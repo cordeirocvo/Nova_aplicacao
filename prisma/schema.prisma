@@ -1,0 +1,140 @@
+generator client {
+  provider   = "prisma-client-js"
+  engineType = "library"
+}
+
+datasource db {
+  provider  = "postgresql"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  role      String   // "ADMIN" or "TV"
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PlanilhaInstalacao {
+  id                      String   @id @default(cuid())
+  
+  // Mirrored fields from Google Sheets
+  idInterno               String?  @unique // Column 'x'
+  instalacao              String?  // Column 'Instalação - Pedro Cliente'
+  diaPrev                 String?
+  manualInstalacao        Boolean  @default(false)
+  obsInstalacao           String?
+  vencimentoParecer       String?
+  vencimentoContrato      String?
+  automaticoPrevInstala   String?
+  dataVenda               String?
+  statusProtocolo         String?
+  statusCompra            String?
+  inversor                String?
+  numMod                  String?
+  modulo                  String?
+  cidadeSheet             String?
+  bairro                  String?
+  rua                     String?
+  numRua                  String?
+  telhado                 String?
+  telefoneSheet           String?
+  vendedorSheet           String?
+
+  // Additional fields requested by the user
+  observacao              String?
+  anexoFotos              String[] // Array of URLs (Supabase storage)
+  anexoArquivos           String[] // Array of URLs (Supabase storage)
+  dataSolicitacao         DateTime @default(now())
+  solicitacao             String?
+  status                  String?  @default("Pendente")
+  vendedor                String?
+  telefoneCliente         String?
+  cidade                  String?
+  dataPrevista            String?
+
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  @@index([idInterno])
+}
+
+model Tarifas {
+  id                String   @id @default(cuid())
+  distribuidora     String   // SigAgente (e.g., CEMIG-D)
+  subGrupo          String   // DscSubGrupo (e.g., A4)
+  modalidade        String   // DscModalidadeTarifaria (Azul/Verde)
+  postoTarifario    String   // NomPostoTarifario (Ponta/Fora Ponta)
+  valorTUSD         Float
+  valorTE           Float
+  dataInicio        DateTime
+  resolution        String?  // DscREH
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([distribuidora, subGrupo, modalidade, postoTarifario])
+}
+
+model StatusOption {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  color     String?  // hex code or tailwind class
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SystemSettings {
+  id              String   @id @default("default")
+  limiteVerde     Int      @default(40)
+  limiteAmarelo   Int      @default(20)
+  limiteParecer   Int      @default(30)
+  updatedAt       DateTime @updatedAt
+}
+
+model Carregador {
+  id                String   @id @default(cuid())
+  brand             String
+  model             String
+  power             Float    // kW
+  voltage           Int      // 220, 380, etc.
+  phases            Int      // 1 or 3
+  current           Float    // Max current in Amperes
+  connectorType     String?  // T2, T1, GB/T
+  protectionReq     String?  // DR type etc
+  groundingReq      String?
+  datasheetUrl      String?
+  imageUrl          String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  projects          ProjetoDimensionamento[]
+}
+
+model ProjetoDimensionamento {
+  id                    String   @id @default(cuid())
+  projectName           String
+  clientName            String?
+  utility               String   @default("CEMIG")
+  entranceCategory      String?  // "C1", "B2", etc.
+  distance              Float    // meters
+  installationMethod    String   // NBR 5410 methods (e.g., B1, C)
+  
+  chargerId             String
+  charger               Carregador @relation(fields: [chargerId], references: [id])
+  
+  calculatedCurrent     Float
+  calculatedCableGauge  Float    // mm2
+  calculatedBreaker     Float    // Amperes
+  calculatedDR          String?  // "30mA Tipo A", etc.
+  calculatedConduit     String?  // mm or inches
+  voltageDrop           Float    // Percentage
+  
+  groundingAnalysis     String?
+  isServiceEntranceOk   Boolean  @default(true)
+  analysisNotes         String?
+  
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}

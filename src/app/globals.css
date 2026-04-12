@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+@theme {
+  --color-cordeiro-blue: #0A192F;
+  --color-cordeiro-green: #00BFA5;
+  --color-cordeiro-light: #F8FAFC;
+  --color-cordeiro-brand: #1E3A8A;
+}
+
+:root {
+  --background: #F8FAFC;
+  --foreground: #0A192F;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+}

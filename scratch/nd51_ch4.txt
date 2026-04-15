@@ -1,0 +1,733 @@
+    ND - 5.1                                                           
+
+                                              Classificação: Público 
+
+isento de emendas e de qualquer dispositivo que possa causar seu seccionamento; 
+
+7.4.3.2  O condutor de aterramento deve ser de cobre nu, rígido, 10 mm². Esse condutor 
+deve ser contínuo (sem emendas) desde a conexão na caixa de medição até o último haste 
+de aterramento, com a conexão do aterramento efetuada no interior da caixa de medição e 
+proteção. 
+
+7.4.3.3  Opcionalmente,  o  condutor  de  aterramento  pode  ser  protegido  por  eletroduto  de 
+PVC rígido, antichama, diâmetro 20 mm (1/2”). 
+
+7.4.4  Condutor de proteção 
+
+7.4.4.1  A caixa de medição e proteção bem como o QDG devem ser aterrados através de 
+condutores de proteção de cobre isolados com PVC na cor verde ou verde-amarelo de fábrica, 
+com as seções indicadas nas Tabelas 1 a 4.  
+
+7.4.4.2  Este condutor deve ser levado juntamente com os condutores fase e neutro (energia 
+medida)  até  a  caixa de passagem, que  é  opcional,  localizada  junto  da caixa de  medição  e 
+proteção ou até o QDG localizado após o padrão de entrada. 
+
+7.4.5  Haste de aterramento 
+
+7.4.5.1  Como  haste  de  aterramento  deve  ser  utilizado  o  seguinte  material,  cujas 
+características dimensionais estão indicadas no Desenho 52 desde que constantes no  PEC-
+11 (Materiais e Equipamentos Aprovados para Padrões de Entrada): 
+
+7.4.5.2 
+
+hastes cantoneiras de aço zincado, por imersão a quente, aprovadas pela Cemig. 
+
+7.4.5.3  O  haste  de  aterramento  deve  ser  cravado  deixando  sua  extremidade  superior 
+(incluindo  conector)  acessível  à  inspeção  pela  Cemig,  dentro  de  uma  caixa  localizada  na 
+propriedade  do  consumidor  ou  no  passeio  público  conforme  o  Desenho  52  com  o  topo  do 
+eletrodo situado abaixo da linha de afloramento. Opcionalmente pode ser utilizado um tubo 
+de PVC rígido de 300mm em substituição à caixa no terreno. 
+
+7.4.5.4  A caixa de aterramento deve ser revestida com argamassa e protegida por tampa 
+de concreto ou ferro fundido. No caso de caixa no passeio público, deve ser utilizado somente 
+tampa de ferro fundido ou de material polimérico, sendo que essa última deve ser de um dos 
+modelos  e  fabricantes  homologados  pela  Cemig  relacionados  no  PEC-11  (Materiais  e 
+Equipamentos Aprovados para Padrões de Entrada). 
+
+7.4.5.5  O primeiro haste de aterramento deve ser cravado, no máximo, a 40 centímetros 
+do padrão de entrada. 
+
+7.4.5.6  A  conexão  do  condutor  de  aterramento  ao  eletrodo  deve  ser  feita  através  dos 
+conectores  existentes  no  corpo  das  hastes  (conforme  indicado  no  Desenho  52),  sendo 
+admissível conexões exotérmicas como alternativa. 
+
+7.4.5.7  Os padrões pré-fabricados em aço cujos postes são zincados por imersão a quente, 
+
+50 
+
+Classificação: Direcionado 
+Classificação: Direcionado 
+
+Docusign Envelope ID: 7A89F835-10C1-4E89-A462-3421E3EBB99C                                 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+    ND - 5.1                                                           
+
+                                              Classificação: Público 
+
+não necessitam de haste de aterramento, pois o próprio poste funciona como um  haste de 
+aterramento. 
+
+7.5 
+
+Caixas para medição e proteção 
+
+7.5.1  As  caixas  para  instalação  dos  equipamentos  de  medição  e  de  proteção  devem 
+corresponder a um dos modelos aprovados pela Cemig e relacionados no PEC-11 (Materiais 
+e Equipamentos Aprovados para Padrões de Entrada). 
+
+7.5.2  As caixas instaladas em local sujeito à umidade devem ter os seus furos providos de 
+massa de calafetar. 
+
+7.5.3  Nos padrões embutidos em muro, mureta ou parede, é permitido ao consumidor fazer 
+um acabamento/revestimento no local onde estiver instalada a caixa (tais como, painéis de 
+madeira,  lambris,  pinturas,  etc),  desde  que  não  impeçam  a  leitura  e  retirada  da  tampa  da 
+caixa. 
+
+7.5.4  Os furos não utilizados da caixa para instalação de eletrodutos devem ser mantidos 
+fechados. 
+7.5.5  Nos  padrões  com  eletrodutos  de  diâmetros  inferiores  aos  dos  furos  da  caixa,  é 
+obrigatório o uso de luvas de redução de PVC, alumínio ou aço conforme o Desenho 60. É 
+vetado o uso de dispositivos tipo “arruela” e/ou redução de PVC para rede hidráulica.  
+
+7.5.6  Nos padrões com caixa com leitura pela via pública embutida em muro ou mureta, fica 
+a critério do consumidor a instalação de uma "tampa basculável" conforme o Desenho 44 na 
+abertura a ser deixada externamente na alvenaria para leitura do medidor. 
+
+7.5.7  A entrada nas caixas deve ser pelo lado oposto ao de instalação do disjuntor. 
+
+7.5.8  Não é permitido o alargamento dos orifícios existentes para instalação de eletroduto 
+nem  o  uso  de  ferramentas  que  danificam  a  proteção  existente  nas  caixas  para  medição  e 
+proteção. E se no momento da inspeção for detectado o alargamento dos furos, a caixa deve 
+ser trocada. 
+
+7.5.9  Quanto às caixas CM-9 e CM-18 ver notas do Desenho 37.  
+
+7.5.10  Opcionalmente, pode ser instalada caixa de passagem individual no circuito de energia 
+medida para cada caixa de medição. 
+
+7.5.11  As caixas de policarbonato têm parafuso para aterramento, mesmo sendo isolantes. A 
+conexão de equalização unindo o condutor de aterramento, o neutro e o condutor de proteção 
+deve ser feita na primeira caixa que recebe o ramal de entrada. 
+
+7.5.12  As caixas de medições e proteção devem ser lacradas pela Cemig. 
+
+7.5.13  Quando  da  solicitação  de  corte  para  conserto  que  não  resulte  na  necessidade  da 
+substituição  da  caixa  de medição  existente (ex. aumento  de  carga, troca  de  disjuntor,  etc.) 
+
+51 
+
+Classificação: Direcionado 
+Classificação: Direcionado 
+
+Docusign Envelope ID: 7A89F835-10C1-4E89-A462-3421E3EBB99C                                 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+    ND - 5.1                                                           
+
+                                              Classificação: Público 
+
+não  será  exigida  a  adequação  ao  novo  padrão,  desde  que  as  instalações  do  padrão  de 
+entrada existente estejam em condições de uso e segurança adequados. 
+
+7.6 
+
+Caixas de inspeção 
+
+7.6.1  Geral 
+
+7.6.1.1  As  caixas  de  inspeção  devem  ser  construídas  somente  no  passeio  público, 
+obedecendo às seguintes condições mínimas: 
+
+a)  Serem  confeccionadas  em  concreto  pré-moldado,  em  concreto  armado  ou  em 
+
+alvenaria, com tampa e aro de ferro fundido conforme os Desenho 47, 48 e 49. 
+
+b)  Nos fornecimentos atendidos por ramal de entrada subterrâneo em baixa tensão até 
+47 kVA, a caixa de inspeção a ser utilizada deve ser do tipo ZA e nos fornecimentos 
+entre 47,1 kVA (inclusive) e 95,0 kVA (inclusive) a caixa de inspeção deve ser do tipo 
+ZB. 
+
+c)  Nos fornecimentos atendidos por ramal de conexão subterrâneo em baixa tensão com 
+demanda entre 95 kVA a 304 kVA, a caixa de inspeção a ser utilizada deve ser do tipo 
+ZC. 
+
+d)  Não serem instaladas em locais sujeito a passagem de veículos (exceto garagem). 
+
+7.6.1.2  Em terrenos inclinados, a caixa deve ser instalada de forma que sua tampa fique 
+alinhada com o nível do passeio. 
+
+7.6.1.3  As caixas de inspeção devem ser destinadas exclusivamente para a passagem dos 
+condutores  do  ramal  de  conexão  ou  de  entrada  subterrâneo,  sendo  vedada  sua  utilização 
+para passagem de cabos telefônicos, sinalização ou quaisquer outros. 
+
+7.6.1.4  Quando da solicitação de corte para conserto que não resulte na necessidade da 
+substituição  da  caixa de medição  existente (ex. aumento  de  carga, troca  de  disjuntor,  etc.) 
+não  será  exigida  a  adequação  ao  novo  padrão,  desde  que  as  instalações  do  padrão  de 
+entrada existente estejam em condições de uso e segurança adequados. 
+
+7.6.2  Localização 
+
+7.6.2.1  Nos atendimentos em área urbana 
+
+7.6.2.1.1  Deve ser prevista caixa de inspeção nos seguintes pontos: 
+
+a)  No passeio público junto à divisa da propriedade do consumidor. 
+
+b)  Nos demais locais indicados no Desenho 47 e Desenho 48. 
+
+7.6.2.1.2  No caso de ramal de conexão subterrâneo, a construção e a manutenção da caixa 
+de inspeção no passeio público junto à divisa da propriedade particular é responsabilidade do 
+
+52 
+
+Classificação: Direcionado 
+Classificação: Direcionado 
+
+Docusign Envelope ID: 7A89F835-10C1-4E89-A462-3421E3EBB99C                                 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+    ND - 5.1                                                           
+
+                                              Classificação: Público 
+
+consumidor.  
+
+7.6.2.2  Nos  atendimentos  em  área  rural  com 
+consumidoras tipo F3 a F9) 
+
+transformador  exclusivo  (unidades 
+
+7.6.2.2.1  Deve ser prevista caixa de inspeção no seguinte ponto: 
+
+a)  junto ao padrão de entrada do consumidor. 
+
+7.6.2.2.2  No caso de ramal de conexão subterrâneo, a construção e a manutenção da caixa 
+de inspeção junto do padrão de entrada é responsabilidade do consumidor.  
+
+7.6.2.2.3  Para os atendimentos previstos neste item, o transformador é instalado dentro da 
+propriedade rural do consumidor. 
+
+7.7 
+
+Poste e pontalete do padrão de entrada 
+
+7.7.1  Geral 
+
+7.7.1.1  Os  postes  ou  pontaletes  devem  ser  utilizados  no  padrão  de  entrada  para  os 
+fornecimentos tipo A, B, C, D, E, F1, F2 G e H.  
+
+7.7.1.2  Os postes e pontaletes devem ser totalmente visíveis até o engastamento através 
+da  face  onde  consta  os  dados  de  identificação  desses  postes,  por  ocasião  da  vistoria  do 
+padrão, não sendo necessário que todo o contorno (perímetro) dos mesmos fique acessível. 
+
+7.7.1.3  Somente após a ligação, o poste pode ser recoberto visando a reconstituição do 
+muro ou mureta. 
+
+7.7.1.4  Não é permitida pintura de acabamento dos postes e pontaletes. 
+
+7.7.1.5  Somente  podem  ser  utilizados  os  modelos  de  postes  de  aço  ou  de  pontalete 
+constantes no PEC-11 (Materiais e Equipamentos Aprovados para Padrões de Entrada), em 
+sua edição atualizada. 
+
+7.7.1.6  Excepcionalmente para as situações de corte para conserto e/ou alteração de carga 
+para as unidades consumidoras ligadas em data anterior à publicação dessa norma, pode ser 
+utilizado o poste ou pontalete de aço existente desde que atenda as condições de segurança 
+e  de  dimensões  constantes  do  Desenho  66  mesmo  que  o  poste  ou  pontalete  não  tenha  a 
+identificação prevista na Nota 1 do Desenho 66. 
+
+7.7.1.7  Os  postes  de  aço  dos  padrões  de  entrada  localizados  em  propriedades  rurais 
+devem ter comprimento de 7 (sete) metros. 
+
+7.7.2  Poste e pontalete de aço 
+
+53 
+
+Classificação: Direcionado 
+Classificação: Direcionado 
+
+Docusign Envelope ID: 7A89F835-10C1-4E89-A462-3421E3EBB99C                                 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+    ND - 5.1                                                           
+
+                                              Classificação: Público 
+
+7.7.2.1  Os  postes  e  pontaletes  devem  ser  utilizados  de  acordo  com  as  Tabelas  1  a  4 
+quando for área urbana. Quando for área rural somente pode ser utilizado o poste indicado 
+para o lado oposto da rede.  
+
+7.7.2.2  Não são permitidas emendas nos postes e pontaletes de aço. 
+
+7.7.2.3  Os pontaletes somente devem ser utilizados quando engastados em laje, viga ou 
+coluna de concreto pertencentes ao corpo principal da edificação. 
+
+7.7.2.4  O  poste  ou  pontalete  de  aço  pode  vir  de  fábrica  com  furo  para  a  utilização  de 
+parafuso para a instalação da armação secundária para a ancoragem do ramal de conexão 
+em substituição à cinta. 
+
+7.7.2.5  Não será permitida pintura de acabamento nos postes e pontaletes. 
+
+7.7.3  Poste de concreto armado 
+
+7.7.3.1  Alternativamente  aos  postes  de  aço,  podem  ser  utilizados  postes  de  concreto 
+armado, de acordo com o indicado nas Tabelas 1 a 4.  
+
+7.8 
+
+Ramal interno da unidade consumidora 
+
+7.8.1  O dimensionamento, a especificação e construção do ramal interno e das instalações 
+elétricas internas da unidade consumidora devem atender às prescrições da NBR 5410. 
+
+7.8.2  O ramal interno deve apresentar, no mínimo, as características técnicas do ramal de 
+entrada até os seguintes pontos: 
+
+a)  Pingadouro, no caso de saídas aéreas; 
+
+b)  Primeira  caixa  de  passagem  (energia  medida),  no  caso  de  saídas  subterrâneas  ou 
+
+embutidas; 
+
+c)  Quadro de distribuição de circuitos, no caso da não existência de caixa de passagem 
+
+(energia medida).  
+
+7.8.3  As seções mínimas dos condutores devem ser verificadas pelo critério de queda de 
+tensão,  obedecidos  os  seguintes  valores  máximos  a  partir  do  ponto  de  medição  (saída  do 
+medidor ou caixa de passagem com energia medida) e até os pontos de utilização da energia: 
+
+a)  Edificações com demanda até 304kVA:  
+
+Iluminação...........4% 
+Força...................4% 
+
+Nos limites acima devem ser também consideradas as quedas no ramal interno da unidade 
+
+consumidora. 
+
+54 
+
+Classificação: Direcionado 
+Classificação: Direcionado 
+
+Docusign Envelope ID: 7A89F835-10C1-4E89-A462-3421E3EBB99C                                 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+      
+ 
+ 
+ 
+    ND - 5.1                                                           
+
+                                              Classificação: Público 
+
+Atendimento à carga instalada superior a 75kW e demanda maior que 95kVA e menor 
+
+7.9 
+ou igual a 304kVA 
+
+7.9.1  O cliente pode optar por atendimento em baixa tensão quando a carga instalada for 
+superior a 75kW e a demanda for até 304kVA. Neste caso o pedido do consumidor deve ser 
+por escrito. 
+
+7.9.2  Unidades consumidoras localizadas na área rural 
+
+7.9.2.1  O  padrão  de  entrada  deve  ser  construído  fora  das  faixas  de  servidão  (faixas  de 
+segurança) conforme especificado no item 3.15 e abaixo: 
+
+a)  Não será permitido a construção do padrão de entrada junto ao poste do transformador 
+
+da rede da Cemig. 
+
+b)  O  padrão  de  entrada  deve  ser  construído  fora  da  faixa  de  servidão  (faixa  de 
+segurança),  que  é  de  7,5  metros  a  partir  da  rede  de  distribuição  da  Cemig  nos 
+atendimentos através de redes de distribuição até 22kV. 
+
+c)  O  padrão  de  entrada  deve  ser  construído  fora  da  faixa  de  servidão  (faixa  de 
+segurança),  que  é  de  10  metros  a  partir  da  rede  de  distribuição  da  Cemig  nos 
+atendimentos através de redes de distribuição de 34,5kV. 
+
+d)  Em  local  com  linha  de  transmissão  de  energia  elétrica  (tensão  igual  ou  superior  a 
+69kV), procurar a Cemig para definição da faixa de servidão (faixa de segurança). 
+
+7.9.2.2  Assim como o padrão de entrada, o imóvel também não pode ser construído dentro 
+das faixas de servidão (faixas de segurança) especificadas no item 7.9.2.1. 
+
+7.9.2.3  A Cemig reserva o direito de não ligar o padrão de entrada caso esse padrão ou o 
+imóvel esteja localizado dentro das faixas de servidão (faixas de segurança). 
+
+7.9.2.4  Devem ser previstas caixas de inspeção junto do poste da Cemig e do padrão de 
+entrada.  
+
+7.9.3  Unidades consumidoras localizadas na área urbana 
+
+7.9.3.1  Para  as unidades  consumidoras localizadas na  área urbana,  o  atendimento será 
+através de ramal de conexão e de entrada subterrâneos com ponto de conexão na caixa de 
+inspeção localizada no passeio público e instalada na divisa com a propriedade particular.  
+
+7.9.3.2  Além  da  caixa  de  inspeção  instalada  no  passeio  público  junto  à  divisa  da 
+propriedade do consumidor, devem ser previstas caixas de inspeção, nos seguintes pontos 
+conforme o Desenho 47 e Desenho 48: 
+
+a)  No  passeio  público  junto  ao  poste  de  derivação,  quando  houver  travessia  de  via 
+pública  ou  quando  a  distância  entre  o  poste  e  a  caixa  instalada  junto  a  divisa  for 
+superior a 20m nos casos onde não houver travessia de via pública; 
+
+55 
+
+Classificação: Direcionado 
+Classificação: Direcionado 
+
+Docusign Envelope ID: 7A89F835-10C1-4E89-A462-3421E3EBB99C                                 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+    ND - 5.1                                                           
+
+                                              Classificação: Público 
+
+b)  Em alternativa a curva de 90º da Situação nº 2 do Desenho 47 e Desenho 48, desde 
+que a distância entre a caixa junto ao poste e o local da curva de 90º seja superior a 
+15 metros. 
+
+8  CÁLCULO DA CARGA INSTALADA E DA DEMANDA 
+
+8.1 
+
+Determinação da carga instalada 
+
+8.1.1  Para  definição  do  tipo  de  fornecimento,  o  consumidor  deve  determinar  a  carga 
+instalada,  somando-se  a  potência  em  kW,  dos  aparelhos  de  iluminação,  aquecimento, 
+eletrodomésticos, refrigeração, motores e máquina de solda que possam ser ligados em sua 
+unidade consumidora. 
+
+8.1.2  Os  aparelhos  com  previsão  de  serem  adquiridos  e  instalados  futuramente  podem 
+também ser computados no cálculo, a critério do consumidor, visando dimensionar a entrada 
+de serviço já considerado o aumento de carga da unidade consumidora previsto no item 4.11. 
+
+8.1.3  Não é necessário considerar a potência dos aparelhos de reserva. 
+
+8.1.4  Quando  o  consumidor  não  dispuser  das  potências  de  seus  aparelhos,  podem  ser 
+considerados os valores médios indicados nas Tabelas 8A e 8B. 
+
+8.1.5  A  Cemig  definirá  o  tipo  de  fornecimento  às  unidades  consumidoras  rurais, 
+considerando a carga declarada pelos consumidores. 
+
+8.1.6  No  caso  das  unidades  consumidoras  urbanas  ou  rurais  atendidas  por  redes 
+secundárias  trifásicas  (127/220V),  com  carga  instalada  entre  16,1  kW  e  75,0kW,  o 
+fornecimento  deve  ser  a  4  fios,  sendo  a  entrada  de  serviço  dimensionada  pela  demanda, 
+conforme item 2 deste Capítulo. 
+
+8.1.7  No Anexo A são apresentados alguns exemplos de cálculos da carga instalada. 
+
+8.2 
+
+Cálculo de demanda 
+
+8.2.1  O  dimensionamento  da  entrada  de  serviço  das  unidades  consumidoras  urbanas  ou 
+rurais atendidas por redes secundárias trifásicas (127/220V), com carga instalada entre 16,1 
+kW e 75,0kW deve ser feito pela demanda provável da edificação, cujo valor  será inferior a 
+sua carga instalada. 
+
+8.2.2  O consumidor pode determinar a demanda de sua edificação, considerando o regime 
+de funcionamento de suas cargas. Salientamos que este critério é um exemplo de cálculo da 
+demanda, sendo do consumidor a responsabilidade da escolha do critério a ser adotado para 
+o cálculo da demanda de sua edificação, que pode ser o critério apresentado na norma. 
+
+8.2.3  Expressão para o cálculo da demanda: 
+
+D = a + b + c + d + e + f   (kVA) 
+
+56 
+
+Classificação: Direcionado 
+Classificação: Direcionado 
+
+Docusign Envelope ID: 7A89F835-10C1-4E89-A462-3421E3EBB99C                                 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+    ND - 5.1                                                           
+
+                                              Classificação: Público 
+
+Onde: 
+
+a = demanda referente a iluminação e tomadas, dada pelas Tabelas 10 e 11. 
+
+b  =  demanda  relativa  aos  aparelhos  eletrodomésticos  e  de  aquecimento.  Os  fatores  de 
+demanda, dados pela Tabela 13 devem ser aplicados, separadamente, à carga instalada dos 
+seguintes grupos de aparelhos: 
+
+b1: chuveiros, torneiras e cafeteiras elétricas; 
+
+b2: aquecedores de água por acumulação e por passagem; 
+
+b3: fornos, fogões e aparelhos tipo "Grill"; 
+
+b4: máquinas de lavar e secar roupas, máquinas de lavar louças e ferro elétrico; 
+
+b5:  demais  aparelhos  (TV,  conjunto  de  som,  ventilador,  geladeira,  freezer,  torradeira, 
+liquidificador, batedeira, exaustor, ebulidor, etc.). 
+
+c = demanda dos aparelhos condicionadores de ar, determinada pela Tabela 13. 
+
+No caso de condicionador central de ar, utilizar fator de demanda igual a 100%. 
+
+d = demanda de motores elétricos, dada pelas Tabelas 14 e 15. 
+
+e = demanda de máquinas de solda e transformador, determinada por: 
+
+- 100% da potência do maior aparelho; 
+
+-  70% da potência do segundo maior aparelho; 
+
+-  40% da potência do terceiro maior aparelho; 
+
+-  30% da potência dos demais aparelhos. 
+
+No caso de máquina de solda a transformador com ligação V-v invertida, a potência deve ser 
+considerada em dobro. 
+
+f = demanda dos aparelhos de raios-X, determinada por: 
+
+- 100% da potência do maior aparelho; 
+
+-  10% da potência dos demais aparelhos. 
+
+8.2.4  No Anexo B são apresentados alguns exemplos de cálculo de demanda. 
+
+57 
+
+Classificação: Direcionado 
+Classificação: Direcionado 
+
+Docusign Envelope ID: 7A89F835-10C1-4E89-A462-3421E3EBB99C                                 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+    
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+    ND - 5.1                                                           
+
+                                              Classificação: Público 
+
+9  RAMAL DE CONEXÃO ATÉ A CAIXA DE MEDIÇÃO  
+
+9.1 
+A partir do dia 01/06/2025 será adotada a instalação de ramal de conexão até a caixa 
+de medição do padrão de entrada para as faixas de fornecimento com ramal de entrada de 
+16 mm², conforme indicado nas tabelas 1, 2 e 3.  
+
+A principal característica deste conceito é o “lançamento” do ramal de conexão até o 
+9.2 
+interior da caixa de medição, não sendo executada a conexão no “pingadouro”. Para tal, o 
+ramal de conexão deve passar por dentro do eletroduto até a caixa de medição.  
+
+9.3 
+A  partir  do  dia  01/06/2025,  para  ligações  novas  o  cliente  deve  disponibilizar  
+condutores  do  ramal  de  entrada  com  comprimento  de  50  cm,  a  serem  deixados  dentro  da 
+caixa de medição. Na Figura 1 segue a visão geral da instalação interna à caixa de medição 
+nesta configuração, em que estão indicados em azul os condutores do ramal de entrada que 
+são responsabilidade do cliente e em verde os condutores e conectores do ramal de conexão 
+que são de responsabilidade da Cemig. Todos os condutores de saída, bem como o disjuntor, 
+são de responsabilidade do cliente.  
+
+9.3.1  Para cada segmento de fase do ramal de entrada, em uma das extremidades deve ser 
+crimpado  um  terminal  tubular  longo  sem  isolação  de  cobre  estanhado  (conhecido  como 
+“ilhós”) para condutores de 16mm² (Figura 2). Na outra extremidade deve ser crimpado um 
+terminal tubular longo com isolação de cobre estanhado para condutores de 16mm² (Figura 
+3). Resultado final conforme Figura 4. 
+
+9.3.2  Na  extremidade  do  segmento  de  neutro  do  ramal  entrada  que  será  conectada  ao 
+medidor deve ser crimpado um terminal tubular longo com isolação de cobre estanhado para 
+condutores de 16mm² (Figura 3). Na outra extremidade do neutro não é necessário terminal, 
+onde a Cemig fará a conexão ao neutro do ramal de conexão. 
+
+9.3.3  Todos os terminais tubulares devem ser necessariamente crimpados com ferramenta 
+adequada, não sendo admitido apertos com ferramentas improvisadas (alicate universal, etc.). 
+
+9.3.4  Para  os  padrões  em  que  o  condutor  de  proteção  se  inicia  na  caixa  de  medição,  o 
+mesmo deve estar conectado ao parafuso de aterramento da caixa, assim como o neutro. 
+
+9.4  O cliente deve instalar um cabo-guia de arame de ferro galvanizado liso de 14 BWG 
+entre  a  caixa  de  medição  e  o  topo  do  poste  do  padrão,  com  sobra  de  50  cm  em  cada 
+extremidade.  
+
+Até  o  dia  01/06/2025,  para  ligações  novas  o  cliente  deve  instalar  os  condutores  do 
+
+9.5 
+ramal de entrada no comprimento normal (entre a caixa de medição e o topo do poste). 
+
+58 
+
+Classificação: Direcionado 
+Classificação: Direcionado 
+
+Docusign Envelope ID: 7A89F835-10C1-4E89-A462-3421E3EBB99C                                 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+    ND - 5.1                                                           
+
+                                              Classificação: Público 
+
+Figura 1- Visão Geral das instalações do padrão na configuração “Ramal de conexão até a 
+caixa de medição” 
+
+59 
+
+Classificação: Direcionado 
+Classificação: Direcionado 
+
+Docusign Envelope ID: 7A89F835-10C1-4E89-A462-3421E3EBB99C                                 
+ 
+ 
+ 
+ 
+ 
+    ND - 5.1                                                           
+
+                                              Classificação: Público 
+
+Figura 2 – Terminal tubular longo sem isolação de cobre estanhado (conhecido como “ilhós”) 
+para condutores de 16mm²   
+
+Figura 3 - Terminal tubular longo com isolação de cobre estanhado (conhecido como “ilhós”) 
+para condutores de 16mm²   
+
+Figura 4 – Segmento fase do ramal de entrada que deverá ser disponibilizado pelo cliente: 
+50 cm de condutor 16mm² de cobre; uma extremidade com terminal sem isolação; outra 
+extremidade com terminal com isolação 
+
+60 
+
+Classificação: Direcionado 
+Classificação: Direcionado 
+
+Docusign Envelope ID: 7A89F835-10C1-4E89-A462-3421E3EBB99C                                 
+ 
+        
+ 
+ 
+ 
+    ND - 5.1                                                                                                    
+
+                                                                                                   

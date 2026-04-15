@@ -1,0 +1,2441 @@
+    ND - 5.1                                                           
+
+                                              Classificação: Público 
+
+3.32  RDA 
+
+Rede  de  Distribuição  Aérea.  É  a  rede  da  Cemig  onde  os  equipamentos  e  condutores  são 
+instalados de forma aérea a partir das subestações. Como particularidade, essa rede pode ter 
+vãos de condutores que são instalados de forma subterrânea. 
+
+3.33  RDR 
+
+Rede de Distribuição Rural. É a rede da Cemig instalada em área rural dentro da propriedade 
+particular do consumidor. 
+
+3.34  RDS 
+
+Rede de Distribuição Subterrânea. É a rede da Cemig onde os equipamentos e condutores 
+são instalados de forma subterrânea a partir das subestações. 
+
+3.35  RDU 
+
+Rede de Distribuição Urbana. É a rede da Cemig instalada em vias públicas. 
+
+3.36  Unidade consumidora 
+
+Conjunto  composto  por  instalações,  ramal  de  entrada,  equipamentos  elétricos,  condutores, 
+acessórios e, no caso de conexão em tensão maior ou igual a 2,3 kV, a subestação, sendo 
+caracterizado por:  
+
+a)  recebimento de energia elétrica em apenas um ponto de conexão;  
+
+b)  medição individualizada;  
+
+c)  pertencente a um único consumidor; e  
+
+d)  localizado em um mesmo imóvel ou em imóveis contíguos. 
+
+3.37  Via Pública 
+
+Toda  área  de  terreno  destinada  ao  trânsito  público  e  assim  reconhecida  pelos  poderes 
+competentes. 
+
+17 
+
+Classificação: Direcionado 
+Classificação: Direcionado 
+
+Docusign Envelope ID: 7A89F835-10C1-4E89-A462-3421E3EBB99C                                 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+    ND - 5.1                                                           
+
+                                              Classificação: Público 
+
+4  CONDIÇÕES GERAIS DE FORNECIMENTO 
+
+4.1 
+
+Aspectos gerais 
+
+4.1.1  Como  regra  geral,  os  padrões  de  entrada  estabelecidos  nesta  ND  são  aplicáveis  a 
+novas  unidades  consumidoras  a  serem  conectadas  ao  sistema  elétrico  da  Cemig.   A 
+necessidade de adequações nos padrões de entrada existentes poderá ocorrer nas seguintes 
+situações: 
+
+a)  descumprimento das normas e padrões vigentes à época da primeira conexão; 
+b)  deficiência técnica ou de segurança dos padrões da unidade consumidora; 
+c)  inviabilidade técnica para a instalação do sistema de medição compatível com a 
+
+modalidade tarifária aplicável. 
+
+4.1.1.1  As condições que possam caracterizar deficiência técnica ou de segurança citadas 
+no  item  (b)  serão  avaliadas  pela  Cemig  oportunamente  e  deverão  ser  documentadas  por 
+escrito no ato da vistoria. 
+
+4.1.2  As  edificações  individuais  devem  ser  atendidas  através  de  uma  única  entrada  de 
+serviço. 
+
+4.1.3  As  unidades  consumidoras  somente  serão  ligadas  após  vistoria  e  aprovação  do 
+padrão de entrada pela Cemig, de acordo com as condições estabelecidas nesta norma. 
+
+4.1.4  O atendimento ao pedido de ligação não transfere a responsabilidade técnica à Cemig, 
+quanto a segurança e integridade das instalações elétricas internas da unidade consumidora. 
+
+4.1.5  O  atendimento  deve  ser  híbrido,  onde  aplicável,  conforme  o  capítulo  “Atendimento 
+Híbrido”. 
+
+4.1.6  Será  necessário  a  apresentação  de  autorização  do  órgão  ambiental  competente  e 
+gestor  da  unidade  de  atendimento  para  a(s)  ligação(ões)  da(s)  unidade(s)  consumidora(s) 
+e/ou  padrão(ões)  de  entrada  de  energia  elétrica  situado(s)  em  Área(s)  de  Preservação 
+Permanente – APP. 
+
+4.1.7  Caso o consumidor esteja localizado em área não atendida por rede de distribuição 
+aérea  e se enquadre nas  condições  do  artigo 515  da  REN  1000/2021, a Cemig  avaliará  a 
+viabilidade de atendimento através de sistemas isolados, considerando os critérios do capítulo 
+IV da REN 1000/2021.  
+
+4.2 
+
+PONTO DE CONEXÃO 
+
+O  ponto  de  conexão,  que  corresponde  à  conexão  do  ramal  de  entrada  do  consumidor  ao 
+sistema elétrico da Cemig, é identificado de acordo com as seguintes situações: 
+
+4.2.1  Ramal de conexão aéreo 
+
+18 
+
+Classificação: Direcionado 
+Classificação: Direcionado 
+
+Docusign Envelope ID: 7A89F835-10C1-4E89-A462-3421E3EBB99C                                 
+ 
+ 
+ 
+  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+    ND - 5.1                                                           
+
+                                              Classificação: Público 
+
+4.2.1.1  Área urbana ou rural com rede da Cemig instalada na via pública 
+
+Para  atendimento  até  95kVA  de  demanda  em  local  atendido  por  rede  aérea,  o  ramal  de 
+conexão  deve  ser  aéreo.  Neste  caso  o  ponto  de  conexão  está  situado  junto  ao  poste  ou 
+pontalete  do  padrão  de  entrada  da  unidade  consumidora  ou  junto  à  parede  da  edificação 
+localizados na divisa da propriedade com o passeio público e é representado pela conexão 
+entre os condutores do ramal de entrada embutido e do ramal de conexão aéreo (pingadouro), 
+conforme o Desenho 1. 
+
+4.2.1.2  Área rural com rede da Cemig instalada dentro da propriedade rural 
+
+Para  atendimento  até  95kVA  de  demanda  em  local  atendido  por  rede  aérea,  o  ramal  de 
+conexão  deve  ser  aéreo.  Neste  caso  o  ponto  de  conexão  está  situado  junto  ao  poste  do 
+padrão  de  entrada  da  unidade  consumidora  localizado  fora  da  faixa  de  servidão  e  é 
+representado pela conexão entre os condutores do ramal de entrada embutido e do ramal de 
+conexão aéreo (pingadouro), conforme o Desenho 1. 
+
+4.2.2  Ramal de conexão subterrâneo 
+
+4.2.2.1  Área urbana ou rural com rede da Cemig instalada na via pública 
+
+Para atendimento à demanda superior a 95 e menor ou igual a 304kVA em local atendido por 
+rede aérea, o ramal de conexão deve ser subterrâneo. Neste caso o ponto de conexão está 
+situado na caixa de inspeção instalada pelo consumidor no passeio público, junto à divisa da 
+propriedade e é representado pela conexão entre os condutores dos ramais de entrada e de 
+ligação subterrâneos, conforme ilustrado pelo Desenho 48. 
+
+4.2.2.2  Área rural com rede da Cemig instalada dentro da propriedade rural 
+
+Para atendimento à demanda superior a 95 e menor ou igual a 304kVA em local atendido por 
+rede aérea, o ramal de conexão deve ser subterrâneo. Neste caso o ponto de conexão está 
+situado na caixa de inspeção instalada pelo consumidor fora da faixa de servidão definida no 
+item 3.15, junto ao padrão de entrada e é representado pela conexão entre os condutores dos 
+ramais  de  entrada  e  de  ligação  subterrâneos,  conforme  ilustrado  pelo  Desenho  48.  Nesse 
+atendimento a caixa de inspeção localizada na base do poste da rede da Cemig bem como a 
+caixa  de  inspeção  localizada  junto  do  padrão  de  entrada  (Ponto  de  Conexão)  deve  ser 
+conforme o Desenho 73. 
+
+4.2.3  Ramal de entrada subterrâneo 
+
+O ramal de entrada subterrâneo deve ser instalado somente nos atendimentos previstos no 
+item 7.2.3 e no item 4.2.2.  
+Para o atendimento previsto no item  7.2.3.b a montagem do ramal de entrada subterrâneo 
+deve ser conforme o Desenho 48. 
+Para  o  atendimento  previsto no  item  7.2.3.c  a montagem  do  ramal  de entrada  subterrâneo 
+deve ser conforme o Desenho 47. 
+
+19 
+
+Classificação: Direcionado 
+Classificação: Direcionado 
+
+Docusign Envelope ID: 7A89F835-10C1-4E89-A462-3421E3EBB99C                                 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+    ND - 5.1                                                           
+
+                                              Classificação: Público 
+
+O ponto de conexão nos atendimentos com ramal de entrada subterrâneo está definido no 
+item 7.2.3. 
+
+4.3 
+
+TENSÕES DE FORNECIMENTO 
+
+O fornecimento de energia é efetuado em uma das seguintes tensões secundárias de baixa 
+tensão: 
+
+a)  127/220V, sistema trifásico, estrela com neutro multi-aterrado, frequência 60 Hz; 
+b)  120/240V, sistema bifásico com neutro multi-aterrado, frequência 60 Hz. 
+
+4.4 
+
+LIMITES DE FORNECIMENTO  
+
+4.4.1  O fornecimento de energia elétrica deve ser sempre efetuado em tensão secundária 
+de distribuição às unidades consumidoras que apresentarem carga instalada igual ou inferior 
+a 75 kW.   
+
+4.4.2  As  unidades  com  carga  instalada  superior  a  75kW  terão  o  fornecimento  em  média 
+tensão de distribuição de acordo com as prescrições contidas na norma Cemig ND-5.3, exceto 
+se o consumidor fizer a opção por fornecimento na baixa tensão conforme descrito no item 
+2.1.b. 
+
+4.4.3  A ligação de cargas especiais tais como máquinas de solda a transformador ou tipo 
+motor-gerador,  bem  como  de  motores  elétricos  monofásicos  e  trifásicos,  deve  atender  às 
+limitações definidas para cada tipo de fornecimento. 
+
+4.4.4  As  unidades  consumidoras  com  cargas  acionadas  por  motores  com  partidas 
+frequentes  (ou  simultâneas)  ou  especiais  (aparelhos  de  raios-X,  máquinas  de  solda)  cuja 
+operação  venha  a  introduzir  perturbações  indesejáveis  na  rede  tais  como  flutuações  de 
+tensão,  rádio-interferência,  harmônicos,  etc.,  prejudicando  a  qualidade  do  fornecimento  a 
+outras unidades serão notificadas pela Cemig quanto: 
+
+a)  às condições em que tais cargas podem operar; 
+
+b)  às  alterações  no  padrão  de  entrada  visando  adequá-lo  ao  tipo  de  fornecimento 
+
+compatível com o funcionamento e as características elétricas destas cargas. 
+
+4.4.5  As cargas internas devem ser distribuídas entre as fases, caso fornecimento através 
+de  mais  de  uma  fase,  de  forma  que  o  desequilíbrio  de  tensão  não  exceda  os  valores  de 
+referência dispostos no Módulo 8 do PRODIST.  
+
+4.5 
+
+TIPOS DE FORNECIMENTO 
+
+Os tipos de fornecimento são definidos em função da carga instalada, da demanda, do tipo 
+de rede e local onde estiver situada a unidade consumidora. 
+
+20 
+
+Classificação: Direcionado 
+Classificação: Direcionado 
+
+Docusign Envelope ID: 7A89F835-10C1-4E89-A462-3421E3EBB99C                                 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+    ND - 5.1                                                           
+
+                                              Classificação: Público 
+
+NOTAS:  
+
+a)  O cliente deve fornecer à Cemig sua relação de cargas. 
+
+b)  O  fornecimento  de  energia  elétrica  deve  ser  conforme  a  relação  de  cargas 
+apresentada pelo cliente, que deve ser enquadrada dentro de um dos tipos abaixo. 
+
+4.5.1  Classificação das Unidades Consumidoras  
+
+4.5.1.1  Tipo A: Fornecimento de energia a 2 fios (Fase-Neutro) 
+
+Abrange  as  unidades  consumidoras  urbanas  ou  rurais  atendidas  por  redes  de  distribuição 
+secundárias trifásicas (127V/220V), com carga instalada até 8kW e da qual não constem: 
+
+a)  motores monofásicos com potência nominal superior a 2 cv; 
+
+b)  máquina de solda a transformador com potência nominal superior a 2 kVA. 
+
+4.5.1.2  Tipo B: Fornecimento de energia a 3 fios (2 Condutores Fase -Neutro) 
+
+Abrange as unidades consumidoras situadas em áreas urbanas ou rurais atendidas por redes 
+de distribuição secundárias trifásicas (127/220V), que não se enquadram no fornecimento tipo 
+A, com carga instalada até 16kW e da qual não constem: 
+
+a)  os aparelhos vetados ao fornecimento tipo A, se alimentados em 127V;  
+
+b)  motores monofásicos com potência nominal superior a 5 cv, alimentados em 220V; 
+
+c)  máquina de solda a transformador com potência nominal superior a 9kVA, alimentada 
+
+em 220V. 
+
+4.5.1.3  Tipo C: Fornecimento de energia a 4 fios (3 Condutores Fase-Neutro) 
+
+4.5.1.3.1  Abrange  as  unidades  consumidoras  urbanas  ou  rurais  a  serem  atendidas  por 
+redes de distribuição secundárias trifásicas (127/220V), com carga instalada entre 16,1 kW e 
+75,0kW, e demanda provável até 75 kVA, que não se enquadram nos fornecimentos tipo A e 
+B e da qual não constem: 
+
+a)  os aparelhos vetados aos fornecimentos tipo A, se alimentados em 127V; 
+
+b)  motores monofásicos com potência nominal superior a 5cv, alimentados em 220V; 
+
+c)  motores de indução trifásicos com potência nominal superior a 15cv. 
+
+d)  máquina de solda tipo motor-gerador com potência nominal superior a 30kVA; 
+
+21 
+
+Classificação: Direcionado 
+Classificação: Direcionado 
+
+Docusign Envelope ID: 7A89F835-10C1-4E89-A462-3421E3EBB99C                                 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+    ND - 5.1                                                           
+
+                                              Classificação: Público 
+
+e)  máquina de solda a transformador com potência nominal superior a 9kVA, alimentada 
+
+em 220V - 2 fases ou 220V - 3 fases em ligação V-v invertida; 
+
+f)  máquina  de  solda  a  transformador  com  potência  nominal  superior  a  30kVA  e  com 
+
+retificação em ponte trifásica, alimentada em 220V-3 fases. 
+
+4.5.1.3.2  Na ligação de motores de indução trifásicos com potência nominal superior a 5cv 
+devem  ser  utilizados  dispositivos  auxiliares  de  partida,  conforme  indicado  na  Tabela  6.  As 
+características destes dispositivos estão descritas na Tabela 7. 
+
+4.5.1.3.3  Caso o atendimento seja feito através de transformador exclusivo (transformador 
+não possui o secundário conectado à rede de baixa tensão da Cemig), as cargas permitidas 
+são: 
+
+a)  motores de indução trifásicos com potência nominal superior a 50 cv. 
+
+b)  motores monofásicos com potência nominal superior a 10 cv, alimentados em 220V. 
+
+c)  máquinas de solda vetadas ao fornecimento 4.5.1.3.1. 
+
+4.5.1.3.3.1  Motores trifásicos com potências nominais de 60cv e 75cv, bem como motores 
+monofásicos  com  potências  nominais  de  12,5  cv  e  15cv  podem  ser  ligados  neste  tipo  de 
+fornecimento, desde que utilizados os dispositivos auxiliares de partida indicados na Tabela 
+6. As características destes dispositivos estão descritas na Tabela 7. 
+
+4.5.1.4  Tipo F: Fornecimento de Energia a 4 Fios (3 condutores Fase - Neutro) 
+
+Abrange  as  unidades  consumidoras  individuais  atendidas  por  redes  de  distribuição 
+secundárias trifásicas (127/220V) com carga instalada superior a 75kW e demanda provável 
+até 304kVA da qual não constem as cargas vetadas para o fornecimento tipo C e que optem 
+por atendimento em baixa tensão. A solicitação do consumidor deve ser por escrito conforme 
+descrito no item 2.1.b. 
+
+4.5.1.5  Tipo G: Fornecimento de energia a 2 fios (Fase-Neutro) 
+
+Abrange  as  unidades  consumidoras  urbanas  ou  rurais  atendidas  por  redes  de  distribuição 
+primárias monofásicas localizadas em via pública (120/240 V), ligações de baixa tensão a 2 
+fios, com carga instalada até 7,6kW e da qual não constem:  
+
+a)  motores monofásicos com potência nominal superior a 2 cv; 
+
+b)  máquina de solda a transformador com potência nominal superior a 2 kVA. 
+
+4.5.1.6  Tipo H: Fornecimento de Energia a 3 Fios (2 Condutores Fases-Neutro) 
+
+22 
+
+Classificação: Direcionado 
+Classificação: Direcionado 
+
+Docusign Envelope ID: 7A89F835-10C1-4E89-A462-3421E3EBB99C                                 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+    ND - 5.1                                                           
+
+                                              Classificação: Público 
+
+Abrange  as  unidades  consumidoras  urbanas  ou  rurais  atendidas  por  redes  de  distribuição 
+primárias monofásicas localizadas em via pública (120/240 V), ligações de baixa tensão a 3 
+fios, com carga instalada entre 7,7kW e 50kW e da qual não constem: 
+
+a)  os aparelhos vetados aos fornecimentos tipo G, se alimentados em 127V;  
+
+b)   motores monofásicos com potência nominal superior a 5cv, alimentados em 220V. 
+
+NOTA:    A  ligação  de  motores  monofásicos  de  7,5cv  e  10cv  neste  tipo  de  fornecimento 
+somente poderá ser efetuada após liberação prévia da Cemig, que analisará suas possíveis 
+perturbações na rede de distribuição e nas unidades consumidoras vizinhas. 
+
+A  ligação  de  cargas  com  características  elétricas  além  dos  limites  estabelecidos  para  os 
+fornecimentos dos tipos A a H, pode ser efetuada desde que haja liberação prévia da Cemig, 
+que analisará suas possíveis perturbações na rede de distribuição e unidades consumidoras 
+vizinhas. 
+
+4.5.1.6.1  Caso o atendimento seja feito através de transformador exclusivo (transformador 
+não possui o secundário conectado à rede de baixa tensão da Cemig), as cargas permitidas 
+são: 
+
+a)  os aparelhos vetados aos fornecimentos tipo A, se alimentados em 127V;  
+
+b)  motores monofásicos com potência nominal superior a 10 cv, alimentados em 220V. 
+
+Neste  tipo  de  atendimento  o  transformador  é  instalado  dentro  da  propriedade  rural  do 
+consumidor. Esse transformador não possui o secundário conectado à rede de baixa tensão 
+da Cemig. 
+
+4.5.1.6.1.1  Motores  monofásicos  com  potências  nominais  de  12,5cv  e  15cv  podem  ser 
+ligados neste tipo de fornecimento, desde que utilizados os dispositivos auxiliares de partida 
+indicados na Tabela 6. As características destes dispositivos estão descritas na Tabela 7. 
+
+4.5.2  O  consumidor  pode  optar  por  fornecimento  com  número  de  fases  a  mais  que  o 
+estabelecido  pelo  padrão  da  Cemig  para  a  carga  instalada  ou  potência  requerida,  todavia 
+deverá arcar com o custo da diferença de preço do sistema de medição e de adaptação da 
+rede, conforme critérios do artigo 99 da REN 1000/2021.  
+
+4.6 
+
+LEVANTAMENTO DE DADOS  
+
+4.6.1  Antes de construir ou adquirir os materiais para a execução do seu padrão de entrada, 
+o consumidor deve obter, inicialmente, informações orientativas a respeito das condições de 
+fornecimento de energia à sua unidade consumidora. 
+
+23 
+
+Classificação: Direcionado 
+Classificação: Direcionado 
+
+Docusign Envelope ID: 7A89F835-10C1-4E89-A462-3421E3EBB99C                                 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+    ND - 5.1                                                           
+
+                                              Classificação: Público 
+
+4.6.2  As  informações  orientativas  estão  contidas  em  publicações  no  site  da  Cemig 
+(www.cemig.com.br),  que  apresentam  as  primeiras  providências  a  serem  tomadas  pelos 
+consumidores relativas a: 
+
+a)  verificação da posição da rede de distribuição em relação ao imóvel; 
+
+b)  definição do tipo de fornecimento; 
+
+c)  carga instalada a ser ligada; 
+
+d)  localização e escolha do tipo de padrão; 
+
+e)  verificação do desnível da edificação em relação à posteação da rede; 
+
+f) 
+
+identificação clara da numeração da edificação; a numeração predial deve ser legível, 
+indelével e sequencial. 
+
+g)  perfeita demarcação da propriedade, tanto de unidades consumidoras localizadas em 
+
+áreas urbanas quanto de unidades consumidoras localizadas em áreas rurais; 
+
+4.6.3  A Cemig se reserva no direito de não efetuar a ligação caso a carga  declarada não 
+estiver compatível com a carga instalada no local. 
+
+4.6.4  Em alguns casos, após a definição do tipo de atendimento, deve ser gerado um pedido 
+de estudo de rede. O consumidor deve aguardar os resultados, para somente após solicitar a 
+vistoria do padrão e a ligação da unidade consumidora. 
+
+4.6.5  Os materiais e equipamentos aprovados para uso nos padrões de entrada constam no 
+PEC-11 (Materiais e Equipamentos Aprovados para Padrões de Entrada) que está disponível 
+no sita da Cemig.  
+
+4.7 
+
+PEDIDO DE LIGAÇÃO 
+
+4.7.1  Requisitos Gerais  
+
+4.7.1.1  Após  realizados  os  esclarecimentos  preliminares  aos  consumidores  sobre  as 
+condições gerais do fornecimento de energia, a Cemig deve solicitar-lhes a formalização do 
+pedido de ligação. 
+
+4.7.1.2  Para  as  solicitações  de ligações  novas ou  aumento  de  carga  acima  de 75kW de 
+carga  instalada  e  até  304kVA  de  demanda,  o  consumidor  deve  apresentar  à  Cemig  o 
+Formulário para Solicitação de Análise de Carga ou Aprovação de Projeto Elétrico de BT VIA 
+APR WEB preenchido, que se encontra disponível no endereço eletrônico www.cemig.com.br 
+(dentro da página acesse Cemig Atende depois “Ligação Nova”) juntamente com uma cópia 
+da  ART  (Anotação  de  Responsabilidade  Técnica)  ou  TRT  (Termo  de  Responsabilidade 
+Técnica) de projeto e o documento “Opção de Atendimento em Baixa Tensão”.   
+
+24 
+
+Classificação: Direcionado 
+Classificação: Direcionado 
+
+Docusign Envelope ID: 7A89F835-10C1-4E89-A462-3421E3EBB99C                                 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+    ND - 5.1                                                           
+
+                                              Classificação: Público 
+
+4.7.1.3  A  Cemig  somente  efetuará  a  ligação  de  obras,  definitiva  ou  temporária,  após  a 
+vistoria e aprovação dos respectivos padrões de entrada que devem atender às prescrições 
+técnicas contidas nesta norma. 
+
+4.7.1.4  A  Cemig  se  reserva  no  direito  de  vistoriar  as  instalações  elétricas  internas  da 
+unidade consumidora e não efetuar a ligação caso as prescrições das NBR 5410 e 5419 não 
+tenham sido seguidas em seus aspectos técnicos e de segurança. 
+
+4.8 
+
+Conexão Temporária  
+
+4.8.1  Caracterizam-se por serem efetuadas com ou sem medição, por um prazo máximo de 
+3 (três) meses e através de somente um padrão de entrada para cada unidade consumidora.  
+
+4.8.2  As conexões temporárias destinam-se à ligação de parques de diversões, circos, feiras 
+e  exposições  agropecuárias,  comerciais  ou  industriais,  solenidades  festivas,  vendedores 
+ambulantes  e  obras  públicas,  com  demanda  igual  ou  inferior  a  304kVA.  Se  a  conexão 
+temporária for com medição, deve ser utilizado um dos padrões de entrada especificados no 
+Capítulo 9 para atendimento na baixa tensão. Caso contrário, o padrão de entrada fica restrito 
+à instalação de proteção geral de baixa tensão correspondente à carga instalada ou demanda 
+prevista para o evento. Quando aplicável, o padrão de entrada pode resumir-se na montagem 
+do kit previsto no Desenho 71. 
+
+4.8.3  A instalação do padrão de entrada deve atender às demais exigências desta norma. 
+
+4.8.4  Na Tabela 18 constam os dimensionamentos dos disjuntores e condutores a serem 
+utilizados  nas  conexões  temporárias  monofásicas,  bifásicas  e  trifásicas  até  a  demanda  de 
+304kVA. 
+
+4.8.5  No  caso  de  atendimento  na  média  tensão  com  medição  deve  ser  construída  uma 
+subestação  conforme  as  exigências  da  ND-5.3.  Caso  contrário,  o  consumidor  deve 
+providenciar a instalação de uma estrutura na divisa da propriedade particular com o passeio 
+ou  via pública.  Esta  estrutura  será  o  ponto  de  conexão.  A  partir  deste  ponto  de  conexão  o 
+consumidor instalará equipamentos e rede de sua propriedade. 
+
+4.8.6  O  atendimento  na  média  tensão  com  ou  sem  medição  fica  condicionado  à 
+apresentação  de  projeto  elétrico  conforme  os  critérios  estabelecidos  na  norma  ND-5.3 
+(Fornecimento de Energia Elétrica em Média Tensão). 
+
+4.8.7  Excepcionalmente  no  caso  de  parque  de  exposições  agropecuárias,  comerciais  ou 
+industriais, o atendimento pode ser feito através de uma entrada de energia elétrica em baixa 
+tensão para a conexão do padrão definitivo de uso individual ou de uso coletivo e de outra 
+entrada de energia elétrica em baixa ou média tensão para a conexão temporária. 
+
+4.9 
+
+Conexão temporária de obras 
+
+4.9.1  Caracteriza-se como conexão temporária de obras aquela efetuada com medição, sem 
+prazo definido, para o atendimento das obras de construção ou reforma da edificação. 
+
+25 
+
+Classificação: Direcionado 
+Classificação: Direcionado 
+
+Docusign Envelope ID: 7A89F835-10C1-4E89-A462-3421E3EBB99C                                 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+    ND - 5.1                                                           
+
+                                              Classificação: Público 
+
+4.9.2  O consumidor deve apresentar a relação de cargas a serem utilizadas durante a obra 
+para a definição do tipo de fornecimento aplicável. 
+
+4.9.3  O padrão de entrada pode corresponder a qualquer um dos tipos apresentados nesta 
+norma, sendo os mais indicados o padrão pré-fabricado em aço conforme o Desenho 14 ou o 
+padrão instalado em poste conforme o Desenho 13. 
+
+4.10  Ligação Definitiva 
+
+4.10.1  As  ligações  definitivas  correspondem  às  ligações  das  unidades  consumidoras  com 
+medição e em caráter definitivo de acordo com um dos padrões indicados nesta norma. 
+
+4.10.2  A  Cemig  efetuará  o  desligamento  da  ligação  de  obras por  ocasião  da  execução  da 
+ligação definitiva. 
+
+4.10.3  O  padrão  de  entrada  utilizado  na  ligação  de  obras  pode  ser  mantido  na  unidade 
+consumidora para a ligação definitiva, desde que a carga instalada declarada pelo consumidor 
+seja compatível com as especificações do padrão já existente. 
+
+4.10.4  O consumidor pode solicitar a mudança do local do padrão existente para a ligação 
+definitiva, se for o caso. 
+
+4.10.5  O  consumidor  pode,  opcionalmente,  solicitar  fornecimento  de  energia  elétrica  sem 
+medição (FSM) exclusivamente nos casos em que se tratar de equipamentos instalados na 
+via pública (exemplos: semáforos, radares, equipamentos para compartilhamento de internet, 
+letreiros de ônibus, equipamentos de TV a cabo, relógios/termômetros públicos, câmeras de 
+segurança,  equipamentos  de  realizem  emissões  de  Rádio  Frequência  em  geral,  etc)  em 
+alternativa à instalação da medição Cemig.  
+
+4.11  AUMENTO DE CARGA 
+
+4.11.1  Aumentos de carga devem ser solicitados à Cemig para análise das modificações que 
+se fizerem necessárias na rede e no padrão de entrada. 
+
+4.11.2  No  caso  de  haver  previsão  futura  de  aumento  de  carga,  permite-se  ao  consumidor 
+instalar  caixa  para  medição  polifásica,  bem  como  dimensionar  eletrodutos,  condutores  e 
+poste/pontalete em função da carga futura. O número de condutores fase e o disjuntor devem 
+ser compatíveis com o tipo de ligação do padrão de entrada (conforme a carga instalada no 
+momento da ligação). 
+
+4.11.3  Na ocasião do pedido de aumento de carga, o consumidor deve alterar a proteção e 
+instalar  os  demais  condutores  fase  com  as  mesmas  características  dos  condutores  fase 
+existentes, sujeitando-se, então, às condições do pedido de ligação. 
+
+26 
+
+Classificação: Direcionado 
+Classificação: Direcionado 
+
+Docusign Envelope ID: 7A89F835-10C1-4E89-A462-3421E3EBB99C                                 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+    ND - 5.1                                                           
+
+                                              Classificação: Público 
+
+4.12  DESMEMBRAMENTO DE MEDIÇÕES 
+
+4.12.1  A edificação individual que, a qualquer tempo, venha a ser subdividida ou transformada 
+em edificação de uso coletivo ou em agrupamento com mais de uma unidade consumidora, 
+deve  ter  seu  padrão  de  entrada  modificado  de  acordo  com  as  prescrições  da  ND-5.2 
+(Fornecimento  de  Energia  Elétrica  em  Tensão  Secundária  -  Rede  de  Distribuição  Aérea  - 
+Edificações Coletivas). 
+
+4.12.2  As  instalações  elétricas  internas  das  unidades  consumidoras  que  resultarem  da 
+subdivisão  de qualquer propriedade,  devem  ser alteradas  visando  adequá-las à medição  e 
+proteção individualizadas, observadas as condições não permitidas, indicadas no item 4.17. 
+
+4.12.3  As unidades consumidoras situadas em áreas periféricas de centros urbanos tais como 
+sítios  e  chácaras,  contendo  várias  benfeitorias  que  utilizam  energia  elétrica,  devem  ser 
+atendidas através de um único ponto de conexão, em princípio com medição única. No caso 
+destas  benfeitorias  serem  cedidas  a  terceiros,  é  permitido  aos  consumidores  modificar  o 
+padrão  de  entrada  para  a  instalação  de  medições  individualizadas,  desde  que  sejam 
+atendidos  por  um  único  ponto  de  conexão  dimensionada  de  acordo  com  a  ND-5.2 
+(Fornecimento  de  Energia  Elétrica  em  Tensão  Secundária  -  Rede  de  Distribuição  Aérea  - 
+Edificações Coletivas). 
+
+4.13  GERAÇÃO PRÓPRIA SEM INJEÇÃO E SISTEMAS DE EMERGÊNCIA 
+
+4.13.1  Não  é  permitido  o  paralelismo  de  geradores  de  propriedade  do  consumidor  com  o 
+sistema elétrico da Cemig. 
+
+4.13.2  Para evitar tal paralelismo, deve ser prevista a instalação de uma chave reversível de 
+acionamento manual ou elétrico, com intertravamento mecânico, separando os circuitos do 
+gerador particular e da rede de distribuição da Cemig. 
+
+4.13.3  Este equipamento deve ser previamente aprovado pela Cemig e deve ser lacrado por 
+ocasião  da  ligação          definitiva  da  unidade  consumidora.  Ao  consumidor  somente  será 
+permitido o acesso ao dispositivo de acionamento do mesmo. 
+
+4.13.4  No  caso  de  circuitos  de  emergência,  supridos  pelos  geradores  particulares,  os 
+mesmos  devem  ser  instalados  independentemente  dos  demais  circuitos,  em  eletrodutos 
+exclusivos,  passíveis  de  serem  vistoriados  pela Cemig.  É  vetada qualquer  interligação dos 
+circuitos de emergência com a rede da Cemig. 
+
+4.14  ESTAÇÃO DE RECARGA DE VEÍCULOS ELÉTRICOS 
+
+4.14.1  A  instalação  de  estação  de  recarga  de  veículos  elétricos  deve  ser  comunicada 
+previamente à distribuidora em caso de necessidade de conexão nova, aumento ou redução 
+de carga, ou alteração do nível de tensão, conforme artigo 550 da REN 1000/2021.  
+
+27 
+
+Classificação: Direcionado 
+Classificação: Direcionado 
+
+Docusign Envelope ID: 7A89F835-10C1-4E89-A462-3421E3EBB99C                                 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+    ND - 5.1                                                           
+
+                                              Classificação: Público 
+
+4.14.2  É  vedada a  injeção  de energia elétrica  na rede  de  distribuição  a partir dos  veículos 
+elétricos.  
+
+4.15  SISTEMA DE PREVENÇÃO E COMBATE A INCÊNDIO 
+
+4.15.1  Nas instalações de prevenção e combate a incêndios, os conjuntos motobombas de 
+recalque devem ser alimentados por circuitos elétricos independentes, de forma a permitir o 
+desligamento de todas as instalações elétricas sem prejuízo do funcionamento dos conjuntos 
+de motobombas. 
+
+4.15.2  A  Cemig  estabelece  as  seguintes  prescrições  para  a  ligação  das  cargas  que 
+contenham sistema hidráulico de combate a incêndio (sprinklers e hidrantes internos dotados 
+de mangueira e esguicho): 
+
+4.15.2.1  A derivação para os circuitos dos conjuntos de motobombas deve ser feita após a 
+medição da Cemig conforme o Desenho 67. 
+
+4.15.2.2  Junto à proteção do sistema de prevenção e combate a incêndio deve ser colocada 
+plaqueta  indicativa  com  instruções  para  desligamento  da  devida  proteção,  em  caso  de 
+emergência/incêndio. 
+
+4.15.2.3  A Cemig pode exigir que o cliente ou responsável técnico apresente declaração do 
+Corpo de Bombeiros informando que, para aquele edifício, o sistema de prevenção e combate 
+a incêndio é obrigatório pela postura municipal. 
+
+4.16  ATENDIMENTO  À  CARGA  INSTALADA  SUPERIOR  A  75kW  E  DEMANDA  ATÉ 
+304kVA 
+
+4.16.1  O cliente pode optar por atendimento em baixa tensão quando a carga instalada for 
+superior a 75kW e a demanda for até 304kVA. Esta unidade consumidora será atendida por 
+redes  secundárias  trifásicas  (127/220V).  A  solicitação  do  consumidor  deve  ser  por  escrito 
+conforme descrito no item 2.1.b. 
+
+4.16.2  Demanda até 95kVA 
+
+4.16.3  O  atendimento  será  através  de  ramal  de  conexão  aéreo  com  ponto  de  conexão  no 
+pingadouro do padrão de entrada. 
+
+4.16.4  Alternativamente,  por  opção  do  consumidor,  nos  atendimentos  através  de  rede  de 
+distribuição  aérea  localizadas  do  mesmo  lado  da  rua  em  que  a  unidade  consumidora  se 
+encontra,  o  ponto  de  conexão  pode  ser  deslocado  para  a  rede  de  distribuição,  conforme 
+Desenho  47.  Ou  seja,  é  estabelecido  um  ramal  de  entrada  subterrâneo  que  vai  desde  a 
+conexão com a rede da Cemig até a conexão com o disjuntor do padrão de entrada. 
+
+4.16.5  Demanda maior que 95kVA e menor ou igual a 304kVA 
+
+28 
+
+Classificação: Direcionado 
+Classificação: Direcionado 
+
+Docusign Envelope ID: 7A89F835-10C1-4E89-A462-3421E3EBB99C                                 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+    ND - 5.1                                                           
+
+                                              Classificação: Público 
+
+4.16.6  O atendimento será através de ramal de conexão e de entrada subterrâneos com ponto 
+de conexão na caixa de inspeção localizada no passeio público e instalada na divisa com a 
+propriedade particular conforme Desenho 48. 
+
+4.17  CONDIÇÕES NÃO PERMITIDAS 
+
+4.17.1  As seguintes situações não são permitidas, sob pena de suspensão do fornecimento 
+de energia elétrica: 
+
+4.17.1.1 
+fornecimento seja gratuito. 
+
+Interligação  entre  instalações elétricas  de  unidades consumidoras, mesmo que  o 
+
+4.17.1.2 
+medição, inclusive violação de lacres. 
+
+Interferência de pessoas não credenciadas pela Cemig aos seus equipamentos de 
+
+4.17.1.3 
+contendo condutores conduzindo energia já medida. 
+
+Instalação  de  condutores  conduzindo  energia  não  medida  na  mesma  tubulação 
+
+4.17.1.4  Medição única a mais de uma unidade consumidora ou mais de uma medição em 
+uma única unidade consumidora. 
+
+4.17.1.5  Ligação  de  cargas  com potência nominal  acima dos  limites estabelecidos  para  o 
+tipo de fornecimento existente na unidade consumidora. 
+
+4.17.1.6  Ligação  de  cargas  que  não  constem  da  relação  apresentada  e  que  venha  a 
+introduzir perturbações indesejáveis na rede da Cemig, tais como flutuações de tensão, rádio 
+interferência (aparelhos de raios-X, equipamentos de eletrogalvanização, etc) e harmônicos. 
+Neste caso a Cemig notificará o consumidor que as alterações necessárias em seu sistema 
+elétrico para o atendimento de tais cargas, serão executadas às expensas do consumidor. 
+
+4.17.1.7  Cargas perturbadoras que levem à degradação do nível de qualidade de energia 
+elétrica  permissível  no  ponto  de  conexão.  Nesse  caso  o  responsável  pela  unidade 
+consumidora deve providenciar a implantação de medidas corretivas apropriadas de modo a 
+atingir  os  níveis  de  qualidade  de  energia  determinados  pela  Aneel  segundo  o  PRODIST, 
+módulo  
+
+4.17.1.8  Unidade consumidora com mais de um nível de tensão. 
+
+4.17.1.9  Deficiência técnica e/ou de segurança das instalações da unidade consumidora que 
+ofereça risco iminente de danos a pessoas ou bens, inclusive ao funcionamento do sistema 
+elétrico da concessionária. 
+
+4.17.1.10 Não  pode  existir  condutor  sobrando  dentro  do  eletroduto  utilizado  para  ramal  de 
+entrada (energia não medida) e de saída (energia medida). 
+
+4.17.1.11 Disjuntor incompatível com o tipo de fornecimento. 
+
+29 
+
+Classificação: Direcionado 
+Classificação: Direcionado 
+
+Docusign Envelope ID: 7A89F835-10C1-4E89-A462-3421E3EBB99C                                 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+    ND - 5.1                                                           
+
+                                              Classificação: Público 
+
+4.18  SUSPENSÃO DO FORNECIMENTO DE ENERGIA ELÉTRICA 
+
+4.18.1  A  Cemig  pode  suspender  o  fornecimento  de  energia  elétrica  de  imediato  quando 
+verificar a ocorrência das seguintes situações: 
+
+a)  Ocorrência de qualquer procedimento cuja responsabilidade não lhe seja atribuída 
+e que tenha provocado faturamento inferior ao correto, ou no caso de não haver 
+faturamento; 
+
+b)  Revenda ou fornecimento de energia elétrica a terceiros sem a devida autorização 
+
+federal; 
+
+c)  Ligação clandestina, religação à revelia, e deficiência técnica e/ou de segurança 
+das instalações da unidade consumidora, que ofereça risco iminente de danos a 
+pessoas ou bens, inclusive ao funcionamento do sistema elétrico da Cemig; ou  
+
+d)  Em eventual emergência que surgir em seu sistema. 
+
+4.18.2  A  Cemig  também  deve  suspender  o  fornecimento  de  energia  elétrica  após  prévia 
+comunicação formal ao consumidor, nas seguintes situações: 
+
+a)  Por atraso do consumidor no pagamento da fatura relativa à prestação de serviço 
+
+público de energia elétrica; 
+
+b)  Por atraso do consumidor no pagamento de despesas provenientes de serviços 
+
+prestados pela Cemig; 
+
+c)  Por existência de equipamento que ocasione perturbações ao sistema elétrico de 
+
+distribuição; 
+
+d)  Por aumento de carga não autorizado pela Cemig; 
+
+e)  Por  deficiência  técnica  e/ou  de  segurança  das  instalações  elétricas  da  unidade 
+
+consumidora; 
+
+f)  Quando  encerrado  o  prazo  acordado  com  o  consumidor  para  a  conexão 
+temporária,  e  o  mesmo  não  tiver  atendido  às  exigências  para  a  conexão 
+permanente; 
+
+g)  Por travessia do ramal de conexão sobre terrenos de terceiros; 
+
+h)  Por dano ocasional em equipamento de medição pertencente à Cemig; 
+
+i)  Por qualquer modificação no dimensionamento geral da proteção, sem autorização 
+
+da Cemig;  
+
+j)  Se for vedada a fiscalização da medição; ou 
+
+30 
+
+Classificação: Direcionado 
+Classificação: Direcionado 
+
+Docusign Envelope ID: 7A89F835-10C1-4E89-A462-3421E3EBB99C                                 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+    ND - 5.1                                                           
+
+                                              Classificação: Público 
+
+k)  Quando  existir  algum  empecilho  tais  como  veículos,  material  de  construção, 
+
+móveis, etc, que dificulte ou impeça o acesso às medições.  
+
+4.19  MUDANÇA DE LOCAL OU CORTE PARA CONSERTO DO PADRÃO DE ENTRADA 
+
+4.19.1  No caso de mudança de local ou corte para conserto do padrão de entrada com carga 
+instalada superior a 75kW e demanda menor ou igual a 304kVA é necessária a apresentação 
+do  Formulário  para  Solicitação  de  Análise  de  Rede  –  Ligação  Nova/Aumento  de  Carga 
+preenchido  bem como  a  ART (Anotação  de  Responsabilidade  Técnica) ou TRT (Termo de 
+Responsabilidade Técnica) pelo projeto. 
+
+4.19.2  As  alterações  no  padrão  de  entrada  nos  casos  de  mudança  de  local  e  corte  para 
+conserto devem atender os critérios definidos nessa norma. 
+
+4.20  UNIFICAÇÃO DE MEDIÇÕES 
+
+4.20.1  As  edificações  que,  a  qualquer  tempo,  venha  a  ser  unificadas  e  transformada  em 
+edificação de uso coletivo, devem ter o atendimento através de uma única entrada de energia 
+conforme  a  ND-5.2  (Fornecimento  de  Energia  Elétrica  em  Tensão  Secundária  –  Rede  de 
+Distribuição Aérea - Edificações Coletivas). 
+
+31 
+
+Classificação: Direcionado 
+Classificação: Direcionado 
+
+Docusign Envelope ID: 7A89F835-10C1-4E89-A462-3421E3EBB99C                                 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+    ND - 5.1                                                           
+
+                                              Classificação: Público 
+
+5 
+
+INSTALAÇÕES DE RESPONSABILIDADE DA CEMIG 
+
+5.1 
+
+Ramal de conexão 
+
+5.1.1  Geral 
+
+A  aquisição,  instalação  e  manutenção  dos  ramais  de  conexão  é  feita  exclusivamente  pela 
+Cemig,  a  partir  da  estrutura  da  rede  por  ela  designada,  de  acordo  com  as  prescrições 
+estabelecidas para cada tipo de ramal. 
+Toda unidade consumidora deve ser atendida através de um único ramal de conexão. 
+
+5.1.2  Ramal de conexão aéreo 
+
+A instalação do ramal de conexão aéreo deve ser efetuada nos atendimentos através de rede 
+de  distribuição  aérea  com  demanda  igual  ou  menor  que  95kVA,  independentemente  da 
+unidade consumidora estar localizada do mesmo lado ou lado contrário da rede da Cemig.  
+
+5.1.3  Requisitos para instalação 
+
+5.1.3.1  O ramal de conexão pode entrar por qualquer lado da edificação desde que não 
+corte  terreno  de  terceiros  e  que  seja  de  fácil  acesso  para  as  equipes  de  construção, 
+manutenção e operação da Cemig. 
+
+5.1.3.2  Os  condutores  do  ramal  devem  ser  instalados  de forma  a  se  obter  as  seguintes 
+distâncias mínimas, medidas na vertical entre o ponto de maior flecha e o solo (Ver Desenho 
+1): 
+
+a)  
+
+em áreas urbanas 
+
+- ruas, avenidas.................................................................................................. 5,50 metros 
+
+- vias públicas exclusivas de pedestres ............................................................ 3,50 metros 
+
+- entradas de prédios e demais locais de uso restrito a veículos ..................... 4,50 metros 
+
+b)  
+
+em áreas rurais 
+
+- vias exclusivas de pedestre (Nota c)  ............................................................. 6,00 metros 
+
+ Estradas rurais e áreas de plantio com tráfego de máquinas agrícolas .......... 6,00 metros 
+
+c)  
+
+em rodovias federais ............................................................................. 7,00 metros 
+
+d)  
+
+em ferrovias não eletrificadas e não eletrificáveis ................................. 6,00 metros 
+
+OBSERVAÇÕES: 
+
+32 
+
+Classificação: Direcionado 
+Classificação: Direcionado 
+
+Docusign Envelope ID: 7A89F835-10C1-4E89-A462-3421E3EBB99C                                 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+    ND - 5.1                                                           
+
+                                              Classificação: Público 
+
+a)  Em ferrovias eletrificadas ou eletrificáveis, a distância mínima do condutor ao boleto 
+
+dos trilhos é de 12 metros para tensões até 36,2kV; 
+
+b)  Em  rodovias  estaduais,  a  distância  mínima  do  condutor  ao  solo  deve  obedecer  à 
+legislação  específica  do  órgão  estadual.  Na  falta  de  regulamentação  estadual, 
+obedecer aos valores citados acima. 
+
+c)  Esta  distância  é  definida  na  ND-2.2  (Instalações  Básicas  de  Redes  de  Distribuição 
+Aéreas Rurais), versão outubro/2016. As demais distâncias são definidas pela NBR 
+15688/2012. 
+
+5.1.3.3  Os valores máximos das flechas dos condutores do ramal de conexão devem ser 
+compatíveis  com  as  alturas  mínimas  acima  indicadas  e  com  as  trações  de  montagem 
+recomendadas pela Tabela 16. 
+
+5.1.3.4  O comprimento máximo do ramal de conexão em área urbana é 30 metros medidos 
+a  partir  da  base  do  poste  da  Cemig  até  a  divisa  da  propriedade  do  consumidor  com  a  via 
+pública (ponto de conexão), onde deve ser construído o padrão de entrada para ancoragem 
+e conexão do ramal de conexão ao ramal de entrada. 
+
+5.1.3.5  O comprimento máximo do ramal de conexão em área rural é 30 metros medidos a 
+partir da base do poste da Cemig até o padrão de entrada do consumidor.   
+
+5.1.3.6  Na instalação do ramal é exigido que seus condutores: 
+
+a)  não cortem terrenos de terceiros; 
+
+b)  não passem sobre áreas construídas; 
+
+c)  devem ficar fora do alcance de janelas, sacadas, telhados, terraços, muros, escadas, 
+
+saídas de incêndio ou locais análogos; 
+
+d)  devem ficar a uma distância horizontal igual ou superior a 1,20 metros de janelas; 
+
+e)  devem ficar a uma distância vertical igual ou superior a 3,50 metros acima do piso 
+
+de sacadas, terraços ou varandas; 
+
+f) 
+
+   devem ficar a uma distância vertical igual ou superior a 0,50 metro abaixo do piso 
+de sacadas, terraços, varandas ou telhados (beiral); 
+
+g)  devem ter afastamento mínimo de 0,50 m de fios e cabos de telefonia. 
+
+5.1.4  Condutores e acessórios  
+
+5.1.4.1  Os cabos do ramal de conexão aéreo são do tipo multiplex, constituídos por um, 
+dois ou três condutor(es) de alumínio isolado(s) com função de condutor(es), fase torcido(s) 
+em torno de um condutor de alumínio nu, com funções de condutor neutro e de elemento de 
+
+33 
+
+Classificação: Direcionado 
+Classificação: Direcionado 
+
+Docusign Envelope ID: 7A89F835-10C1-4E89-A462-3421E3EBB99C                                 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+    ND - 5.1                                                           
+
+                                              Classificação: Público 
+
+sustentação dos demais. 
+
+Os cabos multiplex por tipo de ligação são os seguintes: 
+
+a)  ligação  2  fios:  duplex,  com  isolação  do  condutor  fase  em  PE-70°C  para  0,6/1kV  e 
+
+condutor neutro, de alumínio simples; 
+
+b)  ligação a 3 fios: triplex, com isolação e tipo de neutro idênticos aos duplex; 
+
+c)  ligação a 4 fios: quadruplex, com isolação dos condutores fase em XLPE-90° C para 
+
+0,6/1kV e condutor neutro de alumínio-liga. 
+
+5.1.4.2  O  dimensionamento  dos  cabos  multiplex  para  os  diversos  tipos  de  fornecimento 
+deve ser feito de acordo com a Tabela 5. 
+
+5.1.4.3  Para fixação do cabo multiplex na parede da edificação ou no poste/pontalete do 
+consumidor, deve ser utilizado um dos seguintes sistemas de ancoragem (ver Desenho 58): 
+
+a)  parafuso olhal, para instalação em poste ou pontalete; 
+
+b)  armação secundária de um ou dois estribos, de aço, zincada por imersão a quente, 
+com isolador tipo roldana para instalações em poste, pontalete ou parede (instalada 
+em parte estrutural da edificação); 
+
+c)  chumbador-olhal,  para  instalação  em  parede  (instalado  em  parte  estrutural  da 
+
+edificação). 
+
+5.1.4.4  O encabeçamento do condutor neutro do cabo multiplex no poste da Cemig e no 
+padrão  de  entrada  do  consumidor, deve  ser feita através de  alças  preformadas,  de  acordo 
+com a ND-2.1 e detalhes do Desenho 4, respectivamente. 
+
+5.1.4.5  As conexões das fases do ramal de conexão à rede secundária isolada devem ser 
+executadas através de conectores tipo perfuração, cuja instrução de montagem se encontra 
+na ND-2.7 (Instalações Básicas de Redes de Distribuição Aéreas Isoladas). As conexões do 
+condutor neutro do ramal de conexão devem ser executadas através de conectores tipo cunha 
+de cobre (seções até 70mm², inclusive) e de compressão formato H (seções acima de 70mm²), 
+de acordo com a ND-2.1 (Instalações Básicas de Redes de Distribuição Aéreas Urbanas). 
+
+5.1.4.6  As conexões do ramal de conexão à rede secundária nua devem ser executadas 
+através de conectores tipo cunha de cobre (seções até 70mm², inclusive) e de compressão 
+formato H (seções acima de 70mm²), de acordo com a ND-2.1. 
+
+5.1.4.7  As conexões do ramal de conexão ao ramal de entrada devem ser feitas através de 
+conectores  tipo  cunha  de  cobre  ou  de  perfuração  (seções  até  35mm²,  inclusive)  e  de 
+compressão formato H (seções acima de 35mm²). 
+
+5.1.5  Ramal de conexão subterrâneo 
+
+34 
+
+Classificação: Direcionado 
+Classificação: Direcionado 
+
+Docusign Envelope ID: 7A89F835-10C1-4E89-A462-3421E3EBB99C                                 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+    ND - 5.1                                                           
+
+                                              Classificação: Público 
+
+A instalação do ramal de conexão subterrâneo deve ser efetuada somente nos atendimentos 
+através  de  rede  de  distribuição  subterrânea  e  nos  atendimentos  através  de  rede  de 
+distribuição  aérea  quando  o  consumidor  opta  por  atendimento  em  baixa  tensão  para  uma 
+demanda maior que 95kVA e menor ou igual a 304kVA.  
+
+5.1.5.1  Requisitos para instalação 
+
+5.1.5.1.1  Na instalação do ramal de conexão subterrâneo é exigido que seus condutores: 
+
+a)  não cortem terrenos de terceiros; 
+
+b)  não sejam enterrados diretamente no solo; 
+
+c)  não  apresentem  emendas  dentro  de  dutos  e  caixas  intermediárias  de  inspeção; 
+somente na caixa de inspeção localizada na divisa da propriedade do consumidor com 
+o passeio público (ponto de conexão) existirá uma emenda que será entre o ramal de 
+conexão  e  o  ramal  de  entrada  para  os  atendimentos  com  ramal  de  conexão 
+subterrâneo em baixa tensão. 
+
+d)  não apresentem emendas dentro de dutos e caixas intermediárias de inspeção até a 
+bucha  primária  do  transformador  para  os  atendimentos  com  ramal  de  conexão 
+subterrâneo em baixa tensão. 
+
+5.1.5.1.2  O  ramal  de  conexão  subterrâneo  deve  entrar  preferencialmente  pela  frente  da 
+edificação, respeitando-se as posturas municipais quando cruzar vias públicas com trânsito 
+de veículos. No caso de edificações situadas em esquina, é permitida a ligação por qualquer 
+um dos lados da propriedade. 
+
+5.1.5.1.3  O comprimento máximo admitido é de 30 m, medido a partir da base do poste de 
+derivação,  até  a  caixa  de  inspeção  instalada  no  passeio  junto  à  divisa  da  propriedade  do 
+consumidor. 
+
+5.1.5.1.4  Os  condutores  do  ramal  de  conexão  subterrâneo  devem  ser  fisicamente 
+protegidos desde a derivação da rede da Cemig até a primeira caixa de passagem localizada 
+junto ao poste da rede da Cemig ou na divisa da propriedade particular com o passeio público 
+por  eletrodutos  de  aço  por  imersão  a  quente  popularmente  conhecido  como  “eletroduto 
+pesado” conforme as características constantes da NBR 5598 ou NBR 5597 e do Desenho 
+46. 
+
+5.1.5.1.5  Os  condutores  do  ramal  de  conexão  subterrâneo  devem  ser  fisicamente 
+protegidos entre as caixas de passagem localizadas no passeio público por eletroduto de PVC 
+rígido conforme as características constantes do Desenho 53, espiralado, corrugado, flexível, 
+em polietileno de alta densidade conforme a NBR 13898 (somente  podem ser utilizados os 
+dutos  aprovados  pela  área  de  rede  de  distribuição  elétrica)  conforme  as  características 
+constantes  do  Desenho  54  ou  eletrodutos  de  aço  por  imersão  a  quente,  popularmente 
+conhecido como “eletroduto pesado”, conforme as características constantes da NBR 5598 
+ou NBR 5597 e do Desenho 55. 
+
+35 
+
+Classificação: Direcionado 
+Classificação: Direcionado 
+
+Docusign Envelope ID: 7A89F835-10C1-4E89-A462-3421E3EBB99C                                 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+    ND - 5.1                                                           
+
+                                              Classificação: Público 
+
+5.1.5.1.6  O(s) eletroduto(s) de aço instalado(s) na descida junto ao poste da Cemig deve(m) 
+ser identificado(s) com o(s) número(s) da(s) respectiva(s) edificação(ões) de forma legível e 
+indelével e deve(m) ser instalado(s) conforme indicado no Desenho 48.  
+
+5.1.5.1.7  As conexões subterrâneas devem ser isoladas através da aplicação de fitas auto-
+fusão e isolante. 
+
+5.1.5.1.8  O(s) eletroduto(s) que protege(m) o ramal de conexão deve(m) ser envelopado(s) 
+com concreto e após o envelopamento deve ser colocada uma faixa de advertência de acordo 
+com o Desenho 48.  
+
+5.1.5.1.9  O  ramal  de  conexão  subterrâneo  deve  ser  tão  retilíneo  quanto  possível,  com 
+inclinação mínima de 0,5% para as caixas de inspeção (de tal forma que quando for executada 
+a drenagem das caixas não haja acúmulo de água nos mesmos), instaladas de acordo com 
+os requisitos do item 7.6. 
+
+5.1.5.1.10  Devem ser previstas caixas de inspeção de acordo com o indicado no item 7.6. 
+
+5.1.5.1.11  O reaterro pode ser feito com o próprio material retirado da vala, sob o passeio ou 
+via pública, isento de elementos que possam danificar os eletrodutos durante a compactação 
+da vala. 
+
+5.1.5.1.12  O revestimento final da vala deve ter uma camada mínima de 0,20m para "reaterro 
++ pavimentação". 
+
+5.1.5.1.13   O revestimento deve ser executado com materiais de mesma qualidade, tipo e 
+aparência dos existentes anteriormente, utilizando-se técnicas adequadas de modo a evitar 
+deformações no passeio ou via pública. 
+
+5.1.5.1.14  Devem  ser  deixadas,  no  interior  das  caixas  de  inspeção,  folga  de  1,0m  de 
+comprimento dos condutores. Em caso de curva nos eletrodutos, o raio mínimo deve ser de 8 
+vezes o diâmetro externo do cabo. 
+
+5.1.5.2  Ramal de conexão subterrâneo em baixa tensão 
+
+Além dos requisitos para instalação, o ramal de conexão subterrâneo em baixa tensão, para 
+atendimento  das  edificações  com  demanda  entre  95  e  304kVA  deve  atender  ainda  as 
+seguintes exigências: 
+
+5.1.5.2.1 
+com XLPE – 90ºC para 0,6/1kV. 
+
+ Os condutores fase e neutro devem ser cabos unipolares de alumínio, isolados 
+
+5.1.5.2.2 
+demais condutores. 
+
+ O condutor neutro deve ser marcado de forma indelével, visando diferenciá-lo dos 
+
+5.1.5.2.3 
+ As conexões das fases do ramal de conexão à rede secundária isolada devem 
+ser  executadas  através  de  conectores  tipo  perfuração,  cuja  instrução  de  montagem  se 
+encontra  na  ND-2.7  (Instalações  Básicas  de  Redes  de  Distribuição  Aéreas  Isoladas).  As 
+
+36 
+
+Classificação: Direcionado 
+Classificação: Direcionado 
+
+Docusign Envelope ID: 7A89F835-10C1-4E89-A462-3421E3EBB99C                                 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+    ND - 5.1                                                           
+
+                                              Classificação: Público 
+
+conexões  do  condutor  neutro  do  ramal  de  conexão  devem  ser  executadas  através  de 
+conectores tipo cunha de cobre (seções até 70mm², inclusive) e de compressão formato H 
+(seções  acima  de  70mm²),  de  acordo  com  a  ND-2.1  (Instalações  Básicas  de  Redes  de 
+Distribuição Aéreas Urbanas). 
+
+5.1.5.2.4  As conexões do ramal de conexão à rede secundária nua devem ser executadas 
+através de conectores tipo cunha de cobre (seções até 70mm², inclusive) e de compressão 
+formato H (seções acima de 70mm²), de acordo com a ND-2.1. 
+
+5.1.5.2.5  As conexões do ramal de conexão ao ramal de entrada devem ser feitas através 
+de  conectores  tipo  cunha  de  cobre  ou  de  perfuração  (seções  até  35mm²,  inclusive)  e  de 
+compressão formato H (seções acima de 35mm²). 
+
+5.1.5.2.6  Os dimensionamentos dos condutores e respectivos eletrodutos estão indicados 
+nas Tabelas 1 a 4. 
+
+5.1.5.2.7  Quando  o  ramal  de  conexão  for  constituído  por  mais  de  um  condutor  por  fase, 
+deve ser distribuído nos eletrodutos de tal forma que em cada eletroduto passe um circuito 
+trifásico completo (fases A, B, C e neutro). 
+
+6  MEDIÇÃO 
+
+6.1 
+
+Aspectos gerais 
+
+6.1.1  Os equipamentos de medição, tais como, medidores de energia, transformadores de 
+corrente e chaves de  aferição da  Cemig, somente são  instalados e ligados após vistoria  e 
+aprovação do padrão de entrada. 
+
+6.1.2  Na  Tabela  5  são  apresentadas  para  cada  faixa  de  fornecimento,  as  relações  de 
+"corrente nominal/corrente máxima" dos medidores de kWh e de transformação para os TC. 
+
+6.1.3  Os critérios de aplicação e de ligação dos equipamentos de medição devem seguir as 
+orientações da ND-5.6 e do Desenho 68, Desenho 69 e Desenho 70. 
+
+6.1.4  Os  medidores  eletrônicos  utilizados  em  unidades  consumidoras  devem  ter  sua 
+alimentação  derivada  antes  da  proteção  geral  da  instalação  conforme  os  Desenho  68  e 
+Desenho 69. 
+
+6.1.5  A conexão de unidades consumidoras de ligação indireta deve ser realizada de forma 
+que as entradas de tensão do medidor sejam conectadas antes da proteção, independente 
+da modalidade tarifária (tarifa convencional, tarifa branca ou tarifa irrigante). 
+
+6.2 
+
+Localização 
+
+6.2.1  Geral 
+
+6.2.1.1  A caixa de medição e proteção deve ser instalada em locais apropriados de livre e 
+
+37 
+
+Classificação: Direcionado 
+Classificação: Direcionado 
+
+Docusign Envelope ID: 7A89F835-10C1-4E89-A462-3421E3EBB99C                                 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+    ND - 5.1                                                           
+
+                                              Classificação: Público 
+
+fácil acesso, e em condições adequadas de iluminação, ventilação e segurança. 
+
+6.2.1.2  Não é permitida a instalação da medição em locais sem iluminação, sem condições 
+de segurança e de difícil acesso, tais como: 
+
+a)  escadas e rampas; 
+
+b)  interiores de vitrines; 
+
+c)  áreas entre prateleiras; 
+
+d)  pavimentos superiores; 
+
+e)  Locais sujeitos a gases corrosivos, inundações e trepidações excessivas; 
+
+f)  proximidades de máquinas, bombas, reservatórios, fogões e caldeiras. 
+
+g)  banheiros, cozinhas, salas e dormitórios; 
+
+h)  pavimento superior ao nível da rua. 
+
+6.2.1.3  Ocorrendo modificações na edificação que tornem o local da medição incompatível 
+com os requisitos já mencionados, o consumidor deve preparar novo local para a instalação 
+dos equipamentos de medição da Cemig. 
+
+6.2.2  Área Urbana 
+
+6.2.2.1  O  padrão  de  entrada  deve  ser  construído  no  limite  da  propriedade  da  edificação 
+com o passeio público e com a leitura para a via pública ou para área de recuo do passeio 
+público com livre acesso, conforme um dos modelos constantes do Capítulo 9.  
+
+6.2.2.2  Opcionalmente,  para  as  unidades  consumidoras  listadas  abaixo,  a  caixa  de 
+medição  e  proteção  pode  ser  instalada  no  interior  dessas  unidades,  admitindo-se  um 
+afastamento  máximo  de  5  metros  do  limite  da  propriedade  da  edificação  com  o  passeio 
+público.  O  ponto  de  conexão  permanece  na  divisa  da  propriedade  com  o  passeio  público, 
+onde deve ser construído o ponto para ancoragem do ramal de conexão. 
+
+a)  Unidade consumidora tipo F. 
+
+b)  Unidade consumidora localizada em condomínio fechado onde, de forma escrita, 
+é  proibida  a  instalação  de  qualquer  barreira  física  na  divisa  da  propriedade 
+particular com o passeio público. 
+
+c)  Unidade consumidora comercial. 
+
+d)  Unidade  consumidora  localizada  em  área  de  edificações  tombadas  como 
+
+patrimônio histórico. 
+
+38 
+
+Classificação: Direcionado 
+Classificação: Direcionado 
+
+Docusign Envelope ID: 7A89F835-10C1-4E89-A462-3421E3EBB99C                                 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+    ND - 5.1                                                           
+
+                                              Classificação: Público 
+
+6.2.3  Área Rural 
+
+6.2.3.1  O  padrão  de  entrada  deve  ser  construído  fora  das  faixas  de  servidão  (faixas  de 
+segurança) conforme especificado no item 3.15 e abaixo: 
+
+a)  Não será permitido a construção do padrão de entrada junto ao poste do transformador 
+
+da rede da Cemig. 
+
+b)  O  padrão  de  entrada  deve  ser  construído  fora  da  faixa  de  servidão  (faixa  de 
+segurança),  que  é  de  7,5  metros  a  partir  da  rede  de  distribuição  da  Cemig  nos 
+atendimentos através de redes de distribuição até 22kV. 
+
+c)  O  padrão  de  entrada  deve  ser  construído  fora  da  faixa  de  servidão  (faixa  de 
+segurança),  que  é  de  10  metros  a  partir  da  rede  de  distribuição  da  Cemig  nos 
+atendimentos através de redes de distribuição de 34,5kV. 
+
+d)  Em  local  com  linha  de  transmissão  de  energia  elétrica  (tensão  igual  ou  superior  a 
+69kV), procurar a Cemig para definição da faixa de servidão (faixa de segurança). 
+
+6.2.3.2  Assim como o padrão de entrada, o imóvel também não pode ser construído dentro 
+das faixas de servidão (faixas de segurança) especificadas no item 6.2.3.1. 
+
+6.2.3.3  A Cemig reserva o direito de não ligar o padrão de entrada caso esse padrão ou o 
+imóvel esteja localizado dentro das faixas de servidão (faixas de segurança). 
+
+6.2.3.4  A  frente  da  caixa  de  medição  deve  ser  preferencialmente  voltada  para  o  sol  da 
+manhã, para evitar a proliferação de insetos no interior da caixa.  
+
+6.3 
+
+Proteção contra sobretensões 
+
+Os critérios para instalação  de  pára-raios de  baixa  tensão  pela  Cemig, visando  a  proteção 
+contra sobretensões de unidades consumidoras localizadas em áreas urbanas e rurais com 
+níveis ceráunicos mais elevados, estão detalhados na ND-3.1 e ND-3.2. 
+
+Independentemente da instalação desta proteção, o consumidor pode instalar, a seu critério, 
+varistores  em  suas  instalações  elétricas  internas  (após  a  medição  e  necessariamente 
+após/fora da caixa de medição e/ou medição e proteção), observando-se as prescrições das 
+NBR 5410 e 5419.   
+
+39 
+
+Classificação: Direcionado 
+Classificação: Direcionado 
+
+Docusign Envelope ID: 7A89F835-10C1-4E89-A462-3421E3EBB99C                                 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+    ND - 5.1                                                           
+
+                                              Classificação: Público 
+
+7 
+
+INSTALAÇÕES DE RESPONSABILIDADE DO CONSUMIDOR 
+
+7.1 
+
+Aspectos gerais 
+
+7.1.1  Aquisição de materiais e equipamentos 
+
+7.1.1.1  Os  materiais  e  equipamentos  constituintes  do  padrão  de  entrada  (ferragens, 
+isoladores tipo roldana, condutores e eletrodutos do ramal de entrada, caixas para medição e 
+de inspeção, disjuntores, e hastes e condutores de aterramento, etc.) devem ser adquiridos 
+pelo consumidor. 
+
+7.1.1.2  Nestes materiais estão incluídos os sistemas de ancoragem do ramal de conexão, 
+relacionados no 5.1.4.3. 
+
+7.1.1.3  Na  aquisição  de  caixas  para  medição,  proteção  e  derivação,  de  disjuntores 
+termomagnéticos e hastes de aterramento, somente são aceitos os modelos aprovados pela 
+Cemig  e  relacionados  no  PEC-11  (Materiais  e  Equipamentos  Aprovados  para  Padrões  de 
+Entrada) com atualização e edição periódica, disponíveis nas Agências de Atendimento e no 
+endereço eletrônico www.cemig.com.br. 
+
+7.1.1.4  Os demais materiais, apesar de não serem previamente aprovados, devem atender 
+as especificações mínimas indicadas no Capítulo 7, sendo passíveis de fiscalização e recusa 
+pela Cemig. 
+
+7.1.1.5  Opcionalmente, o consumidor pode construir caixa de passagem (energia medida) 
+logo após a caixa de medição e proteção. 
+
+7.1.2  Escolha do padrão de entrada 
+
+7.1.2.1  Fornecimentos tipo A, B, C, F, G e H 
+
+Na definição do tipo do padrão mais apropriado para as unidades consumidoras enquadradas 
+nestes fornecimentos, devem ser considerados os seguintes parâmetros: 
+
+a)  número de fios da ligação; 
+
+b)  localização da unidade consumidora em relação à rede da Cemig; 
+
+c)  distância dos limites da propriedade do consumidor, à posteação da Cemig; 
+
+d)  afastamento da edificação, em relação a divisa da propriedade com o passeio público; 
+
+e)  altura (pé-direito) da edificação, em relação ao passeio público. 
+
+f)  Simultaneidade, período e duração do funcionamento das cargas motrizes (partidas e 
+
+regime permanente); 
+
+g)  Características das demais cargas. 
+
+40 
+
+Classificação: Direcionado 
+Classificação: Direcionado 
+
+Docusign Envelope ID: 7A89F835-10C1-4E89-A462-3421E3EBB99C                                 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+    ND - 5.1                                                           
+
+                                              Classificação: Público 
+
+7.1.3  Construção do padrão de entrada 
+
+7.1.3.1  A instalação dos materiais que compõem o padrão de entrada, bem como as obras 
+civis necessárias à sua construção, devem ser executadas pelo consumidor, de acordo com 
+os requisitos estabelecidos para cada tipo de padrão. 
+
+7.1.3.2  Para  a  elaboração  do  padrão  de  entrada  os  desenhos  do  capítulo  11  devem  ser 
+seguidos. Pequenas variações serão avaliadas pelas equipes de campo.  
+
+7.1.3.3  Quando da existência de marquises, o ponto de ancoragem não deve exceder a 60 
+centímetros  de  avanço  quando  da  instalação  de  ramal  de  conexão  aéreo.  O  ponto  de 
+ancoragem deve ser fixado em parte estrutural da edificação. 
+
+7.1.3.4  As conexões dentro da caixa de medição devem ser isoladas através da aplicação 
+de  fitas  auto-fusão  e  isolante.  Opcionalmente  pode  ser  utilizada  massa  para  isolamento 
+elétrico. 
+
+7.1.3.5  Opcionalmente, o consumidor pode construir caixa de passagem (energia medida) 
+logo após a caixa de medição e proteção. 
+
+7.1.3.6  Em área rural somente pode ser utilizado padrão de entrada com comprimento de 
+7 metros. 
+
+7.1.3.7  Em área rural o padrão de entrada deve ser construído fora das faixas de servidão 
+(faixas de segurança) conforme especificado no item 3.15. 
+
+7.1.3.8  Para  atender  as  alturas  indicadas  nos  desenhos  do  Capítulo  7  entre  a  caixa  de 
+medição e o piso não pode ser construído patamar no passeio público. Caso necessário, o 
+piso no lado interno da unidade consumidora deve ser rebaixado. 
+
+7.1.3.9  Quando o padrão de água for instalado próximo do padrão de entrada de energia 
+elétrica, deve existir uma distância mínima de 30 (trinta) centímetros entre as extremidades 
+da caixa de medição de energia e do padrão de água e entre os respectivos ramais internos. 
+No  caso  de  padrão  de  entrada  de  energia  elétrica  com  ramais  de  entrada  ou  saída 
+subterrâneos,  deve  existir  uma  distância  mínima  de  30  (trinta)  centímetros  entre  as 
+extremidades  dos  padrões  no  sentido  horizontal,  ou  seja,  o  padrão  de  água  não  pode  ser 
+construído na mesma direção vertical da caixa de medição de energia.  
+
+7.1.3.10  Nos  casos  de  atendimento  com  ramal  de  conexão  aéreo  ancorado  no  poste  do 
+padrão  de  entrada,  a caixa  de  medição  deve  ser  instalada  junto  desse poste  conforme  os 
+desenhos do Capítulo 9. 
+
+7.1.3.11  O poste do padrão de entrada utilizado para ancoragem do ramal de conexão aéreo 
+deve ser instalado na divisa com o passeio público. Onde exista área de recuo que representa 
+uma extensão do passeio público, o poste deve ser instalado na divisa do passeio público e, 
+
+41 
+
+Classificação: Direcionado 
+Classificação: Direcionado 
+
+Docusign Envelope ID: 7A89F835-10C1-4E89-A462-3421E3EBB99C                                 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+    ND - 5.1                                                           
+
+                                              Classificação: Público 
+
+simultaneamente, em uma barreira física na divisa com uma das propriedades adjacentes.  
+
+7.1.4  Conservação do padrão de entrada 
+
+7.1.4.1  O  consumidor  fica  obrigado  a  manter  em  bom  estado  de  conservação,  os 
+componentes  de  seu  padrão  de  entrada.  Caso  contrário,  a  Cemig  pode  vir  a  exigir  do 
+consumidor os reparos necessários ou até mesmo a substituição dos materiais danificados. 
+
+7.1.4.2  O consumidor é responsável pelos equipamentos de medição da Cemig instalados 
+em seu padrão, e responderá pelos eventuais danos causados aos mesmos. 
+
+7.1.4.3  O local do padrão de entrada, bem como o acesso ao mesmo, deve ser mantido 
+limpo pelo consumidor. 
+
+7.1.4.4  Os  selos  da  Cemig  nas  caixas  não  devem  ser  retirados  por  pessoas  não 
+autorizadas sob pena do consumidor ser penalizado. 
+
+7.1.5  Acesso ao padrão de entrada 
+
+7.1.5.1  O consumidor deve permitir, em qualquer tempo, o livre acesso dos funcionários da 
+Cemig e de seus prestadores de serviços devidamente identificados e credenciados ao seu 
+padrão de entrada e fornecer-lhes os dados e informações pertinentes ao funcionamento dos 
+equipamentos e aparelhos. 
+
+7.1.5.2  Todos os consumidores devem ter acesso físico e direto ao padrão de entrada de 
+sua unidade consumidora, limitando-se aos dispositivos de proteção. Somente as equipes da 
+Cemig podem ter acesso aos equipamentos de medição. 
+
+7.1.5.3  Não  pode  ter  nenhum  empecilho  para  acesso  às  caixas  de  medição  tais  como 
+veículos, material de construção, móveis, etc. 
+
+7.2 
+
+Ramal de entrada 
+
+7.2.1  Requisitos gerais 
+
+7.2.1.1  A aquisição, instalação e manutenção do ramal de entrada é feita exclusivamente 
+pelo consumidor, a partir do ponto de conexão, de acordo com as prescrições estabelecidas 
+para cada tipo de ramal de entrada. 
+
+7.2.1.2  Toda unidade consumidora deve ter um único ramal de entrada. 
+
+7.2.1.3  Nos ramais de entrada embutidos e subterrâneos, a instalação dos condutores fase 
+e neutro deve ser executada de modo a se constituir sempre um circuito trifásico completo no 
+mesmo eletroduto.  
+
+7.2.1.4  Os comprimentos dos condutores de uma mesma fase, bem como suas conexões, 
+
+42 
+
+Classificação: Direcionado 
+Classificação: Direcionado 
+
+Docusign Envelope ID: 7A89F835-10C1-4E89-A462-3421E3EBB99C                                 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+    ND - 5.1                                                           
+
+                                              Classificação: Público 
+
+devem ser idênticos, visando obter uma perfeita distribuição de corrente. 
+
+7.2.1.5  Os  condutores  devem  ser  contínuos,  isentos  de  emendas.  No  condutor  neutro  é 
+vetado o uso de qualquer dispositivo de interrupção. 
+
+7.2.1.6  As seções mínimas de condutores e diâmetros dos eletrodutos recomendadas para 
+cada faixa de fornecimento, estão indicadas no capítulo “Tabelas”. 
+
+7.2.1.7  Seções  superiores  às  do  ramal  de  entrada  podem  ser  requeridas  para  o  ramal 
+interno da unidade consumidora visando atender aos limites de queda de tensão permitidos 
+no item 7.8.3. 
+
+7.2.1.8  No caso dos padrões com caixa com leitura pela via pública (CM-13, CM-14 e CM3 
+LVP),  os  condutores  que  ligam  o  disjuntor  ao  medidor,  os  condutores  instalados  entre  o 
+medidor e a conexão com os condutores do ramal interno (localizada em caixa de passagem) 
+bem  como  o  neutro  desde  o pingadouro  e o  medidor  de  energia elétrica  devem  ser  cabos 
+flexíveis - classe 5 ou 6 de acordo com a NBRNM 280. 
+
+7.2.1.9  Nas extremidades dos condutores flexíveis (classe 5 ou 6 de acordo com a NBRNM 
+280) devem ser utilizados terminais tubulares ou terminais de encapsulamento ou terminais 
+de compressão maciço de cobre conforme especificado no Desenho 61 e Desenho 62 visando 
+proporcionar melhor conexão. 
+
+7.2.1.10  No caso de unidades consumidoras já existentes (já conectadas ao Sistema Elétrico 
+da Cemig), ligadas com o padrão antigo (disjuntor antes do medidor), que desejem adesão às 
+modalidades tarifárias branca ou irrigante, ou medidor com funcionalidades de qualidade de 
+energia ou que tiveram ramal de entrada roubado ou com avaria em função de acidente, é 
+permitida  a  emenda  do  ramal  de  entrada  desde  que  a  emenda  seja  feita  com  um  dos 
+conectores listados no Desenho 63. 
+
+7.2.1.11  Para  as  faixas  de  fornecimento  de  energia  com  ramal  de  entrada  de  16  mm², 
+indicados nas tabelas 1,2 e 3, será adotada a instalação de ramal de conexão até a caixa de 
+medição do padrão de entrada. Nestes casos o cliente não precisa disponibilizar o ramal de 
+entrada, porém instalar o cabo-guia, conforme capítulo 9.  
+
+7.2.2  Ramal de entrada embutido 
+
+A instalação do ramal de entrada embutido deve ser efetuada nos atendimentos às edificações 
+de uso individual através de rede de distribuição aérea e através de ramal de conexão aéreo 
+com demanda igual ou menor que 95kVA, independentemente da unidade consumidora estar 
+localizada do mesmo lado ou lado contrário da rede da Cemig.  
+
+7.2.2.1  Requisitos para instalação 
+
+7.2.2.1.1  Os serviços de instalação do ramal de entrada embutido devem ser executados 
+pelo consumidor. 
+
+7.2.2.1.2  O  consumidor  deve  informar-se  previamente  na  Cemig,  antes  da  execução  do 
+
+43 
+
+Classificação: Direcionado 
+Classificação: Direcionado 
+
+Docusign Envelope ID: 7A89F835-10C1-4E89-A462-3421E3EBB99C                                 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+    ND - 5.1                                                           
+
+                                              Classificação: Público 
+
+ramal, se há previsão de modificações na rede no local da ligação. 
+
+7.2.2.2  Requisitos para os condutores 
+
+7.2.2.2.1  Os condutores (Fase-Neutro) devem ser unipolares, de cobre, isolados com PVC 
+-  70°C  (tipo  BWF)  para tensões  de  450/750V,  e  atender  as  demais  exigências da  NBRNM 
+247-3. 
+
+7.2.2.2.2  As  seções  mínimas,  recomendadas  para  cada  faixa  de  fornecimento,  estão 
+indicadas nas Tabelas 1 a 4. 
+
+7.2.2.2.3  Os condutores devem ser contínuos, isentos de emendas. No condutor neutro é 
+vetado o uso de qualquer dispositivo de interrupção. 
+
+7.2.2.2.4  Os  condutores  do  ramal  de  entrada  devem  ter  comprimentos  suficientes  para 
+permitir  conexões  com  os  condutores  do  ramal  de  conexão  e  com  os  equipamentos  de 
+medição e proteção. Deste modo, devem ser deixadas as seguintes pontas em cada condutor: 
+
+a)  após a saída da curva 45° ou cabeçote (para confecção do pingadouro): 0,60m; 
+
+b)  dentro da caixa para medição com instalação direta até o disjuntor, nas ligações a 2 
+
+fios: 0,80m; 
+
+c)  dentro da caixa para medição com instalação direta até o disjuntor, nas ligações a 3 e 
+
+4 fios: 1,20m; 
+
+d)  dentro da caixa para medição com instalação indireta até o disjuntor, nas ligações a 3 
+
+e 4 fios: 1,20m; 
+
+7.2.2.2.5  O  condutor  neutro  deve  ser  perfeitamente  identificado,  através  da  cor  azul  (de 
+fábrica) de sua isolação. 
+
+7.2.2.2.6  O condutor fase deve ser perfeitamente identificado, através de qualquer cor (de 
+fábrica) de sua isolação, exceto as cores azul e verde ou verde/amarelo. 
+
+7.2.2.2.7  O condutor de proteção deve ser perfeitamente identificado, através da cor verde 
+ou  verde/amarelo  de  sua  isolação.  Este  condutor  deve  ser  levado  juntamente  com  os 
+condutores fase e neutro (energia medida) até o quadro de distribuição interna dos circuitos 
+elétricos da unidade consumidora ou até à caixa de passagem, se houver, localizada junto 
+das caixas de medição e proteção.  
+
+7.2.2.2.8  Não  é  necessária  a  instalação  do  condutor  de  proteção  para  a  unidade 
+consumidora tipo F entre a caixa CM-9 ou CM-18 e a caixa de passagem, pois a barra de 
+aterramento instalada entre estas caixas representa os condutores neutro e de proteção. Para 
+esta  unidade consumidora deve ter  o  condutor  de proteção a  partir  da  caixa de  passagem 
+conforme a Tabela 4 e entre a caixa CM-9 ou CM-18 e a caixa CM-4 deve ter o condutor de 
+
+44 
+
+Classificação: Direcionado 
+Classificação: Direcionado 
+
+Docusign Envelope ID: 7A89F835-10C1-4E89-A462-3421E3EBB99C                                 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+    ND - 5.1                                                           
+
+                                              Classificação: Público 
+
+proteção de 10mm² conforme o Desenho 46.  
+
+7.2.2.2.9  No  caso  dos  padrões  com  caixa  com  leitura  pela  via  pública  (CM-13,  CM-14  e 
+CM3 LVP), os condutores fase e neutro devem ser flexíveis classe 5 ou 6 de acordo com a 
+NBR 7288 ou NBR 7286 ou NBR 7285. 
+
+7.2.2.3  Requisitos para os eletrodutos 
+
+7.2.2.3.1  Os eletrodutos do ramal de entrada embutido devem ser de PVC rígido conforme 
+as características técnicas indicadas no Desenho 53. 
+
+7.2.2.3.2  Os  diâmetros  nominais  recomendados  para  cada  faixa  de  fornecimento  estão 
+indicados nas Tabelas 1 a 4. 
+
+7.2.2.3.3  Os  eletrodutos  podem  ser  fixados  ao  poste  ou  pontalete  por  meio  de  fitas  ou 
+braçadeiras metálicas em alternativa às amarrações com arame de aço galvanizado 12 BWG 
+(diâmetro  2,76  mm),  observando-se  que  as  identificações  dos  eletrodutos  não  fiquem 
+encobertas. 
+
+7.2.2.3.4  Nas junções entre eletrodutos utilizar luvas e aplicar fita veda rosca. 
+
+7.2.2.3.5  Os  eletrodutos  devem  ser  firmemente  fixados  à  caixa  de  medição  e  proteção 
+através de bucha, porca-arruela e fitas veda-rosca. 
+
+7.2.3  Ramal de entrada subterrâneo 
+
+A instalação do ramal de entrada subterrâneo deve ser efetuada nos seguintes casos: 
+
+a - Atendimentos através de rede de distribuição subterrânea. Nesse caso o ramal de entrada 
+subterrâneo vai desde a caixa de passagem localizada no passeio público a 20 centímetros 
+da divisa da propriedade particular, que é o ponto de conexão, até à conexão com o ramal 
+interno da unidade consumidora. 
+
+b  -  atendimentos  através  de  rede  de  distribuição  aérea  quando  o  consumidor  opta  por 
+atendimento  em  baixa  tensão  para  uma  demanda  maior  que  95kVA  e  menor  ou  igual  a 
+304kVA.  Nesse  caso,  o  ramal  de  entrada  subterrâneo  vai  desde  a  caixa  de  passagem 
+localizada no passeio público a 20 centímetros da divisa da propriedade particular, que é o 
+ponto de conexão, até a conexão com o disjuntor do padrão de entrada. 
+
+c - como opção por decisão do consumidor, nos atendimentos através de rede de distribuição 
+aérea para demanda menor ou igual a 95 kVA para as unidades consumidoras localizadas do 
+mesmo lado da rede. Nesse caso, o ramal de entrada subterrâneo vai desde a conexão com 
+a rede da Cemig, que é o ponto de  conexão, até a conexão com o disjuntor do padrão de 
+entrada. 
+
+Nesse tipo de atendimento (ramal de entrada subterrâneo indicado no item “c” acima) o cliente 
+é responsável pela instalação e manutenção dos condutores e eletroduto do ramal de entrada 
+a partir da rede Cemig. Para ilustrar essa responsabilidade, caso, por exemplo, algum veículo 
+
+45 
+
+Classificação: Direcionado 
+Classificação: Direcionado 
+
+Docusign Envelope ID: 7A89F835-10C1-4E89-A462-3421E3EBB99C                                 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+    ND - 5.1                                                           
+
+                                              Classificação: Público 
+
+destrua  o  poste  e  a  rede  da  Cemig,  os  eletrodutos  e  condutores  do  ramal  de  entrada 
+subterrâneo, a Cemig é responsável por instalar outro poste e outros condutores apenas da 
+sua rede de distribuição, sendo o cliente responsável por instalar novos eletrodutos e novos 
+condutores do seu ramal de entrada subterrâneo a partir da rede da Cemig, que é o ponto de 
+conexão. 
+
+A instalação do ramal de entrada subterrâneo deve ser efetuada conforme o Desenho 47. 
+
+7.2.3.1  Requisitos para instalação 
+
+7.2.3.1.1  Os serviços de instalação do ramal de entrada subterrâneo devem ser executados 
+pelo consumidor, respeitando as legislações municipais e assumindo toda a responsabilidade 
+pelos serviços executados no passeio público. 
+
+7.2.3.1.2  O  consumidor  deve  informar-se  previamente  na  Cemig,  antes  da  execução  do 
+ramal, se há previsão de modificações na rede no local da ligação. 
+
+7.2.3.1.3  Na instalação do ramal de entrada subterrâneo é exigido que seus condutores: 
+
+a)  Não cortem terrenos de terceiros; 
+
+b)  Não sejam enterrados diretamente no solo; 
+
+c)  Não apresentem emendas dentro de dutos. 
+
+7.2.3.2  Requisitos para os condutores 
+
+7.2.3.2.1  Os condutores fase e neutro do ramal de entrada subterrâneo devem ser cabos 
+unipolares de cobre, isolados com PVC-70°C ou EPR-90⁰  para 0,6/1kV, dotados de cobertura 
+externa de PVC ou Neoprene (condutores isolados com camada dupla) e atender as demais 
+exigências da NBR 7288 ou dotados de cobertura externa de EPR (condutores isolados com 
+camada dupla) e atender as demais exigências da NBR 7286 ou dotados de cobertura externa 
+de XLPE (condutores isolados com camada dupla) e atender as demais exigências da NBR 
+7285.   
+
+7.2.3.2.2  O  condutor  neutro  deve  ser  perfeitamente  identificado,  através  da  cor  azul  (de 
+fábrica) de sua isolação.  
+
+7.2.3.2.3  No  caso  dos  padrões  com  caixa  com  leitura  pela  via  pública  (CM-13,  CM-14  e 
+CM3 LVP), os condutores fase e neutro devem ser flexível classe 5 ou 6 de acordo com a 
+NBR 7288 ou NBR 7286 ou NBR 7285.  
+
+7.2.3.2.4  O condutor fase deve ser perfeitamente identificado, através de qualquer cor (de 
+fábrica) de sua isolação, exceto as cores azul e verde ou verde/amarelo. 
+
+7.2.3.2.5  O condutor de proteção deve ser perfeitamente identificado, através da cor verde 
+
+46 
+
+Classificação: Direcionado 
+Classificação: Direcionado 
+
+Docusign Envelope ID: 7A89F835-10C1-4E89-A462-3421E3EBB99C                                 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+    ND - 5.1                                                           
+
+                                              Classificação: Público 
+
+ou verde/amarelo (de fábrica) de sua isolação.  
+
+7.2.3.2.6  Os condutores do ramal de entrada subterrâneo devem ter comprimento suficiente 
+para permitir suas conexões com os condutores do ramal de conexão da Cemig. Deste modo, 
+devem  ser  deixadas  sobras  de  1,00  m  em  cada  condutor,  dentro  da  caixa  de 
+inspeção/passagem localizada na divisa da propriedade do consumidor com o passeio público 
+(ponto de conexão), para conexão ao ramal de conexão. 
+
+7.2.3.2.7  No interior das caixas para medição devem ser deixadas as sobras exigidas no 
+item 7.2.2.4. 
+
+7.2.3.2.8  As seções mínimas dos condutores do ramal de entrada subterrâneo devem ser 
+aquelas indicadas na Tabela 4. 
+
+7.2.3.2.9  Quando o ramal de entrada for constituído por mais de um condutor por fase, deve 
+ser distribuído nos eletrodutos de tal forma que em cada eletroduto passe um circuito trifásico 
+completo (fases A, B, C e neutro). 
+
+7.2.3.3  Requisitos para os eletrodutos 
+
+7.2.3.3.1  Os condutores do ramal de entrada subterrâneo devem ser fisicamente protegidos 
+desde  a  caixa  de  passagem  localizada  na  divisa  da  propriedade  particular  com  o  passeio 
+público (ponto de conexão) até a caixa de medição e/ou proteção por eletroduto de PVC rígido 
+conforme as características constantes do Desenho 53 ou eletroduto de aço por imersão a 
+quente  popularmente  conhecido  como  “eletroduto  pesado”  conforme  as  características 
+constantes da NBR 5598 ou NBR 5597 e do Desenho 55. 
+
+7.2.3.3.2  No  caso  do  atendimento  do  item  7.2.3.c  os  condutores  do  ramal  de  entrada 
+subterrâneo devem ser fisicamente protegidos desde a derivação da rede da Cemig (Ponto 
+de Conexão) até a primeira caixa de passagem localizada junto ao poste da rede da Cemig 
+ou  na  divisa  da  propriedade  particular  com  o  passeio  público  por  eletrodutos  de  aço  por 
+imersão  a  quente  popularmente  conhecido  como  “eletroduto  pesado”  conforme  as 
+características constantes da NBR 5598 ou NBR 5597 e do Desenho 55. 
+
+7.2.3.3.3  No caso do atendimento do item 7.2.3.c o eletroduto de aço instalado na descida 
+junto ao poste da Cemig deve ser identificado com o número da respectiva edificação de forma 
+legível e indelével e deve ser instalado conforme indicado no Desenho 47.  
+
+7.2.3.3.4  Os  diâmetros  nominais  dos  eletrodutos  para  cada  faixa  de  fornecimento  estão 
+indicados na Tabela 4.  
+
+7.3 
+
+Proteção contra sobrecorrentes e sobretensões 
+
+7.3.1  Requisitos gerais 
+
+7.3.1.1  O  padrão  de  entrada  deve  possuir  dispositivo  de  proteção  geral  contra 
+sobrecorrentes,  a  fim  de  limitar  e  interromper  o  fornecimento  de  energia,  bem  como 
+proporcionar proteção à rede da Cemig contra eventuais defeitos a partir do ramal interno do 
+
+47 
+
+Classificação: Direcionado 
+Classificação: Direcionado 
+
+Docusign Envelope ID: 7A89F835-10C1-4E89-A462-3421E3EBB99C                                 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+    ND - 5.1                                                           
+
+                                              Classificação: Público 
+
+consumidor. 
+
+7.3.1.2  Em  todos  os  tipos  de  fornecimento  tal  proteção  deve  ser  efetuada  através  de 
+disjuntores termomagnéticos e deve ser instalado na posição vertical com o ramal de entrada 
+conectado sempre em seus bornes superiores. 
+
+7.3.1.3  No  caso  de  opção  por  disjuntores  com  elementos  térmicos  e/ou  magnéticos 
+ajustáveis, os consumidores devem ajustá-los de acordo com as características operativas de 
+suas cargas motrizes. 
+
+7.3.1.4  A  substituição  dos  disjuntores  termomagnéticos  deve  ser  sempre  efetuada  pela 
+Cemig. 
+
+7.3.1.5  Os  disjuntores  termomagnéticos  dos  padrões  de  entrada  devem  atender  às 
+seguintes condições: 
+
+a)  Para disjuntores de até 200 A, corresponder a um dos modelos e corrente nominal que 
+conste no PEC-11 (Materiais e Equipamentos Aprovados para Padrões de Entrada); 
+
+b)  Para disjuntores acima de 200 A, deve-se utilizar modelo de fabricante que conste no 
+PEC-11, ainda que a aprovação deste fabricante seja para modelo de corrente nominal 
+inferior;      
+
+c)  Nos fornecimentos tipo A e G é obrigatória a utilização de disjuntores monopolares;                      
+
+d)  Nos fornecimentos tipo B é obrigatória a utilização de disjuntores bipolares; 
+
+e)  Nos fornecimentos tipo C e F é obrigatória a utilização de disjuntores tripolares; 
+
+f)  Ter capacidade de interrupção mínima em curto-circuito, de 4,5kA em 230V ou de 5kA 
+em  127V  (monopolares,  bipolares  e tripolares  até  125A)  e 10kA  em  220V  ou  230V 
+(bipolares e tripolares a partir de 125A, inclusive). 
+
+7.3.1.6  Para  os  padrões  de  entrada  que  já  estiverem  ligados  e  o  consumidor  solicitar 
+alteração de faixa de fornecimento, o disjuntor deve ser trocado pelo disjuntor compatível com 
+a nova faixa de fornecimento, conforme Tabelas desta norma. 
+
+7.3.1.7  As  capacidades  dos  dispositivos  de  proteção,  para  os  diversos  tipos  de 
+fornecimento, estão indicadas nas Tabelas 1 a 4. 
+
+7.3.1.8  É recomendável que o consumidor instale internamente em sua propriedade (após a 
+medição  e  necessariamente  após/fora  da  caixa  de  medição  e/ou  proteção),  para-
+raios de baixa tensão ou varistores de acordo com as prescrições das NBR 5410 e 
+5419.  Esta  recomendação  visa  a  supressão  das  sobretensões  causadas,  por 
+exemplo, pelos fenômenos atmosféricos, sobretensões de manobra, evitando, assim, 
+os  eventuais  danos  que  podem  ser  causados  aos  equipamentos  elétricos  e 
+eletrônicos.  
+
+48 
+
+Classificação: Direcionado 
+Classificação: Direcionado 
+
+Docusign Envelope ID: 7A89F835-10C1-4E89-A462-3421E3EBB99C                                 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+    ND - 5.1                                                           
+
+                                              Classificação: Público 
+
+7.3.2  Proteção e partida de motores 
+
+7.3.2.1  Os dispositivos de partida, apresentados pela Tabela 7 devem ser escolhidos pelos 
+próprios consumidores, em função das características dos conjugados de partida solicitados 
+pelas  cargas  (que  devem  ser  sempre  inferiores  aos  proporcionados  pela  utilização  dos 
+dispositivos). 
+
+7.3.2.2  Os  dispositivos  de  partida  devem  ser  dotados  de  sensores  que  os  desliguem  na 
+eventual falta de tensão, em pelo menos uma fase. 
+
+7.3.2.3 
+Independentemente  do  tipo  de  partida,  é  recomendável  que  os  consumidores 
+instalem dispositivos de proteção contra falta de fase na ligação de seus motores. A Cemig, 
+portanto, não se responsabilizará pelos danos causados pela falta de fase(s). 
+
+7.4 
+
+Aterramento 
+
+7.4.1  Sistemas de Aterramento - Fornecimentos tipo A, B, C, F, G e H 
+
+7.4.1.1  O neutro do ramal de entrada deve ser sempre aterrado junto ao padrão de entrada. 
+
+7.4.1.2  O número de eletrodos definido para cada tipo de fornecimento está indicado nas 
+Tabelas 1 a 4. 
+
+7.4.1.3  Os eletrodos devem ser espaçados um do outro por uma distância mínima de 2,4m. 
+
+7.4.1.4  A caixa para medição deve ser aterrada pelo condutor apropriado de aterramento. 
+Quando este for cabo, utilizar terminal para aterramento conforme Desenho 63; o condutor de 
+aterramento deve ficar exposto para inspeção quando do pedido de ligação. 
+
+7.4.1.5  Nos padrões pré-fabricados em aço zincado é dispensável a utilização do haste de 
+aterramento, sendo o aterramento do neutro efetuado pelo próprio poste. 
+
+7.4.2  Sistema de aterramento - Fornecimentos com transformador exclusivo 
+
+7.4.2.1  O neutro do ramal de entrada deve ser conectado ao condutor de aterramento do 
+transformador. 
+
+7.4.2.2  A caixa para medição deve ser também aterrada através do condutor neutro. 
+
+7.4.2.3  O número e disposição dos hastes de aterramento devem seguir as recomendações 
+da ND-2.2. 
+
+7.4.3  Condutor de aterramento 
+
+7.4.3.1  O condutor de aterramento, que interliga o neutro ao(s) eletrodo(s) de aterramento 
+(ou haste de aterramento), através do conector de aterramento da caixa de medição, deve ser 
+
+49 
+
+Classificação: Direcionado 
+Classificação: Direcionado 
+
+Docusign Envelope ID: 7A89F835-10C1-4E89-A462-3421E3EBB99C                                 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+

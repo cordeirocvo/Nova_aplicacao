@@ -1,0 +1,453 @@
+﻿    ND - 5.1                                                           
+
+                                              Classifica├º├úo: P├║blico  
+
+DESENHO 44 - TAMPA BASCUL├üVEL PARA CAIXA COM LEITURA VIA P├ÜBLICA E 
+
+DISJUNTOR COM ACESSO PELO INTERIOR DA PROPRIEDADE................. 144 
+
+DESENHO 45 - CAIXA MODULAR PARA DISJUNTOR GERAL, TC E BARRAMENTOS . 145 
+
+DESENHO 46 ÔÇô DETALHES DA MONTAGEM DA CAIXA CM-9 OU CM-18 ÔÇô DISJUNTOR 
+
+AT├ë 800A E TC AT├ë 1000/5 .............................................................................. 146 
+
+DESENHO 47 - RAMAL DE ENTRADA SUBTERR├éNEO EM BAIXA TENS├âO PARA 
+
+UNIDADES CONSUMIDORAS COM DEMANDA IGUAL OU INFERIOR A 95kVA 
+LOCALIZADAS DO MESMO LADO DA REDE DE DISTRIBUI├ç├âO A├ëREA ..... 148 
+
+DESENHO 48 - DETALHE DE INSTALA├ç├âO DO RAMAL DE CONEX├âO SUBTERR├éNEO 
+
+COM TRAVESSIA DE VIA P├ÜBLICA ÔÇô REDE DE DISTRIBUI├ç├âO A├ëREA - 
+ATENDIMENTO ├Ç DEMANDA SUPERIOR A 95kVA E IGUAL OU INFERIOR A 
+304kVA .............................................................................................................. 150 
+
+DESENHO 49 - MODELO DE CAIXA DE INSPE├ç├âO ....................................................... 152 
+
+DESENHO 50 - DETALHES DE INSTALA├ç├âO DA CAIXA DE INSPE├ç├âO ...................... 153 
+
+DESENHO 51 - TAMPA DA CAIXA DE INSPE├ç├âO .......................................................... 154 
+
+DESENHO 52 - SISTEMA DE ATERRAMENTO ............................................................... 155 
+
+DESENHO 53 - ELETRODUTO DE PVC R├ìGIDO ............................................................. 156 
+
+DESENHO 54 - ELETRODUTO CORRUGADO DE POLIETILENO .................................. 157 
+
+DESENHO 55 - ELETRODUTO DE A├çO .......................................................................... 158 
+
+DESENHO 56 - ALTERNATIVAS DE FIXA├ç├âO DO RAMAL DE CONEX├âO E DA CAIXA DE 
+MEDI├ç├âO .......................................................................................................... 159 
+
+DESENHO 57 - BASE CONCRETADA PARA POSTE DO PADR├âO DE ENTRADA ........ 160 
+
+DESENHO 58 - FERRAGENS - ANCORAGEM DO RAMAL DE CONEX├âO A├ëREO ....... 161 
+
+DESENHO 59 - CINTAS .................................................................................................... 162 
+
+DESENHO 60 - ARRUELA, BUCHA E ISOLADOR ROLDANA ......................................... 163 
+
+DESENHO 61 - TERMINAL MACI├çO DE COMPRESS├âO TIPO PINO E DE 
+
+ENCAPSULAMENTO ........................................................................................ 164 
+
+DESENHO 62 - TERMINAL DE COMPRESS├âO VAZADO TIPO PINO............................. 165 
+
+DESENHO 63 - CONECTORES E TERMINAIS ................................................................ 166 
+
+DESENHO 64 - CABE├çOTE PARA ELETRODUTO .......................................................... 167 
+
+DESENHO 65 - POSTE DE CONCRETO .......................................................................... 168 
+
+DESENHO 66 - POSTE E PONTALETE DE A├çO ............................................................. 170 
+
+Classifica├º├úo: Direcionado 
+
+Docusign Envelope ID: 7A89F835-10C1-4E89-A462-3421E3EBB99C 
+    ND - 5.1                                                           
+
+                                              Classifica├º├úo: P├║blico  
+
+DESENHO 67 - ESQUEMA DE LIGA├ç├âO DO SISTEMA DE PREVEN├ç├âO E COMBATE A 
+
+INC├èNDIO ......................................................................................................... 172 
+
+DESENHO 68 - ESQUEMAS DE LIGA├ç├âO DOS MEDIDORES DE ENERGIA EL├ëTRICA
+
+ .......................................................................................................................... 173 
+
+DESENHO 69 - ESQUEMAS DE LIGA├ç├âO DOS MEDIDORES DE ENERGIA EL├ëTRICA 
+
+PARA UNIDADES CONSUMIDORAS IRRIGANTES, PARA UNIDADES COM 
+TARIFA BRANCA OU PARA UNIDADES COM MEDIDOR PARA VERIFICAR A 
+QUALIDADE DE ................................................................................................ 174 
+
+ENERGIA EL├ëTRICA (QEE) ............................................................................................. 174 
+
+DESENHO 70 - FOTOS DE LIGA├ç├âO DOS MEDIDORES DE ENERGIA EL├ëTRICA PARA 
+
+UNIDADES CONSUMIDORAS IRRIGANTES, PARA UNIDADES COM TARIFA 
+BRANCA OU PARA UNIDADES COM MEDIDOR PARA VERIFICAR A 
+QUALIDADE DE ENERGIA EL├ëTRICA (QEE) .................................................. 175 
+
+DESENHO 71 - KIT PARA CONEX├âO TEMPOR├üRIA EM SITUA├ç├òES DE CORTE PARA 
+CONSERTO E FESTIVIDADE NA RUA E PRA├çA COM DIVERSAS BARRACAS
+ .......................................................................................................................... 176 
+
+DESENHO 72 - FITA MET├üLICA....................................................................................... 177 
+
+DESENHO 73 - CAIXA DE INSPE├ç├âO/PASSAGEM INSTALADA DENTRO DA 
+
+PROPRIEDADE RURAL .................................................................................... 178 
+
+DESENHO 74 - EXEMPLO DE MONTAGEM DE CONDUTORES NO PARAFUSO PARA 
+
+ATERRAMENTO DA CAIXA DE MEDI├ç├âO....................................................... 179 
+
+Classifica├º├úo: Direcionado 
+
+Docusign Envelope ID: 7A89F835-10C1-4E89-A462-3421E3EBB99C 
+ 
+    ND - 5.1                                                           
+
+                                              Classifica├º├úo: P├║blico 
+
+1 
+
+INTRODU├ç├âO 
+
+Esta norma tem por objetivo estabelecer as diretrizes t├®cnicas para o fornecimento de energia 
+el├®trica em tens├úo secund├íria, ├ás edifica├º├Áes individuais, a partir das redes de distribui├º├úo 
+a├®reas, bem como fixar os requisitos m├¡nimos para as entradas de servi├ºo destas edifica├º├Áes. 
+
+Esta norma est├í estruturada em fun├º├úo dos seguintes t├│picos: 
+
+´éÀ  Crit├®rios de dimensionamento dos componentes das entradas de servi├ºo; 
+
+´éÀ 
+
+Instala├º├Áes b├ísicas referentes ├á cada tipo de padr├úo de entrada; 
+
+´éÀ  Materiais padronizados e aprovados para utiliza├º├úo nos padr├Áes de entrada. 
+
+Esta  norma  est├í  em  conson├óncia  com  as  normas  da  Associa├º├úo  Brasileira  de  Normas 
+T├®cnicas ÔÇô ABNT (NBR 5410 e 5419), com a Resolu├º├úo N┬║ 1000/2021 da ANEEL e com as 
+├║ltimas  resolu├º├Áes,  Atos  do  CREA-MG  e  do  CRT-MG.  As  especifica├º├Áes  t├®cnicas  dos 
+materiais e equipamentos utilizados pela Cemig na liga├º├úo das unidades consumidoras est├úo 
+contidas na ND-2.6. 
+
+Esta edi├º├úo corresponde ├á revis├úo da ND-5.1 de Dezembro/2022 e a cancela e substitui. 
+
+Esta  norma  poder├í  sofrer  altera├º├Áes,  no  todo  ou  em  parte,  nos  termos  da  Resolu├º├úo 
+N┬║1000/2021, motivo pelo qual os interessados dever├úo, periodicamente, consultar o site da 
+Cemig para verificar a vers├úo aplic├ível. 
+
+2  CAMPO DE APLICA├ç├âO 
+
+Esta norma se aplica ao fornecimento de energia el├®trica em tens├úo secund├íria aos 
+
+2.1 
+seguintes casos: 
+
+a)  Edifica├º├Áes individuais, com carga instalada igual ou inferior a 75 kW. 
+
+b)  Edifica├º├Áes individuais com carga instalada superior a 75kW e demanda at├® 304kVA 
+e que optem por atendimento em baixa tens├úo. A solicita├º├úo do consumidor deve ser 
+realizada por escrito e ser├í objeto de estudo por parte da Cemig, conforme ┬º4┬║ e ┬º5┬║ 
+do  artigo  23  da  REN  1000/2021.  Caso  vi├ível,  estas  unidades  consumidoras  ser├úo 
+atendidas por redes secund├írias trif├ísicas (127/220V). 
+
+c)  Edifica├º├Áes  individuais  localizadas  em  atendimento  h├¡brido  conforme  Cap├¡tulo 
+
+ÔÇ£Atendimento H├¡bridoÔÇØ.  
+
+11 
+
+Classifica├º├úo: Direcionado 
+Classifica├º├úo: Direcionado 
+
+Docusign Envelope ID: 7A89F835-10C1-4E89-A462-3421E3EBB99C                                 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+    ND - 5.1                                                           
+
+                                              Classifica├º├úo: P├║blico 
+
+2.2 
+
+Esta norma n├úo se aplica ├ás unidades consumidoras: 
+
+a)  Localizadas em ├íreas de transi├º├úo de rede a├®rea para subterr├ónea ou em ├íreas de 
+rede subterr├ónea, as quais devem atender ao disposto na ND-5.5 (Fornecimento de 
+Energia El├®trica em Tens├úo Secund├íria - Rede de Distribui├º├úo Subterr├ónea). 
+
+b)  Situadas em edifica├º├Áes de uso coletivo e atendidas de acordo com as orienta├º├Áes da 
+
+ND-5.2. 
+
+c)  Caracterizadas por agrupamentos que apesar de n├úo constitu├¡rem edifica├º├Áes de uso 
+coletivo,  ou  seja,  possuem  ├írea  comum  sem  que  esta  constitua  uma  unidade 
+consumidora (n├úo h├í condom├¡nio), devem ser atendidas tamb├®m de acordo com as 
+prescri├º├Áes  da  ND-5.2  (Fornecimento  de  Energia  El├®trica  em  Tens├úo  Secund├íria  - 
+Rede de Distribui├º├úo A├®rea - Edifica├º├Áes Coletivas). 
+
+d)  Com demanda acima de 304kVA, que devem ser atendidas em m├®dia tens├úo atrav├®s 
+da ND-5.3 (Fornecimento de Energia El├®trica em M├®dia Tens├úo ÔÇô Rede de Distribui├º├úo 
+A├®rea ou Subterr├ónea).  
+
+3  DEFINI├ç├òES 
+
+Os  termos  t├®cnicos  utilizados  nesta  norma  est├úo  definidos  nas  normas  da  Associa├º├úo 
+Brasileira de Normas T├®cnicas ÔÇô ABNT e s├úo complementados pelos seguintes: 
+
+3.1 
+
+Cabo Multiplexado 
+
+Cabo de cobre ou alum├¡nio, formado pela reuni├úo de um, dois ou tr├¬s condutores fase em 
+torno do condutor neutro e sustenta├º├úo, com isola├º├úo constitu├¡da por composto extrudado ├á 
+base de Polietileno Termopl├ístico (PE) ou Polietileno Reticulado (XLPE). 
+
+3.2 
+
+Caixa de Inspe├º├úo 
+
+├ë o compartimento enterrado, com dimens├Áes insuficientes para pessoas trabalharem em seu 
+interior,  intercalado  em  uma  ou  mais  linhas  de  dutos  convergentes,  destinado  a  facilitar  a 
+passagem dos condutores e execu├º├úo de emendas. 
+
+3.3 
+
+Caixas de Medi├º├úo e Prote├º├úo 
+
+3.3.1  Caixas para medi├º├úo com instala├º├úo direta  
+
+S├úo caixas destinadas ├á instala├º├úo do medidor de energia e do disjuntor (caixas monof├ísicas: 
+CM-1 e CM-13 e polif├ísicas: CM-2 e CM-14. 
+
+12 
+
+Classifica├º├úo: Direcionado 
+Classifica├º├úo: Direcionado 
+
+Docusign Envelope ID: 7A89F835-10C1-4E89-A462-3421E3EBB99C                                 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+    ND - 5.1                                                           
+
+                                              Classifica├º├úo: P├║blico 
+
+3.3.2  Caixas para medi├º├úo com instala├º├úo indireta 
+
+├ë a caixa destinada ├á instala├º├úo do medidor de energia, do disjuntor e dos transformadores 
+de corrente (TC) (CM-3 e CM-3LVP). 
+
+3.3.3  Caixas para medi├º├úo CM-4 
+
+Caixa para dois medidores polif├ísicos e chave de aferi├º├úo. 
+
+3.3.4  Caixas para medi├º├úo CM-9 
+
+Caixa modular para disjuntor e/ou transformadores de corrente. 
+
+3.3.5  Caixas para medi├º├úo CM-18 
+
+Caixa modular para disjuntor e/ou transformadores de corrente. 
+
+3.4 
+
+Carga Especial 
+
+Equipamento que, pelas suas caracter├¡sticas de funcionamento ou pot├¬ncia, possa prejudicar 
+a qualidade do fornecimento a outros consumidores. 
+
+3.5 
+
+Carga Instalada 
+
+Soma  das  pot├¬ncias  nominais  dos  equipamentos  el├®tricos 
+consumidora, em condi├º├Áes de entrar em funcionamento, expressa em quilowatts (kW). 
+
+instalados  na  unidade 
+
+3.6 
+
+Chave de Aferi├º├úo 
+
+├ë um dispositivo que possibilita a retirada do medidor do circuito, abrindo o seu circuito de 
+potencial, sem interromper o fornecimento, ao mesmo tempo em que coloca em curto-circuito 
+o secund├írio dos transformadores de corrente. 
+
+3.7 
+
+Condutor de prote├º├úo 
+
+├ë o condutor que desviar├í a corrente de fuga para a terra que surge quando acontece falhas 
+de  funcionamento  nos  equipamentos  el├®tricos  energizando  a  carca├ºa  met├ílica  desses 
+equipamentos, evitando acidentes. 
+
+3.8 
+
+Consumidor 
+
+├ë a pessoa f├¡sica ou jur├¡dica, ou comunh├úo de fato ou de direito legalmente representada, que 
+solicitar  ├á  Cemig  o  fornecimento  de  energia  el├®trica  e  assumir  expressamente  a 
+responsabilidade pelo pagamento das contas e pelas demais obriga├º├Áes regulamentares e 
+contratuais. 
+
+13 
+
+Classifica├º├úo: Direcionado 
+Classifica├º├úo: Direcionado 
+
+Docusign Envelope ID: 7A89F835-10C1-4E89-A462-3421E3EBB99C                                 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+    ND - 5.1                                                           
+
+                                              Classifica├º├úo: P├║blico 
+
+3.9 
+
+Demanda 
+
+M├®dia das pot├¬ncias ativas ou reativas, solicitadas ao sistema el├®trico pela parcela da carga 
+instalada em opera├º├úo na unidade consumidora, durante um intervalo de tempo espec├¡fico, 
+expressa em kVA. 
+
+3.10  Demanda M├íxima 
+
+M├íxima pot├¬ncia el├®trica, expressa em kVA, solicitada por uma unidade consumidora durante 
+um per├¡odo de tempo especificado. 
+
+3.11  Disjuntor Termomagn├®tico  
+
+Dispositivo  de  manobra  e  prote├º├úo,  capaz  de  conduzir  correntes  em  condi├º├Áes  normais  e 
+interromp├¬-las automaticamente em condi├º├Áes anormais. 
+
+3.12  Distribuidora 
+
+Agente titular de concess├úo ou permiss├úo federal para prestar o servi├ºo p├║blico de distribui├º├úo 
+de energia el├®trica. 
+
+3.13  Edifica├º├úo Individual 
+
+├ë  toda  e  qualquer  constru├º├úo,  reconhecida  pelos  poderes  p├║blicos,  contendo  uma  ├║nica 
+unidade consumidora. 
+
+3.14  Entrada de Servi├ºo 
+
+├ë  o  conjunto  constitu├¡do  pelos  condutores,  equipamentos  e  acess├│rios  instalados  entre  o 
+ponto de deriva├º├úo da rede secund├íria da Cemig e a medi├º├úo, inclusive. 
+A  entrada  de  servi├ºo  abrange,  portanto,  do  ramal  de  conex├úo  at├®  a  conex├úo  com  o ramal 
+interno. 
+
+3.15  Faixas de Servid├úo 
+
+As faixas de servid├úo, tamb├®m chamadas de faixas de seguran├ºa, s├úo ├íreas do terreno com 
+restri├º├úo imposta ├á faculdade de uso e gozo do propriet├írio, cujo dom├¡nio e uso ├® atribu├¡do a 
+Cemig, para permitir a implanta├º├úo, opera├º├úo e manuten├º├úo do seu sistema el├®trico. 
+
+3.15.1  A largura da faixa de seguran├ºa para redes de distribui├º├úo rurais at├® 22 kV ├® 15 metros, 
+distribu├¡dos em 7,5 metros de cada lado em rela├º├úo ao eixo da rede. 
+
+3.15.2  A  largura  da  faixa  de  seguran├ºa  para  redes  de  distribui├º├úo  rurais  de  34,5kV  ├®  20 
+metros, distribu├¡dos em 10 metros de cada lado em rela├º├úo ao eixo da rede. 
+
+3.15.3  A  largura  da  faixa  de  seguran├ºa  de  uma  linha  de  transmiss├úo  de  energia  el├®trica 
+(tens├úo igual ou superior a 69kV) deve ser determinada levando-se em conta o balan├ºo dos 
+cabos devidos ├á a├º├úo do vento, efeitos el├®tricos e posicionamento das funda├º├Áes de suportes 
+
+14 
+
+Classifica├º├úo: Direcionado 
+Classifica├º├úo: Direcionado 
+
+Docusign Envelope ID: 7A89F835-10C1-4E89-A462-3421E3EBB99C                                 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+    ND - 5.1                                                           
+
+                                              Classifica├º├úo: P├║blico 
+
+e  estais.  Neste  caso  procurar  a  Cemig  antes  da  constru├º├úo  do  padr├úo  de  entrada  para  a 
+defini├º├úo da largura da faixa de seguran├ºa pois esta defini├º├úo ser├í pontual e depender├í do 
+tipo da linha de transmiss├úo. 
+
+3.16  Formul├írio para Solicita├º├úo de An├ílise de Rede ÔÇô Liga├º├úo Nova/Aumento de Carga 
+
+├ë  o formul├írio  utilizado  para  o  atendimento  ├ás unidades  consumidoras com prote├º├úo geral 
+igual  ou  superior  a  225A  at├®  800A, 
+inclusive,  dispon├¡vel  no  endere├ºo  eletr├┤nico 
+www.cemig.com.br. 
+
+3.17  Fornecimento Sem Medi├º├úo (FSM) 
+
+├ë uma forma de fornecimento de energia el├®trica que ocorre sem a utiliza├º├úo de medidor d

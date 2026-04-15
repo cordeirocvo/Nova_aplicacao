@@ -141,3 +141,116 @@ model ProjetoDimensionamento {
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 }
+
+// ─── MÓDULO ENGENHARIA & CÁLCULOS ─────────────────────────────────────────
+
+model ProjetoEngenharia {
+  id                String   @id @default(cuid())
+  nome              String
+  cliente           String?
+  tipo              String   // BESS | SOLAR | HYBRID | CARREGADOR
+  status            String   @default("Rascunho")
+
+  analiseFatura     AnaliseFatura?
+  analiseMassa      AnaliseMassaDados[]
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model AnaliseFatura {
+  id                    String   @id @default(cuid())
+  projetoId             String   @unique
+  projeto               ProjetoEngenharia @relation(fields: [projetoId], references: [id], onDelete: Cascade)
+
+  // Identificação
+  concessionaria        String?   // CEMIG, COPEL, CELESC...
+  numeroInstalacao      String?
+  cnpjCpfTitular        String?
+
+  // Grupo Tarifário (ANEEL REN 1000/2021)
+  grupoTarifario        String?   // A ou B
+  subgrupo              String?   // A1,A2,A3,A3a,A4,AS,B1,B2,B3,B4
+  modalidadeTarifaria   String?   // CONVENCIONAL | AZUL | VERDE | BRANCA | HORARIA_VERDE | HORARIA_AZUL
+  classeConsumo         String?   // Residencial | Comercial | Industrial | Rural | Iluminação Pública...
+
+  // Consumo (12 meses)
+  consumoMeses          Json?     // [{mes: '2024-01', kwh: 1234, injetado: 0, bandeira: 'verde'}, ...]
+  consumoMedioMensalKWh Float?
+  consumoTotalAnualKWh  Float?
+
+  // Demanda (para Grupo A)
+  demandaContratadaKW   Float?
+  demandaMedidaHPKW     Float?
+  demandaMedidaHFPKW    Float?
+
+  // Geração Distribuída detectada
+  temGeracao            Boolean  @default(false)
+  geracaoTipos          String?  // ex: "Solar fotovoltaico"
+  geracaoInjetadaKWh    Float?   // kWh injetados no período
+
+  // Tarifas extraídas
+  tusd                  Float?   // R$/kWh
+  te                    Float?   // R$/kWh
+  tarifaHP              Float?
+  tarifaHFP             Float?
+  tarifaDemandaHP       Float?   // R$/kW
+  tarifaDemandaHFP      Float?
+  valorUltimaFatura     Float?
+  bandeiraTarifaria     String?  // Verde | Amarela | Vermelha 1 | Vermelha 2
+
+  // Arquivo original
+  rawPdfUrl             String?
+  extraidoPorIA         Boolean  @default(false)
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model AnaliseMassaDados {
+  id                    String   @id @default(cuid())
+  projetoId             String
+  projeto               ProjetoEngenharia @relation(fields: [projetoId], references: [id], onDelete: Cascade)
+
+  // Arquivos originais
+  rawXlsUrls            String[] // URLs no Supabase Storage
+  nomeArquivos          String[] // nomes originais
+
+  // Configuração dos postos tarifários
+  postoHP_inicio        String?  @default("18:00") // HH:MM
+  postoHP_fim           String?  @default("21:00")
+  postoHFP_inicio       String?  @default("21:00")
+  postoHFP_fim          String?  @default("18:00")
+  postoHR_inicio        String?  // Horário Reservado (opcional — tarifas verdes)
+  postoHR_fim           String?
+  diasUteisSemana       Int[]    @default([1,2,3,4,5]) // 1=Seg..7=Dom
+
+  // Resultados processados (pico de demanda em cada posto — período completo)
+  periodoInicio         DateTime?
+  periodoFim            DateTime?
+  totalRegistros        Int?
+
+  // Demanda máxima por posto (kW)
+  maxDemandaHP          Float?
+  maxDemandaHFP         Float?
+  maxDemandaHR          Float?
+  maxDemandaTotal       Float?
+
+  // Consumo total por posto (kWh)
+  consumoHP_kWh         Float?
+  consumoHFP_kWh        Float?
+  consumoHR_kWh         Float?
+
+  // Curva de carga média diária (96 pontos de 15min ou 24 pontos horários) — JSON
+  curvaMediaDiaria      Json?    // [{hora: 0, kw: 12.3}, ...]
+  curvaHP               Json?    // curva nos dias de semana apenas no HP
+  curvaHFP              Json?
+
+  // Dia crítico identificado
+  diaCriticoData        DateTime?
+  diaCriticoDemandaKW   Float?
+  diaCriticoCurva       Json?    // curva do dia de maior demanda
+
+  processado            Boolean  @default(false)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}

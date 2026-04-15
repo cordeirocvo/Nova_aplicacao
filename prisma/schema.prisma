@@ -254,3 +254,89 @@ model AnaliseMassaDados {
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 }
+
+// ─── EQUIPAMENTOS (FASE 2) ────────────────────────────────────────────────
+
+model InversorSolar {
+  id                String   @id @default(cuid())
+  fabricante        String
+  modelo            String
+  potenciaNominalKW Float
+  tipoConexao       String   // ON_GRID | OFF_GRID | HYBRID
+  
+  // Especificações CC
+  tensaoEntradaMinV Float?
+  tensaoEntradaMaxV Float?
+  correnteMaxCC     Float?
+  numeroStringsMPPT Int?
+  potenciaMPPTKW    Float?
+  
+  // Especificações CA
+  tensaoSaidaVAC    Float?
+  fatorPotencia     Float?
+  eficiencia        Float?
+  
+  // Outros
+  comunicacao       String?  // WiFi / RS485 / Ethernet
+  ipBD              String?  // IP65, IP66
+  datasheetUrl      String?
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model ModuloFotovoltaico {
+  id                String   @id @default(cuid())
+  fabricante        String
+  modelo            String
+  potenciaPicoWp    Float
+  Vmp               Float?
+  Imp               Float?
+  Voc               Float?
+  Isc               Float?
+  eficiencia        Float?
+  dimensoes         String?  // ex: 2279x1134x35 mm
+  pesoKg            Float?
+  coefTempVoc       Float?
+  coefTempIsc       Float?
+  garantiaAnos      Int?
+  datasheetUrl      String?
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model BateriaSistema {
+  id                String   @id @default(cuid())
+  fabricante        String
+  modelo            String
+  tecnologia        String   // LFP | NMC | AGM | GEL | VRLA
+  capacidadeNomKWh  Float
+  tensaoNominalV    Float?
+  profundidadeDescarga Float? // DOD % (ex: 0.8 para 80%)
+  ciclosVida        Int?
+  correnteMaxCarga  Float?
+  correnteMaxDescarga Float?
+  tempOperacaoMin   Float?
+  tempOperacaoMax   Float?
+  datasheetUrl      String?
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model EstruturaFotovoltaica {
+  id                String   @id @default(cuid())
+  fabricante        String
+  modelo            String
+  tipoTelhado       String   // CERAMICO | METALICO | FIBROCIMENTO | LAJE | SOLO | CARPORT
+  materialEstrutura String?  // Aluminio | Aco
+  cargaMaxVentoKNm2 Float?
+  modulosMaxFileira Int?
+  anguloMin         Float?
+  anguloMax         Float?
+  datasheetUrl      String?
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}

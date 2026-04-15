@@ -30,9 +30,9 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { name: 'Projetos', href: '/engenharia', icon: BarChart3 },
       { name: 'Análise de Consumo', href: '/engenharia/analise-consumo', icon: Sun },
-      { name: 'Dimensionamento BESS', href: '/engenharia/bess', icon: Battery, badge: 'Em breve' },
-      { name: 'Sistema Fotovoltaico', href: '/engenharia/solar', icon: Sun, badge: 'Em breve' },
-      { name: 'Equipamentos', href: '/engenharia/equipamentos', icon: Package, badge: 'Em breve' },
+      { name: 'Dimensionamento BESS', href: '/engenharia/bess', icon: Battery },
+      { name: 'Sistema Fotovoltaico', href: '/engenharia/solar', icon: Sun },
+      { name: 'Equipamentos', href: '/engenharia/equipamentos', icon: Package },
       { name: 'Carregadores VE', href: '/carregamento', icon: BatteryCharging },
     ],
   },

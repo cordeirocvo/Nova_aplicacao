@@ -153,6 +153,8 @@ model ProjetoEngenharia {
 
   analiseFatura     AnaliseFatura?
   analiseMassa      AnaliseMassaDados[]
+  estudoBESS        EstudoBESS?
+  estudoSolar       EstudoSolar?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 }
@@ -339,4 +341,70 @@ model EstruturaFotovoltaica {
   
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
+}
+model EstudoBESS {
+  id                    String   @id @default(cuid())
+  projetoId             String   @unique
+  projeto               ProjetoEngenharia @relation(fields: [projetoId], references: [id], onDelete: Cascade)
+  
+  // Configurações da simulação
+  demandaAlvoKW         Float?
+  estrategia            String?   // PEAK_SHAVING | TIME_SHIFTING | HYBRID | BACKUP
+  
+  // Equipamentos selecionados (IDs da biblioteca)
+  bateriaId             String?
+  inversorId            String?
+  quantidadeBaterias    Int      @default(1)
+  
+  // Resultados da simulação
+  picoReduzidoKW        Float?
+  economiaMensalLeve    Float?   
+  economiaMensalBESS    Float?   
+  paybackSimples        Float?
+  vpl                   Float?
+  tir                   Float?
+  
+  configSimulacao       Json?    // Detalhes extras (preço kWh, inflação, etc)
+  resultadosGrafico     Json?    // Dados da curva simulada
+  
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+model EstudoSolar {
+  id                    String   @id @default(cuid())
+  projetoId             String   @unique
+  projeto               ProjetoEngenharia @relation(fields: [projetoId], references: [id], onDelete: Cascade)
+  
+  // Localização e Irradiação
+  lat                   Float?
+  long                  Float?
+  hspManual             Float?
+  hspPvgis              Float?
+  pr                    Float    @default(0.75) // Performance Ratio (ajustável)
+  perdaSistema          Float    @default(0.14) // Outras perdas (sujeira, cabos, etc)
+  
+  // Dimensionamento Energético
+  geracaoAlvoKWh        Float?
+  potenciaNecessariaKWp Float?
+  
+  // Equipamentos Selecionados (IDs da biblioteca)
+  moduloId              String?
+  inversorId            String?
+  quantidadeModulos     Int      @default(0)
+  quantidadeInversores  Int      @default(1)
+  
+  // Configuração Elétrica
+  numStrings            Int      @default(1)
+  modulosPorString      Int      @default(1)
+  areaOcupadaM2         Float?
+  pesoTotalKg           Float?
+  
+  // Resultados Financeiros
+  investimentoEstimado  Float?
+  paybackAnos           Float?
+  vpl                   Float?
+  tir                   Float?
+  
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 }

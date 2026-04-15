@@ -1,7 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { BarChart3, Plus, Sun, Battery, BatteryCharging, FileText, Calendar, ChevronRight, Loader2, Zap } from "lucide-react";
+import { BarChart3, Plus, Sun, Battery, BatteryCharging, FileText, Calendar, ChevronRight, Loader2, Zap, Download } from "lucide-react";
+import { ReportButton } from "@/components/engenharia/ReportButton";
 
 const TIPO_ICONS: Record<string, React.ElementType> = {
   BESS: Battery,
@@ -158,6 +159,9 @@ export default function EngenhariaPage() {
                         Grupo {p.analiseFatura.grupoTarifario}{p.analiseFatura.subgrupo ? `/${p.analiseFatura.subgrupo}` : ''}
                       </span>
                     )}
+                  </div>
+                  <div className="hidden sm:flex items-center gap-3 mr-2">
+                    <ReportButton projetoId={p.id} projectName={p.nome} />
                   </div>
                   <ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-[#00BFA5] transition-colors" />
                 </div>

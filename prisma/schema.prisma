@@ -58,6 +58,9 @@ model PlanilhaInstalacao {
   createdAt               DateTime @default(now())
   updatedAt               DateTime @updatedAt
 
+  prioridade              Boolean  @default(false)
+  atividadeExtra          Boolean  @default(false)
+
   @@index([idInterno])
 }
 

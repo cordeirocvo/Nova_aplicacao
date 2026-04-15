@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Edit2, ShieldAlert } from "lucide-react";
 import SettingsModal from "./SettingsModal";
 import { calcDaysLate } from "@/lib/dateUtils";
+import { TagToggler } from "./TagToggler";
 
 export const metadata = {
   title: "Acompanhamento | Cordeiro Energia",
@@ -33,6 +34,15 @@ export default async function AcompanhamentoPage() {
 
   // Phase 2: Ordenador avançado
   atividadesWithDays.sort((a, b) => {
+    // Top Priority: Atividade Priorizada
+    if (a.prioridade && !b.prioridade) return -1;
+    if (!a.prioridade && b.prioridade) return 1;
+
+    // Second Priority: Atividade Extra
+    if (a.atividadeExtra && !b.atividadeExtra) return -1;
+    if (!a.atividadeExtra && b.atividadeExtra) return 1;
+
+    // Normal Urgent Checks
     const aUrgent = a.daysParecer !== null && a.daysParecer < settings.limiteParecer;
     const bUrgent = b.daysParecer !== null && b.daysParecer < settings.limiteParecer;
 
@@ -103,8 +113,9 @@ export default async function AcompanhamentoPage() {
               return (
                 <tr key={atv.id} className={bgColorCss}>
                   <td className="px-3 py-3 font-bold leading-tight break-words">
-                    {isUrgentParecer && <ShieldAlert className="inline-block w-3 h-3 mr-1" />}
-                    {atv.instalacao || "N/A"}
+                    {isUrgentParecer && <ShieldAlert className="inline-block w-4 h-4 mr-1 mb-0.5 text-red-200" />}
+                    <span className="text-sm">{atv.instalacao || "N/A"}</span>
+                    <TagToggler id={atv.id} prioridade={atv.prioridade} atividadeExtra={atv.atividadeExtra} isAdmin={!!isAdmin} />
                   </td>
                   <td className="px-3 py-3 font-black text-xs">
                     {diaPrevRender}
@@ -161,7 +172,10 @@ export default async function AcompanhamentoPage() {
             <div key={atv.id} className={`p-4 rounded-xl border-2 shadow-sm relative ${urgencyColor}`}>
               {isUrgentParecer && <ShieldAlert className="absolute top-2 right-2 w-5 h-5 text-white animate-bounce" />}
               <div className="flex justify-between items-start mb-2">
-                <h3 className="font-bold text-lg leading-tight w-2/3">{atv.instalacao}</h3>
+                <div className="w-2/3">
+                  <h3 className="font-bold text-lg leading-tight">{atv.instalacao}</h3>
+                  <TagToggler id={atv.id} prioridade={atv.prioridade} atividadeExtra={atv.atividadeExtra} isAdmin={!!isAdmin} />
+                </div>
                 <span className="text-xs font-black px-2 py-1 bg-black/5 rounded uppercase tracking-widest">{atv.status || "Pendente"}</span>
               </div>
               

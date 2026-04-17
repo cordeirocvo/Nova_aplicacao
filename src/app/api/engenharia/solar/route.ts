@@ -9,14 +9,18 @@ export async function GET(req: NextRequest) {
     const lat = req.nextUrl.searchParams.get('lat');
     const lon = req.nextUrl.searchParams.get('lon');
     const tilt = req.nextUrl.searchParams.get('tilt') || '0';
-    const azimuth = req.nextUrl.searchParams.get('azimuth') || '0';
+    const uiAzimuth = parseFloat(req.nextUrl.searchParams.get('azimuth') || '0');
+
+    // Mapeamento: UI Norte (0) -> PVGIS Norte (180), UI Sul (180) -> PVGIS Sul (0)
+    // PVGIS aspect: 0=South, 90=West, -90=East, 180=North.
+    let pvgisAspect = uiAzimuth + 180;
+    if (pvgisAspect > 180) pvgisAspect -= 360;
 
     if (!lat || !lon) return NextResponse.json({ error: 'Lat/Lon obrigatórios' }, { status: 400 });
     
     try {
       // PVcalc é mais preciso pois considera temperatura e perdas por reflexão
-      // aspect: 0=South, 90=West, -90=East, 180=North.
-      const url = `https://re.jrc.ec.europa.eu/api/v5_2/PVcalc?lat=${lat}&lon=${lon}&peakpower=1&loss=14&angle=${tilt}&aspect=${azimuth}&outputformat=json`;
+      const url = `https://re.jrc.ec.europa.eu/api/v5_2/PVcalc?lat=${lat}&lon=${lon}&peakpower=1&loss=14&angle=${tilt}&aspect=${pvgisAspect}&outputformat=json`;
       const res = await fetch(url);
       const data = await res.json();
       return NextResponse.json(data);

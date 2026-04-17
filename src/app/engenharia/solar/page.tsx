@@ -43,7 +43,7 @@ function SolarContent() {
     numStrings: 1,
     quantidadeModulos: 0,
     tilt: 15,
-    azimuth: 180, // Default Norte p/ Brasil
+    azimuth: 0, // Agora 0° é Norte
     overEnclosureAlvo: 1.40
   });
 
@@ -109,7 +109,7 @@ function SolarContent() {
               numStrings: e.numStrings || 1,
               quantidadeModulos: e.quantidadeModulos || 0,
               tilt: e.tilt ?? 15,
-              azimuth: e.azimuth ?? 180,
+              azimuth: e.azimuth ?? 0,
               overEnclosureAlvo: e.overEnclosureAlvo || 1.40
             });
           } else {
@@ -214,11 +214,17 @@ function SolarContent() {
         hsp = pvgisMatch.hsp;
         geracaoCalculada = pvgisMatch.energySpecific * (kwpAtual || 0);
       } else {
-        // Fallback: Curva senoidal sintética para o Hemisfério Sul (Norte é 180)
-        // No Brasil, geração é maior em Jan/Dez (~1.1x) e menor em Jun/Jul (~0.85x)
+        // Fallback dinâmico: Curva senoidal + Fator de Projeção Geométrica (Cos θ)
+        // Isso dá feedback instantâneo ao usuário enquanto o PVGIS não carrega.
         const sazonalidade = 1 + 0.15 * Math.cos((2 * Math.PI * (mesNum - 1)) / 12);
+        
+        // Fator de perda simplificado por orientação:
+        // Ideal para Brasil (Hemisfério Sul) é Norte. Com a inversão, Norte agora é 0°.
+        const deltaAz = Math.abs(config.azimuth - 0);
+        const projectionFactor = Math.cos((config.tilt * Math.PI) / 180) * Math.cos((deltaAz * Math.PI) / 360);
+        
         hsp = (pvgisMatch ? pvgisMatch.hsp : config.hspManual) || 5.2;
-        geracaoCalculada = hsp * 30 * (kwpAtual || 0) * (config.pr || 0) * sazonalidade;
+        geracaoCalculada = hsp * 30 * (kwpAtual || 0) * (config.pr || 0) * sazonalidade * Math.max(0.5, projectionFactor);
       }
 
       const realConsumo = (projetoBase?.analiseFatura?.consumoMeses as any[])?.find((m: any) => {
@@ -444,10 +450,10 @@ function SolarContent() {
                     onChange={e => setConfig({...config, azimuth: parseInt(e.target.value) || 0})} 
                   />
                   <div className="flex justify-between text-[8px] font-black text-slate-300 uppercase">
-                    <span>Leste (-90°)</span>
-                    <span>Norte (180°)</span>
-                    <span>Norte (-180°)</span>
-                    <span>Oeste (90°)</span>
+                    <span>Oeste (-90°)</span>
+                    <span>Sul (180°)</span>
+                    <span>Sul (-180°)</span>
+                    <span>Leste (90°)</span>
                   </div>
                 </div>
 

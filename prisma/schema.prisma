@@ -172,6 +172,8 @@ model AnaliseFatura {
   concessionaria        String?   // CEMIG, COPEL, CELESC...
   numeroInstalacao      String?
   cnpjCpfTitular        String?
+  vencimento            String?
+  mesReferencia         String?
 
   // Grupo Tarifário (ANEEL REN 1000/2021)
   grupoTarifario        String?   // A ou B
@@ -182,6 +184,8 @@ model AnaliseFatura {
 
   // Consumo (12 meses)
   consumoMeses          Json?     // [{mes: '2024-01', kwh: 1234, injetado: 0, bandeira: 'verde'}, ...]
+  energiaAtivaHRKWh     Float?    // Energia Ativa HR (kW)
+  descontoIrrigante     Float?    // Desconto Irrigante Noturno
   consumoMedioMensalKWh Float?
   consumoTotalAnualKWh  Float?
 

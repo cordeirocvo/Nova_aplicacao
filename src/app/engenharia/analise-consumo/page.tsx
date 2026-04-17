@@ -59,6 +59,7 @@ function AnaliseConsumoContent() {
     modalidadeTarifaria: "CONVENCIONAL", classeConsumo: "Comercial/Serviços",
     demandaContratadaKW: 0, tusd: 0, te: 0, tarifaHP: 0, tarifaHFP: 0,
     tarifaDemandaHP: 0, padraoConexao: "TRIFASICO",
+    energiaAtivaHRKWh: 0, descontoIrrigante: 0
   });
   const [meses, setMeses] = useState<MesConsumo[]>(initialMeses());
   const [tarifas, setTarifas] = useState<any[]>([]);
@@ -374,6 +375,19 @@ function AnaliseConsumoContent() {
                 </div>
               </div>
 
+              {manualForm.grupoTarifario === 'A' && (
+                <div className="grid grid-cols-2 gap-4">
+                   <div>
+                    <label className={labelCls}>Energia Ativa HR (kWh)</label>
+                    <input type="number" className={inputCls} value={manualForm.energiaAtivaHRKWh || ''} onChange={e => setManualForm({...manualForm, energiaAtivaHRKWh: parseFloat(e.target.value) || 0})} />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Desconto Irrigante (R$)</label>
+                    <input type="number" className={inputCls} value={manualForm.descontoIrrigante || ''} onChange={e => setManualForm({...manualForm, descontoIrrigante: parseFloat(e.target.value) || 0})} />
+                  </div>
+                </div>
+              )}
+
               <button onClick={() => handleManualSave()} disabled={saving}
                 className="w-full py-3 bg-[#1E3A8A] text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2">
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Salvar Dados
@@ -426,15 +440,23 @@ function AnaliseConsumoContent() {
                       <option value="HORARIA_AZUL">AZUL</option>
                       <option value="HORARIA_VERDE">VERDE</option>
                       <option value="BRANCA">BRANCA</option>
-                    </select>
+    </select>
+  </div>
+                  <div>
+                    <label className={labelCls}>Mês Referência</label>
+                    <input type="text" className={inputCls} placeholder="MMM/YYYY" value={tempData.mesReferencia || ""} onChange={e => setTempData({...tempData, mesReferencia: e.target.value})} />
                   </div>
                   <div>
-                    <label className={labelCls}>Padrão de Conexão</label>
-                    <select className={inputCls} value={tempData.padraoConexao || ""} onChange={e => setTempData({...tempData, padraoConexao: e.target.value})}>
-                      <option value="MONOFASICO">Monofásico</option>
-                      <option value="BIFASICO">Bifásico</option>
-                      <option value="TRIFASICO">Trifásico</option>
-                    </select>
+                    <label className={labelCls}>Energia Ativa Reativa (HR)</label>
+                    <input type="number" className={inputCls} placeholder="kWh" value={tempData.energiaAtivaHRKWh || ""} onChange={e => setTempData({...tempData, energiaAtivaHRKWh: parseFloat(e.target.value) || 0})} />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Demanda Ativa HFP</label>
+                    <input type="number" className={inputCls} placeholder="kW" value={tempData.demandaMedidaHFPKW || ""} onChange={e => setTempData({...tempData, demandaMedidaHFPKW: parseFloat(e.target.value) || 0})} />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Desconto Irrigante</label>
+                    <input type="number" className={inputCls} placeholder="R$" value={tempData.descontoIrrigante || ""} onChange={e => setTempData({...tempData, descontoIrrigante: parseFloat(e.target.value) || 0})} />
                   </div>
                 </div>
 
@@ -684,7 +706,9 @@ function AnaliseConsumoContent() {
                   { label: "Classe de Consumo", value: analise?.classeConsumo || manualForm.classeConsumo || "—", color: "emerald" },
                   { label: "Bandeira", value: analise?.bandeiraTarifaria || "Verde", color: analise?.bandeiraTarifaria?.includes("Vermelha") ? "red" : "green" },
                   { label: "GD Solar", value: analise?.temGeracao ? "Detectada ✅" : "Não detectada", color: analise?.temGeracao ? "green" : "slate" },
-                ].map(item => (
+                  { label: "Energia HR", value: (analise?.energiaAtivaHRKWh || manualForm.energiaAtivaHRKWh) ? `${analise?.energiaAtivaHRKWh || manualForm.energiaAtivaHRKWh} kWh` : "—", color: "amber", hide: !(analise?.energiaAtivaHRKWh || manualForm.energiaAtivaHRKWh) },
+                  { label: "Desconto Irrig.", value: (analise?.descontoIrrigante || manualForm.descontoIrrigante) ? `R$ ${(analise?.descontoIrrigante || manualForm.descontoIrrigante).toFixed(2)}` : "—", color: "emerald", hide: !(analise?.descontoIrrigante || manualForm.descontoIrrigante) },
+                ].filter(item => !item.hide).map(item => (
                   <div key={item.label} className="p-3 bg-slate-50 rounded-2xl">
                     <p className="text-[10px] font-black text-slate-400 uppercase">{item.label}</p>
                     <p className="font-bold text-slate-700 text-sm mt-0.5">{item.value || "—"}</p>

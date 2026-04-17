@@ -39,7 +39,11 @@ Se algum campo não estiver disponível na fatura, retorne null para ele.
   "tensaoFornecimento": "tensão em kV ou 'baixa tensão'",
   "demandaContratadaKW": número,
   "demandaMedidaHPKW": número,
-  "demandaMedidaHFPKW": número,
+  "demandaMedidaHFPKW": número (procure por 'Demanda Ativa HFP'),
+  "energiaAtivaHRKWh": número (procure por 'Energia Ativa HR'),
+  "descontoIrrigante": número (procure por 'Desconto Irrigante Noturno'),
+  "vencimento": "DD/MM/YYYY",
+  "mesReferencia": "MMM/YYYY",
   "consumoMeses": [
     {"mes": "MM/YYYY", "kwh": número, "injetadoKWh": número ou 0, "bandeira": "Verde|Amarela|Vermelha 1|Vermelha 2"}
   ],
@@ -117,7 +121,7 @@ Retorne APENAS o JSON, sem texto adicional.`;
       (consumoMeses[0]?.bandeira) || null;
 
     // ── Salvar no banco ─────────────────────────────────────────────────────
-    const analise = await prisma.analiseFatura.upsert({
+    const analise = await (prisma as any).analiseFatura.upsert({
       where: { projetoId },
       create: {
         projetoId,
@@ -126,6 +130,8 @@ Retorne APENAS o JSON, sem texto adicional.`;
         concessionaria: extracted.concessionaria || null,
         numeroInstalacao: extracted.numeroInstalacao || null,
         cnpjCpfTitular: extracted.cnpjCpfTitular || null,
+        vencimento: extracted.vencimento || null,
+        mesReferencia: extracted.mesReferencia || null,
         grupoTarifario: grupoFinal,
         subgrupo: subgrupoFinal,
         modalidadeTarifaria: modalidadeFinal,
@@ -136,6 +142,8 @@ Retorne APENAS o JSON, sem texto adicional.`;
         demandaContratadaKW: extracted.demandaContratadaKW || null,
         demandaMedidaHPKW: extracted.demandaMedidaHPKW || null,
         demandaMedidaHFPKW: extracted.demandaMedidaHFPKW || null,
+        energiaAtivaHRKWh: extracted.energiaAtivaHRKWh || null,
+        descontoIrrigante: extracted.descontoIrrigante || null,
         temGeracao,
         geracaoTipos: extracted.geracaoTipos || null,
         geracaoInjetadaKWh,
@@ -154,6 +162,8 @@ Retorne APENAS o JSON, sem texto adicional.`;
         endereco: extracted.endereco || undefined,
         concessionaria: extracted.concessionaria || undefined,
         numeroInstalacao: extracted.numeroInstalacao || undefined,
+        vencimento: extracted.vencimento || undefined,
+        mesReferencia: extracted.mesReferencia || undefined,
         grupoTarifario: grupoFinal,
         subgrupo: subgrupoFinal,
         modalidadeTarifaria: modalidadeFinal,
@@ -162,6 +172,8 @@ Retorne APENAS o JSON, sem texto adicional.`;
         consumoMedioMensalKWh: consumoMedioMensalKWh ?? undefined,
         consumoTotalAnualKWh: consumoTotalAnualKWh ?? undefined,
         demandaContratadaKW: extracted.demandaContratadaKW || undefined,
+        energiaAtivaHRKWh: extracted.energiaAtivaHRKWh || undefined,
+        descontoIrrigante: extracted.descontoIrrigante || undefined,
         temGeracao,
         geracaoInjetadaKWh: geracaoInjetadaKWh ?? undefined,
         tusd: extracted.tusd || undefined,
@@ -191,7 +203,7 @@ export async function GET(req: NextRequest) {
   const projetoId = searchParams.get('projetoId');
   if (!projetoId) return NextResponse.json({ error: 'projetoId required' }, { status: 400 });
 
-  const analise = await prisma.analiseFatura.findUnique({ where: { projetoId } });
+  const analise = await (prisma as any).analiseFatura.findUnique({ where: { projetoId } });
   return NextResponse.json(analise);
 }
 
@@ -201,7 +213,7 @@ export async function PATCH(req: NextRequest) {
     const { projetoId, ...data } = body;
     if (!projetoId) return NextResponse.json({ error: 'projetoId required' }, { status: 400 });
 
-    const analise = await prisma.analiseFatura.upsert({
+    const analise = await (prisma as any).analiseFatura.upsert({
       where: { projetoId },
       create: { projetoId, ...data },
       update: data,

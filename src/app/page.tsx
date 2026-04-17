@@ -1,8 +1,13 @@
 import { redirect } from "next/navigation";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "./api/auth/[...nextauth]/route";
 
-export default function Home() {
-  // Redireciona usuários da tela inicial vazia diretamente para o portal de login
+export default async function Home() {
+  const session = await getServerSession(authOptions);
+
+  if (session) {
+    redirect("/dashboard");
+  }
+
   redirect("/login");
-  
-  return null;
 }

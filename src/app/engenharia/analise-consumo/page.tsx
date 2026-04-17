@@ -36,6 +36,7 @@ function AnaliseConsumoContent() {
   const [tab, setTab] = useState<"fatura" | "massa" | "manual">("fatura");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
   // Fatura state
   const [faturaFile, setFaturaFile] = useState<File | null>(null);
@@ -61,6 +62,7 @@ function AnaliseConsumoContent() {
     tarifaDemandaHP: 0, padraoConexao: "TRIFASICO",
     energiaAtivaHRKWh: 0, descontoIrrigante: 0
   });
+  const [manualError, setManualError] = useState("");
   const [meses, setMeses] = useState<MesConsumo[]>(initialMeses());
   const [tarifas, setTarifas] = useState<any[]>([]);
   const [loadingTarifas, setLoadingTarifas] = useState(false);
@@ -146,6 +148,12 @@ function AnaliseConsumoContent() {
       const d = await res.json();
       setFaturaResult({ analise: d });
       setIsConfirming(false);
+      setSaveSuccess(true);
+      setManualError("");
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } else {
+      const err = await res.json();
+      setManualError(err.error || "Erro ao salvar dados");
     }
     setSaving(false);
   };
@@ -389,9 +397,18 @@ function AnaliseConsumoContent() {
               )}
 
               <button onClick={() => handleManualSave()} disabled={saving}
-                className="w-full py-3 bg-[#1E3A8A] text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2">
-                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Salvar Dados
+                className={`w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${
+                  saveSuccess ? "bg-emerald-500 text-white" : "bg-[#1E3A8A] text-white"
+                }`}>
+                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : saveSuccess ? <CheckCircle2 className="w-4 h-4" /> : <Save className="w-4 h-4" />} 
+                {saveSuccess ? "Dados Salvos!" : "Salvar Dados"}
               </button>
+
+              {manualError && (
+                <div className="flex gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 animate-in fade-in slide-in-from-top-1">
+                  <AlertTriangle className="w-4 h-4 shrink-0" /> {manualError}
+                </div>
+              )}
             </div>
           )}
         </div>

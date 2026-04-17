@@ -166,8 +166,7 @@ Retorne APENAS o JSON, sem texto adicional.`;
         mesReferencia: extracted.mesReferencia || undefined,
         grupoTarifario: grupoFinal,
         subgrupo: subgrupoFinal,
-        modalidadeTarifaria: modalidadeFinal,
-        classeConsumo: classeFinal,
+        padraoConexao: extracted.padraoConexao || undefined,
         consumoMeses: consumoMeses.length > 0 ? consumoMeses : undefined,
         consumoMedioMensalKWh: consumoMedioMensalKWh ?? undefined,
         consumoTotalAnualKWh: consumoTotalAnualKWh ?? undefined,
@@ -177,6 +176,7 @@ Retorne APENAS o JSON, sem texto adicional.`;
         temGeracao,
         geracaoInjetadaKWh: geracaoInjetadaKWh ?? undefined,
         tusd: extracted.tusd || undefined,
+        te: extracted.te || undefined,
         te: extracted.te || undefined,
         tarifaHP: extracted.tarifaHP || undefined,
         tarifaHFP: extracted.tarifaHFP || undefined,
@@ -210,16 +210,62 @@ export async function GET(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json();
-    const { projetoId, ...data } = body;
+    const { projetoId, ...rawData } = body;
     if (!projetoId) return NextResponse.json({ error: 'projetoId required' }, { status: 400 });
+
+    // Processar cálculos se houver consumoMeses
+    let consumoTotalAnualKWh = 0;
+    let consumoMedioMensalKWh = 0;
+    let temGeracao = false;
+
+    if (rawData.consumoMeses && Array.isArray(rawData.consumoMeses)) {
+      consumoTotalAnualKWh = rawData.consumoMeses.reduce((acc: number, m: any) => acc + (Number(m.kwh) || 0), 0);
+      consumoMedioMensalKWh = rawData.consumoMeses.length > 0 ? consumoTotalAnualKWh / rawData.consumoMeses.length : 0;
+      temGeracao = rawData.consumoMeses.some((m: any) => (Number(m.injetadoKWh) || 0) > 0);
+    }
+
+    // Mapeamento explícito para evitar erro de campos desconhecidos se o Prisma Client estiver dessincronizado
+    const mappedData: any = {
+      concessionaria: rawData.concessionaria,
+      grupoTarifario: rawData.grupoTarifario,
+      subgrupo: rawData.subgrupo,
+      modalidadeTarifaria: rawData.modalidadeTarifaria,
+      classeConsumo: rawData.classeConsumo,
+      padraoConexao: rawData.padraoConexao,
+      consumoMeses: rawData.consumoMeses,
+      consumoMedioMensalKWh: consumoMedioMensalKWh,
+      consumoTotalAnualKWh: consumoTotalAnualKWh,
+      energiaAtivaHRKWh: Number(rawData.energiaAtivaHRKWh) || 0,
+      descontoIrrigante: Number(rawData.descontoIrrigante) || 0,
+      demandaContratadaKW: Number(rawData.demandaContratadaKW) || 0,
+      tusd: Number(rawData.tusd) || 0,
+      te: Number(rawData.te) || 0,
+      temGeracao: temGeracao,
+      // Campos de identificação (opcionais)
+      numeroInstalacao: rawData.numeroInstalacao,
+      cnpjCpfTitular: rawData.cnpjCpfTitular,
+      vencimento: rawData.vencimento,
+      mesReferencia: rawData.mesReferencia,
+    };
+
+    // Remover campos undefined para não sobrescrever com null se não desejado
+    Object.keys(mappedData).forEach(key => mappedData[key] === undefined && delete mappedData[key]);
+
+    console.log('TENTANDO UPSERT COM CAMPOS:', Object.keys(mappedData));
 
     const analise = await (prisma as any).analiseFatura.upsert({
       where: { projetoId },
-      create: { projetoId, ...data },
-      update: data,
+      create: { projetoId, ...mappedData },
+      update: mappedData,
     });
+    
+    console.log('SALVAMENTO CONCLUÍDO COM SUCESSO:', analise.id);
     return NextResponse.json(analise);
   } catch (error: any) {
-    return NextResponse.json({ error: error?.message }, { status: 500 });
+    console.error('ERRO CRÍTICO NO PATCH FATURA:', error);
+    return NextResponse.json({ 
+      error: error?.message || 'Erro interno ao salvar fatura',
+      details: error?.meta // Detalhes do Prisma (ex: campos desconhecidos)
+    }, { status: 500 });
   }
 }

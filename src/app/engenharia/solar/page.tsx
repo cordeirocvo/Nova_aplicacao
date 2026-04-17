@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, 
-  ResponsiveContainer, Legend, Cell
+  ResponsiveContainer, Legend, Cell, LabelList
 } from "recharts";
 import { 
   calcularPotenciaNecessaria, 
@@ -92,30 +92,32 @@ function SolarContent() {
         const resEstudo = await fetch(`/api/engenharia/solar?projetoId=${projetoId}`);
         if (resEstudo.ok) {
           const d = await resEstudo.json();
-          const base = d.base || d.estudo?.projeto;
-          setProjetoBase(base);
-          
-          if (d.estudo) {
-            const e = d.estudo;
-            setConfig({
-              lat: e.lat || -19.91,
-              lon: e.lon || -43.93,
-              hspManual: e.hspManual || 5.2,
-              pr: e.pr || 0.75,
-              perdaSistema: e.perdaSistema || 0.14,
-              metaGeracaoKWh: e.metaGeracaoKWh || (metaSugestao ? parseFloat(metaSugestao) : 1000),
-              selectedModuloId: e.selectedModuloId || "",
-              selectedInversorId: e.selectedInversorId || "",
-              numStrings: e.numStrings || 1,
-              quantidadeModulos: e.quantidadeModulos || 0,
-              tilt: e.tilt ?? 15,
-              azimuth: e.azimuth ?? 0,
-              overEnclosureAlvo: e.overEnclosureAlvo || 1.40
-            });
-          } else {
-             const meta = metaSugestao ? parseFloat(metaSugestao) : (base?.analiseFatura?.consumoMedioMensalKWh || 1000);
-             setConfig(prev => ({ ...prev, metaGeracaoKWh: meta }));
-          }
+            const base = d.base || d.estudo?.projeto;
+            setProjetoBase(base);
+            
+            const consumoMedio = base?.analiseFatura?.consumoMedioMensalKWh || 1000;
+
+            if (d.estudo) {
+              const e = d.estudo;
+              setConfig({
+                lat: e.lat || -19.91,
+                lon: e.lon || -43.93,
+                hspManual: e.hspManual || 5.2,
+                pr: e.pr || 0.75,
+                perdaSistema: e.perdaSistema || 0.14,
+                metaGeracaoKWh: e.geracaoAlvoKWh || (metaSugestao ? parseFloat(metaSugestao) : consumoMedio),
+                selectedModuloId: e.moduloId || "",
+                selectedInversorId: e.inversorId || "",
+                numStrings: e.numStrings || 1,
+                quantidadeModulos: e.quantidadeModulos || 0,
+                tilt: e.tilt ?? 15,
+                azimuth: e.azimuth ?? 0,
+                overEnclosureAlvo: e.overEnclosureAlvo || 1.40
+              });
+            } else {
+               const meta = metaSugestao ? parseFloat(metaSugestao) : consumoMedio;
+               setConfig(prev => ({ ...prev, metaGeracaoKWh: meta }));
+            }
         }
       }
       setLoading(false);
@@ -123,12 +125,19 @@ function SolarContent() {
     fetchData();
   }, [projetoId]);
 
-  // 2. Re-simular PVGIS quando a geometria muda
+  // 2. Re-simular PVGIS quando a geometria muda e sugerir inversor se necessário
   useEffect(() => {
     if (!loading && config.lat && config.lon) {
       triggerPvgisFetch(config.lat, config.lon, config.tilt, config.azimuth);
     }
   }, [config.lat, config.lon, config.tilt, config.azimuth, loading]);
+
+  // Sugestão automática ao trocar o módulo
+  useEffect(() => {
+    if (config.selectedModuloId && !config.selectedInversorId && calculated.sugestoes.length > 0) {
+       aplicarSugestaoInversor();
+    }
+  }, [config.selectedModuloId]);
 
   const triggerPvgisFetch = async (lat: number, lon: number, tilt: number, azimuth: number) => {
     setFetchingPvgis(true);
@@ -279,8 +288,19 @@ function SolarContent() {
       ? kwpAtual / sugestoes.reduce((acc, cur) => acc + (cur.potenciaNominalKW * cur.quantidade), 0)
       : 0;
 
-    return { kwpNecessario, kwpAtual, qteModulos, compatibilidade, area, peso, monthlyGeneration, sugestoes, padrao, overActual };
+    const idealAC = kwpAtual / (config.overEnclosureAlvo || 1.4);
+    return { kwpNecessario, kwpAtual, qteModulos, compatibilidade, area, peso, monthlyGeneration, sugestoes, padrao, overActual, idealAC };
   }, [config, modulos, inversores, isCustomModulo, customModulo, isCustomInversor, customInversor, projetoBase, pvgisData]);
+
+  const aplicarSugestaoInversor = () => {
+    if (calculated.sugestoes.length > 0) {
+      const sugerido = calculated.sugestoes[0];
+      setConfig(prev => ({
+        ...prev,
+        selectedInversorId: sugerido.id
+      }));
+    }
+  };
 
   const handleSave = async () => {
     if (!projetoId) return;
@@ -290,23 +310,23 @@ function SolarContent() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         projetoId,
-        lat: config.lat,
-        long: config.lon,
-        hspManual: config.hspManual,
-        pr: config.pr,
-        geracaoAlvoKWh: config.metaGeracaoKWh,
-        potenciaNecessariaKWp: calculated.kwpNecessario,
+        lat: Number(config.lat),
+        long: Number(config.lon),
+        hspManual: Number(config.hspManual),
+        pr: Number(config.pr),
+        geracaoAlvoKWh: Number(config.metaGeracaoKWh),
+        potenciaNecessariaKWp: Number(calculated.kwpNecessario),
         moduloId: config.selectedModuloId,
         inversorId: config.selectedInversorId,
-        quantidadeModulos: calculated.qteModulos,
-        numStrings: config.numStrings,
-        tilt: config.tilt,
-        azimuth: config.azimuth,
-        overEnclosureAlvo: config.overEnclosureAlvo,
+        quantidadeModulos: Number(calculated.qteModulos),
+        numStrings: Number(config.numStrings),
+        modulosPorString: Number(calculated.compatibilidade?.modulosPorString || 0),
+        tilt: Number(config.tilt),
+        azimuth: Number(config.azimuth),
+        overEnclosureAlvo: Number(config.overEnclosureAlvo),
         inversoresSugeridos: calculated.sugestoes.map(s => ({ id: s.id, quantidade: s.quantidade })),
-        modulosPorString: calculated.compatibilidade?.modulosPorString,
-        areaOcupadaM2: calculated.area,
-        pesoTotalKg: calculated.peso
+        areaOcupadaM2: Number(calculated.area),
+        pesoTotalKg: Number(calculated.peso)
       })
     });
     setSaving(false);
@@ -572,7 +592,7 @@ function SolarContent() {
                          <div className="p-3 bg-blue-50 border border-blue-100 rounded-2xl space-y-2">
                             <div className="flex items-center justify-between">
                               <p className="text-[9px] font-black text-[#1E3A8A] uppercase tracking-widest flex items-center gap-1">
-                                <Zap className="w-3 h-3" /> Sugestão p/ Over {config.overEnclosureAlvo}
+                                <Zap className="w-3 h-3" /> Sugestão (Ideal: {calculated.idealAC.toFixed(1)}kW AC)
                               </p>
                               <span className="text-[9px] font-bold text-slate-400">Total CA: {calculated.sugestoes.reduce((acc, cur) => acc + (cur.potenciaNominalKW * cur.quantidade), 0)}kW</span>
                             </div>
@@ -649,6 +669,7 @@ function SolarContent() {
                            {calculated.monthlyGeneration.map((_, index) => (
                              <Cell key={`cell-${index}`} fillOpacity={0.8} />
                            ))}
+                           <LabelList dataKey="hsp" position="top" style={{ fontSize: '8px', fontWeight: 'bold', fill: '#92400e' }} offset={8} />
                         </Bar>
                      </BarChart>
                    </ResponsiveContainer>
@@ -735,8 +756,8 @@ function SolarContent() {
                          <XAxis dataKey="mes" tick={{fontSize: 10}} tickFormatter={m => ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][m-1]} />
                          <YAxis tick={{fontSize: 10}} unit="kWh" />
                          <Tooltip contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)'}} />
-                         <Bar dataKey="consumo" name="Consumo (Fatura)" fill="#1E3A8A" radius={[4, 4, 0, 0]} barSize={20} />
-                         <Bar dataKey="geracao" name="Geração Projetada" fill="#00BFA5" radius={[4, 4, 0, 0]} barSize={20} />
+                         <Bar dataKey="consumo" name="Consumo (Fatura)" fill="#1E3A8A" radius={[4, 4, 0, 0]} barSize={20}><LabelList dataKey="consumo" position="top" style={{ fontSize: '7px', fontWeight: 'bold', fill: '#1E3A8A' }} offset={5} /></Bar>
+                         <Bar dataKey="geracao" name="Geração Projetada" fill="#00BFA5" radius={[4, 4, 0, 0]} barSize={20}><LabelList dataKey="geracao" position="top" style={{ fontSize: '7px', fontWeight: 'bold', fill: '#065f46' }} offset={5} /></Bar>
                       </BarChart>
                    </ResponsiveContainer>
                 </div>

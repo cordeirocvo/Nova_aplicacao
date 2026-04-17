@@ -4,79 +4,72 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
+  provider = "postgresql"
 }
 
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
   password  String
-  role      String   // "ADMIN" or "TV"
+  role      String
   name      String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model PlanilhaInstalacao {
-  id                      String   @id @default(cuid())
-  
-  // Mirrored fields from Google Sheets
-  idInterno               String?  @unique // Column 'x'
-  instalacao              String?  // Column 'Instalação - Pedro Cliente'
-  diaPrev                 String?
-  manualInstalacao        Boolean  @default(false)
-  obsInstalacao           String?
-  vencimentoParecer       String?
-  vencimentoContrato      String?
-  automaticoPrevInstala   String?
-  dataVenda               String?
-  statusProtocolo         String?
-  statusCompra            String?
-  inversor                String?
-  numMod                  String?
-  modulo                  String?
-  cidadeSheet             String?
-  bairro                  String?
-  rua                     String?
-  numRua                  String?
-  telhado                 String?
-  telefoneSheet           String?
-  vendedorSheet           String?
-
-  // Additional fields requested by the user
-  observacao              String?
-  anexoFotos              String[] // Array of URLs (Supabase storage)
-  anexoArquivos           String[] // Array of URLs (Supabase storage)
-  dataSolicitacao         DateTime @default(now())
-  solicitacao             String?
-  status                  String?  @default("Pendente")
-  vendedor                String?
-  telefoneCliente         String?
-  cidade                  String?
-  dataPrevista            String?
-
-  createdAt               DateTime @default(now())
-  updatedAt               DateTime @updatedAt
-
-  prioridade              Boolean  @default(false)
-  atividadeExtra          Boolean  @default(false)
+  id                    String   @id @default(cuid())
+  idInterno             String?  @unique
+  instalacao            String?
+  diaPrev               String?
+  manualInstalacao      Boolean  @default(false)
+  obsInstalacao         String?
+  vencimentoParecer     String?
+  vencimentoContrato    String?
+  automaticoPrevInstala String?
+  dataVenda             String?
+  statusProtocolo       String?
+  statusCompra          String?
+  inversor              String?
+  numMod                String?
+  modulo                String?
+  cidadeSheet           String?
+  bairro                String?
+  rua                   String?
+  numRua                String?
+  telhado               String?
+  telefoneSheet         String?
+  vendedorSheet         String?
+  observacao            String?
+  anexoFotos            String[]
+  anexoArquivos         String[]
+  dataSolicitacao       DateTime @default(now())
+  solicitacao           String?
+  status                String?  @default("Pendente")
+  vendedor              String?
+  telefoneCliente       String?
+  cidade                String?
+  dataPrevista          String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  atividadeExtra        Boolean  @default(false)
+  prioridade            Boolean  @default(false)
 
   @@index([idInterno])
 }
 
 model Tarifas {
-  id                String   @id @default(cuid())
-  distribuidora     String   // SigAgente (e.g., CEMIG-D)
-  subGrupo          String   // DscSubGrupo (e.g., A4)
-  modalidade        String   // DscModalidadeTarifaria (Azul/Verde)
-  postoTarifario    String   // NomPostoTarifario (Ponta/Fora Ponta)
-  valorTUSD         Float
-  valorTE           Float
-  dataInicio        DateTime
-  resolution        String?  // DscREH
-  
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id             String   @id @default(cuid())
+  distribuidora  String
+  subGrupo       String
+  modalidade     String
+  postoTarifario String
+  valorTUSD      Float
+  valorTE        Float
+  dataInicio     DateTime
+  resolution     String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@unique([distribuidora, subGrupo, modalidade, postoTarifario])
 }
@@ -84,346 +77,277 @@ model Tarifas {
 model StatusOption {
   id        String   @id @default(cuid())
   name      String   @unique
-  color     String?  // hex code or tailwind class
+  color     String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model SystemSettings {
-  id              String   @id @default("default")
-  limiteVerde     Int      @default(40)
-  limiteAmarelo   Int      @default(20)
-  limiteParecer   Int      @default(30)
-  updatedAt       DateTime @updatedAt
+  id            String   @id @default("default")
+  limiteVerde   Int      @default(40)
+  limiteAmarelo Int      @default(20)
+  limiteParecer Int      @default(30)
+  updatedAt     DateTime @updatedAt
 }
 
 model Carregador {
-  id                String   @id @default(cuid())
-  brand             String
-  model             String
-  power             Float    // kW
-  voltage           Int      // 220, 380, etc.
-  phases            Int      // 1 or 3
-  current           Float    // Max current in Amperes
-  connectorType     String?  // T2, T1, GB/T
-  protectionReq     String?  // DR type etc
-  groundingReq      String?
-  datasheetUrl      String?
-  imageUrl          String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  projects          ProjetoDimensionamento[]
+  id            String                   @id @default(cuid())
+  brand         String
+  model         String
+  power         Float
+  voltage       Int
+  phases        Int
+  current       Float
+  connectorType String?
+  protectionReq String?
+  groundingReq  String?
+  datasheetUrl  String?
+  imageUrl      String?
+  createdAt     DateTime                 @default(now())
+  updatedAt     DateTime                 @updatedAt
+  projects      ProjetoDimensionamento[]
 }
 
 model ProjetoDimensionamento {
-  id                    String   @id @default(cuid())
-  projectName           String
-  clientName            String?
-  utility               String   @default("CEMIG")
-  entranceCategory      String?  // "C1", "B2", etc.
-  distance              Float    // meters
-  installationMethod    String   // NBR 5410 methods (e.g., B1, C)
-  
-  chargerId             String
-  charger               Carregador @relation(fields: [chargerId], references: [id])
-  
-  calculatedCurrent     Float
-  calculatedCableGauge  Float    // mm2
-  calculatedBreaker     Float    // Amperes
-  calculatedDR          String?  // "30mA Tipo A", etc.
-  calculatedConduit     String?  // mm or inches
-  voltageDrop           Float    // Percentage
-  
-  groundingAnalysis     String?
-  isServiceEntranceOk   Boolean  @default(true)
-  analysisNotes         String?
-  
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  id                   String     @id @default(cuid())
+  projectName          String
+  clientName           String?
+  utility              String     @default("CEMIG")
+  entranceCategory     String?
+  distance             Float
+  installationMethod   String
+  chargerId            String
+  calculatedCurrent    Float
+  calculatedCableGauge Float
+  calculatedBreaker    Float
+  calculatedDR         String?
+  calculatedConduit    String?
+  voltageDrop          Float
+  groundingAnalysis    String?
+  isServiceEntranceOk  Boolean    @default(true)
+  analysisNotes        String?
+  createdAt            DateTime   @default(now())
+  updatedAt            DateTime   @updatedAt
+  charger              Carregador @relation(fields: [chargerId], references: [id])
 }
 
-// ─── MÓDULO ENGENHARIA & CÁLCULOS ─────────────────────────────────────────
-
 model EngeProjeto {
-  id                String   @id @default(cuid())
-  nome              String
-  cliente           String?
-  tipo              String   // BESS | SOLAR | HYBRID | CARREGADOR
-  status            String   @default("Rascunho")
-
-  analiseFatura     AnaliseFatura?
-  analiseMassa      AnaliseMassaDados[]
-  estudoBESS        EstudoBESS?
-  estudoSolar       EstudoSolar?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id            String              @id @default(cuid())
+  nome          String
+  cliente       String?
+  tipo          String
+  status        String              @default("Rascunho")
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  analiseFatura AnaliseFatura?
+  analiseMassa  AnaliseMassaDados[]
+  estudoBESS    EstudoBESS?
+  estudoSolar   EstudoSolar?
 }
 
 model AnaliseFatura {
-  id                    String   @id @default(cuid())
-  projetoId             String   @unique
-  projeto               EngeProjeto @relation(fields: [projetoId], references: [id], onDelete: Cascade)
-
-  // Dados do Cliente
+  id                    String      @id @default(cuid())
+  projetoId             String      @unique
   nomeCliente           String?
   endereco              String?
-
-  // Identificação
-  concessionaria        String?   // CEMIG, COPEL, CELESC...
+  concessionaria        String?
   numeroInstalacao      String?
   cnpjCpfTitular        String?
-  vencimento            String?
-  mesReferencia         String?
-
-  // Grupo Tarifário (ANEEL REN 1000/2021)
-  grupoTarifario        String?   // A ou B
-  subgrupo              String?   // A1,A2,A3,A3a,A4,AS,B1,B2,B3,B4
-  modalidadeTarifaria   String?   // CONVENCIONAL | AZUL | VERDE | BRANCA | HORARIA_VERDE | HORARIA_AZUL
-  classeConsumo         String?   // Residencial | Comercial | Industrial | Rural | Iluminação Pública...
-  padraoConexao         String?   // MONOFASICO | BIFASICO | TRIFASICO
-
-  // Consumo (12 meses)
-  consumoMeses          Json?     // [{mes: '2024-01', kwh: 1234, injetado: 0, bandeira: 'verde'}, ...]
-  energiaAtivaHRKWh     Float?    // Energia Ativa HR (kW)
-  descontoIrrigante     Float?    // Desconto Irrigante Noturno
+  grupoTarifario        String?
+  subgrupo              String?
+  modalidadeTarifaria   String?
+  classeConsumo         String?
+  consumoMeses          Json?
   consumoMedioMensalKWh Float?
   consumoTotalAnualKWh  Float?
-
-  // Demanda (para Grupo A)
   demandaContratadaKW   Float?
   demandaMedidaHPKW     Float?
   demandaMedidaHFPKW    Float?
-
-  // Geração Distribuída detectada
-  temGeracao            Boolean  @default(false)
-  geracaoTipos          String?  // ex: "Solar fotovoltaico"
-  geracaoInjetadaKWh    Float?   // kWh injetados no período
-
-  // Tarifas extraídas
-  tusd                  Float?   // R$/kWh
-  te                    Float?   // R$/kWh
+  temGeracao            Boolean     @default(false)
+  geracaoTipos          String?
+  geracaoInjetadaKWh    Float?
+  tusd                  Float?
+  te                    Float?
   tarifaHP              Float?
   tarifaHFP             Float?
-  tarifaDemandaHP       Float?   // R$/kW
+  tarifaDemandaHP       Float?
   tarifaDemandaHFP      Float?
   valorUltimaFatura     Float?
-  bandeiraTarifaria     String?  // Verde | Amarela | Vermelha 1 | Vermelha 2
-
-  // Arquivo original
+  bandeiraTarifaria     String?
   rawPdfUrl             String?
-  extraidoPorIA         Boolean  @default(false)
-
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  extraidoPorIA         Boolean     @default(false)
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+  padraoConexao         String?
+  descontoIrrigante     Float?
+  energiaAtivaHRKWh     Float?
+  mesReferencia         String?
+  vencimento            String?
+  projeto               EngeProjeto @relation(fields: [projetoId], references: [id], onDelete: Cascade)
 }
 
 model AnaliseMassaDados {
-  id                    String   @id @default(cuid())
-  projetoId             String
-  projeto               EngeProjeto @relation(fields: [projetoId], references: [id], onDelete: Cascade)
-
-  // Arquivos originais
-  rawXlsUrls            String[] // URLs no Supabase Storage
-  nomeArquivos          String[] // nomes originais
-
-  // Configuração dos postos tarifários
-  postoHP_inicio        String?  @default("18:00") // HH:MM
-  postoHP_fim           String?  @default("21:00")
-  postoHFP_inicio       String?  @default("21:00")
-  postoHFP_fim          String?  @default("18:00")
-  postoHR_inicio        String?  // Horário Reservado (opcional — tarifas verdes)
-  postoHR_fim           String?
-  diasUteisSemana       Int[]    @default([1,2,3,4,5]) // 1=Seg..7=Dom
-
-  // Resultados processados (pico de demanda em cada posto — período completo)
-  periodoInicio         DateTime?
-  periodoFim            DateTime?
-  totalRegistros        Int?
-
-  // Demanda máxima por posto (kW)
-  maxDemandaHP          Float?
-  maxDemandaHFP         Float?
-  maxDemandaHR          Float?
-  maxDemandaTotal       Float?
-
-  // Consumo total por posto (kWh)
-  consumoHP_kWh         Float?
-  consumoHFP_kWh        Float?
-  consumoHR_kWh         Float?
-
-  // Curva de carga média diária (96 pontos de 15min ou 24 pontos horários) — JSON
-  curvaMediaDiaria      Json?    // [{hora: 0, kw: 12.3}, ...]
-  curvaHP               Json?    // curva nos dias de semana apenas no HP
-  curvaHFP              Json?
-
-  // Dia crítico identificado (maior consumo)
-  diaCriticoData        DateTime?
-  diaCriticoDemandaKW   Float?
-  diaCriticoCurva       Json?    // curva do dia de maior demanda
-  mediaDiaCritico       Float?   // média de consumo no dia mais carregado
-
-  // Detalhes extras de demanda
-  maxDemandaTotalData   DateTime? // momento exato do pico absoluto
-  minDemandaTotal       Float?
-  minDemandaTotalData   DateTime? // momento da menor demanda registrada
-
-  processado            Boolean  @default(false)
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  id                  String      @id @default(cuid())
+  projetoId           String
+  rawXlsUrls          String[]
+  nomeArquivos        String[]
+  postoHP_inicio      String?     @default("18:00")
+  postoHP_fim         String?     @default("21:00")
+  postoHFP_inicio     String?     @default("21:00")
+  postoHFP_fim        String?     @default("18:00")
+  postoHR_inicio      String?
+  postoHR_fim         String?
+  diasUteisSemana     Int[]       @default([1, 2, 3, 4, 5])
+  periodoInicio       DateTime?
+  periodoFim          DateTime?
+  totalRegistros      Int?
+  maxDemandaHP        Float?
+  maxDemandaHFP       Float?
+  maxDemandaHR        Float?
+  maxDemandaTotal     Float?
+  consumoHP_kWh       Float?
+  consumoHFP_kWh      Float?
+  consumoHR_kWh       Float?
+  curvaMediaDiaria    Json?
+  curvaHP             Json?
+  curvaHFP            Json?
+  diaCriticoData      DateTime?
+  diaCriticoDemandaKW Float?
+  diaCriticoCurva     Json?
+  mediaDiaCritico     Float?
+  maxDemandaTotalData DateTime?
+  minDemandaTotal     Float?
+  minDemandaTotalData DateTime?
+  processado          Boolean     @default(false)
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+  projeto             EngeProjeto @relation(fields: [projetoId], references: [id], onDelete: Cascade)
 }
-
-// ─── EQUIPAMENTOS (FASE 2) ────────────────────────────────────────────────
 
 model InversorSolar {
   id                String   @id @default(cuid())
   fabricante        String
   modelo            String
   potenciaNominalKW Float
-  tipoConexao       String   // ON_GRID | OFF_GRID | HYBRID
-  fase              Int?     @default(1) // 1=Monofásico, 2=Bifásico, 3=Trifásico
-  
-  // Especificações CC
+  tipoConexao       String
   tensaoEntradaMinV Float?
   tensaoEntradaMaxV Float?
   correnteMaxCC     Float?
   numeroStringsMPPT Int?
   potenciaMPPTKW    Float?
-  
-  // Especificações CA
   tensaoSaidaVAC    Float?
   fatorPotencia     Float?
   eficiencia        Float?
-  
-  // Outros
-  comunicacao       String?  // WiFi / RS485 / Ethernet
-  ipBD              String?  // IP65, IP66
+  comunicacao       String?
+  ipBD              String?
   datasheetUrl      String?
-  
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
+  fase              Int?     @default(1)
 }
 
 model ModuloFotovoltaico {
-  id                String   @id @default(cuid())
-  fabricante        String
-  modelo            String
-  potenciaPicoWp    Float
-  Vmp               Float?
-  Imp               Float?
-  Voc               Float?
-  Isc               Float?
-  eficiencia        Float?
-  dimensoes         String?  // ex: 2279x1134x35 mm
-  pesoKg            Float?
-  coefTempVoc       Float?
-  coefTempIsc       Float?
-  garantiaAnos      Int?
-  datasheetUrl      String?
-  
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id             String   @id @default(cuid())
+  fabricante     String
+  modelo         String
+  potenciaPicoWp Float
+  Vmp            Float?
+  Imp            Float?
+  Voc            Float?
+  Isc            Float?
+  eficiencia     Float?
+  dimensoes      String?
+  pesoKg         Float?
+  coefTempVoc    Float?
+  coefTempIsc    Float?
+  garantiaAnos   Int?
+  datasheetUrl   String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
 
 model BateriaSistema {
-  id                String   @id @default(cuid())
-  fabricante        String
-  modelo            String
-  tecnologia        String   // LFP | NMC | AGM | GEL | VRLA
-  capacidadeNomKWh  Float
-  tensaoNominalV    Float?
-  profundidadeDescarga Float? // DOD % (ex: 0.8 para 80%)
-  ciclosVida        Int?
-  correnteMaxCarga  Float?
-  correnteMaxDescarga Float?
-  tempOperacaoMin   Float?
-  tempOperacaoMax   Float?
-  datasheetUrl      String?
-  
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id                   String   @id @default(cuid())
+  fabricante           String
+  modelo               String
+  tecnologia           String
+  capacidadeNomKWh     Float
+  tensaoNominalV       Float?
+  profundidadeDescarga Float?
+  ciclosVida           Int?
+  correnteMaxCarga     Float?
+  correnteMaxDescarga  Float?
+  tempOperacaoMin      Float?
+  tempOperacaoMax      Float?
+  datasheetUrl         String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 }
 
 model EstruturaFotovoltaica {
   id                String   @id @default(cuid())
   fabricante        String
   modelo            String
-  tipoTelhado       String   // CERAMICO | METALICO | FIBROCIMENTO | LAJE | SOLO | CARPORT
-  materialEstrutura String?  // Aluminio | Aco
+  tipoTelhado       String
+  materialEstrutura String?
   cargaMaxVentoKNm2 Float?
   modulosMaxFileira Int?
   anguloMin         Float?
   anguloMax         Float?
   datasheetUrl      String?
-  
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 }
+
 model EstudoBESS {
-  id                    String   @id @default(cuid())
-  projetoId             String   @unique
-  projeto               EngeProjeto @relation(fields: [projetoId], references: [id], onDelete: Cascade)
-  
-  // Configurações da simulação
-  demandaAlvoKW         Float?
-  estrategia            String?   // PEAK_SHAVING | TIME_SHIFTING | HYBRID | BACKUP
-  
-  // Equipamentos selecionados (IDs da biblioteca)
-  bateriaId             String?
-  inversorId            String?
-  quantidadeBaterias    Int      @default(1)
-  
-  // Resultados da simulação
-  picoReduzidoKW        Float?
-  economiaMensalLeve    Float?   
-  economiaMensalBESS    Float?   
-  paybackSimples        Float?
-  vpl                   Float?
-  tir                   Float?
-  
-  configSimulacao       Json?    // Detalhes extras (preço kWh, inflação, etc)
-  resultadosGrafico     Json?    // Dados da curva simulada
-  
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  id                 String      @id @default(cuid())
+  projetoId          String      @unique
+  demandaAlvoKW      Float?
+  estrategia         String?
+  bateriaId          String?
+  inversorId         String?
+  quantidadeBaterias Int         @default(1)
+  picoReduzidoKW     Float?
+  economiaMensalLeve Float?
+  economiaMensalBESS Float?
+  paybackSimples     Float?
+  vpl                Float?
+  tir                Float?
+  configSimulacao    Json?
+  resultadosGrafico  Json?
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+  projeto            EngeProjeto @relation(fields: [projetoId], references: [id], onDelete: Cascade)
 }
+
 model EstudoSolar {
-  id                    String   @id @default(cuid())
-  projetoId             String   @unique
-  projeto               EngeProjeto @relation(fields: [projetoId], references: [id], onDelete: Cascade)
-  
-  // Localização e Irradiação
+  id                    String      @id @default(cuid())
+  projetoId             String      @unique
   lat                   Float?
   long                  Float?
   hspManual             Float?
   hspPvgis              Float?
-  tilt                  Float    @default(0)    // Inclinação (0 a 90)
-  azimuth               Float    @default(0)    // Orientação (-180 a 180, 0=S, -90=E, 90=W)
-  pr                    Float    @default(0.75) // Performance Ratio (ajustável)
-  perdaSistema          Float    @default(0.14) // Outras perdas (sujeira, cabos, etc)
-  
-  // Dimensionamento Energético
+  tilt                  Float       @default(0)
+  azimuth               Float       @default(0)
+  pr                    Float       @default(0.75)
+  perdaSistema          Float       @default(0.14)
   geracaoAlvoKWh        Float?
   potenciaNecessariaKWp Float?
-  
-  // Equipamentos Selecionados (IDs da biblioteca)
   moduloId              String?
   inversorId            String?
-  inversoresSugeridos   Json?    // [{id: string, quantidade: number}] - Suporte a múltiplos modelos
-  quantidadeModulos     Int      @default(0)
-  quantidadeInversores  Int      @default(1)
-  
-  // Configuração Elétrica
-  numStrings            Int      @default(1)
-  modulosPorString      Int      @default(1)
+  quantidadeModulos     Int         @default(0)
+  quantidadeInversores  Int         @default(1)
+  numStrings            Int         @default(1)
+  modulosPorString      Int         @default(1)
   areaOcupadaM2         Float?
   pesoTotalKg           Float?
-  
-  // Resultados Financeiros
   investimentoEstimado  Float?
   paybackAnos           Float?
   vpl                   Float?
   tir                   Float?
-  
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+  inversoresSugeridos   Json?
+  overEnclosureAlvo     Float?      @default(1.40)
+  projeto               EngeProjeto @relation(fields: [projetoId], references: [id], onDelete: Cascade)
 }

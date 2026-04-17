@@ -177,7 +177,6 @@ Retorne APENAS o JSON, sem texto adicional.`;
         geracaoInjetadaKWh: geracaoInjetadaKWh ?? undefined,
         tusd: extracted.tusd || undefined,
         te: extracted.te || undefined,
-        te: extracted.te || undefined,
         tarifaHP: extracted.tarifaHP || undefined,
         tarifaHFP: extracted.tarifaHFP || undefined,
         valorUltimaFatura: extracted.valorUltimaFatura || undefined,

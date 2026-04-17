@@ -144,7 +144,7 @@ model ProjetoDimensionamento {
 
 // ─── MÓDULO ENGENHARIA & CÁLCULOS ─────────────────────────────────────────
 
-model ProjetoEngenharia {
+model EngeProjeto {
   id                String   @id @default(cuid())
   nome              String
   cliente           String?
@@ -162,7 +162,11 @@ model ProjetoEngenharia {
 model AnaliseFatura {
   id                    String   @id @default(cuid())
   projetoId             String   @unique
-  projeto               ProjetoEngenharia @relation(fields: [projetoId], references: [id], onDelete: Cascade)
+  projeto               EngeProjeto @relation(fields: [projetoId], references: [id], onDelete: Cascade)
+
+  // Dados do Cliente
+  nomeCliente           String?
+  endereco              String?
 
   // Identificação
   concessionaria        String?   // CEMIG, COPEL, CELESC...
@@ -174,6 +178,7 @@ model AnaliseFatura {
   subgrupo              String?   // A1,A2,A3,A3a,A4,AS,B1,B2,B3,B4
   modalidadeTarifaria   String?   // CONVENCIONAL | AZUL | VERDE | BRANCA | HORARIA_VERDE | HORARIA_AZUL
   classeConsumo         String?   // Residencial | Comercial | Industrial | Rural | Iluminação Pública...
+  padraoConexao         String?   // MONOFASICO | BIFASICO | TRIFASICO
 
   // Consumo (12 meses)
   consumoMeses          Json?     // [{mes: '2024-01', kwh: 1234, injetado: 0, bandeira: 'verde'}, ...]
@@ -211,7 +216,7 @@ model AnaliseFatura {
 model AnaliseMassaDados {
   id                    String   @id @default(cuid())
   projetoId             String
-  projeto               ProjetoEngenharia @relation(fields: [projetoId], references: [id], onDelete: Cascade)
+  projeto               EngeProjeto @relation(fields: [projetoId], references: [id], onDelete: Cascade)
 
   // Arquivos originais
   rawXlsUrls            String[] // URLs no Supabase Storage
@@ -247,10 +252,16 @@ model AnaliseMassaDados {
   curvaHP               Json?    // curva nos dias de semana apenas no HP
   curvaHFP              Json?
 
-  // Dia crítico identificado
+  // Dia crítico identificado (maior consumo)
   diaCriticoData        DateTime?
   diaCriticoDemandaKW   Float?
   diaCriticoCurva       Json?    // curva do dia de maior demanda
+  mediaDiaCritico       Float?   // média de consumo no dia mais carregado
+
+  // Detalhes extras de demanda
+  maxDemandaTotalData   DateTime? // momento exato do pico absoluto
+  minDemandaTotal       Float?
+  minDemandaTotalData   DateTime? // momento da menor demanda registrada
 
   processado            Boolean  @default(false)
   createdAt             DateTime @default(now())
@@ -265,6 +276,7 @@ model InversorSolar {
   modelo            String
   potenciaNominalKW Float
   tipoConexao       String   // ON_GRID | OFF_GRID | HYBRID
+  fase              Int?     @default(1) // 1=Monofásico, 2=Bifásico, 3=Trifásico
   
   // Especificações CC
   tensaoEntradaMinV Float?
@@ -345,7 +357,7 @@ model EstruturaFotovoltaica {
 model EstudoBESS {
   id                    String   @id @default(cuid())
   projetoId             String   @unique
-  projeto               ProjetoEngenharia @relation(fields: [projetoId], references: [id], onDelete: Cascade)
+  projeto               EngeProjeto @relation(fields: [projetoId], references: [id], onDelete: Cascade)
   
   // Configurações da simulação
   demandaAlvoKW         Float?
@@ -373,13 +385,15 @@ model EstudoBESS {
 model EstudoSolar {
   id                    String   @id @default(cuid())
   projetoId             String   @unique
-  projeto               ProjetoEngenharia @relation(fields: [projetoId], references: [id], onDelete: Cascade)
+  projeto               EngeProjeto @relation(fields: [projetoId], references: [id], onDelete: Cascade)
   
   // Localização e Irradiação
   lat                   Float?
   long                  Float?
   hspManual             Float?
   hspPvgis              Float?
+  tilt                  Float    @default(0)    // Inclinação (0 a 90)
+  azimuth               Float    @default(0)    // Orientação (-180 a 180, 0=S, -90=E, 90=W)
   pr                    Float    @default(0.75) // Performance Ratio (ajustável)
   perdaSistema          Float    @default(0.14) // Outras perdas (sujeira, cabos, etc)
   
@@ -390,6 +404,7 @@ model EstudoSolar {
   // Equipamentos Selecionados (IDs da biblioteca)
   moduloId              String?
   inversorId            String?
+  inversoresSugeridos   Json?    // [{id: string, quantidade: number}] - Suporte a múltiplos modelos
   quantidadeModulos     Int      @default(0)
   quantidadeInversores  Int      @default(1)
   

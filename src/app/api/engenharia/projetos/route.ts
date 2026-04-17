@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
 export async function GET() {
-  const projetos = await prisma.projetoEngenharia.findMany({
+  const projetos = await prisma.engeProjeto.findMany({
     include: {
       analiseFatura: { select: { concessionaria: true, consumoMedioMensalKWh: true, grupoTarifario: true, subgrupo: true } },
       analiseMassa: { select: { maxDemandaTotal: true, processado: true }, take: 1, orderBy: { createdAt: 'desc' } },
@@ -13,14 +13,22 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const body = await req.json();
-  const { nome, cliente, tipo } = body;
-  if (!nome || !tipo) return NextResponse.json({ error: 'nome e tipo são obrigatórios' }, { status: 400 });
+  try {
+    const body = await req.json();
+    const { nome, cliente, tipo } = body;
+    if (!nome || !tipo) return NextResponse.json({ error: 'nome e tipo são obrigatórios' }, { status: 400 });
 
-  const projeto = await prisma.projetoEngenharia.create({
-    data: { nome, cliente: cliente || null, tipo },
-  });
-  return NextResponse.json(projeto, { status: 201 });
+    const projeto = await prisma.engeProjeto.create({
+      data: { nome, cliente: cliente || null, tipo },
+    });
+    return NextResponse.json(projeto, { status: 201 });
+  } catch (error: any) {
+    console.error("ERRO AO CRIAR PROJETO:", error);
+    try {
+      require('fs').appendFileSync('scratch/server_error.log', `[${new Date().toISOString()}] POST ERROR: ${error?.message}\n${error?.stack}\n\n`);
+    } catch(e) {}
+    return NextResponse.json({ error: error?.message || "Erro desconhecido", stack: error?.stack }, { status: 500 });
+  }
 }
 
 export async function PATCH(req: NextRequest) {
@@ -28,7 +36,7 @@ export async function PATCH(req: NextRequest) {
   const { id, ...data } = body;
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
 
-  const projeto = await prisma.projetoEngenharia.update({ where: { id }, data });
+  const projeto = await prisma.engeProjeto.update({ where: { id }, data });
   return NextResponse.json(projeto);
 }
 
@@ -37,6 +45,6 @@ export async function DELETE(req: NextRequest) {
   const id = searchParams.get('id');
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
 
-  await prisma.projetoEngenharia.delete({ where: { id } });
+  await prisma.engeProjeto.delete({ where: { id } });
   return NextResponse.json({ ok: true });
 }

@@ -4,12 +4,14 @@ import { useState, useEffect, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
   Upload, FileText, BarChart3, AlertTriangle, CheckCircle2,
-  Info, Sun, Zap, Loader2, Plus, Settings2, ChevronDown, ExternalLink, Edit3, Save
+  Info, Sun, Zap, Loader2, Plus, Settings2, ChevronDown, ExternalLink, Edit3, Save, Search, Battery
 } from "lucide-react";
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, Legend, ResponsiveContainer, ReferenceLine
 } from "recharts";
+
+import { Suspense } from "react";
 
 const MESES_PTBR = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
 const labelCls = "block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5";
@@ -26,8 +28,7 @@ function initialMeses(): MesConsumo[] {
   });
 }
 
-/* ─── Main Page ──────────────────────────────────────────────────────────── */
-export default function AnaliseConsumoPage() {
+function AnaliseConsumoContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const projetoId = searchParams.get("projetoId") || "";
@@ -40,6 +41,12 @@ export default function AnaliseConsumoPage() {
   const [faturaFile, setFaturaFile] = useState<File | null>(null);
   const [faturaResult, setFaturaResult] = useState<any>(null);
   const [faturaError, setFaturaError] = useState("");
+  const [isConfirming, setIsConfirming] = useState(false);
+  const [tempData, setTempData] = useState<any>(null);
+
+  const [isConfirmingMassa, setIsConfirmingMassa] = useState(false);
+  const [tempDataMassa, setTempDataMassa] = useState<any>(null);
+  const [massaError, setMassaError] = useState("");
 
   // Massa state
   const [massaFiles, setMassaFiles] = useState<File[]>([]);
@@ -51,15 +58,23 @@ export default function AnaliseConsumoPage() {
     concessionaria: "CEMIG-D", grupoTarifario: "B", subgrupo: "B3",
     modalidadeTarifaria: "CONVENCIONAL", classeConsumo: "Comercial/Serviços",
     demandaContratadaKW: 0, tusd: 0, te: 0, tarifaHP: 0, tarifaHFP: 0,
-    tarifaDemandaHP: 0,
+    tarifaDemandaHP: 0, padraoConexao: "TRIFASICO",
   });
   const [meses, setMeses] = useState<MesConsumo[]>(initialMeses());
   const [tarifas, setTarifas] = useState<any[]>([]);
   const [loadingTarifas, setLoadingTarifas] = useState(false);
+  const [projeto, setProjeto] = useState<any>(null);
 
   // Fetch existing data
   useEffect(() => {
     if (!projetoId) return;
+    
+    // Buscar projeto para saber o tipo
+    fetch(`/api/engenharia/projetos/${projetoId}`)
+      .then(r => r.json())
+      .then(d => setProjeto(d))
+      .catch(err => console.error("Erro ao buscar projeto:", err));
+
     fetch(`/api/engenharia/fatura?projetoId=${projetoId}`)
       .then(r => r.ok ? r.json() : null)
       .then(d => { if (d) setFaturaResult({ analise: d }); });
@@ -84,7 +99,10 @@ export default function AnaliseConsumoPage() {
     const res = await fetch("/api/engenharia/fatura", { method: "POST", body: fd });
     const data = await res.json();
     if (!res.ok) { setFaturaError(data.error || "Erro ao processar fatura"); }
-    else { setFaturaResult(data); }
+    else { 
+      setTempData(data.extraido); 
+      setIsConfirming(true);
+    }
     setLoading(false);
   };
 
@@ -92,25 +110,42 @@ export default function AnaliseConsumoPage() {
   const handleMassaUpload = async () => {
     if (massaFiles.length === 0 || !projetoId) return;
     setLoading(true);
+    setMassaError("");
     const fd = new FormData();
     massaFiles.forEach(f => fd.append("files", f));
     fd.append("projetoId", projetoId);
     Object.entries(postoConfig).forEach(([k, v]) => v && fd.append(k, v));
-    const res = await fetch("/api/engenharia/memoria-massa", { method: "POST", body: fd });
-    const data = await res.json();
-    if (res.ok) setMassaResult(data);
+    
+    try {
+      const res = await fetch("/api/engenharia/memoria-massa", { method: "POST", body: fd });
+      const data = await res.json();
+      if (!res.ok) {
+        setMassaError(data.error || "Erro ao processar memória de massa.");
+      } else {
+        setTempDataMassa(data.resultado || data.analise); 
+        setIsConfirmingMassa(true);
+      }
+    } catch (err) {
+      setMassaError("Falha na conexão com o servidor.");
+    }
     setLoading(false);
   };
 
   /* ── Save Manual ───────────────────────────────────────────────────────── */
-  const handleManualSave = async () => {
+  const handleManualSave = async (dataToSave?: any) => {
     if (!projetoId) return;
     setSaving(true);
-    await fetch("/api/engenharia/fatura", {
+    const body = dataToSave || { ...manualForm, consumoMeses: meses };
+    const res = await fetch("/api/engenharia/fatura", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ projetoId, ...manualForm, consumoMeses: meses }),
+      body: JSON.stringify({ projetoId, ...body }),
     });
+    if (res.ok) {
+      const d = await res.json();
+      setFaturaResult({ analise: d });
+      setIsConfirming(false);
+    }
     setSaving(false);
   };
 
@@ -249,6 +284,12 @@ export default function AnaliseConsumoPage() {
                 className="w-full py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl font-bold text-sm disabled:opacity-40 flex items-center justify-center gap-2">
                 {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Processando...</> : <><BarChart3 className="w-4 h-4" /> Processar Memória de Massa</>}
               </button>
+
+              {massaError && (
+                <div className="flex gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700">
+                  <AlertTriangle className="w-4 h-4 shrink-0" /> {massaError}
+                </div>
+              )}
             </div>
           )}
 
@@ -275,10 +316,15 @@ export default function AnaliseConsumoPage() {
                 </div>
                 <div className="col-span-2"><label className={labelCls}>Modalidade Tarifária</label>
                   <select className={inputCls} value={manualForm.modalidadeTarifaria} onChange={e => setManualForm({ ...manualForm, modalidadeTarifaria: e.target.value })}>
-                    <option value="CONVENCIONAL">Convencional (Monômia)</option>
-                    <option value="HORARIA_AZUL">Horária Azul</option>
-                    <option value="HORARIA_VERDE">Horária Verde</option>
                     <option value="BRANCA">Branca</option>
+                  </select>
+                </div>
+                <div className="col-span-2">
+                  <label className={labelCls}>Padrão de Conexão</label>
+                  <select className={inputCls} value={manualForm.padraoConexao} onChange={e => setManualForm({ ...manualForm, padraoConexao: e.target.value })}>
+                    <option value="MONOFASICO">Monofásico</option>
+                    <option value="BIFASICO">Bifásico</option>
+                    <option value="TRIFASICO">Trifásico</option>
                   </select>
                 </div>
                 {manualForm.grupoTarifario === 'A' && (
@@ -328,7 +374,7 @@ export default function AnaliseConsumoPage() {
                 </div>
               </div>
 
-              <button onClick={handleManualSave} disabled={saving}
+              <button onClick={() => handleManualSave()} disabled={saving}
                 className="w-full py-3 bg-[#1E3A8A] text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2">
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Salvar Dados
               </button>
@@ -336,8 +382,293 @@ export default function AnaliseConsumoPage() {
           )}
         </div>
 
-        {/* ── Right panel — charts ────────────────────────────────────────── */}
-        <div className="lg:col-span-3 space-y-5">
+        {/* ── Confirmation Modal (Fatura) ─────────────────────────────────────────── */}
+        {isConfirming && tempData && (
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+              <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-amber-100 text-amber-600 rounded-xl"><Settings2 className="w-5 h-5" /></div>
+                  <div>
+                    <h2 className="text-xl font-black text-slate-800">Conferir Dados da Fatura</h2>
+                    <p className="text-xs text-slate-400">Verifique se a IA extraiu as informações corretamente</p>
+                  </div>
+                </div>
+                <button onClick={() => setIsConfirming(false)} className="text-slate-400 hover:text-slate-600">✕</button>
+              </div>
+
+              <div className="p-6 overflow-y-auto space-y-6 flex-1 bg-slate-50/50">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="col-span-2">
+                    <label className={labelCls}>Nome do Cliente</label>
+                    <input type="text" className={inputCls} value={tempData.nomeCliente || ""} onChange={e => setTempData({...tempData, nomeCliente: e.target.value})} />
+                  </div>
+                  <div className="col-span-2">
+                    <label className={labelCls}>Endereço</label>
+                    <input type="text" className={inputCls} value={tempData.endereco || ""} onChange={e => setTempData({...tempData, endereco: e.target.value})} />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Concessionária</label>
+                    <input type="text" className={inputCls} value={tempData.concessionaria || ""} onChange={e => setTempData({...tempData, concessionaria: e.target.value})} />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Instalação / UC</label>
+                    <input type="text" className={inputCls} value={tempData.numeroInstalacao || ""} onChange={e => setTempData({...tempData, numeroInstalacao: e.target.value})} />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Subgrupo</label>
+                    <input type="text" className={inputCls} value={tempData.subgrupo || ""} onChange={e => setTempData({...tempData, subgrupo: e.target.value})} />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Modalidade</label>
+                    <select className={inputCls} value={tempData.modalidadeTarifaria || ""} onChange={e => setTempData({...tempData, modalidadeTarifaria: e.target.value})}>
+                      <option value="CONVENCIONAL">CONVENCIONAL</option>
+                      <option value="HORARIA_AZUL">AZUL</option>
+                      <option value="HORARIA_VERDE">VERDE</option>
+                      <option value="BRANCA">BRANCA</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className={labelCls}>Padrão de Conexão</label>
+                    <select className={inputCls} value={tempData.padraoConexao || ""} onChange={e => setTempData({...tempData, padraoConexao: e.target.value})}>
+                      <option value="MONOFASICO">Monofásico</option>
+                      <option value="BIFASICO">Bifásico</option>
+                      <option value="TRIFASICO">Trifásico</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <p className="text-xs font-black text-slate-400 uppercase tracking-widest border-b border-slate-200 pb-2">Histórico de Consumo (Últimos 12 meses)</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {tempData.consumoMeses?.map((m: any, i: number) => (
+                      <div key={i} className="flex items-center gap-2 bg-white p-2 rounded-xl border border-slate-200">
+                        <span className="text-[10px] font-bold text-slate-400 w-16">{m.mes}</span>
+                        <input type="number" className="flex-1 text-xs font-bold focus:outline-none" value={m.kwh || ""} placeholder="kWh" onChange={e => {
+                          const novo = [...tempData.consumoMeses]; 
+                          novo[i] = { ...m, kwh: parseFloat(e.target.value) || 0 }; 
+                          setTempData({...tempData, consumoMeses: novo});
+                        }} />
+                        <span className="text-[10px] text-slate-300">kWh</span>
+                        <input type="number" className="w-16 text-xs text-[#00BFA5] font-bold focus:outline-none text-right" value={m.injetadoKWh || 0} placeholder="Inj." onChange={e => {
+                           const novo = [...tempData.consumoMeses]; 
+                           novo[i] = { ...m, injetadoKWh: parseFloat(e.target.value) || 0 }; 
+                           setTempData({...tempData, consumoMeses: novo});
+                        }} />
+                        <span className="text-[10px] text-slate-300">Inj.</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className={labelCls}>TUSD (R$/kWh)</label>
+                    <input type="number" step="0.0001" className={inputCls} value={tempData.tusd || ""} onChange={e => setTempData({...tempData, tusd: parseFloat(e.target.value) || 0})} />
+                  </div>
+                  <div>
+                    <label className={labelCls}>TE (R$/kWh)</label>
+                    <input type="number" step="0.0001" className={inputCls} value={tempData.te || ""} onChange={e => setTempData({...tempData, te: parseFloat(e.target.value) || 0})} />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Demanda (kW)</label>
+                    <input type="number" className={inputCls} value={tempData.demandaContratadaKW || ""} onChange={e => setTempData({...tempData, demandaContratadaKW: parseFloat(e.target.value) || 0})} />
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-6 border-t border-slate-100 flex gap-3">
+                <button onClick={() => setIsConfirming(false)} className="flex-1 py-3 border border-slate-200 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-50">Descartar</button>
+                <button onClick={() => handleManualSave(tempData)} disabled={saving}
+                  className="flex-2 py-3 bg-[#00BFA5] text-white rounded-xl font-bold text-sm shadow-lg shadow-emerald-200 flex items-center justify-center gap-2 px-8">
+                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><CheckCircle2 className="w-4 h-4" /> Confirmar e Salvar</>}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="lg:col-span-3 space-y-6">
+
+          {/* 📊 DASHBOARD DE MEMÓRIA DE MASSA (Corrigido) */}
+          {(tempDataMassa || massaResult) && (
+            <div className="space-y-6">
+              <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+                <div className="p-6 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-[#1E3A8A] text-white rounded-xl shadow-lg shadow-blue-100">
+                      <BarChart3 className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-black text-slate-800 uppercase tracking-tight">Painel de Memória de Massa</h3>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase">Aba Processada: <span className="text-[#1E3A8A]">{(tempDataMassa || massaResult)?.abaProcessada}</span></p>
+                    </div>
+                  </div>
+                  {tempDataMassa && !massaResult && (
+                    <button 
+                      onClick={() => { setMassaResult(tempDataMassa); setTempDataMassa(null); }}
+                      className="px-6 py-2 bg-[#00BFA5] text-white rounded-xl font-bold text-sm shadow-lg shadow-emerald-100 flex items-center gap-2 hover:bg-[#00a690] transition-colors"
+                    >
+                      <CheckCircle2 className="w-4 h-4" /> Confirmar Importação
+                    </button>
+                  )}
+                </div>
+
+                <div className="p-6 space-y-8">
+                  {/* Métricas Principais Ampliadas */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="p-5 bg-white rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-center">
+                      <p className="text-[10px] font-black text-slate-400 uppercase mb-2">Maior Demanda (Pico)</p>
+                      <p className="text-3xl font-black text-[#1E3A8A]">{(tempDataMassa || massaResult)?.maxDemandaTotal?.toFixed(2)} <span className="text-sm font-normal text-slate-400">kW</span></p>
+                      <p className="text-[10px] text-slate-400 mt-1 font-bold">🗓️ {(tempDataMassa || massaResult)?.maxDemandaTotalData ? new Date((tempDataMassa || massaResult).maxDemandaTotalData).toLocaleString('pt-BR') : '—'}</p>
+                    </div>
+                    <div className="p-5 bg-white rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-center">
+                      <p className="text-[10px] font-black text-slate-400 uppercase mb-2">Consumo Total Período</p>
+                      <p className="text-3xl font-black text-[#00BFA5]">{(tempDataMassa || massaResult)?.consumoTotal?.toFixed(4)} <span className="text-sm font-normal text-slate-400">kWh</span></p>
+                      <p className="text-[10px] text-slate-400 mt-1 font-bold">⚡ Total somado HP + HFP + HR</p>
+                    </div>
+                    <div className="p-5 bg-amber-50 rounded-2xl border border-amber-100 shadow-sm flex flex-col justify-center">
+                      <p className="text-[10px] font-black text-amber-600 uppercase mb-2">Média Dia Crítico</p>
+                      <p className="text-3xl font-black text-amber-700">{(tempDataMassa || massaResult)?.mediaDiaCritico?.toFixed(3)} <span className="text-sm font-normal text-amber-400">kW</span></p>
+                      <p className="text-[10px] text-amber-400 mt-1 font-bold">⚠️ Data: {(tempDataMassa || massaResult)?.diaCriticoData ? new Date((tempDataMassa || massaResult).diaCriticoData).toLocaleDateString('pt-BR') : '—'}</p>
+                    </div>
+                  </div>
+
+                  {/* Curva de Demanda Ampliada */}
+                  <div className="bg-white p-6 rounded-3xl border border-slate-100">
+                    <div className="flex items-center justify-between mb-8">
+                      <h4 className="font-black text-slate-800 text-xs uppercase tracking-widest">Curva de Carga Diária (Dia Crítico)</h4>
+                      <div className="px-3 py-1 bg-[#1E3A8A]/10 text-[#1E3A8A] rounded-full text-[10px] font-black">KW (DEMANDA)</div>
+                    </div>
+                    <ResponsiveContainer width="100%" height={350}>
+                      <LineChart data={(tempDataMassa || massaResult)?.diaCriticoCurva}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                        <XAxis dataKey="hora" tick={{ fontSize: 11, fontWeight: 'bold' }} tickFormatter={h => `${h}h`} />
+                        <YAxis tick={{ fontSize: 11, fontWeight: 'bold' }} unit=" kW" />
+                        <Tooltip 
+                          contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)' }}
+                          formatter={(v: any) => [`${Number(v).toFixed(3)} kW`, "Demanda"]}
+                        />
+                        <Line type="monotone" dataKey="kw" stroke="#1E3A8A" strokeWidth={5} dot={{ r: 5, fill: '#1E3A8A' }} activeDot={{ r: 9 }} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+
+                  {/* Consumo Horário Ampliado */}
+                  <div className="bg-white p-6 rounded-3xl border border-slate-100">
+                    <div className="flex items-center justify-between mb-8">
+                      <h4 className="font-black text-slate-800 text-xs uppercase tracking-widest">Distribuição de Consumo por Posto</h4>
+                      <div className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-[10px] font-black">KWH (CONSUMO)</div>
+                    </div>
+                    <ResponsiveContainer width="100%" height={350}>
+                      <BarChart data={(tempDataMassa || massaResult)?.diaCriticoCurva?.map((d: any) => ({
+                        ...d,
+                        kwhHP: d.posto === 'HP' ? d.kwh : 0,
+                        kwhHFP: d.posto === 'HFP' ? d.kwh : 0,
+                        kwhHR: d.posto === 'HR' ? d.kwh : 0,
+                      }))}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                        <XAxis dataKey="hora" tick={{ fontSize: 11, fontWeight: 'bold' }} tickFormatter={h => `${h}h`} />
+                        <YAxis tick={{ fontSize: 11, fontWeight: 'bold' }} unit=" kWh" />
+                        <Tooltip 
+                          contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)' }}
+                          formatter={(v: any, name: any) => [`${Number(v).toFixed(4)} kWh`, name === 'kwhHP' ? 'Ponta' : name === 'kwhHFP' ? 'Fora Ponta' : 'Reservado']}
+                        />
+                        <Legend wrapperStyle={{ paddingTop: '30px', fontSize: '12px', fontWeight: 'bold' }} />
+                        <Bar dataKey="kwhHP" name="Ponta" stackId="a" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="kwhHFP" name="Fora Ponta" stackId="a" fill="#1E3A8A" radius={[4, 4, 0, 0]} />
+                        {postoConfig.hr_inicio && <Bar dataKey="kwhHR" name="Reservado" stackId="a" fill="#f59e0b" radius={[4, 4, 0, 0]} />}
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+
+                  {/* Diagnóstico de Importação (Auditoria) */}
+                  <div className="p-6 bg-[#1E3A8A]/5 border border-[#1E3A8A]/10 rounded-3xl">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2">
+                        <Search className="w-5 h-5 text-[#1E3A8A]" />
+                        <h4 className="font-extrabold text-slate-800 text-sm uppercase tracking-tight">Arquivos e Amostra de Dados (Auditoria)</h4>
+                      </div>
+                      <span className="px-3 py-1 bg-white text-[10px] font-black text-slate-400 rounded-lg border border-slate-100 shadow-sm">LOGS DE IMPORTAÇÃO</span>
+                    </div>
+                    <div className="overflow-x-auto bg-white rounded-2xl border border-slate-100 shadow-sm">
+                      <table className="w-full text-left text-xs text-slate-600">
+                        <thead>
+                          <tr className="border-b border-slate-100 bg-slate-50/50">
+                            <th className="p-3 font-black uppercase text-slate-400">Data e Hora</th>
+                            <th className="p-3 font-black uppercase text-slate-400">Consumo Lido (kWh)</th>
+                            <th className="p-3 font-black uppercase text-slate-400">Posto Tarifário</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {(tempDataMassa || massaResult)?.amostraDados?.map((r: any, i: number) => (
+                            <tr key={i} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                              <td className="p-3 font-bold text-slate-700">{r.ts}</td>
+                              <td className="p-3 font-black text-[#1E3A8A]">{r.v.toFixed(4)}</td>
+                              <td className="p-3">
+                                <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase ${
+                                  r.posto === 'HP' ? 'bg-red-100 text-red-600' : 
+                                  r.posto === 'HR' ? 'bg-amber-100 text-amber-600' : 
+                                  'bg-blue-100 text-blue-600'
+                                }`}>
+                                  {r.posto}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Métricas Adicionais de Engenharia */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {[
+                  { label: "D. Máx. HP", value: `${(tempDataMassa || massaResult)?.maxDemandaHP?.toFixed(3)} kW`, color: "red" },
+                  { label: "D. Máx. HFP", value: `${(tempDataMassa || massaResult)?.maxDemandaHFP?.toFixed(3)} kW`, color: "blue" },
+                  { label: "D. Máx. HR", value: `${(tempDataMassa || massaResult)?.maxDemandaHR?.toFixed(3)} kW`, color: "amber", hide: !postoConfig.hr_inicio },
+                ].filter(s => !s.hide).map(s => (
+                  <div key={s.label} className={`p-4 rounded-2xl border-2 ${s.color === 'red' ? 'bg-red-50 border-red-200 text-red-700' : s.color === 'blue' ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-amber-50 border-amber-200 text-amber-700'}`}>
+                    <p className="text-[10px] font-black uppercase opacity-60">{s.label}</p>
+                    <p className="text-lg font-black mt-1">{s.value}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-6">
+                <h3 className="font-bold text-slate-800 mb-1">Curva de Carga Média Diária (Período)</h3>
+                <p className="text-xs text-slate-400 mb-5">Demanda média (kW) consolidada nas 24 horas</p>
+                <ResponsiveContainer width="100%" height={280}>
+                  <LineChart data={(tempDataMassa || massaResult)?.curvaMediaDiaria}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                    <XAxis dataKey="hora" tick={{ fontSize: 11 }} tickFormatter={h => `${String(h).padStart(2,'0')}h`} />
+                    <YAxis tick={{ fontSize: 11 }} unit=" kW" />
+                    <Tooltip formatter={(v: any) => `${Number(v).toFixed(2)} kW`} labelFormatter={l => `${String(l).padStart(2,'0')}:00`} />
+                    <Line type="monotone" dataKey="kw" stroke="#1E3A8A" strokeWidth={3} dot={false} name="Demanda Média" />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+
+              {(tempDataMassa || massaResult)?.resumoMensal?.length > 0 && (
+                <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-6">
+                  <h3 className="font-bold text-slate-800 mb-5 text-sm uppercase tracking-widest">Demanda Máxima Mensal (HP x HFP)</h3>
+                  <ResponsiveContainer width="100%" height={250}>
+                    <BarChart data={(tempDataMassa || massaResult).resumoMensal}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                      <XAxis dataKey="mes" tick={{ fontSize: 10 }} />
+                      <YAxis tick={{ fontSize: 11 }} unit=" kW" />
+                      <Tooltip formatter={(v: any) => `${Number(v).toFixed(2)} kW`} />
+                      <Legend verticalAlign="top" height={36}/>
+                      <Bar dataKey="maxDemandaHP" name="Ponta" fill="#ef4444" radius={[3,3,0,0]} />
+                      <Bar dataKey="maxDemandaHFP" name="Fora Ponta" fill="#1E3A8A" radius={[3,3,0,0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Classificação tarifária */}
           {(analise || tab === "manual") && (
@@ -404,63 +735,6 @@ export default function AnaliseConsumoPage() {
             </div>
           )}
 
-          {/* Curva de carga — memória de massa */}
-          {massaResult?.analise && (
-            <>
-              <div className="grid grid-cols-3 gap-3">
-                {[
-                  { label: "Demanda Máx. HP", value: `${massaResult.analise.maxDemandaHP?.toFixed(1)} kW`, color: "red" },
-                  { label: "Demanda Máx. HFP", value: `${massaResult.analise.maxDemandaHFP?.toFixed(1)} kW`, color: "blue" },
-                  { label: "Pico Absoluto", value: `${massaResult.analise.maxDemandaTotal?.toFixed(1)} kW`, color: "orange" },
-                ].map(s => (
-                  <div key={s.label} className={`p-4 rounded-2xl border-2 ${s.color === 'red' ? 'bg-red-50 border-red-200' : s.color === 'blue' ? 'bg-blue-50 border-blue-200' : 'bg-orange-50 border-orange-200'}`}>
-                    <p className="text-[10px] font-black uppercase opacity-60">{s.label}</p>
-                    <p className="text-xl font-black mt-1">{s.value}</p>
-                  </div>
-                ))}
-              </div>
-
-              <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-6">
-                <h3 className="font-bold text-slate-800 mb-1">Curva de Carga Média Diária</h3>
-                <p className="text-xs text-slate-400 mb-5">Demanda média (kW) ao longo das 24 horas</p>
-                <ResponsiveContainer width="100%" height={220}>
-                  <LineChart data={massaResult.analise.curvaMediaDiaria}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                    <XAxis dataKey="hora" tick={{ fontSize: 11 }} tickFormatter={h => `${String(h).padStart(2,'0')}h`} />
-                    <YAxis tick={{ fontSize: 11 }} unit=" kW" />
-                    <Tooltip formatter={(v: any) => `${Number(v).toFixed(2)} kW`} labelFormatter={l => `${String(l).padStart(2,'0')}:00`} />
-                    <ReferenceLine x={parseInt(postoConfig.hp_inicio)} stroke="#ef4444" strokeDasharray="4 4" label={{ value: "HP", fill: "#ef4444", fontSize: 10 }} />
-                    <ReferenceLine x={parseInt(postoConfig.hp_fim)} stroke="#ef4444" strokeDasharray="4 4" />
-                    <Line type="monotone" dataKey="kw" stroke="#1E3A8A" strokeWidth={2} dot={false} name="Demanda (kW)" />
-                  </LineChart>
-                </ResponsiveContainer>
-                {massaResult.analise.diaCriticoData && (
-                  <p className="text-xs text-slate-500 mt-3">
-                    📌 Dia crítico: <strong>{new Date(massaResult.analise.diaCriticoData).toLocaleDateString('pt-BR')}</strong> — Pico: <strong className="text-red-600">{massaResult.analise.diaCriticoDemandaKW?.toFixed(1)} kW</strong>
-                  </p>
-                )}
-              </div>
-
-              {/* Resumo mensal */}
-              {massaResult.resumoMensal?.length > 0 && (
-                <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-6">
-                  <h3 className="font-bold text-slate-800 mb-5">Demanda Máxima por Mês (HP vs. HFP)</h3>
-                  <ResponsiveContainer width="100%" height={200}>
-                    <BarChart data={massaResult.resumoMensal}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                      <XAxis dataKey="mes" tick={{ fontSize: 10 }} />
-                      <YAxis tick={{ fontSize: 11 }} unit=" kW" />
-                      <Tooltip formatter={(v: any) => `${Number(v).toFixed(1)} kW`} />
-                      <Legend />
-                      <Bar dataKey="maxDemandaHP" name="HP" fill="#ef4444" radius={[3,3,0,0]} />
-                      <Bar dataKey="maxDemandaHFP" name="HFP" fill="#1E3A8A" radius={[3,3,0,0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              )}
-            </>
-          )}
-
           {/* Placeholder quando não há dados */}
           {!analise && !massaResult && (
             <div className="bg-gradient-to-br from-[#0A192F] to-[#1E3A8A] rounded-3xl p-12 text-center text-white">
@@ -471,6 +745,53 @@ export default function AnaliseConsumoPage() {
           )}
         </div>
       </div>
+
+      {/* ── Sticky Flow Navigation Rodapé ─────────────────────────────────────────── */}
+      {(analise || massaResult) && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[40] w-full max-w-4xl px-4 animate-in slide-in-from-bottom-10 duration-500">
+           <div className="bg-[#0A192F] text-white p-4 rounded-3xl shadow-2xl shadow-blue-900/40 border border-white/10 backdrop-blur-md flex items-center justify-between">
+              <div className="flex items-center gap-4 ml-2">
+                 <div className="w-10 h-10 bg-[#00BFA5]/20 rounded-full flex items-center justify-center">
+                    <CheckCircle2 className="w-5 h-5 text-[#00BFA5]" />
+                 </div>
+                 <div>
+                    <p className="text-[10px] font-black text-[#00BFA5] uppercase tracking-widest">Análise Concluída</p>
+                    <p className="text-xs font-bold text-slate-300">Deseja prosseguir para o dimensionamento?</p>
+                 </div>
+              </div>
+
+              <div className="flex gap-3">
+                 {(!projeto || projeto?.tipo === 'SOLAR' || projeto?.tipo === 'HYBRID') && (
+                   <button 
+                     onClick={() => {
+                       const meta = parseFloat(analise?.consumoMedioMensalKWh) || 0;
+                       router.push(`/engenharia/solar?projetoId=${projetoId}&meta=${meta}`);
+                     }}
+                     className="bg-[#00BFA5] hover:bg-[#00a690] text-white px-6 py-2.5 rounded-2xl font-black text-xs flex items-center gap-2 transition-all shadow-lg shadow-emerald-900/20"
+                   >
+                     <Sun className="w-4 h-4" /> Dimensionamento Solar
+                   </button>
+                 )}
+                 {(!projeto || projeto?.tipo === 'BESS' || projeto?.tipo === 'HYBRID') && (
+                   <button 
+                     onClick={() => router.push(`/engenharia/bess?projetoId=${projetoId}`)}
+                     className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-2.5 rounded-2xl font-black text-xs flex items-center gap-2 transition-all shadow-lg shadow-amber-900/20"
+                   >
+                     <Battery className="w-4 h-4" /> Estudo BESS
+                   </button>
+                 )}
+              </div>
+           </div>
+        </div>
+      )}
     </div>
+  );
+}
+
+export default function AnaliseConsumoPage() {
+  return (
+    <Suspense fallback={<div className="flex h-[80vh] items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-[#00BFA5]" /></div>}>
+      <AnaliseConsumoContent />
+    </Suspense>
   );
 }

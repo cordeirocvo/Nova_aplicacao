@@ -6,7 +6,7 @@ export async function GET(req: NextRequest) {
   if (!projetoId) return NextResponse.json({ error: 'projetoId obrigatório' }, { status: 400 });
 
   try {
-    const projeto = await prisma.projetoEngenharia.findUnique({
+    const projeto = await prisma.engeProjeto.findUnique({
       where: { id: projetoId },
       include: {
         analiseFatura: true,

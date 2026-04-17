@@ -32,7 +32,7 @@ export const ReportButton: React.FC<ReportButtonProps> = ({ projetoId, projectNa
   if (!reportData) {
     return (
       <button 
-        onClick={(e) => { e.preventDefault(); fetchReportData(); }}
+        onClick={(e) => { e.preventDefault(); e.stopPropagation(); fetchReportData(); }}
         disabled={loadingData}
         className="flex items-center gap-2 p-2 px-3 text-xs font-bold text-slate-500 hover:text-[#1E3A8A] hover:bg-blue-50 rounded-lg transition-all border border-transparent hover:border-blue-100"
       >
@@ -43,7 +43,7 @@ export const ReportButton: React.FC<ReportButtonProps> = ({ projetoId, projectNa
   }
 
   return (
-    <div onClick={(e) => e.preventDefault()} className="flex items-center gap-2">
+    <div onClick={(e) => { e.stopPropagation(); }} className="flex items-center gap-2">
       <PDFDownloadLink 
         document={<RelatorioPDF data={reportData} />} 
         fileName={`Relatorio_Tecnico_${projectName.replace(/\s+/g, '_')}.pdf`}

@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
 
     if (!estudo) {
       // Se não existe, busca apenas os dados base do projeto para iniciar novo estudo
-      const base = await prisma.projetoEngenharia.findUnique({
+      const base = await prisma.engeProjeto.findUnique({
         where: { id: projetoId },
         include: {
           analiseFatura: true,

@@ -27,18 +27,21 @@ Se algum campo não estiver disponível na fatura, retorne null para ele.
 
 {
   "concessionaria": "nome da distribuidora (ex: CEMIG-D, CPFL, CELESC)",
+  "nomeCliente": "nome completo do titular da conta",
+  "endereco": "endereço completo do imóvel da instalação",
   "numeroInstalacao": "número da instalação/UC",
   "cnpjCpfTitular": "cpf ou cnpj do titular",
   "grupoTarifario": "A ou B",
   "subgrupo": "ex: A4, B3, B1, AS",
   "modalidadeTarifaria": "CONVENCIONAL ou AZUL ou VERDE ou BRANCA",
   "classeConsumo": "Residencial | Comercial | Industrial | Rural | Iluminação Pública",
+  "padraoConexao": "MONOFASICO | BIFASICO | TRIFASICO",
   "tensaoFornecimento": "tensão em kV ou 'baixa tensão'",
   "demandaContratadaKW": número,
   "demandaMedidaHPKW": número,
   "demandaMedidaHFPKW": número,
   "consumoMeses": [
-    {"mes": "YYYY-MM", "kwh": número, "injetadoKWh": número ou 0, "bandeira": "Verde|Amarela|Vermelha 1|Vermelha 2"}
+    {"mes": "MM/YYYY", "kwh": número, "injetadoKWh": número ou 0, "bandeira": "Verde|Amarela|Vermelha 1|Vermelha 2"}
   ],
   "valorUltimaFatura": número em reais,
   "bandeiraTarifaria": "Verde|Amarela|Vermelha 1|Vermelha 2",
@@ -53,6 +56,10 @@ Se algum campo não estiver disponível na fatura, retorne null para ele.
   "geracaoInjetadaKWh": número ou 0
 }
 
+IMPORTANTE PARA CEMIG: O histórico de consumo geralmente fica em uma tabela ou grid com meses abreviados (JAN, FEV, MAR...). Capture os últimos 12 meses.
+O endereço e nome do cliente geralmente ficam no topo da primeira página.
+Capture as tarifas TUSD e TE discriminadas se disponíveis.
+
 Retorne APENAS o JSON, sem texto adicional.`;
 
     let extracted: any = {};
@@ -65,9 +72,15 @@ Retorne APENAS o JSON, sem texto adicional.`;
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         extracted = JSON.parse(jsonMatch[0]);
+      } else {
+        throw new Error("Formato de resposta inválido da IA.");
       }
-    } catch (e) {
-      console.warn('Gemini extração falhou parcialmente:', e);
+    } catch (e: any) {
+      console.error('Gemini extração falhou:', e);
+      if (e?.status === 429 || e?.message?.includes('429')) {
+        return NextResponse.json({ error: 'Limite de requisições do Google atingido. Por favor, aguarde cerca de 1 a 2 minutos e tente novamente.' }, { status: 429 });
+      }
+      return NextResponse.json({ error: 'A IA não conseguiu ler esta fatura. Verifique a qualidade do PDF.' }, { status: 500 });
     }
 
     // ── Classificação tarifária automática ─────────────────────────────────
@@ -108,6 +121,8 @@ Retorne APENAS o JSON, sem texto adicional.`;
       where: { projetoId },
       create: {
         projetoId,
+        nomeCliente: extracted.nomeCliente || null,
+        endereco: extracted.endereco || null,
         concessionaria: extracted.concessionaria || null,
         numeroInstalacao: extracted.numeroInstalacao || null,
         cnpjCpfTitular: extracted.cnpjCpfTitular || null,
@@ -135,6 +150,8 @@ Retorne APENAS o JSON, sem texto adicional.`;
         extraidoPorIA: true,
       },
       update: {
+        nomeCliente: extracted.nomeCliente || undefined,
+        endereco: extracted.endereco || undefined,
         concessionaria: extracted.concessionaria || undefined,
         numeroInstalacao: extracted.numeroInstalacao || undefined,
         grupoTarifario: grupoFinal,

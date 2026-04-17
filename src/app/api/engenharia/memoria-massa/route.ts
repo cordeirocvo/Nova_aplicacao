@@ -40,9 +40,7 @@ export async function POST(req: NextRequest) {
     // Processar memória de massa
     const resultado = processarMemoriaMassa(buffers, postoConfig);
     if (!resultado) {
-      return NextResponse.json({
-        error: 'Não foi possível processar os arquivos. Verifique se são arquivos XLS/XLSX de memória de massa CEMIG.',
-      }, { status: 422 });
+      throw new Error('Nenhum dado válido pôde ser extraído dos arquivos enviados.');
     }
 
     // Salvar no banco
@@ -64,6 +62,9 @@ export async function POST(req: NextRequest) {
         maxDemandaHFP: resultado.maxDemandaHFP,
         maxDemandaHR: resultado.maxDemandaHR,
         maxDemandaTotal: resultado.maxDemandaTotal,
+        maxDemandaTotalData: resultado.maxDemandaTotalData,
+        minDemandaTotal: resultado.minDemandaTotal,
+        minDemandaTotalData: resultado.minDemandaTotalData,
         consumoHP_kWh: resultado.consumoHP_kWh,
         consumoHFP_kWh: resultado.consumoHFP_kWh,
         consumoHR_kWh: resultado.consumoHR_kWh,
@@ -73,6 +74,7 @@ export async function POST(req: NextRequest) {
         diaCriticoData: resultado.diaCriticoData,
         diaCriticoDemandaKW: resultado.diaCriticoDemandaKW,
         diaCriticoCurva: resultado.diaCriticoCurva,
+        mediaDiaCritico: resultado.mediaDiaCritico,
         processado: true,
       },
     });
@@ -84,7 +86,9 @@ export async function POST(req: NextRequest) {
     });
   } catch (error: any) {
     console.error('Erro ao processar memória de massa:', error);
-    return NextResponse.json({ error: error?.message || 'Erro interno' }, { status: 500 });
+    return NextResponse.json({ 
+      error: error?.message || 'Erro ao processar arquivo' 
+    }, { status: 500 });
   }
 }
 

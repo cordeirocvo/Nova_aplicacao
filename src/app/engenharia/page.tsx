@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { BarChart3, Plus, Sun, Battery, BatteryCharging, FileText, Calendar, ChevronRight, Loader2, Zap, Download } from "lucide-react";
 import { ReportButton } from "@/components/engenharia/ReportButton";
 
@@ -19,6 +20,7 @@ const TIPO_COLORS: Record<string, string> = {
 };
 
 export default function EngenhariaPage() {
+  const router = useRouter();
   const [projetos, setProjetos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showNew, setShowNew] = useState(false);
@@ -42,6 +44,9 @@ export default function EngenhariaPage() {
       setProjetos([p, ...projetos]);
       setShowNew(false);
       setNewForm({ nome: "", cliente: "", tipo: "HYBRID" });
+      
+      // Redireciona automaticamente para a primeira fase (Análise de Consumo)
+      router.push(`/engenharia/analise-consumo?projetoId=${p.id}`);
     }
     setSaving(false);
   };
@@ -128,8 +133,11 @@ export default function EngenhariaPage() {
             const Icon = TIPO_ICONS[p.tipo] || Zap;
             const grad = TIPO_COLORS[p.tipo] || "from-slate-500 to-slate-700";
             return (
-              <Link key={p.id} href={`/engenharia/analise-consumo?projetoId=${p.id}`}
-                className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all group">
+              <div 
+                key={p.id} 
+                onClick={() => router.push(`/engenharia/analise-consumo?projetoId=${p.id}`)}
+                className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all group cursor-pointer"
+              >
                 <div className="flex items-center gap-4">
                   <div className={`w-12 h-12 bg-gradient-to-br ${grad} rounded-2xl flex items-center justify-center text-white shadow-md`}>
                     <Icon className="w-6 h-6" />
@@ -165,7 +173,7 @@ export default function EngenhariaPage() {
                   </div>
                   <ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-[#00BFA5] transition-colors" />
                 </div>
-              </Link>
+              </div>
             );
           })}
         </div>

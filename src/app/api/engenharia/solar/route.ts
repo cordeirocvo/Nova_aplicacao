@@ -8,15 +8,20 @@ export async function GET(req: NextRequest) {
   if (action === 'pvgis') {
     const lat = req.nextUrl.searchParams.get('lat');
     const lon = req.nextUrl.searchParams.get('lon');
+    const tilt = req.nextUrl.searchParams.get('tilt') || '0';
+    const azimuth = req.nextUrl.searchParams.get('azimuth') || '0';
+
     if (!lat || !lon) return NextResponse.json({ error: 'Lat/Lon obrigatórios' }, { status: 400 });
     
     try {
-      const url = `https://re.jrc.ec.europa.eu/api/v5_2/MRcalc?lat=${lat}&lon=${lon}&raddatabase=PVGIS-SARAH2&usehorizon=1&outputformat=json`;
+      // PVcalc é mais preciso pois considera temperatura e perdas por reflexão
+      // aspect: 0=South, 90=West, -90=East, 180=North.
+      const url = `https://re.jrc.ec.europa.eu/api/v5_2/PVcalc?lat=${lat}&lon=${lon}&peakpower=1&loss=14&angle=${tilt}&aspect=${azimuth}&outputformat=json`;
       const res = await fetch(url);
       const data = await res.json();
       return NextResponse.json(data);
     } catch (e) {
-      return NextResponse.json({ error: 'Erro ao buscar dados PVGIS' }, { status: 500 });
+      return NextResponse.json({ error: 'Erro ao buscar dados PVcalc' }, { status: 500 });
     }
   }
 
@@ -33,11 +38,11 @@ export async function GET(req: NextRequest) {
     });
 
     if (!estudo) {
-      const base = await prisma.projetoEngenharia.findUnique({
+      const projeto = await prisma.engeProjeto.findUnique({
         where: { id: projetoId },
-        include: { analiseFatura: true }
+        include: { analiseFatura: true, analiseMassa: { take: 1, orderBy: { createdAt: 'desc' } } }
       });
-      return NextResponse.json({ base });
+      return NextResponse.json({ projeto });
     }
 
     return NextResponse.json({ estudo });

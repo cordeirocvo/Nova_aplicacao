@@ -30,11 +30,12 @@ export function calcularPotenciaNecessaria(params: SolarSizingParams): number {
 /**
  * Busca irradiação média mensal (HSP) via API do PVGIS (JRC EU)
  */
-export async function buscarDadosPVGIS(lat: number, lon: number): Promise<{ hspMedia: number; mensal: any[] } | null> {
+export async function buscarDadosPVGIS(lat: number, lon: number, tilt: number = 0, azimuth: number = 0): Promise<{ hspMedia: number; mensal: any[] } | null> {
   try {
     // API MRcalc para médias mentais (HSP)
-    // Usamos raddatabase=PVGIS-SARAH2 para melhor precisão nas Américas
-    const url = `https://re.jrc.ec.europa.eu/api/v5_2/MRcalc?lat=${lat}&lon=${lon}&raddatabase=PVGIS-SARAH2&usehorizon=1&outputformat=json`;
+    // tilt: 0 to 90
+    // azimuth: -180 to 180 (0=S, -90=E, 90=W, 180=N)
+    const url = `https://re.jrc.ec.europa.eu/api/v5_2/MRcalc?lat=${lat}&lon=${lon}&raddatabase=PVGIS-SARAH2&usehorizon=1&angle=${tilt}&aspect=${azimuth}&outputformat=json`;
     const res = await fetch(url);
     if (!res.ok) throw new Error("Erro na API PVGIS");
 

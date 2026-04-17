@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { 
   Battery, Zap, TrendingDown, DollarSign, Loader2, Save, 
@@ -11,7 +11,7 @@ import {
 } from "recharts";
 import { simularPeakShaving, simularTimeShifting, calcularFinanceiroBESS, BESSConfig } from "@/lib/engenharia/bessEngine";
 
-export default function DimensionamentoBESSPage() {
+function BESSContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const projetoId = searchParams.get("projetoId") || "";
@@ -143,6 +143,12 @@ export default function DimensionamentoBESSPage() {
             <Battery className="w-7 h-7" />
           </div>
           <div>
+            <button 
+              onClick={() => router.push(`/engenharia/analise-consumo?projetoId=${projetoId}`)}
+              className="text-[10px] font-black text-slate-400 hover:text-[#1E3A8A] uppercase tracking-widest mb-1 flex items-center gap-1 transition-colors"
+            >
+               ← Voltar para Análise de Consumo
+            </button>
             <h1 className="text-2xl font-black text-slate-800">Dimensionamento BESS</h1>
             <p className="text-slate-500 text-sm">Estudo de Peak Shaving e Time Shifting</p>
           </div>
@@ -230,14 +236,14 @@ export default function DimensionamentoBESSPage() {
                     <span className="text-sm font-black text-[#1E3A8A]">{demandaAlvoKW} kW</span>
                   </div>
                   <input 
-                    type="range" min="0" max={Math.ceil(projetoBase.analiseMassa[0].maxDemandaTotal * 1.2)} step="5"
+                    type="range" min="0" max={Math.ceil((projetoBase?.analiseMassa?.[0]?.maxDemandaTotal || 100) * 1.2)} step="5"
                     className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#00BFA5]"
                     value={demandaAlvoKW}
                     onChange={(e) => setDemandaAlvoKW(parseInt(e.target.value))}
                   />
                   <div className="flex justify-between text-[10px] text-slate-400 mt-1">
                     <span>0 kW</span>
-                    <span>Máx: {Math.ceil(projetoBase.analiseMassa[0].maxDemandaTotal)} kW</span>
+                    <span>Máx: {Math.ceil(projetoBase?.analiseMassa?.[0]?.maxDemandaTotal || 0)} kW</span>
                   </div>
                 </div>
               </div>
@@ -246,12 +252,12 @@ export default function DimensionamentoBESSPage() {
               <div className="p-4 bg-slate-900 rounded-2xl text-white space-y-2">
                 <p className="text-[10px] font-black text-[#00BFA5] uppercase">Capacidade Instalada</p>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-2xl font-black">{config.capacidadeKWh.toFixed(1)}</span>
+                  <span className="text-2xl font-black">{config?.capacidadeKWh?.toFixed(1) || '0.0'}</span>
                   <span className="text-xs opacity-60">kWh</span>
                 </div>
                 <div className="flex justify-between text-[11px] opacity-70">
-                  <span>Potência: {config.potenciaInversorKW}kW</span>
-                  <span>DOD: {(config.dodMax * 100).toFixed(0)}%</span>
+                  <span>Potência: {config?.potenciaInversorKW || 0}kW</span>
+                  <span>DOD: {((config?.dodMax || 0.9) * 100).toFixed(0)}%</span>
                 </div>
               </div>
             </div>
@@ -402,5 +408,13 @@ export default function DimensionamentoBESSPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function DimensionamentoBESSPage() {
+  return (
+    <Suspense fallback={<div className="flex h-[80vh] items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-[#00BFA5]" /></div>}>
+      <BESSContent />
+    </Suspense>
   );
 }

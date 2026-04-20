@@ -99,14 +99,28 @@ function AnaliseConsumoContent() {
     const fd = new FormData();
     fd.append("file", faturaFile);
     fd.append("projetoId", projetoId);
-    const res = await fetch("/api/engenharia/fatura", { method: "POST", body: fd });
-    const data = await res.json();
-    if (!res.ok) { setFaturaError(data.error || "Erro ao processar fatura"); }
-    else { 
-      setTempData(data.extraido); 
-      setIsConfirming(true);
+    
+    try {
+      const res = await fetch("/api/engenharia/fatura", { method: "POST", body: fd });
+      const text = await res.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (err) {
+        throw new Error("O servidor falhou com um erro crítico não-JSON. Tente novamente.");
+      }
+
+      if (!res.ok) { 
+        setFaturaError(data.error || "Erro ao processar fatura"); 
+      } else { 
+        setTempData(data.extraido); 
+        setIsConfirming(true);
+      }
+    } catch (err: any) {
+      setFaturaError(err.message || "Falha na comunicação com o servidor.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   /* ── Upload Massa ──────────────────────────────────────────────────────── */
@@ -229,16 +243,33 @@ function AnaliseConsumoContent() {
               </button>
 
               {analise && (
-                <div className="p-4 bg-green-50 border border-green-200 rounded-2xl space-y-2">
-                  <p className="text-xs font-black text-green-700 uppercase">Dados Extraídos</p>
-                  <p className="text-sm font-bold text-slate-700">{analise.concessionaria || "Concessionária"} — UC {analise.numeroInstalacao || "—"}</p>
-                  <div className="grid grid-cols-2 gap-2 text-xs text-slate-600">
-                    <span><strong>Grupo:</strong> {analise.grupoTarifario || "—"}{analise.subgrupo ? `/${analise.subgrupo}` : ""}</span>
-                    <span><strong>Classe:</strong> {analise.classeConsumo || "—"}</span>
-                    <span><strong>Modalidade:</strong> {analise.modalidadeTarifaria || "—"}</span>
-                    <span><strong>Consumo médio:</strong> {analise.consumoMedioMensalKWh?.toFixed(0) || "—"} kWh/mês</span>
-                    {analise.demandaContratadaKW && <span><strong>Demanda:</strong> {analise.demandaContratadaKW} kW</span>}
-                    {analise.temGeracao && <span className="text-green-600 font-bold col-span-2">⚡ GD detectada: {analise.geracaoTipos}</span>}
+                <div className="p-5 bg-white border border-slate-200 shadow-sm rounded-2xl w-full">
+                  <div className="flex items-center gap-2 mb-4">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                    <h3 className="font-bold text-slate-800 text-sm uppercase">Dados Extraídos para Análise</h3>
+                  </div>
+                  <div className="overflow-x-auto rounded-xl border border-slate-100">
+                    <table className="w-full text-left text-xs bg-slate-50">
+                      <tbody>
+                        {[
+                          ["Instalação", analise.numeroInstalacao],
+                          ["Vencimento", analise.vencimento],
+                          ["Total a Pagar", analise.valorUltimaFatura ? `R$ ${analise.valorUltimaFatura.toFixed(2)}` : null],
+                          ["Demanda Medida (kW)", analise.demandaMedidaHFPKW],
+                          ["Demanda Contratada (kW)", analise.demandaContratadaKW],
+                          ["Energia Reativa (kWh)", analise.energiaAtivaHRKWh],
+                          ["Desconto Irrigante", analise.descontoIrrigante ? `R$ ${analise.descontoIrrigante.toFixed(2)}` : null],
+                          ["CPF/CNPJ Titular", analise.cnpjCpfTitular],
+                          ["Grupo Tarifário", `${analise.grupoTarifario || ""} ${analise.subgrupo ? "/ " + analise.subgrupo : ""}`],
+                          ["Consumo Atual (kWh)", analise.consumoMeses?.[0]?.kwh]
+                        ].filter(item => item[1] !== undefined && item[1] !== null && item[1] !== "").map(([label, value], i) => (
+                          <tr key={i} className="border-b border-slate-100 hover:bg-emerald-50/50 transition-colors">
+                            <td className="py-2 px-3 font-bold text-slate-500 w-1/2">{label}</td>
+                            <td className="py-2 px-3 font-medium text-slate-800 bg-white">{value}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               )}
@@ -753,7 +784,7 @@ function AnaliseConsumoContent() {
               <p className="text-xs text-slate-400 mb-5">kWh consumido da rede vs. energia injetada (GD)</p>
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={consumoMeses.map(m => ({
-                  mes: MESES_PTBR[parseInt(m.mes.split('-')[1]) - 1],
+                  mes: MESES_PTBR[parseInt(m.mes.split('-')[1]) - 1] || m.mes,
                   Consumo: m.kwh,
                   Injetado: m.injetadoKWh || 0,
                 }))}>
@@ -766,13 +797,50 @@ function AnaliseConsumoContent() {
                   <Bar dataKey="Injetado" fill="#00BFA5" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
-              <div className="flex gap-6 mt-4 text-sm text-slate-600">
+              <div className="flex gap-6 mt-4 mb-4 text-sm text-slate-600">
                 <span>Média: <strong className="text-[#1E3A8A]">{(consumoMeses.reduce((s, m) => s + m.kwh, 0) / consumoMeses.length).toFixed(0)} kWh/mês</strong></span>
                 <span>Anual: <strong className="text-[#1E3A8A]">{consumoMeses.reduce((s, m) => s + m.kwh, 0).toFixed(0)} kWh</strong></span>
                 {consumoMeses.some(m => m.injetadoKWh > 0) && (
                   <span className="text-[#00BFA5]">GD injetada: <strong>{consumoMeses.reduce((s, m) => s + (m.injetadoKWh || 0), 0).toFixed(0)} kWh</strong></span>
                 )}
               </div>
+
+              {consumoMeses[0] && (consumoMeses[0] as any).demandaHFP !== undefined && (
+                <div className="mt-6 pt-4 border-t border-slate-100">
+                  <h4 className="text-xs font-black text-slate-800 uppercase mb-3">Tabela Detalhada de Consumo (Dimensionamento)</h4>
+                  <div className="overflow-x-auto border border-slate-200 rounded-xl">
+                    <table className="w-full text-left text-[10px] bg-slate-50 text-slate-600">
+                      <thead className="bg-[#1E3A8A] text-white">
+                        <tr>
+                          <th className="px-3 py-2 font-bold uppercase border-b border-blue-900 border-r">Mês/Ano</th>
+                          <th className="px-3 py-2 font-bold uppercase text-center border-b border-blue-900 border-r" colSpan={2}>Demanda (kW)</th>
+                          <th className="px-3 py-2 font-bold uppercase text-center border-b border-blue-900" colSpan={3}>Energia (kWh)</th>
+                        </tr>
+                        <tr>
+                          <th className="px-3 py-2 bg-blue-800 font-medium border-r border-blue-900"></th>
+                          <th className="px-3 py-2 bg-blue-800 font-medium border-r border-blue-900 text-center">HP</th>
+                          <th className="px-3 py-2 bg-blue-800 font-medium border-r border-blue-900 text-center">HFP</th>
+                          <th className="px-3 py-2 bg-blue-800 font-medium border-r border-blue-900 text-center">HP</th>
+                          <th className="px-3 py-2 bg-blue-800 font-medium border-r border-blue-900 text-center">HFP</th>
+                          <th className="px-3 py-2 bg-blue-800 font-medium text-center">HR</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {consumoMeses.map((m: any, i: number) => (
+                          <tr key={i} className="border-b border-slate-200 hover:bg-emerald-50 transition-colors">
+                            <td className="px-3 py-2 font-bold border-r border-slate-200">{m.mes}</td>
+                            <td className="px-3 py-2 text-center border-r border-slate-200">{m.demandaHP}</td>
+                            <td className="px-3 py-2 text-center font-bold text-[#1E3A8A] border-r border-slate-200">{m.demandaHFP}</td>
+                            <td className="px-3 py-2 text-center border-r border-slate-200">{m.energiaHP}</td>
+                            <td className="px-3 py-2 text-center font-bold text-[#00BFA5] border-r border-slate-200">{m.energiaHFP}</td>
+                            <td className="px-3 py-2 text-center text-amber-600">{m.energiaHR}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

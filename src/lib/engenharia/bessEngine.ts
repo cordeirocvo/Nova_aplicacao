@@ -1,7 +1,9 @@
 /**
  * Engine de Simulação BESS (Battery Energy Storage System)
- * Implementa lógicas de Peak Shaving, Time Shifting e Back-of-the-envelope ROI.
+ * Implementa lógicas de Peak Shaving, Time Shifting e Simulação Dinâmica Horária.
  */
+
+export type BESSStrategy = 'SOLAR_ONLY' | 'HYBRID' | 'ARBITRAGE';
 
 export interface BESSConfig {
   capacidadeKWh: number;
@@ -9,6 +11,17 @@ export interface BESSConfig {
   dodMax: number; // Profundidade de descarga (ex: 0.9 para 90%)
   eficienciaRTE: number; // Round-trip efficiency (ex: 0.85 ou 85%)
   custoSistema: number;
+  estratégia?: BESSStrategy;
+}
+
+export interface BESSSimResult {
+  hora: number;
+  geracaoSolar: number;
+  consumoOriginal: number;
+  consumoComBESS: number;
+  potenciaBateria: number; // + para carga, - para descarga
+  soc: number; // %
+  posto: string;
 }
 
 export interface PeakShavingSim {
@@ -29,6 +42,99 @@ export interface FinanceiroBESS {
   vpl: number;
   tir: number;
   economiaMensalEstimada: number;
+}
+
+/**
+ * Simulação Dinâmica Horária (Energy Balance)
+ * Considera Geração Solar, Consumo e Estratégia BESS
+ */
+export function simularDinamicamenteBESS(
+  curvaConsumo: Array<{ hora: number; kw: number; posto?: string }>,
+  solarKWp: number,
+  hspCity: number,
+  config: BESSConfig
+): { series: BESSSimResult[]; economiaKWh: number; autonomiaHoras: number } {
+  const { capacidadeKWh, potenciaInversorKW, dodMax, eficienciaRTE, estratégia = 'SOLAR_ONLY' } = config;
+  const socMin = (1 - dodMax) * 100;
+  let currentSoC = socMin; // Inicia em SoC Min ou 100 conforme estratégia? Vamos iniciar em SoC Min.
+  if (estratégia === 'ARBITRAGE' || estratégia === 'HYBRID') currentSoC = 100; // Assume carregado da madrugada
+
+  const capUtilKWh = capacidadeKWh * dodMax;
+  const efChg = Math.sqrt(eficienciaRTE); // Aproximação: perdas iguais na carga e descarga
+  const efDis = Math.sqrt(eficienciaRTE);
+
+  const series: BESSSimResult[] = [];
+  let economiaKWh = 0;
+
+  // Gerção Solar Sintética (Bell Curve simplificada)
+  // Total dia = solarKWp * hspCity
+  const solarPerHour = (h: number) => {
+    if (h < 6 || h > 18) return 0;
+    // Função seno para distribuir HSP ao longo das 12h de sol
+    const peak = (solarKWp * hspCity) / 7.6; // 7.6 é aprox integral de sen(x)*12h
+    return peak * Math.sin((Math.PI * (h - 6)) / 12);
+  };
+
+  for (let h = 0; h < 24; h++) {
+    const gen = solarPerHour(h);
+    const cons = curvaConsumo.find(c => c.hora === h)?.kw || 0;
+    const posto = curvaConsumo.find(c => c.hora === h)?.posto || 'HFP';
+    const isHFP = posto === 'HFP' || posto === 'HR';
+
+    let potBat = 0;
+    let net = gen - cons;
+
+    // Lógica de CARGA
+    if (net > 0 || (isHFP && (estratégia === 'HYBRID' || estratégia === 'ARBITRAGE'))) {
+      let chargeLimit = 0;
+      
+      if (net > 0) {
+        // Carga com excedente solar
+        chargeLimit = net;
+      } else if (isHFP && (estratégia === 'HYBRID' || estratégia === 'ARBITRAGE')) {
+        // Carga da rede (se habilitado)
+        chargeLimit = potenciaInversorKW; 
+      }
+
+      const canChargeKWh = ((100 - currentSoC) / 100) * capacidadeKWh / efChg;
+      const actualChgKWh = Math.min(chargeLimit, potenciaInversorKW, canChargeKWh);
+      
+      potBat = actualChgKWh;
+      currentSoC += (actualChgKWh * efChg / capacidadeKWh) * 100;
+      if (currentSoC > 100) currentSoC = 100;
+    } 
+    // Lógica de DESCARGA
+    else if (net < 0) {
+      // Prioridade: Cobrir déficit solar (Auto-consumo) 
+      // e opcionalmente Peak Shaving (se implementado aqui)
+      const canDischargeKWh = ((currentSoC - socMin) / 100) * capacidadeKWh * efDis;
+      const actualDisKWh = Math.min(Math.abs(net), potenciaInversorKW, canDischargeKWh);
+
+      potBat = -actualDisKWh;
+      currentSoC -= (actualDisKWh / efDis / capacidadeKWh) * 100;
+      if (currentSoC < socMin) currentSoC = socMin;
+      
+      economiaKWh += actualDisKWh;
+    }
+
+    const consFinal = Math.max(0, cons - gen + potBat);
+
+    series.push({
+      hora: h,
+      geracaoSolar: parseFloat(gen.toFixed(2)),
+      consumoOriginal: parseFloat(cons.toFixed(2)),
+      consumoComBESS: parseFloat(consFinal.toFixed(2)),
+      potenciaBateria: parseFloat(potBat.toFixed(2)),
+      soc: parseFloat(currentSoC.toFixed(1)),
+      posto
+    });
+  }
+
+  // Autonomia: Horas de descarga se houver queda de energia com consumo médio
+  const mediaCons = series.reduce((acc, s) => acc + s.consumoOriginal, 0) / 24;
+  const autonomia = (capUtilKWh * efDis) / (mediaCons || 1);
+
+  return { series, economiaKWh, autonomiaHoras: parseFloat(autonomia.toFixed(1)) };
 }
 
 /**
@@ -77,8 +183,6 @@ export function simularTimeShifting(
   tarifaHFP: number,
   rte: number
 ): TimeShiftingSim {
-  // Economía por kWh deslocado: (Tarifa Ponta) - (Tarifa Fora Ponta / Eficiência)
-  // Nota: A carga ocorre no HFP, a descarga no HP.
   const economiaPorKWh = tarifaHP - (tarifaHFP / rte);
   const economiaDiaria = Math.max(0, economiaPorKWh * capacidadeUtilKWh);
 
@@ -100,13 +204,11 @@ export function calcularFinanceiroBESS(
   const economiaAnual = economiaMensal * 12;
   const payback = investimento / economiaAnual;
 
-  // Cálculo VPL simplificado
   let vpl = -investimento;
   for (let ano = 1; ano <= vidaUtilAnos; ano++) {
     vpl += economiaAnual / Math.pow(1 + taxaDescontoAnual, ano);
   }
 
-  // TIR Simplificada (Iterativa rápida para fins de UI)
   let tir = 0.1;
   for (let i = 0; i < 20; i++) {
     let npv = -investimento;

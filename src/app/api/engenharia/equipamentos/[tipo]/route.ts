@@ -32,6 +32,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tip
     }
     return NextResponse.json(item, { status: 201 });
   } catch (error: any) {
+    console.error('API ERROR [POST]:', error);
     return NextResponse.json({ error: error?.message }, { status: 500 });
   }
 }

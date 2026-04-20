@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { classificarTarifaria, identificarBandeira } from '@/lib/engenharia/tarifaParser';
+import { extrairDadosCemigRegex } from '@/lib/engenharia/faturaRegexParser';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
@@ -16,10 +17,27 @@ export async function POST(req: NextRequest) {
     }
 
     const bytes = await file.arrayBuffer();
-    const base64 = Buffer.from(bytes).toString('base64');
+    const nodeBuffer = Buffer.from(bytes);
+    const base64 = nodeBuffer.toString('base64');
 
-    // ── Extração via Gemini Vision ─────────────────────────────────────────
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+    // ── Extração Offline Nativa (Regex) ────────────────────────────────────
+    let extracted: any = {};
+    let isCemigRegexSuccess = false;
+    
+    try {
+      const regexData = await extrairDadosCemigRegex(nodeBuffer);
+      // Validamos sucesso se achou pelo menos a Instalação ou Vencimento (fortes indícios)
+      if (regexData && (regexData.numeroInstalacao || regexData.vencimento)) {
+        extracted = regexData;
+        isCemigRegexSuccess = true;
+      }
+    } catch (err) {
+      console.warn("Extração por regex falhou, tentando IA...", err);
+    }
+
+    // ── Extração via Gemini Vision (Fallback ou Complemento) ───────────────
+    if (!isCemigRegexSuccess) {
+      const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
     const prompt = `Você é um especialista em análise de faturas de energia elétrica brasileiras.
 Analise esta fatura e extraia TODOS os dados possíveis no formato JSON exato abaixo.
@@ -75,17 +93,24 @@ Retorne APENAS o JSON, sem texto adicional.`;
       const text = result.response.text().trim();
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
-        extracted = JSON.parse(jsonMatch[0]);
+         extracted = JSON.parse(jsonMatch[0]);
       } else {
-        throw new Error("Formato de resposta inválido da IA.");
+         throw new Error("Formato de resposta inválido da IA.");
       }
     } catch (e: any) {
       console.error('Gemini extração falhou:', e);
       if (e?.status === 429 || e?.message?.includes('429')) {
-        return NextResponse.json({ error: 'Limite de requisições do Google atingido. Por favor, aguarde cerca de 1 a 2 minutos e tente novamente.' }, { status: 429 });
+        // Se a Regex não funcionou E a IA deu cota, não dá pra continuar
+        if (!isCemigRegexSuccess) {
+          return NextResponse.json({ error: 'Limite de requisições do Google atingido e Regex falhou. Aguarde 2 min.' }, { status: 429 });
+        }
+      } else {
+        if (!isCemigRegexSuccess) {
+          return NextResponse.json({ error: 'A IA e o parser não conseguiram ler esta fatura.' }, { status: 500 });
+        }
       }
-      return NextResponse.json({ error: 'A IA não conseguiu ler esta fatura. Verifique a qualidade do PDF.' }, { status: 500 });
     }
+    } // fim do if (!isCemigRegexSuccess)
 
     // ── Classificação tarifária automática ─────────────────────────────────
     const classificacao = classificarTarifaria({
@@ -119,6 +144,19 @@ Retorne APENAS o JSON, sem texto adicional.`;
     const bandeira = extracted.bandeiraTarifaria ||
       identificarBandeira(String(extracted.bandeiraTarifaria || '')) ||
       (consumoMeses[0]?.bandeira) || null;
+
+    // Se houver um Nome do Cliente extraido, também atualizamos o nome do cliente no próprio EngeProjeto
+    const nomeFinal = extracted.nomeCliente ? String(extracted.nomeCliente).trim() : null;
+    if (nomeFinal) {
+      try {
+        await (prisma as any).engeProjeto.update({
+          where: { id: projetoId },
+          data: { cliente: nomeFinal }
+        });
+      } catch (err) {
+        console.warn("Erro ao atualizar o nome do cliente no projeto principal:", err);
+      }
+    }
 
     // ── Salvar no banco ─────────────────────────────────────────────────────
     const analise = await (prisma as any).analiseFatura.upsert({
@@ -241,6 +279,8 @@ export async function PATCH(req: NextRequest) {
       te: Number(rawData.te) || 0,
       temGeracao: temGeracao,
       // Campos de identificação (opcionais)
+      nomeCliente: rawData.nomeCliente,
+      endereco: rawData.endereco,
       numeroInstalacao: rawData.numeroInstalacao,
       cnpjCpfTitular: rawData.cnpjCpfTitular,
       vencimento: rawData.vencimento,
@@ -257,6 +297,18 @@ export async function PATCH(req: NextRequest) {
       create: { projetoId, ...mappedData },
       update: mappedData,
     });
+    
+    // Atualiza nome do Cliente no próprio EngeProjeto a partir das correções manuais no Modal
+    if (mappedData.nomeCliente) {
+      try {
+        await (prisma as any).engeProjeto.update({
+          where: { id: projetoId },
+          data: { cliente: String(mappedData.nomeCliente).trim() }
+        });
+      } catch (err) {
+        console.warn("Erro ao atualizar o nome do cliente no projeto principal pelo PATCH:", err);
+      }
+    }
     
     console.log('SALVAMENTO CONCLUÍDO COM SUCESSO:', analise.id);
     return NextResponse.json(analise);

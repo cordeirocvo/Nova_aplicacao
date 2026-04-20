@@ -9,7 +9,7 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, 
   ResponsiveContainer, ReferenceLine, Legend
 } from "recharts";
-import { simularPeakShaving, simularTimeShifting, calcularFinanceiroBESS, BESSConfig } from "@/lib/engenharia/bessEngine";
+import { simularPeakShaving, simularTimeShifting, calcularFinanceiroBESS, simularDinamicamenteBESS, BESSConfig } from "@/lib/engenharia/bessEngine";
 
 function BESSContent() {
   const searchParams = useSearchParams();
@@ -26,12 +26,14 @@ function BESSContent() {
   const [inversores, setInversores] = useState<any[]>([]);
   
   // Simulation Config
+  const [strategy, setStrategy] = useState<any>('HYBRID');
   const [config, setConfig] = useState<BESSConfig>({
     capacidadeKWh: 100,
     potenciaInversorKW: 50,
     dodMax: 0.9,
     eficienciaRTE: 0.9,
-    custoSistema: 250000
+    custoSistema: 250000,
+    estratégia: 'HYBRID'
   });
 
   const [selectedBateriaId, setSelectedBateriaId] = useState("");
@@ -57,12 +59,15 @@ function BESSContent() {
         const resEstudo = await fetch(`/api/engenharia/bess?projetoId=${projetoId}`);
         if (resEstudo.ok) {
           const d = await resEstudo.json();
-          setProjetoBase(d.base || d.estudo?.projeto);
+          const pBase = d.base || d.estudo?.projeto;
+          setProjetoBase(pBase);
+
           if (d.estudo) {
             setDemandaAlvoKW(d.estudo.demandaAlvoKW || 100);
             setQuantidadeBaterias(d.estudo.quantidadeBaterias || 1);
             setSelectedBateriaId(d.estudo.bateriaId || "");
             setSelectedInversorId(d.estudo.inversorId || "");
+            setStrategy(d.estudo.estratégia || 'HYBRID');
           }
         }
       }
@@ -82,31 +87,38 @@ function BESSContent() {
         capacidadeKWh: (bat?.capacidadeNomKWh || 0) * quantidadeBaterias,
         potenciaInversorKW: inv?.potenciaNominalKW || prev.potenciaInversorKW,
         dodMax: bat?.profundidadeDescarga || 0.9,
-        custoSistema: ((bat?.custoUSD || 0) * 5.2 + (inv?.custoUSD || 0) * 5.2 + 50000) // Mock cost formula
+        estratégia: strategy,
+        custoSistema: ((bat?.custoUSD || 0) * 5.2 + (inv?.custoUSD || 0) * 5.2 + 50000) * 1.5 // Multiplicador para impostos + lucro
       }));
     }
-  }, [selectedBateriaId, selectedInversorId, quantidadeBaterias, baterias, inversores]);
+  }, [selectedBateriaId, selectedInversorId, quantidadeBaterias, baterias, inversores, strategy]);
 
   // Simulation Logic
   const simulacao = useMemo(() => {
     if (!projetoBase?.analiseMassa?.[0]?.curvaMediaDiaria) return null;
     const curva = projetoBase.analiseMassa[0].curvaMediaDiaria as any[];
+    const solarKWp = projetoBase.estudoSolar?.potenciaNecessariaKWp || 0;
+    const hspCity = projetoBase.estudoSolar?.hspCity || 5.0; // Fallback para HSP média BR
     
-    // Peak Shaving
+    // Peak Shaving (Análise Estática Clássica)
     const ps = simularPeakShaving(curva, config, demandaAlvoKW);
     
-    // Time Shifting (if in HP/HFP mode)
+    // Simulação Dinâmica (Energy Balance)
+    const din = simularDinamicamenteBESS(curva, solarKWp, hspCity, config);
+    
+    // Time Shifting
     const fatura = projetoBase.analiseFatura;
     let ts = null;
     if (fatura?.tarifaHP && fatura?.tarifaHFP) {
       ts = simularTimeShifting(config.capacidadeKWh * config.dodMax, fatura.tarifaHP, fatura.tarifaHFP, config.eficienciaRTE);
     }
     
-    // Financials
-    const economiaMensal = (ts?.economiaDiariaBruta || 0) * 22; // Dias úteis
+    // Financials (Usando economia da simulação dinâmica + peak shaving)
+    const econPS = (ps.picoReduzidoKW < demandaAlvoKW ? (ps.demandaAlvoKW - ps.picoReduzidoKW) : 0) * (fatura?.tarifaDemandaHFP || 20); // Valor demanda aproximado
+    const economiaMensal = (din.economiaKWh * (fatura?.tarifaHP || 1.0)) + econPS; 
     const fin = calcularFinanceiroBESS(config.custoSistema, economiaMensal);
 
-    return { ps, ts, fin };
+    return { ps, ts, fin, din };
   }, [projetoBase, config, demandaAlvoKW]);
 
   const handleSave = async () => {
@@ -121,12 +133,13 @@ function BESSContent() {
         bateriaId: selectedBateriaId,
         inversorId: selectedInversorId,
         quantidadeBaterias,
+        estratégia: strategy,
         picoReduzidoKW: simulacao?.ps.picoReduzidoKW,
         economiaMensalBESS: simulacao?.fin.economiaMensalEstimada,
         paybackSimples: simulacao?.fin.paybackAnos,
         vpl: simulacao?.fin.vpl,
         tir: simulacao?.fin.tir,
-        resultadosGrafico: simulacao?.ps.shavedCurve
+        resultadosGrafico: simulacao?.din.series
       })
     });
     setSaving(false);
@@ -231,6 +244,27 @@ function BESSContent() {
                 </div>
 
                 <div className="pt-4 border-t border-slate-50">
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">Estratégia de Carga</label>
+                  <div className="grid grid-cols-1 gap-2">
+                    {[
+                      { id: 'SOLAR_ONLY', label: 'Auto-consumo (Solar)', icon: <Zap className="w-3 h-3"/> },
+                      { id: 'HYBRID', label: 'Híbrido (Solar + Rede HFP)', icon: <Battery className="w-3 h-3"/> },
+                      { id: 'ARBITRAGE', label: 'Arbitragem (Max Grid)', icon: <DollarSign className="w-3 h-3"/> }
+                    ].map(s => (
+                      <button
+                        key={s.id}
+                        onClick={() => setStrategy(s.id)}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] font-bold transition-all border ${
+                          strategy === s.id ? 'bg-[#1E3A8A] text-white border-[#1E3A8A]' : 'bg-slate-50 text-slate-500 border-slate-100 hover:border-slate-300'
+                        }`}
+                      >
+                        {s.icon} {s.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-slate-50">
                   <div className="flex justify-between items-end mb-2">
                     <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">Demanda Alvo (kW)</label>
                     <span className="text-sm font-black text-[#1E3A8A]">{demandaAlvoKW} kW</span>
@@ -301,11 +335,11 @@ function BESSContent() {
                   <p className="text-xl font-black">R$ {simulacao?.fin.economiaMensalEstimada.toLocaleString('pt-BR')}</p>
                 </div>
               </div>
-              <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex items-center gap-4">
+               <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex items-center gap-4">
                 <div className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center text-amber-600"><Zap className="w-5 h-5" /></div>
                 <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase">Energia p/ Shaving</p>
-                  <p className="text-xl font-black">{simulacao?.ps.energiaNecessariaCicloKWh} kWh/dia</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase">Autonomia Estimada</p>
+                  <p className="text-xl font-black">{simulacao?.din.autonomiaHoras} h</p>
                 </div>
               </div>
             </div>
@@ -315,9 +349,9 @@ function BESSContent() {
               <div className="flex items-center justify-between mb-8">
                 <div>
                   <h3 className="font-bold text-slate-800 flex items-center gap-2">
-                    <BarChart3 className="w-5 h-5 text-[#00BFA5]" /> Simulação de Curva Shaved
+                    <BarChart3 className="w-5 h-5 text-[#00BFA5]" /> Simulação Dinâmica BESS
                   </h3>
-                  <p className="text-xs text-slate-400">Visão da demanda original vs. demanda após atuação do BESS</p>
+                  <p className="text-xs text-slate-400">Equilíbrio energético: Solar vs. Consumo vs. Bateria</p>
                 </div>
                 <div className="flex gap-4">
                    <div className="flex items-center gap-1.5"><div className="w-3 h-3 bg-slate-200 rounded-sm" /> <span className="text-[10px] font-bold text-slate-500 uppercase">Original</span></div>
@@ -327,13 +361,17 @@ function BESSContent() {
               
               <div className="h-80 w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={simulacao?.ps.shavedCurve}>
+                  <AreaChart data={simulacao?.din.series}>
                     <defs>
-                      <linearGradient id="colorOrig" x1="0" y1="0" x2="0" y2="1">
+                      <linearGradient id="colorSolar" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#fbbf24" stopOpacity={0.2}/>
+                        <stop offset="95%" stopColor="#fbbf24" stopOpacity={0}/>
+                      </linearGradient>
+                      <linearGradient id="colorCons" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#94a3b8" stopOpacity={0.1}/>
                         <stop offset="95%" stopColor="#94a3b8" stopOpacity={0}/>
                       </linearGradient>
-                      <linearGradient id="colorBess" x1="0" y1="0" x2="0" y2="1">
+                      <linearGradient id="colorSoC" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#00BFA5" stopOpacity={0.3}/>
                         <stop offset="95%" stopColor="#00BFA5" stopOpacity={0}/>
                       </linearGradient>
@@ -344,14 +382,19 @@ function BESSContent() {
                       tick={{ fontSize: 10, fill: '#64748b' }} 
                       tickFormatter={h => `${String(h).padStart(2,'0')}h`}
                     />
-                    <YAxis tick={{ fontSize: 10, fill: '#64748b' }} unit=" kW" />
+                    <YAxis yAxisId="left" tick={{ fontSize: 10, fill: '#64748b' }} unit=" kW" />
+                    <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10, fill: '#64748b' }} unit=" %" domain={[0, 100]} />
+                    
                     <Tooltip 
                       contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
                       labelFormatter={h => `${String(h).padStart(2,'0')}:00`}
                     />
-                    <ReferenceLine y={demandaAlvoKW} stroke="#f43f5e" strokeDasharray="5 5" label={{ value: 'Alvo', fill: '#f43f5e', fontSize: 10, offset: 10, position: 'insideTopLeft' }} />
-                    <Area type="monotone" dataKey="originalKW" stroke="#94a3b8" strokeWidth={1} fillOpacity={1} fill="url(#colorOrig)" name="Demanda Original" />
-                    <Area type="monotone" dataKey="finalKW" stroke="#00BFA5" strokeWidth={3} fillOpacity={1} fill="url(#colorBess)" name="Demanda Shaved" />
+                    <Legend iconType="circle" wrapperStyle={{ fontSize: '10px', fontWeight: 'bold', paddingTop: '10px' }} />
+                    
+                    <Area yAxisId="left" type="monotone" dataKey="geracaoSolar" stroke="#fbbf24" strokeWidth={2} fillOpacity={1} fill="url(#colorSolar)" name="Geração Solar" />
+                    <Area yAxisId="left" type="monotone" dataKey="consumoOriginal" stroke="#94a3b8" strokeWidth={1} fillOpacity={1} fill="url(#colorCons)" name="Carga Total" />
+                    <Area yAxisId="left" type="monotone" dataKey="consumoComBESS" stroke="#1E3A8A" strokeWidth={2} fillOpacity={0} name="Consumo Rede (Final)" />
+                    <Area yAxisId="right" type="monotone" dataKey="soc" stroke="#00BFA5" strokeWidth={3} fillOpacity={1} fill="url(#colorSoC)" name="Nível Bateria (SoC)" />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
@@ -359,8 +402,7 @@ function BESSContent() {
               <div className="mt-8 p-4 bg-slate-50 rounded-2xl flex items-center gap-3">
                  <div className="bg-amber-100 p-2 rounded-lg text-amber-600"><AlertCircle className="w-5 h-5" /></div>
                  <p className="text-xs text-slate-500 leading-relaxed">
-                   <strong>Nota Técnica:</strong> Esta simulação considera descarga constante para manutenção do patamar alvo de <strong>{demandaAlvoKW} kW</strong>. 
-                   A autonomia real depende do SOC da bateria no início do evento e da vida útil residual.
+                   <strong>Nota Técnica:</strong> Esta simulação dinâmica considera a eficiência RTE calculada e a estratégia de carga selecionada (<strong>{strategy}</strong>).
                  </p>
               </div>
             </div>

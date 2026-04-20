@@ -31,15 +31,56 @@ export default function EquipamentosPage() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
+
+    // Lista de campos válidos por modelo (obriga a filtragem para evitar erro de 'Unknown argument' no Prisma)
+    const validFields: Record<string, string[]> = {
+      inversores: ['fabricante', 'modelo', 'potenciaNominalKW', 'tipoConexao', 'tensaoEntradaMinV', 'tensaoEntradaMaxV', 'correnteMaxCC', 'numeroStringsMPPT', 'potenciaMPPTKW', 'tensaoSaidaVAC', 'fatorPotencia', 'eficiencia', 'comunicacao', 'ipBD', 'datasheetUrl', 'fase'],
+      modulos: ['fabricante', 'modelo', 'potenciaPicoWp', 'Vmp', 'Imp', 'Voc', 'Isc', 'eficiencia', 'dimensoes', 'pesoKg', 'coefTempVoc', 'coefTempIsc', 'garantiaAnos', 'datasheetUrl'],
+      baterias: ['fabricante', 'modelo', 'tecnologia', 'capacidadeNomKWh', 'tensaoNominalV', 'profundidadeDescarga', 'ciclosVida', 'correnteMaxCarga', 'correnteMaxDescarga', 'tempOperacaoMin', 'tempOperacaoMax', 'datasheetUrl'],
+      estruturas: ['fabricante', 'modelo', 'tipoTelhado', 'materialEstrutura', 'cargaMaxVentoKNm2', 'modulosMaxFileira', 'anguloMin', 'anguloMax', 'datasheetUrl']
+    };
+
+    const numericFields: Record<string, string[]> = {
+      inversores: ['potenciaNominalKW', 'tensaoEntradaMinV', 'tensaoEntradaMaxV', 'correnteMaxCC', 'numeroStringsMPPT', 'potenciaMPPTKW', 'tensaoSaidaVAC', 'fatorPotencia', 'eficiencia', 'fase'],
+      modulos: ['potenciaPicoWp', 'Vmp', 'Imp', 'Voc', 'Isc', 'eficiencia', 'pesoKg', 'coefTempVoc', 'coefTempIsc', 'garantiaAnos'],
+      baterias: ['capacidadeNomKWh', 'tensaoNominalV', 'profundidadeDescarga', 'ciclosVida', 'correnteMaxCarga', 'correnteMaxDescarga', 'tempOperacaoMin', 'tempOperacaoMax'],
+      estruturas: ['cargaMaxVentoKNm2', 'modulosMaxFileira', 'anguloMin', 'anguloMax']
+    };
+
+    const allowed = validFields[activeTab] || [];
+    const fieldsToConvert = numericFields[activeTab] || [];
+
+    // Cria os dados finais filtrados
+    const finalData: any = {};
+    if (formData.id) finalData.id = formData.id; // Preserva o ID para PATCH
+
+    allowed.forEach(key => {
+      if (formData[key] !== undefined) {
+        let val = formData[key];
+        
+        // Converte se for campo numérico
+        if (fieldsToConvert.includes(key) && val !== null && val !== '') {
+          val = parseFloat(val.toString().replace(',', '.'));
+          if (isNaN(val)) val = null;
+        }
+        
+        finalData[key] = val;
+      }
+    });
+
     const method = formData.id ? "PATCH" : "POST";
     const res = await fetch(`/api/engenharia/equipamentos/${activeTab}`, {
       method,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(formData),
+      body: JSON.stringify(finalData),
     });
+    
     if (res.ok) {
       setShowModal(false);
       fetchData();
+    } else {
+      const err = await res.json();
+      alert(`Erro ao salvar: ${err.error}`);
     }
     setSaving(false);
   };
@@ -51,7 +92,15 @@ export default function EquipamentosPage() {
   };
 
   const openModal = (item?: any) => {
-    setFormData(item || {});
+    if (item) {
+      setFormData(item);
+    } else {
+      const defaults: any = {};
+      if (activeTab === 'baterias') defaults.tecnologia = 'LFP';
+      if (activeTab === 'inversores') defaults.tipoConexao = 'ON_GRID';
+      if (activeTab === 'estruturas') defaults.tipoTelhado = 'CERAMICO';
+      setFormData(defaults);
+    }
     setShowModal(true);
   };
 
@@ -158,7 +207,7 @@ export default function EquipamentosPage() {
                   <>
                     <div>
                       <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Potência Nominal (kW) *</label>
-                      <input required type="number" step="0.01" className="w-full px-4 py-2.5 rounded-xl border border-slate-200" value={formData.potenciaNominalKW || ''} onChange={e => setFormData({ ...formData, potenciaNominalKW: parseFloat(e.target.value) })} />
+                      <input required type="text" className="w-full px-4 py-2.5 rounded-xl border border-slate-200" value={formData.potenciaNominalKW || ''} onChange={e => setFormData({ ...formData, potenciaNominalKW: e.target.value })} />
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Tipo de Conexão *</label>
@@ -166,26 +215,28 @@ export default function EquipamentosPage() {
                         <option value="ON_GRID">ON_GRID</option><option value="OFF_GRID">OFF_GRID</option><option value="HYBRID">HYBRID</option>
                       </select>
                     </div>
-                    <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">Tensao Entrada Max (V)</label><input type="number" className="w-full px-4 py-2.5 rounded-xl border border-slate-200" value={formData.tensaoEntradaMaxV || ''} onChange={e => setFormData({ ...formData, tensaoEntradaMaxV: parseFloat(e.target.value) })} /></div>
-                    <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">Eficiência (%)</label><input type="number" step="0.1" className="w-full px-4 py-2.5 rounded-xl border border-slate-200" value={formData.eficiencia || ''} onChange={e => setFormData({ ...formData, eficiencia: parseFloat(e.target.value) })} /></div>
+                    <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">Tensao Entrada Max (V)</label><input type="text" className="w-full px-4 py-2.5 rounded-xl border border-slate-200" value={formData.tensaoEntradaMaxV || ''} onChange={e => setFormData({ ...formData, tensaoEntradaMaxV: e.target.value })} /></div>
+                    <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">Eficiência (%)</label><input type="text" className="w-full px-4 py-2.5 rounded-xl border border-slate-200" value={formData.eficiencia || ''} onChange={e => setFormData({ ...formData, eficiencia: e.target.value })} /></div>
                   </>
                 )}
 
                 {activeTab === 'modulos' && (
                   <>
-                    <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">Potência Pico (Wp) *</label><input required type="number" className="w-full px-4 py-2.5 rounded-xl border border-slate-200" value={formData.potenciaPicoWp || ''} onChange={e => setFormData({ ...formData, potenciaPicoWp: parseFloat(e.target.value) })} /></div>
-                    <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">Tensão (Voc) *</label><input type="number" step="0.1" className="w-full px-4 py-2.5 rounded-xl border border-slate-200" value={formData.Voc || ''} onChange={e => setFormData({ ...formData, Voc: parseFloat(e.target.value) })} /></div>
-                    <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">Corrente (Isc) *</label><input type="number" step="0.1" className="w-full px-4 py-2.5 rounded-xl border border-slate-200" value={formData.Isc || ''} onChange={e => setFormData({ ...formData, Isc: parseFloat(e.target.value) })} /></div>
-                    <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">Eficiência (%)</label><input type="number" step="0.1" className="w-full px-4 py-2.5 rounded-xl border border-slate-200" value={formData.eficiencia || ''} onChange={e => setFormData({ ...formData, eficiencia: parseFloat(e.target.value) })} /></div>
+                    <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">Potência Pico (Wp) *</label><input required type="text" className="w-full px-4 py-2.5 rounded-xl border border-slate-200" value={formData.potenciaPicoWp || ''} onChange={e => setFormData({ ...formData, potenciaPicoWp: e.target.value })} /></div>
+                    <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">Tensão Aberta (Voc) *</label><input type="text" className="w-full px-4 py-2.5 rounded-xl border border-slate-200" value={formData.Voc || ''} onChange={e => setFormData({ ...formData, Voc: e.target.value })} /></div>
+                    <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">Tensão Nominal (Vmp) *</label><input type="text" className="w-full px-4 py-2.5 rounded-xl border border-slate-200" value={formData.Vmp || ''} onChange={e => setFormData({ ...formData, Vmp: e.target.value })} /></div>
+                    <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">Corrente Curto (Isc) *</label><input type="text" className="w-full px-4 py-2.5 rounded-xl border border-slate-200" value={formData.Isc || ''} onChange={e => setFormData({ ...formData, Isc: e.target.value })} /></div>
+                    <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">Corrente Nominal (Imp)</label><input type="text" className="w-full px-4 py-2.5 rounded-xl border border-slate-200" value={formData.Imp || ''} onChange={e => setFormData({ ...formData, Imp: e.target.value })} /></div>
+                    <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">Eficiência (%)</label><input type="text" className="w-full px-4 py-2.5 rounded-xl border border-slate-200" value={formData.eficiencia || ''} onChange={e => setFormData({ ...formData, eficiencia: e.target.value })} /></div>
                   </>
                 )}
 
                 {activeTab === 'baterias' && (
                   <>
-                    <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">Capacidade Nominal (kWh) *</label><input required type="number" step="0.1" className="w-full px-4 py-2.5 rounded-xl border border-slate-200" value={formData.capacidadeNomKWh || ''} onChange={e => setFormData({ ...formData, capacidadeNomKWh: parseFloat(e.target.value) })} /></div>
+                    <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">Capacidade Nominal (kWh) *</label><input required type="text" className="w-full px-4 py-2.5 rounded-xl border border-slate-200" value={formData.capacidadeNomKWh || ''} onChange={e => setFormData({ ...formData, capacidadeNomKWh: e.target.value })} /></div>
                     <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">Tecnologia *</label><select required className="w-full px-4 py-2.5 rounded-xl border border-slate-200" value={formData.tecnologia || 'LFP'} onChange={e => setFormData({ ...formData, tecnologia: e.target.value })}><option value="LFP">LFP (LiFePO4)</option><option value="NMC">NMC</option><option value="AGM">Chumbo-Ácido (AGM)</option><option value="VRLA">Chumbo-Ácido (VRLA)</option></select></div>
-                    <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">Tensão Nominal (V)</label><input type="number" step="0.1" className="w-full px-4 py-2.5 rounded-xl border border-slate-200" value={formData.tensaoNominalV || ''} onChange={e => setFormData({ ...formData, tensaoNominalV: parseFloat(e.target.value) })} /></div>
-                    <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">Profundidade de Descarga (DOD %)</label><input type="number" step="0.01" max="1" min="0" placeholder="0.80 para 80%" className="w-full px-4 py-2.5 rounded-xl border border-slate-200" value={formData.profundidadeDescarga || ''} onChange={e => setFormData({ ...formData, profundidadeDescarga: parseFloat(e.target.value) })} /></div>
+                    <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">Tensão Nominal (V)</label><input type="text" className="w-full px-4 py-2.5 rounded-xl border border-slate-200" value={formData.tensaoNominalV || ''} onChange={e => setFormData({ ...formData, tensaoNominalV: e.target.value })} /></div>
+                    <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">Profundidade de Descarga (DOD %)</label><input type="text" placeholder="0.80 para 80%" className="w-full px-4 py-2.5 rounded-xl border border-slate-200" value={formData.profundidadeDescarga || ''} onChange={e => setFormData({ ...formData, profundidadeDescarga: e.target.value })} /></div>
                   </>
                 )}
 

@@ -4,7 +4,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { 
   Sun, Zap, MapPin, Settings2, Info, Loader2, Save, 
   ChevronRight, BarChart3, AlertTriangle, CheckCircle2,
-  Maximize2, ArrowRightLeft, Layers, Compass, MoveUp
+  Maximize2, ArrowRightLeft, Layers, Compass, MoveUp, RefreshCw
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, 
@@ -74,56 +74,71 @@ function SolarContent() {
   });
 
   // 1. Carregamento inicial de dados (Projetos e Equipamentos)
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      const [resProj, resMod, resInv] = await Promise.all([
-        fetch("/api/engenharia/projetos"),
-        fetch("/api/engenharia/equipamentos/modulos"),
-        fetch("/api/engenharia/equipamentos/inversores")
-      ]);
-      
-      if (resProj.ok) setProjetos(await resProj.json());
-      if (resMod.ok) setModulos(await resMod.json());
-      if (resInv.ok) setInversores(await resInv.json());
-      
-      if (projetoId) {
-        const metaSugestao = searchParams.get("meta");
-        const resEstudo = await fetch(`/api/engenharia/solar?projetoId=${projetoId}`);
-        if (resEstudo.ok) {
-          const d = await resEstudo.json();
-            const base = d.base || d.estudo?.projeto;
-            setProjetoBase(base);
-            
-            const consumoMedio = base?.analiseFatura?.consumoMedioMensalKWh || 1000;
+  const fetchData = async () => {
+    setLoading(true);
+    const [resProj, resMod, resInv] = await Promise.all([
+      fetch("/api/engenharia/projetos"),
+      fetch("/api/engenharia/equipamentos/modulos"),
+      fetch("/api/engenharia/equipamentos/inversores")
+    ]);
+    
+    if (resProj.ok) setProjetos(await resProj.json());
+    if (resMod.ok) setModulos(await resMod.json());
+    if (resInv.ok) setInversores(await resInv.json());
+    
+    if (projetoId) {
+      const metaSugestao = searchParams.get("meta");
+      const resEstudo = await fetch(`/api/engenharia/solar?projetoId=${projetoId}`);
+      if (resEstudo.ok) {
+        const d = await resEstudo.json();
+          const base = d.base || d.estudo?.projeto;
+          setProjetoBase(base);
+          
+          const consumoMeses = base?.analiseFatura?.consumoMeses || [];
+          let avgHFP = 0;
+          if (consumoMeses.length > 0 && consumoMeses[0].energiaHFP !== undefined) {
+             avgHFP = consumoMeses.reduce((s: number, m: any) => s + (m.energiaHFP || 0), 0) / consumoMeses.length;
+          }
+          const consumoMeta = avgHFP > 0 ? avgHFP : (base?.analiseFatura?.consumoMedioMensalKWh || 1000);
 
-            if (d.estudo) {
-              const e = d.estudo;
-              setConfig({
-                lat: e.lat || -19.91,
-                lon: e.lon || -43.93,
-                hspManual: e.hspManual || 5.2,
-                pr: e.pr || 0.75,
-                perdaSistema: e.perdaSistema || 0.14,
-                metaGeracaoKWh: e.geracaoAlvoKWh || (metaSugestao ? parseFloat(metaSugestao) : consumoMedio),
-                selectedModuloId: e.moduloId || "",
-                selectedInversorId: e.inversorId || "",
-                numStrings: e.numStrings || 1,
-                quantidadeModulos: e.quantidadeModulos || 0,
-                tilt: e.tilt ?? 15,
-                azimuth: e.azimuth ?? 0,
-                overEnclosureAlvo: e.overEnclosureAlvo || 1.40
-              });
-            } else {
-               const meta = metaSugestao ? parseFloat(metaSugestao) : consumoMedio;
-               setConfig(prev => ({ ...prev, metaGeracaoKWh: meta }));
-            }
-        }
+          if (d.estudo) {
+            const e = d.estudo;
+            setConfig({
+              lat: e.lat || -19.91,
+              lon: e.lon || -43.93,
+              hspManual: e.hspManual || 5.2,
+              pr: e.pr || 0.75,
+              perdaSistema: e.perdaSistema || 0.14,
+              metaGeracaoKWh: e.geracaoAlvoKWh || (metaSugestao ? parseFloat(metaSugestao) : consumoMeta),
+              selectedModuloId: e.moduloId || "",
+              selectedInversorId: e.inversorId || "",
+              numStrings: e.numStrings || 1,
+              quantidadeModulos: e.quantidadeModulos || 0,
+              tilt: e.tilt ?? 15,
+              azimuth: e.azimuth ?? 0,
+              overEnclosureAlvo: e.overEnclosureAlvo || 1.40
+            });
+          } else {
+             const meta = metaSugestao ? parseFloat(metaSugestao) : consumoMeta;
+             setConfig(prev => ({ ...prev, metaGeracaoKWh: meta }));
+          }
       }
-      setLoading(false);
-    };
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
     fetchData();
   }, [projetoId]);
+
+  const fetchEquipamentos = async () => {
+    const [resMod, resInv] = await Promise.all([
+      fetch("/api/engenharia/equipamentos/modulos"),
+      fetch("/api/engenharia/equipamentos/inversores")
+    ]);
+    if (resMod.ok) setModulos(await resMod.json());
+    if (resInv.ok) setInversores(await resInv.json());
+  };
 
   // 2. Re-simular PVGIS quando a geometria muda e sugerir inversor se necessário
   useEffect(() => {
@@ -159,19 +174,46 @@ function SolarContent() {
 
   const fetchPvgis = async () => {
     setFetchingPvgis(true);
-    const res = await fetch(`/api/engenharia/solar?action=pvgis&lat=${config.lat}&lon=${config.lon}&tilt=${config.tilt}&azimuth=${config.azimuth}`);
+    const res = await fetch(`/api/engenharia/irradiacao?lat=${config.lat}&lng=${config.lon}`);
     if (res.ok) {
       const data = await res.json();
-      // PVcalc retorna outputs.monthly.fixed com E_m (energia mensal p/ 1kWp)
-      const raw = data.outputs?.monthly?.fixed || [];
+      const raw = data.mensal || [];
       const monthly = raw.map((m: any) => ({
         mes: m.month,
-        hsp: m["H(i)_m"] / 30, // Irradiação no plano inclinado
-        energySpecific: m.E_m, // Energia estimada p/ 1kWp (já considera PR, Temp, IAM)
+        hsp: m["H(i)_m"] / 30,
+        energySpecific: m.E_m,
       }));
-      setPvgisData(monthly);
-      const avgHsp = monthly.reduce((acc: number, cur: any) => acc + cur.hsp, 0) / 12;
-      setConfig(prev => ({ ...prev, hspManual: parseFloat(avgHsp.toFixed(2)) }));
+      if (monthly.length > 0) {
+         setPvgisData(monthly);
+         const avgHsp = data.hsp || (monthly.reduce((acc: number, cur: any) => acc + cur.hsp, 0) / 12);
+         setConfig(prev => ({ ...prev, hspManual: parseFloat(avgHsp.toFixed(2)) }));
+      }
+    } else {
+      alert("Falha na comunicação com PVGIS. Verifique as coordenadas.");
+    }
+    setFetchingPvgis(false);
+  };
+
+  const fetchPvgisPorEndereco = async () => {
+    const endereco = projetoBase?.analiseFatura?.endereco;
+    if (!endereco) return alert("Fatura não possui endereço extraído para geocodificação.");
+    
+    setFetchingPvgis(true);
+    const res = await fetch(`/api/engenharia/irradiacao?endereco=${encodeURIComponent(endereco)}`);
+    if (res.ok) {
+      const data = await res.json();
+      
+      setConfig(prev => ({ ...prev, lat: data.lat, lon: data.lng, hspManual: data.hsp }));
+
+      const raw = data.mensal || [];
+      const monthly = raw.map((m: any) => ({
+        mes: m.month,
+        hsp: m["H(i)_m"] / 30,
+        energySpecific: m.E_m,
+      }));
+      if (monthly.length > 0) setPvgisData(monthly);
+    } else {
+      alert("Não foi possível encontrar a Lat/Long para este endereço.");
     }
     setFetchingPvgis(false);
   };
@@ -238,7 +280,8 @@ function SolarContent() {
 
       const realConsumo = (projetoBase?.analiseFatura?.consumoMeses as any[])?.find((m: any) => {
          if (typeof m.mes === 'string') {
-            const index = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"].indexOf(m.mes);
+            const prefix = m.mes.substring(0, 3).toUpperCase();
+            const index = ["JAN","FEV","MAR","ABR","MAI","JUN","JUL","AGO","SET","OUT","NOV","DEZ"].indexOf(prefix);
             return index + 1 === mesNum;
          }
          return m.mes === mesNum;
@@ -425,13 +468,24 @@ function SolarContent() {
                   </div>
                 </div>
                 
-                <button 
-                  onClick={fetchPvgis} disabled={fetchingPvgis}
-                  className="w-full py-2 bg-amber-50 text-amber-700 border border-amber-200 rounded-xl text-xs font-bold hover:bg-amber-100 flex items-center justify-center gap-2"
-                >
-                  {fetchingPvgis ? <Loader2 className="w-3 h-3 animate-spin" /> : <BarChart3 className="w-3 h-3" />}
-                  Buscar Dados PVGIS
-                </button>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={fetchPvgis} disabled={fetchingPvgis}
+                    className="flex-1 py-2 bg-amber-50 text-amber-700 border border-amber-200 rounded-xl text-[10px] font-bold hover:bg-amber-100 flex items-center justify-center gap-1 uppercase"
+                  >
+                    {fetchingPvgis ? <Loader2 className="w-3 h-3 animate-spin" /> : <BarChart3 className="w-3 h-3" />}
+                    Atualizar p/ Lat/Lng
+                  </button>
+                  {projetoBase?.analiseFatura?.endereco && (
+                    <button 
+                      onClick={fetchPvgisPorEndereco} disabled={fetchingPvgis}
+                      className="flex-1 py-2 bg-[#1E3A8A] text-white rounded-xl text-[10px] font-bold hover:bg-blue-900 flex items-center justify-center gap-1 uppercase"
+                    >
+                      {fetchingPvgis ? <Loader2 className="w-3 h-3 animate-spin" /> : <MapPin className="w-3 h-3" />}
+                      Automático Fatura
+                    </button>
+                  )}
+                </div>
 
                 <div>
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">HSP Diária (Manual)</label>
@@ -504,7 +558,22 @@ function SolarContent() {
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">Meta de Geração (kWh/mês)</label>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">Meta de Geração (kWh/mês)</label>
+                    {projetoBase?.analiseFatura?.consumoMeses?.length > 0 && (
+                      <button 
+                        onClick={() => {
+                          const meses = projetoBase.analiseFatura.consumoMeses;
+                          let avg = meses.reduce((s: number, m: any) => s + (m.energiaHFP || 0), 0) / meses.length;
+                          if (avg === 0) avg = projetoBase.analiseFatura.consumoMedioMensalKWh;
+                          if (avg > 0) setConfig(prev => ({ ...prev, metaGeracaoKWh: Math.round(avg) }));
+                        }}
+                        className="text-[9px] font-black px-2 py-0.5 rounded-full uppercase border bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100"
+                      >
+                        Puxar Média Fatura
+                      </button>
+                    )}
+                  </div>
                   <input type="number" className="w-full px-4 py-2.5 rounded-xl border border-slate-100 bg-slate-50 text-sm font-bold" value={config.metaGeracaoKWh || 0} onChange={e => {
                     const val = parseFloat(e.target.value);
                     setConfig({...config, metaGeracaoKWh: isNaN(val) ? 0 : val});
@@ -544,7 +613,12 @@ function SolarContent() {
 
                 <div>
                    <div className="flex items-center justify-between mb-2">
-                     <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">Módulo Fotovoltaico</label>
+                     <div className="flex items-center gap-2">
+                       <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">Módulo Fotovoltaico</label>
+                       <button onClick={fetchEquipamentos} className="text-[9px] font-black px-1.5 py-0.5 rounded-full uppercase border bg-green-50 text-green-700 border-green-200 hover:bg-green-100">
+                         Atualizar DB
+                       </button>
+                     </div>
                      <button onClick={() => setIsCustomModulo(!isCustomModulo)} className={`text-[9px] font-black px-1.5 py-0.5 rounded-full uppercase border ${isCustomModulo ? 'bg-amber-100 text-amber-700 border-amber-200' : 'text-slate-400 border-slate-200'}`}>
                        {isCustomModulo ? 'Manual' : 'Auto'}
                      </button>
@@ -588,6 +662,16 @@ function SolarContent() {
                            </option>
                          ))}
                        </select>
+                       {calculated.kwpAtual > 0 && (
+                         <div className="p-3 bg-blue-50 border border-blue-100 rounded-2xl">
+                           <p className="text-[10px] font-black text-[#1E3A8A] uppercase tracking-widest flex items-center gap-1 mb-2">
+                             <Zap className="w-3 h-3" /> Potência Sugerida: {calculated.idealAC.toFixed(1)} kW AC
+                           </p>
+                           <p className="text-xs text-slate-500">
+                             Para {calculated.kwpAtual.toFixed(2)} kWp de painéis com FDI alvo de {config.overEnclosureAlvo?.toFixed(2) || '1.40'}.
+                           </p>
+                         </div>
+                       )}
                        {calculated.sugestoes.length > 0 && (
                          <div className="p-3 bg-blue-50 border border-blue-100 rounded-2xl space-y-2">
                             <div className="flex items-center justify-between">
@@ -763,11 +847,20 @@ function SolarContent() {
                 </div>
                 <div className="mt-6 p-4 bg-slate-50 rounded-2xl flex items-center justify-between">
                    <p className="text-xs text-slate-500 font-medium italic">Simulação baseada na inclinação de {config.tilt}° e azimute de {config.azimuth}°.</p>
-                   <div className="text-right">
-                      <p className="text-[10px] font-black text-slate-400 uppercase">Saldo Anual Projetado</p>
-                      <p className={`text-sm font-black ${calculated.monthlyGeneration.reduce((acc, c) => acc + (c.geracao - c.consumo), 0) >= 0 ? 'text-[#00BFA5]' : 'text-red-500'}`}>
-                        {calculated.monthlyGeneration.reduce((acc, c) => acc + (c.geracao - c.consumo), 0).toFixed(0)} kWh
-                      </p>
+                   <div className="text-right flex items-center justify-end gap-4">
+                      <div>
+                        <p className="text-[10px] font-black text-slate-400 uppercase">Saldo Anual Projetado</p>
+                        <p className={`text-sm font-black ${calculated.monthlyGeneration.reduce((acc, c) => acc + (c.geracao - c.consumo), 0) >= 0 ? 'text-[#00BFA5]' : 'text-red-500'}`}>
+                          {calculated.monthlyGeneration.reduce((acc, c) => acc + (c.geracao - c.consumo), 0).toFixed(0)} kWh
+                        </p>
+                      </div>
+                      <button 
+                        onClick={fetchData} 
+                        className="p-2.5 bg-white border border-slate-200 rounded-xl hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200 transition-all shadow-sm" 
+                        title="Recarregar e Atualizar Saldo (Sinc. de Fatura)"
+                      >
+                         <RefreshCw className="w-4 h-4" />
+                      </button>
                    </div>
                 </div>
             </div>

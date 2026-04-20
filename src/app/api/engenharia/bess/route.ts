@@ -12,7 +12,8 @@ export async function GET(req: NextRequest) {
         projeto: {
           include: {
             analiseFatura: true,
-            analiseMassa: { orderBy: { createdAt: 'desc' }, take: 1 }
+            analiseMassa: { orderBy: { createdAt: "desc" }, take: 1 },
+            estudoSolar: true,
           }
         }
       }

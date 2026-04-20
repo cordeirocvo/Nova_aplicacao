@@ -1,0 +1,80 @@
+
+
+Valores Faturados
+Itens da FaturaUnid.Quant.Preço Unit. (R$) Valor (R$)PIS/COFINSBase Calc.Aliq.ICMSTarifa Unit.
+ICMSICMS
+Demanda Ativa HFPkW          1.06424,01052632      25.547,19      1.277,35          0,00          0,00          0,0022,81000000 
+Energia Ativa HFPkWh        170.800 0,52066316      88.929,26      4.446,46          0,00          0,00          0,00 0,49463000 
+Energia Ativa HRkWh        186.200 0,52066316      96.947,47      4.847,37          0,00          0,00          0,00 0,49463000 
+Energia Reativa HFPkWh          1.400 0,33397895         467,56         23,37          0,00          0,00          0,00 0,31728000 
+Desconto Irrigante Noturno    -82.890,09
+TOTAL    129.001,39     10.594,55           0,00          0,00
+Bandeira Vermelha - Já Incluído no valor a pagar      9.292,38
+Histórico de Consumo
+Mês/AnoDemanda(kW)Energia(kWh)
+HPHFPHPHFPHR
+OUT/25       42     1.064        0  170.800  186.200
+SET/25       14       924    1.400  156.800  156.800
+AGO/25       14       882        0  137.200  137.200
+JUL/25       14       770    1.400  107.800  116.200
+JUN/25        0       854        0  107.800   99.400
+MAI/25        0       812        0  121.800  107.800
+ABR/25        0       826    1.400   92.400  102.200
+MAR/25       14       854        0  117.600  119.000
+FEV/25       14       840    1.400  110.600   92.400
+JAN/25       14       812        0   49.000   30.800
+DEZ/24       14       840        0   46.200   26.600
+NOV/24       14       616    1.400   44.800   15.400
+OUT/24       14       840        0   82.600  105.000
+Reservado ao Fisco
+Base de cálculo (R$)Alíquota (%)Valor (R$)
+PASEP211.891,48   0,891.885,83
+COFINS211.891,484,118.708,72
+Fale com CEMIG: 116 - CEMIG Torpedo 29810 - Ouvidoria CEMIG: 0800 7283838 - Agência Nacional de Energia Elétrica - ANEEL - Telefone: 167- Ligação gratuita de telefones fixos e móveis.
+Código de Débito AutomáticoInstalaçãoVencimentoTotal a pagar
+000090018201300900182027/11/2025R$ 129.001,39 
+Outubro/202583670001290-6 01390138001-7 92696289111-1 00090018201-5
+ATENÇÃO:
+DÉBITO AUTOMÁTICO
+Grandezas Contratadas
+Demanda Fora Ponta           1.150
+ASSOC DOS USUARIOS DO PROJETO PIRAPORA
+BOOSTER BR-365 KM 147 R11 99999 FZ
+AREA RURAL
+39270-000 PIRAPORA, MG
+CNPJ 21.367.4**/****-**
+Nº DA INSTALAÇÃO
+3009001820
+Referente aVencimentoValor a pagar (R$)
+OUT/202527/11/2025129.001,39 
+NOTA FISCAL Nº 325145718 - SÉRIE 000
+Data de emissão: 03/11/2025
+Consulte pela chave de acesso em:
+http://www.sped.fazenda.mg.gov.br/spedmg/nf3e
+chave de acesso:
+31251106981180000116660003251457181054353123
+Protocolo de autorização: 1312500350833423
+03.11.2025 às 20:00:03
+ClasseSubclasseModalidade TarifáriaDatas de Leitura
+Rural Serv Publ IrrigTHS Verde A4AnteriorAtualNº de diasPróxima
+ SUDENE/IDENE30/0931/10 3130/11
+DOCUMENTO AUXILIAR DA NOTA FISCAL DE ENERGIA ELÉTRICA ELETRÔNICA
+CEMIG DISTRIBUIÇÃO S.A. CNPJ 06.981.180/0001-16 / INSC. ESTADUAL 062.322136.0087.
+AV. BARBACENA, 1.200 - 17º ANDAR - ALA 1 - BAIRRO SANTO AGOSTINHO
+CEP: 30190-131 - BELO HORIZONTE - MG.TARIFA SOCIAL DE ENERGIA ELÉTRICA - TSEE FOI CRIADA PELA LEI Nº 10.438, DE 26 DE ABRIL DE 2002
+Informações Gerais
+Direito ao desconto do benefício da atividade de irrigação noturna Art. 107º da Resolução ANEEL nº 414.
+Aplicado desconto referente à classe rural. Tarifa vigente conforme Res Aneel nº 3.459, de 20/05/2025. Pela
+legislação tributária, os descontos a que se refere o Decreto Federal 7.891/13 também integram a base de
+cálculo do ICMS, PASEP e COFINS. Conforme DECRETO Nº 46.213, DE 11 DE ABRIL DE 2013, não será
+exigido o recolhimento do ICMS sobre a parcela de Demanda de Potência não utilizada Considerar nota fiscal
+quitada após débito em sua c/c. CEMIG AGRO - ATENDIMENTO RURAL: 08007216600.   Bandeira tarifária
+OUT/2025: Band. Verm. P1/Vermelha       
+NOTIFICAÇÃO DE DÉBITO(S)
+Até 04/11/2025 constava(m) o(s) seguinte(s) débito(s):
+Mês/Ano       Valor (R$)    Débitos que sujeitam ao corte:
+     Mês/Ano   Valor (R$)   Prev. Corte
+A religação estará condicionada à inexistência de débitos
+vencidos na unidade consumidora. No mês em que ocorrer
+suspensão/religação será cobrado, no mínimo, o custo de
+disponibilidade.

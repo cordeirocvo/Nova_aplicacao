@@ -14,8 +14,9 @@ export default function LoginPage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (status === "authenticated" && session?.user) {
-      const role = (session.user as any).role || "USER";
+    if (status === "authenticated" && session && session.user) {
+      const user = session.user as any;
+      const role = user.role || "USER";
       if (role === "TV") {
         window.location.href = "/atividades";
       } else if (role === "USER") {

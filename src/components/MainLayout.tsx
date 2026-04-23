@@ -47,11 +47,14 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    if (session?.user) {
-      const role = (session.user as any)?.role || 'USER';
-      if (role === 'TV' && pathname !== '/atividades') {
+    if (session && session.user) {
+      const user = session.user as any;
+      const role = user.role || 'USER';
+      const path = pathname || '';
+      
+      if (role === 'TV' && path !== '/atividades') {
         window.location.href = '/atividades';
-      } else if (role === 'USER' && pathname !== '/atividades/nova') {
+      } else if (role === 'USER' && path !== '/atividades/nova') {
         window.location.href = '/atividades/nova';
       }
     }
@@ -59,25 +62,34 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
   if (!session) return <>{children}</>;
 
-  const role = (session.user as any)?.role || 'USER';
+  const userObj = session.user as any;
+  const role = userObj.role || 'USER';
   const isTV = role === 'TV';
 
   const toggleSection = (title: string) => {
-    setCollapsedSections(prev => {
+    setCollapsedSections(function(prev) {
       const next = new Set(prev);
-      next.has(title) ? next.delete(title) : next.add(title);
+      if (next.has(title)) {
+        next.delete(title);
+      } else {
+        next.add(title);
+      }
       return next;
     });
   };
 
-  const visibleSections = NAV_SECTIONS.map(s => ({
-    ...s,
-    items: s.items.filter(item => {
-      if (role === 'ADMIN') return true;
-      if (role === 'USER') return item.name === 'Nova Atividade';
-      return false;
-    }),
-  })).filter(s => s.items.length > 0 && !isTV);
+  const visibleSections = NAV_SECTIONS.map(function(s) {
+    return {
+      ...s,
+      items: s.items.filter(function(item) {
+        if (role === 'ADMIN') return true;
+        if (role === 'USER') return item.name === 'Nova Atividade';
+        return false;
+      }),
+    };
+  }).filter(function(s) {
+    return s.items.length > 0 && !isTV;
+  });
 
   return (
     <div className="flex h-screen w-full bg-slate-50 overflow-hidden text-slate-800">

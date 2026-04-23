@@ -46,5 +46,10 @@
     "tailwindcss": "^4",
     "tsx": "^4.21.0",
     "typescript": "^5"
-  }
+  },
+  "browserslist": [
+    "defaults",
+    "chrome >= 53",
+    "not ie 11"
+  ]
 }

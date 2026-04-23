@@ -23,8 +23,8 @@ export async function extrairDadosCemigRegex(fileBuffer: Buffer): Promise<any> {
     // Nome do cliente e endereço
     const numInstLineIndex = texto.indexOf("Nº DA INSTALAÇÃO");
     if (numInstLineIndex !== -1) {
-      const blocoAcima = texto.substring(0, numInstLineIndex).trim().split('\n').map(l => l.trim()).filter(l => l.length > 0);
-      const cnpjIndex = blocoAcima.findIndex(l => l.toUpperCase().includes('CNPJ') || l.toUpperCase().includes('CPF'));
+      const blocoAcima = texto.substring(0, numInstLineIndex).trim().split('\n').map((l: string) => l.trim()).filter((l: string) => l.length > 0);
+      const cnpjIndex = blocoAcima.findIndex((l: string) => l.toUpperCase().includes('CNPJ') || l.toUpperCase().includes('CPF'));
       if (cnpjIndex !== -1) {
         let endIdx = cnpjIndex - 1;
         let startIdx = endIdx;
@@ -47,11 +47,11 @@ export async function extrairDadosCemigRegex(fileBuffer: Buffer): Promise<any> {
     if (instMatch) extracted.numeroInstalacao = instMatch[1].trim();
 
     // Vencimento
-    const vencMatch = texto.match(/(?:Vencimento|VENCIMENTO).*?(\d{2}\/\d{2}\/\d{4})/is);
+    const vencMatch = texto.match(/(?:Vencimento|VENCIMENTO)[\s\S]*?(\d{2}\/\d{2}\/\d{4})/i);
     if (vencMatch) extracted.vencimento = vencMatch[1].trim();
 
     // Total a pagar
-    const totalMatch = texto.match(/R\$\s*([\d\.]+(?:,\d{2})?)/i) || texto.match(/(?:Total a pagar|TOTAL\s+A\s+PAGAR).*?([\d\.]+(?:,\d{2})?)/is);
+    const totalMatch = texto.match(/R\$\s*([\d\.]+(?:,\d{2})?)/i) || texto.match(/(?:Total a pagar|TOTAL\s+A\s+PAGAR)[\s\S]*?([\d\.]+(?:,\d{2})?)/i);
     if (totalMatch) extracted.valorUltimaFatura = parseNumberExtracted(totalMatch[1]);
 
     // Mês de Referência

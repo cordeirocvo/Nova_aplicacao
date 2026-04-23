@@ -14,10 +14,15 @@ export default function LoginPage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (status === "authenticated") {
-      router.replace("/dashboard");
+    if (status === "authenticated" && session?.user) {
+      const role = (session.user as any).role;
+      if (role === "TV") {
+        window.location.href = "/atividades";
+      } else {
+        window.location.href = "/dashboard";
+      }
     }
-  }, [status, router]);
+  }, [status, session]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,7 +39,7 @@ export default function LoginPage() {
       setError("Email ou senha inválidos.");
       setLoading(false);
     } else {
-      router.push("/dashboard");
+      // The useEffect above will handle the redirect once the session validates
     }
   };
 

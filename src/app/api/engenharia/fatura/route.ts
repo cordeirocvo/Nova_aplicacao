@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { classificarTarifaria, identificarBandeira } from '@/lib/engenharia/tarifaParser';
 import { extrairDadosCemigRegex } from '@/lib/engenharia/faturaRegexParser';
+import fs from 'fs/promises';
+import path from 'path';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
@@ -19,6 +21,20 @@ export async function POST(req: NextRequest) {
     const bytes = await file.arrayBuffer();
     const nodeBuffer = Buffer.from(bytes);
     const base64 = nodeBuffer.toString('base64');
+    
+    // ── Salvar Arquivo no File System ──────────────────────────────────────
+    let rawPdfUrl: string | null = null;
+    try {
+      const dirPath = path.join(process.cwd(), 'public', 'uploads', 'engenharia', 'faturas');
+      await fs.mkdir(dirPath, { recursive: true });
+      const safeName = file.name.replace(/[^a-zA-Z0-9.\-]/g, '_');
+      const fileId = `${projetoId}_${Date.now()}_${safeName}`;
+      const filePath = path.join(dirPath, fileId);
+      await fs.writeFile(filePath, nodeBuffer);
+      rawPdfUrl = `/uploads/engenharia/faturas/${fileId}`;
+    } catch (err) {
+      console.warn("Erro ao salvar anexo localmente:", err);
+    }
 
     // ── Extração Offline Nativa (Regex) ────────────────────────────────────
     let extracted: any = {};
@@ -193,6 +209,7 @@ Retorne APENAS o JSON, sem texto adicional.`;
         tarifaDemandaHFP: extracted.tarifaDemandaHFP || null,
         valorUltimaFatura: extracted.valorUltimaFatura || null,
         bandeiraTarifaria: bandeira,
+        rawPdfUrl: rawPdfUrl,
         extraidoPorIA: true,
       },
       update: {
@@ -219,6 +236,7 @@ Retorne APENAS o JSON, sem texto adicional.`;
         tarifaHFP: extracted.tarifaHFP || undefined,
         valorUltimaFatura: extracted.valorUltimaFatura || undefined,
         bandeiraTarifaria: bandeira || undefined,
+        rawPdfUrl: rawPdfUrl !== null ? rawPdfUrl : undefined,
         extraidoPorIA: true,
       },
     });

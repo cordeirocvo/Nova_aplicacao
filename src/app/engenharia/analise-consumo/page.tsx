@@ -244,9 +244,27 @@ function AnaliseConsumoContent() {
 
               {analise && (
                 <div className="p-5 bg-white border border-slate-200 shadow-sm rounded-2xl w-full">
-                  <div className="flex items-center gap-2 mb-4">
-                    <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-                    <h3 className="font-bold text-slate-800 text-sm uppercase">Dados Extraídos para Análise</h3>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                      <h3 className="font-bold text-slate-800 text-sm uppercase">Dados Extraídos para Análise</h3>
+                    </div>
+                    <div className="flex gap-2">
+                      {analise.rawPdfUrl && (
+                         <a href={analise.rawPdfUrl} target="_blank" className="text-[11px] font-bold text-[#1E3A8A] flex items-center gap-1 bg-blue-50 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors">
+                           <ExternalLink className="w-3 h-3" /> Ver Anexo
+                         </a>
+                      )}
+                      <button 
+                        onClick={() => {
+                          setTempData(analise);
+                          setIsConfirming(true);
+                        }} 
+                        className="text-[11px] font-bold text-slate-600 flex items-center gap-1 bg-slate-100 px-3 py-1.5 rounded-lg hover:bg-slate-200 transition-colors"
+                      >
+                         <Edit3 className="w-3 h-3" /> Editar
+                      </button>
+                    </div>
                   </div>
                   <div className="overflow-x-auto rounded-xl border border-slate-100">
                     <table className="w-full text-left text-xs bg-slate-50">

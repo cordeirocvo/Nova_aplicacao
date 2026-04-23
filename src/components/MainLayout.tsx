@@ -34,6 +34,7 @@ const NAV_SECTIONS: NavSection[] = [
       { name: 'Sistema Fotovoltaico', href: '/engenharia/solar', icon: Sun },
       { name: 'Equipamentos', href: '/engenharia/equipamentos', icon: Package },
       { name: 'Carregadores VE', href: '/carregamento', icon: BatteryCharging },
+      { name: 'Dimensionamento Elétrico', href: '/engenharia/eletrica', icon: Zap },
     ],
   },
 ];
@@ -48,9 +49,11 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   useEffect(() => {
     if (session?.user) {
       const role = (session.user as any)?.role;
-      if (role === 'TV' && pathname !== '/atividades') router.replace('/atividades');
+      if (role === 'TV' && pathname !== '/atividades') {
+        window.location.href = '/atividades';
+      }
     }
-  }, [session, pathname, router]);
+  }, [session, pathname]);
 
   if (!session) return <>{children}</>;
 

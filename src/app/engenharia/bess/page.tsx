@@ -24,6 +24,7 @@ function BESSContent() {
   const [projetoBase, setProjetoBase] = useState<any>(null);
   const [baterias, setBaterias] = useState<any[]>([]);
   const [inversores, setInversores] = useState<any[]>([]);
+  const [modulos, setModulos] = useState<any[]>([]);
   
   // Simulation Config
   const [strategy, setStrategy] = useState<any>('HYBRID');
@@ -45,15 +46,17 @@ function BESSContent() {
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
-      const [resProj, resBat, resInv] = await Promise.all([
+      const [resProj, resBat, resInv, resMod] = await Promise.all([
         fetch("/api/engenharia/projetos"),
         fetch("/api/engenharia/equipamentos/baterias"),
-        fetch("/api/engenharia/equipamentos/inversores")
+        fetch("/api/engenharia/equipamentos/inversores"),
+        fetch("/api/engenharia/equipamentos/modulos")
       ]);
       
       if (resProj.ok) setProjetos(await resProj.json());
       if (resBat.ok) setBaterias(await resBat.json());
       if (resInv.ok) setInversores(await resInv.json());
+      if (resMod.ok) setModulos(await resMod.json());
       
       if (projetoId) {
         const resEstudo = await fetch(`/api/engenharia/bess?projetoId=${projetoId}`);
@@ -97,7 +100,14 @@ function BESSContent() {
   const simulacao = useMemo(() => {
     if (!projetoBase?.analiseMassa?.[0]?.curvaMediaDiaria) return null;
     const curva = projetoBase.analiseMassa[0].curvaMediaDiaria as any[];
-    const solarKWp = projetoBase.estudoSolar?.potenciaNecessariaKWp || 0;
+    
+    let solarKWp = 0;
+    if (projetoBase.estudoSolar) {
+       const modId = projetoBase.estudoSolar.moduloId;
+       const mod = modulos.find(m => m.id === modId);
+       const pWp = mod?.potenciaPicoWp || 0;
+       solarKWp = (projetoBase.estudoSolar.quantidadeModulos * pWp) / 1000;
+    }
     const hspCity = projetoBase.estudoSolar?.hspCity || 5.0; // Fallback para HSP média BR
     
     // Peak Shaving (Análise Estática Clássica)
@@ -119,7 +129,7 @@ function BESSContent() {
     const fin = calcularFinanceiroBESS(config.custoSistema, economiaMensal);
 
     return { ps, ts, fin, din };
-  }, [projetoBase, config, demandaAlvoKW]);
+  }, [projetoBase, config, demandaAlvoKW, modulos]);
 
   const handleSave = async () => {
     if (!projetoId) return;
@@ -393,7 +403,7 @@ function BESSContent() {
                     
                     <Area yAxisId="left" type="monotone" dataKey="geracaoSolar" stroke="#fbbf24" strokeWidth={2} fillOpacity={1} fill="url(#colorSolar)" name="Geração Solar" />
                     <Area yAxisId="left" type="monotone" dataKey="consumoOriginal" stroke="#94a3b8" strokeWidth={1} fillOpacity={1} fill="url(#colorCons)" name="Carga Total" />
-                    <Area yAxisId="left" type="monotone" dataKey="consumoComBESS" stroke="#1E3A8A" strokeWidth={2} fillOpacity={0} name="Consumo Rede (Final)" />
+                    <Area yAxisId="left" type="monotone" dataKey="consumoComBESS" stroke="#1E3A8A" strokeWidth={3} strokeDasharray="5 5" fill="none" name="Consumo Rede (Final)" />
                     <Area yAxisId="right" type="monotone" dataKey="soc" stroke="#00BFA5" strokeWidth={3} fillOpacity={1} fill="url(#colorSoC)" name="Nível Bateria (SoC)" />
                   </AreaChart>
                 </ResponsiveContainer>

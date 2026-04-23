@@ -15,9 +15,11 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (status === "authenticated" && session?.user) {
-      const role = (session.user as any).role;
+      const role = (session.user as any).role || "USER";
       if (role === "TV") {
         window.location.href = "/atividades";
+      } else if (role === "USER") {
+        window.location.href = "/atividades/nova";
       } else {
         window.location.href = "/dashboard";
       }

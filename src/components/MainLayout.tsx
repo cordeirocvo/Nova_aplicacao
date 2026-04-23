@@ -48,9 +48,11 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
   useEffect(() => {
     if (session?.user) {
-      const role = (session.user as any)?.role;
+      const role = (session.user as any)?.role || 'USER';
       if (role === 'TV' && pathname !== '/atividades') {
         window.location.href = '/atividades';
+      } else if (role === 'USER' && pathname !== '/atividades/nova') {
+        window.location.href = '/atividades/nova';
       }
     }
   }, [session, pathname]);
@@ -70,7 +72,11 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
   const visibleSections = NAV_SECTIONS.map(s => ({
     ...s,
-    items: s.items.filter(item => !item.adminOnly || role === 'ADMIN'),
+    items: s.items.filter(item => {
+      if (role === 'ADMIN') return true;
+      if (role === 'USER') return item.name === 'Nova Atividade';
+      return false;
+    }),
   })).filter(s => s.items.length > 0 && !isTV);
 
   return (

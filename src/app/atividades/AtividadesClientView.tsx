@@ -77,32 +77,44 @@ export default function AtividadesClientView({ atividades, settings, isAdmin, is
             {currentSlice.map((atv: any) => {
               const isUrgentParecer = atv.daysParecer !== null && atv.daysParecer < settings.limiteParecer;
               
-              let bgColorCss = "hover:bg-slate-50/50 transition-colors h-[65px]";
+              let bgColorCss = "hover:bg-slate-50 transition-colors h-[65px]";
               let diaPrevRender = "-";
+              let inlineStyle = {};
+              let fontColor = "text-slate-600";
               
               if (atv.daysPrev !== null) {
                  if (atv.daysPrev >= settings.limiteVerde) {
-                    bgColorCss = "bg-green-50/60 hover:bg-green-100/50 text-green-900 h-[65px]";
+                    bgColorCss = "bg-green-100 text-green-900 h-[65px]";
+                    if (isTV) inlineStyle = { backgroundColor: '#dcfce7', color: '#14532d' };
                  } else if (atv.daysPrev >= settings.limiteAmarelo) {
-                    bgColorCss = "bg-yellow-50/60 hover:bg-yellow-100/50 text-yellow-900 h-[65px]";
+                    bgColorCss = "bg-yellow-100 text-yellow-900 h-[65px]";
+                    if (isTV) inlineStyle = { backgroundColor: '#fef9c3', color: '#713f12' };
                  } else {
-                    bgColorCss = "bg-red-50/60 hover:bg-red-100/50 text-red-900 h-[65px]";
+                    bgColorCss = "bg-red-100 text-red-900 h-[65px]";
+                    if (isTV) inlineStyle = { backgroundColor: '#fee2e2', color: '#7f1d1d' };
                  }
                  diaPrevRender = `${atv.daysPrev} dias`;
               }
 
               if (atv.prioridade) {
-                 bgColorCss = "animate-[pulse_2s_infinite] bg-purple-600 hover:bg-purple-500 text-white font-medium shadow-md z-20 relative h-[65px]";
+                 bgColorCss = "bg-purple-600 text-white font-medium shadow-md z-20 relative h-[65px]";
+                 if (isTV) {
+                    bgColorCss = "bg-purple-600 text-white font-medium h-[65px] animate-pulse";
+                    inlineStyle = { backgroundColor: '#9333ea', color: '#ffffff' };
+                 }
+                 fontColor = "text-white";
               } else if (atv.atividadeExtra) {
-                 bgColorCss = "bg-[#1E3A8A] hover:bg-[#152e75] text-white font-medium shadow-md z-15 relative h-[65px]";
+                 bgColorCss = "bg-[#1E3A8A] text-white font-medium shadow-md z-15 relative h-[65px]";
+                 if (isTV) inlineStyle = { backgroundColor: '#1E3A8A', color: '#ffffff' };
+                 fontColor = "text-white";
               } else if (isUrgentParecer) {
-                 bgColorCss = "animate-pulse bg-red-600 hover:bg-red-500 text-white font-medium shadow-md z-10 relative h-[65px]";
+                 bgColorCss = "bg-red-600 text-white font-medium shadow-md z-10 relative h-[65px] animate-pulse";
+                 if (isTV) inlineStyle = { backgroundColor: '#dc2626', color: '#ffffff' };
+                 fontColor = "text-white";
               }
 
-              const fontColor = (isUrgentParecer || atv.prioridade || atv.atividadeExtra) ? "text-slate-50" : "text-slate-600";
-
               return (
-                <tr key={atv.id} className={bgColorCss}>
+                <tr key={atv.id} className={bgColorCss} style={inlineStyle}>
                   <td className="px-3 py-3 font-bold leading-tight break-words">
                     {isUrgentParecer && <ShieldAlert className="inline-block w-4 h-4 mr-1 mb-0.5 text-red-200" />}
                     <span className="text-sm">{atv.instalacao || "N/A"}</span>
@@ -121,7 +133,7 @@ export default function AtividadesClientView({ atividades, settings, isAdmin, is
                     {atv.automaticoPrevInstala || "-"}
                   </td>
                   <td className="px-3 py-3">
-                     <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-tighter ${isUrgentParecer ? 'bg-white/20 text-white' : 'bg-[#0A192F]/5 text-[#0A192F]'}`}>
+                     <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-tighter ${ (isUrgentParecer || atv.prioridade || atv.atividadeExtra) ? 'bg-white/20 text-white' : 'bg-[#0A192F]/5 text-[#0A192F]'}`}>
                         {atv.status || "Pendente"}
                      </span>
                   </td>

@@ -20,6 +20,7 @@ export default function NovaAtividadePage() {
     status: "Pendente",
     vendedor: "",
     telefoneCliente: "",
+    telefoneVendedor: "",
     cidade: "",
     dataPrevista: "",
   });
@@ -125,6 +126,11 @@ export default function NovaAtividadePage() {
           <div>
             <label className={labelClass}>Vendedor</label>
             <input type="text" className={inputClass} placeholder="Nome do Vendedor" value={form.vendedor} onChange={e => setForm({...form, vendedor: e.target.value})} />
+          </div>
+
+          <div>
+            <label className={labelClass}>WhatsApp Vendedor (p/ Alarme)</label>
+            <input type="text" className={inputClass} placeholder="+55 (XX) XXXXX-XXXX" value={form.telefoneVendedor} onChange={e => setForm({...form, telefoneVendedor: e.target.value})} />
           </div>
 
           <div>

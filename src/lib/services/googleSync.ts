@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { prisma } from '../prisma';
+import { checkAndSendAlarm } from './whatsappService';
 
 // Aba 'Instalação' padrão via Export CSV (gid=0)
 const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1esS5CGW5uYLHOhLc_Bd1B_0A3_DIYsjcw8wSmy3dvyc/export?format=csv&gid=0';
@@ -47,7 +48,7 @@ export async function syncGoogleSheets() {
         arr.slice(i * size, i * size + size)
       );
 
-    const chunkedRows = chunkArray(dataRows, 30);
+    const chunkedRows = chunkArray(dataRows, 50);
 
     for (const chunk of chunkedRows) {
       await Promise.all(chunk.map(async (row) => {
@@ -64,7 +65,7 @@ export async function syncGoogleSheets() {
 
         // Upsert into Local DB
         try {
-          await prisma.planilhaInstalacao.upsert({
+          const updated = await prisma.planilhaInstalacao.upsert({
             where: { idInterno: idInterno },
             update: {
               instalacao: row[1],
@@ -115,6 +116,8 @@ export async function syncGoogleSheets() {
               dataSolicitacao: new Date(),
             },
           });
+
+          await checkAndSendAlarm(updated.id);
         } catch (e) {
            console.error("Erro upsert planilha", e);
         }

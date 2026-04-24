@@ -54,6 +54,8 @@ model PlanilhaInstalacao {
   updatedAt             DateTime @updatedAt
   atividadeExtra        Boolean  @default(false)
   prioridade            Boolean  @default(false)
+  telefoneVendedor      String?
+  notificadoWhatsapp     Boolean  @default(false)
 
   @@index([idInterno])
 }

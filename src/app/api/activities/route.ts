@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { checkAndSendAlarm } from "@/lib/services/whatsappService";
 
 export async function POST(req: Request) {
   try {
@@ -18,11 +19,14 @@ export async function POST(req: Request) {
         telefoneCliente: data.telefoneCliente,
         cidade: data.cidade,
         dataPrevista: data.dataPrevista,
+        telefoneVendedor: data.telefoneVendedor,
         anexoFotos: data.anexoFotos || [],
         anexoArquivos: data.anexoArquivos || [],
         manualInstalacao: true // Identifies it as internally created, not synced
       }
     });
+
+    await checkAndSendAlarm(newActivity.id);
 
     return NextResponse.json(newActivity, { status: 201 });
   } catch (error) {

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { checkAndSendAlarm } from "@/lib/services/whatsappService";
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -19,10 +20,13 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         cidade: body.cidade,
         diaPrev: body.diaPrev,
         automaticoPrevInstala: body.automaticoPrevInstala,
+        telefoneVendedor: body.telefoneVendedor,
         anexoFotos: body.anexoFotos,
         anexoArquivos: body.anexoArquivos,
       },
     });
+
+    await checkAndSendAlarm(id);
 
     return NextResponse.json({ success: true, atividade });
   } catch (error) {

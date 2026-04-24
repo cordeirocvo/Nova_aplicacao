@@ -20,6 +20,7 @@ export default function EditForm({ initialData, statuses }: { initialData: any, 
     status: initialData.status || "Pendente",
     vendedor: initialData.vendedor || initialData.vendedorSheet || "",
     telefoneCliente: initialData.telefoneCliente || initialData.telefoneSheet || "",
+    telefoneVendedor: initialData.telefoneVendedor || "",
     cidade: initialData.cidade || initialData.cidadeSheet || "",
     diaPrev: initialData.diaPrev || "",
     automaticoPrevInstala: initialData.automaticoPrevInstala || "",
@@ -143,6 +144,11 @@ export default function EditForm({ initialData, statuses }: { initialData: any, 
           <div>
             <label className={labelClass}>Vendedor</label>
             <input type="text" className={inputClass} value={form.vendedor} onChange={e => setForm({...form, vendedor: e.target.value})} />
+          </div>
+
+          <div>
+             <label className={labelClass}>WhatsApp Vendedor (p/ Alarme)</label>
+             <input type="text" className={inputClass} value={form.telefoneVendedor} onChange={e => setForm({...form, telefoneVendedor: e.target.value})} placeholder="+55 (XX) XXXXX-XXXX" />
           </div>
 
           <div>

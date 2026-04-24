@@ -60,39 +60,53 @@ export default function AtividadesClientView({ atividades, settings, isAdmin, is
   // TV View - Render ONLY the table to avoid duplication and use inline styles for safety
   if (isTV) {
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden relative" style={{ display: 'block', backgroundColor: '#ffffff' }}>
-        <table className="w-full text-[13px] text-left table-fixed" style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead className="text-[11px] text-slate-500 uppercase bg-slate-50/80 border-b border-slate-100" style={{ backgroundColor: '#f8fafc' }}>
+      <div 
+        className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden relative" 
+        style={{ 
+          display: 'block', 
+          backgroundColor: '#ffffff', 
+          borderRadius: '12px', 
+          border: '1px solid #e2e8f0', 
+          overflow: 'hidden', 
+          position: 'relative',
+          boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
+        }}
+      >
+        <table 
+          style={{ 
+            width: '100%', 
+            borderCollapse: 'collapse', 
+            textAlign: 'left', 
+            fontSize: '13px',
+            tableLayout: 'fixed'
+          }}
+        >
+          <thead style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
             <tr>
-              <th className="w-1/4 px-3 py-3 font-bold tracking-wider">Cliente / Instalação</th>
-              <th className="w-[100px] px-3 py-3 font-bold tracking-wider">Atraso</th>
-              <th className="px-3 py-3 font-bold tracking-wider">Observações</th>
-              <th className="w-[120px] px-3 py-3 font-bold tracking-wider">Venc. Parecer</th>
-              <th className="w-[120px] px-3 py-3 font-bold tracking-wider">Prev. Instala</th>
-              <th className="w-[110px] px-3 py-3 font-bold tracking-wider">Status</th>
+              <th style={{ width: '25%', padding: '12px', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '11px', color: '#64748b' }}>Cliente / Instalação</th>
+              <th style={{ width: '100px', padding: '12px', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '11px', color: '#64748b' }}>Atraso</th>
+              <th style={{ padding: '12px', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '11px', color: '#64748b' }}>Observações</th>
+              <th style={{ width: '120px', padding: '12px', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '11px', color: '#64748b' }}>Venc. Parecer</th>
+              <th style={{ width: '120px', padding: '12px', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '11px', color: '#64748b' }}>Prev. Instala</th>
+              <th style={{ width: '110px', padding: '12px', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '11px', color: '#64748b' }}>Status</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody>
             {currentSlice.map((atv: any) => {
               const isUrgentParecer = atv.daysParecer !== null && atv.daysParecer < settings.limiteParecer;
               
-              let bgColorCss = "h-[65px]";
               let diaPrevRender = "-";
-              let inlineStyle: any = { height: '65px' };
-              let fontColor = "text-slate-600";
+              let inlineStyle: any = { height: '65px', borderBottom: '1px solid #f1f5f9' };
               let fontColorHex = "#475569";
               
               if (atv.daysPrev !== null) {
                  if (atv.daysPrev >= settings.limiteVerde) {
-                    bgColorCss = "bg-green-100 text-green-900 h-[65px]";
                     inlineStyle = { ...inlineStyle, backgroundColor: '#dcfce7', color: '#14532d' };
                     fontColorHex = "#14532d";
                  } else if (atv.daysPrev >= settings.limiteAmarelo) {
-                    bgColorCss = "bg-yellow-100 text-yellow-900 h-[65px]";
                     inlineStyle = { ...inlineStyle, backgroundColor: '#fef9c3', color: '#713f12' };
                     fontColorHex = "#713f12";
                  } else {
-                    bgColorCss = "bg-red-100 text-red-900 h-[65px]";
                     inlineStyle = { ...inlineStyle, backgroundColor: '#fee2e2', color: '#7f1d1d' };
                     fontColorHex = "#7f1d1d";
                  }
@@ -100,43 +114,47 @@ export default function AtividadesClientView({ atividades, settings, isAdmin, is
               }
 
               if (atv.prioridade) {
-                 bgColorCss = "bg-purple-600 text-white font-medium h-[65px] animate-pulse";
                  inlineStyle = { ...inlineStyle, backgroundColor: '#9333ea', color: '#ffffff' };
-                 fontColor = "text-white";
                  fontColorHex = "#ffffff";
               } else if (atv.atividadeExtra) {
-                 bgColorCss = "bg-[#1E3A8A] text-white font-medium h-[65px]";
                  inlineStyle = { ...inlineStyle, backgroundColor: '#1E3A8A', color: '#ffffff' };
-                 fontColor = "text-white";
                  fontColorHex = "#ffffff";
               } else if (isUrgentParecer) {
-                 bgColorCss = "bg-red-600 text-white font-medium h-[65px] animate-pulse";
                  inlineStyle = { ...inlineStyle, backgroundColor: '#dc2626', color: '#ffffff' };
-                 fontColor = "text-white";
                  fontColorHex = "#ffffff";
               }
 
               return (
-                <tr key={atv.id} className={bgColorCss} style={inlineStyle}>
-                  <td className="px-3 py-3 font-bold leading-tight break-words">
-                    {isUrgentParecer && <ShieldAlert className="inline-block w-4 h-4 mr-1 mb-0.5" style={{ color: '#fecaca' }} />}
-                    <span className="text-sm">{atv.instalacao || "N/A"}</span>
+                <tr key={atv.id} style={inlineStyle}>
+                  <td style={{ padding: '12px', fontWeight: 'bold', wordWrap: 'break-word' }}>
+                    {isUrgentParecer && <ShieldAlert className="inline-block w-4 h-4 mr-1 mb-0.5" style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '4px', color: '#fecaca' }} />}
+                    <span style={{ fontSize: '14px' }}>{atv.instalacao || "N/A"}</span>
                     <TagToggler id={atv.id} prioridade={atv.prioridade} atividadeExtra={atv.atividadeExtra} isAdmin={!!isAdmin} />
                   </td>
-                  <td className="px-3 py-3 font-black text-xs">
+                  <td style={{ padding: '12px', fontWeight: '900', fontSize: '12px' }}>
                     {diaPrevRender}
                   </td>
-                  <td className={`px-3 py-3 text-[12px] leading-tight line-clamp-2 ${fontColor}`} style={{ color: fontColorHex }} title={atv.obsInstalacao || ""}>
+                  <td style={{ padding: '12px', fontSize: '12px', lineHeight: '1.2', color: fontColorHex, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'normal' }}>
                     {atv.obsInstalacao || "-"}
                   </td>
-                  <td className={`px-3 py-3 font-medium whitespace-nowrap ${fontColor}`} style={{ color: fontColorHex }}>
+                  <td style={{ padding: '12px', fontWeight: '500', whiteSpace: 'nowrap', color: fontColorHex }}>
                     {atv.vencimentoParecer || "-"}
                   </td>
-                  <td className={`px-3 py-3 font-medium whitespace-nowrap ${fontColor}`} style={{ color: fontColorHex }}>
+                  <td style={{ padding: '12px', fontWeight: '500', whiteSpace: 'nowrap', color: fontColorHex }}>
                     {atv.automaticoPrevInstala || "-"}
                   </td>
-                  <td className="px-3 py-3">
-                     <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-tighter ${ (isUrgentParecer || atv.prioridade || atv.atividadeExtra) ? 'bg-white/20 text-white' : 'bg-[#0A192F]/5 text-[#0A192F]'}`}>
+                  <td style={{ padding: '12px' }}>
+                     <span style={{ 
+                       display: 'inline-flex', 
+                       alignItems: 'center', 
+                       padding: '2px 8px', 
+                       borderRadius: '6px', 
+                       fontSize: '10px', 
+                       fontWeight: 'bold', 
+                       textTransform: 'uppercase',
+                       backgroundColor: (isUrgentParecer || atv.prioridade || atv.atividadeExtra) ? 'rgba(255,255,255,0.2)' : 'rgba(10,25,47,0.05)',
+                       color: (isUrgentParecer || atv.prioridade || atv.atividadeExtra) ? '#ffffff' : '#0A192F'
+                     }}>
                         {atv.status || "Pendente"}
                      </span>
                   </td>
@@ -148,13 +166,13 @@ export default function AtividadesClientView({ atividades, settings, isAdmin, is
 
         {/* Rodapé de Paginação da TV */}
         {totalPages > 1 && (
-          <div className="bg-slate-100 px-4 py-2 text-center border-t border-slate-200 flex justify-center items-center" style={{ backgroundColor: '#f1f5f9', display: 'flex', justifyContent: 'center' }}>
-             <div className="flex" style={{ display: 'flex' }}>
+          <div style={{ backgroundColor: '#f1f5f9', padding: '8px 16px', textAlign: 'center', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+             <div style={{ display: 'flex' }}>
                {Array.from({ length: totalPages }).map((_, i) => (
-                 <div key={i} className={`h-2 w-2 rounded-full transition-all mr-1 ${currentPage === i ? 'bg-[#00BFA5] scale-125' : 'bg-slate-300'}`} style={{ backgroundColor: currentPage === i ? '#00BFA5' : '#cbd5e1', width: '8px', height: '8px', borderRadius: '50%', marginRight: '4px' }} />
+                 <div key={i} style={{ backgroundColor: currentPage === i ? '#00BFA5' : '#cbd5e1', width: '8px', height: '8px', borderRadius: '50%', marginRight: '4px' }} />
                ))}
              </div>
-             <span className="text-xs font-bold text-slate-500 ml-3" style={{ fontSize: '12px', marginLeft: '12px' }}>Página {currentPage + 1} de {totalPages}</span>
+             <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#64748b', marginLeft: '12px' }}>Página {currentPage + 1} de {totalPages}</span>
           </div>
         )}
       </div>

@@ -60,7 +60,7 @@ export default function AtividadesClientView({ atividades, settings, isAdmin, is
   return (
     <>
       {/* Table Desktop / TV View */}
-      <div className="hidden lg:block bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden relative">
+      <div className={`${isTV ? 'block' : 'hidden lg:block'} bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden relative`}>
         <table className="w-full text-[13px] text-left table-fixed">
           <thead className="text-[11px] text-slate-500 uppercase bg-slate-50/80 border-b border-slate-100">
             <tr>
@@ -159,19 +159,19 @@ export default function AtividadesClientView({ atividades, settings, isAdmin, is
 
         {/* Rodapé de Paginação da TV */}
         {isTV && totalPages > 1 && (
-          <div className="bg-slate-100 px-4 py-2 text-center border-t border-slate-200 flex justify-center items-center gap-2">
-             <div className="flex space-x-1">
+          <div className="bg-slate-100 px-4 py-2 text-center border-t border-slate-200 flex justify-center items-center">
+             <div className="flex">
                {Array.from({ length: totalPages }).map((_, i) => (
-                 <div key={i} className={`h-2 w-2 rounded-full transition-all ${currentPage === i ? 'bg-[#00BFA5] scale-125' : 'bg-slate-300'}`} />
+                 <div key={i} className={`h-2 w-2 rounded-full transition-all mr-1 ${currentPage === i ? 'bg-[#00BFA5] scale-125' : 'bg-slate-300'}`} />
                ))}
              </div>
-             <span className="text-xs font-bold text-slate-500 ml-2">Página {currentPage + 1} de {totalPages}</span>
+             <span className="text-xs font-bold text-slate-500 ml-3">Página {currentPage + 1} de {totalPages}</span>
           </div>
         )}
       </div>
 
       {/* Mobile Card View (and Tablet/Laptop) */}
-      <div className="lg:hidden grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+      <div className={`${isTV ? 'hidden' : 'lg:hidden'} grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4`}>
         {currentSlice.map((atv: any) => {
           const isUrgentParecer = atv.daysParecer !== null && atv.daysParecer < settings.limiteParecer;
           let urgencyColor = "border-slate-100 bg-white";

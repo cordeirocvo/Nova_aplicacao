@@ -96,22 +96,25 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
       {/* TV Header */}
       {isTV && (
-        <div className="fixed top-0 w-full h-14 bg-[#0A192F] text-white flex items-center justify-between px-6 z-50 shadow-lg">
-          <div className="flex items-center gap-3">
-            <img src="/logo.png" alt="Logo" className="h-7 object-contain" />
+        <div className="fixed top-0 left-0 right-0 w-full h-14 bg-[#0A192F] text-white flex items-center justify-between px-6 z-50 shadow-lg" style={{ top: 0, left: 0, right: 0 }}>
+          <div className="flex items-center">
+            <img src="/logo.png" alt="Logo" className="h-7 object-contain mr-3" />
             <span className="font-bold">Cordeiro Energia | Monitoramento TV</span>
           </div>
-          <button onClick={() => signOut({ callbackUrl: '/login' })} className="flex items-center gap-2 px-3 py-1.5 bg-red-500/20 text-red-400 hover:bg-red-500/30 rounded-lg text-sm font-medium">
-            <LogOut className="w-4 h-4" /> Sair
+          <button 
+            onClick={() => signOut({ callbackUrl: '/login' })} 
+            className="flex items-center px-3 py-1.5 bg-red-500/20 text-red-400 hover:bg-red-500/30 rounded-lg text-sm font-medium"
+          >
+            <LogOut className="w-4 h-4 mr-2" /> Sair
           </button>
         </div>
       )}
 
       {/* Mobile Header */}
       {!isTV && (
-        <div className="md:hidden fixed top-0 w-full h-16 bg-[#0A192F] text-white flex items-center justify-between px-4 z-40 shadow-md">
-          <div className="flex items-center gap-2 font-bold text-lg">
-            <img src="/logo.png" alt="Logo" className="h-8 object-contain" />
+        <div className="md:hidden fixed top-0 left-0 right-0 w-full h-16 bg-[#0A192F] text-white flex items-center justify-between px-4 z-40 shadow-md">
+          <div className="flex items-center font-bold text-lg">
+            <img src="/logo.png" alt="Logo" className="h-8 object-contain mr-2" />
             <span>Cordeiro Energia</span>
           </div>
           <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2">
@@ -123,11 +126,11 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       {/* Sidebar */}
       {!isTV && (
         <aside className={clsx(
-          "fixed md:static inset-y-0 left-0 z-50 w-64 bg-[#0A192F] text-slate-300 transition-transform duration-300 ease-in-out flex flex-col",
+          "fixed md:static top-0 bottom-0 left-0 z-50 w-64 bg-[#0A192F] text-slate-300 transition-transform duration-300 ease-in-out flex flex-col",
           isMobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         )}>
-          <div className="h-16 hidden md:flex items-center gap-3 px-6 bg-[#081324] border-b border-slate-800">
-            <img src="/logo.png" alt="Logo" className="h-8 object-contain" />
+          <div className="h-16 hidden md:flex items-center px-6 bg-[#081324] border-b border-slate-800">
+            <img src="/logo.png" alt="Logo" className="h-8 object-contain mr-3" />
             <span className="text-white font-bold text-xl tracking-tight">Cordeiro</span>
           </div>
 
@@ -141,8 +144,8 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                     onClick={() => toggleSection(section.title)}
                     className="w-full flex items-center justify-between px-2 py-1.5 mb-1 rounded-lg hover:bg-slate-800/30 transition-colors"
                   >
-                    <div className="flex items-center gap-2">
-                      {isEng && <Zap className="w-3 h-3 text-[#00BFA5]" />}
+                    <div className="flex items-center">
+                      {isEng && <Zap className="w-3 h-3 text-[#00BFA5] mr-2" />}
                       <span className={clsx("text-[10px] font-black uppercase tracking-widest", isEng ? "text-[#00BFA5]" : "text-slate-500")}>
                         {section.title}
                       </span>
@@ -161,13 +164,13 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                             href={disabled ? '#' : item.href}
                             onClick={() => { if (!disabled) setIsMobileMenuOpen(false); }}
                             className={clsx(
-                              "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group",
+                              "flex items-center px-3 py-2.5 rounded-xl transition-all duration-200 group",
                               isActive ? "bg-[#1E3A8A] text-white font-medium shadow-md shadow-blue-900/20"
                                 : disabled ? "opacity-40 cursor-not-allowed"
                                 : "hover:bg-slate-800/50 hover:text-white"
                             )}
                           >
-                            <item.icon className={clsx("w-4 h-4 shrink-0", isActive ? "text-[#00BFA5]" : "text-slate-400 group-hover:text-[#00BFA5]")} />
+                            <item.icon className={clsx("w-4 h-4 shrink-0 mr-3", isActive ? "text-[#00BFA5]" : "text-slate-400 group-hover:text-[#00BFA5]")} />
                             <span className="text-sm flex-1">{item.name}</span>
                             {item.badge && (
                               <span className="text-[9px] font-black bg-slate-700 text-slate-400 px-1.5 py-0.5 rounded-full uppercase">
@@ -186,8 +189,8 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
           </div>
 
           <div className="p-4 bg-[#081324] border-t border-slate-800">
-            <div className="flex items-center gap-3 px-3 py-2 mb-3">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#1E3A8A] to-[#00BFA5] flex items-center justify-center text-white font-bold text-sm">
+            <div className="flex items-center px-3 py-2 mb-3">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#1E3A8A] to-[#00BFA5] flex items-center justify-center text-white font-bold text-sm mr-3">
                 {session?.user?.name?.charAt(0) || session?.user?.email?.charAt(0) || 'U'}
               </div>
               <div className="flex flex-col truncate">
@@ -195,8 +198,8 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                 <span className="text-xs text-slate-500">{role}</span>
               </div>
             </div>
-            <button onClick={() => signOut({ callbackUrl: '/login' })} className="w-full flex items-center gap-3 px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-lg transition-colors">
-              <LogOut className="w-4 h-4" /> Sair
+            <button onClick={() => signOut({ callbackUrl: '/login' })} className="w-full flex items-center px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-lg transition-colors">
+              <LogOut className="w-4 h-4 mr-3" /> Sair
             </button>
           </div>
         </aside>
@@ -209,7 +212,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       </main>
 
       {isMobileMenuOpen && !isTV && (
-        <div className="fixed inset-0 bg-slate-900/60 z-40 md:hidden backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)} />
+        <div className="fixed top-0 left-0 right-0 bottom-0 bg-slate-900/60 z-40 md:hidden backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)} />
       )}
     </div>
   );

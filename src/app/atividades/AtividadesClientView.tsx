@@ -57,10 +57,115 @@ export default function AtividadesClientView({ atividades, settings, isAdmin, is
     );
   }
 
+  // TV View - Render ONLY the table to avoid duplication and use inline styles for safety
+  if (isTV) {
+    return (
+      <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden relative" style={{ display: 'block', backgroundColor: '#ffffff' }}>
+        <table className="w-full text-[13px] text-left table-fixed" style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead className="text-[11px] text-slate-500 uppercase bg-slate-50/80 border-b border-slate-100" style={{ backgroundColor: '#f8fafc' }}>
+            <tr>
+              <th className="w-1/4 px-3 py-3 font-bold tracking-wider">Cliente / Instalação</th>
+              <th className="w-[100px] px-3 py-3 font-bold tracking-wider">Atraso</th>
+              <th className="px-3 py-3 font-bold tracking-wider">Observações</th>
+              <th className="w-[120px] px-3 py-3 font-bold tracking-wider">Venc. Parecer</th>
+              <th className="w-[120px] px-3 py-3 font-bold tracking-wider">Prev. Instala</th>
+              <th className="w-[110px] px-3 py-3 font-bold tracking-wider">Status</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {currentSlice.map((atv: any) => {
+              const isUrgentParecer = atv.daysParecer !== null && atv.daysParecer < settings.limiteParecer;
+              
+              let bgColorCss = "h-[65px]";
+              let diaPrevRender = "-";
+              let inlineStyle: any = { height: '65px' };
+              let fontColor = "text-slate-600";
+              let fontColorHex = "#475569";
+              
+              if (atv.daysPrev !== null) {
+                 if (atv.daysPrev >= settings.limiteVerde) {
+                    bgColorCss = "bg-green-100 text-green-900 h-[65px]";
+                    inlineStyle = { ...inlineStyle, backgroundColor: '#dcfce7', color: '#14532d' };
+                    fontColorHex = "#14532d";
+                 } else if (atv.daysPrev >= settings.limiteAmarelo) {
+                    bgColorCss = "bg-yellow-100 text-yellow-900 h-[65px]";
+                    inlineStyle = { ...inlineStyle, backgroundColor: '#fef9c3', color: '#713f12' };
+                    fontColorHex = "#713f12";
+                 } else {
+                    bgColorCss = "bg-red-100 text-red-900 h-[65px]";
+                    inlineStyle = { ...inlineStyle, backgroundColor: '#fee2e2', color: '#7f1d1d' };
+                    fontColorHex = "#7f1d1d";
+                 }
+                 diaPrevRender = `${atv.daysPrev} dias`;
+              }
+
+              if (atv.prioridade) {
+                 bgColorCss = "bg-purple-600 text-white font-medium h-[65px] animate-pulse";
+                 inlineStyle = { ...inlineStyle, backgroundColor: '#9333ea', color: '#ffffff' };
+                 fontColor = "text-white";
+                 fontColorHex = "#ffffff";
+              } else if (atv.atividadeExtra) {
+                 bgColorCss = "bg-[#1E3A8A] text-white font-medium h-[65px]";
+                 inlineStyle = { ...inlineStyle, backgroundColor: '#1E3A8A', color: '#ffffff' };
+                 fontColor = "text-white";
+                 fontColorHex = "#ffffff";
+              } else if (isUrgentParecer) {
+                 bgColorCss = "bg-red-600 text-white font-medium h-[65px] animate-pulse";
+                 inlineStyle = { ...inlineStyle, backgroundColor: '#dc2626', color: '#ffffff' };
+                 fontColor = "text-white";
+                 fontColorHex = "#ffffff";
+              }
+
+              return (
+                <tr key={atv.id} className={bgColorCss} style={inlineStyle}>
+                  <td className="px-3 py-3 font-bold leading-tight break-words">
+                    {isUrgentParecer && <ShieldAlert className="inline-block w-4 h-4 mr-1 mb-0.5" style={{ color: '#fecaca' }} />}
+                    <span className="text-sm">{atv.instalacao || "N/A"}</span>
+                    <TagToggler id={atv.id} prioridade={atv.prioridade} atividadeExtra={atv.atividadeExtra} isAdmin={!!isAdmin} />
+                  </td>
+                  <td className="px-3 py-3 font-black text-xs">
+                    {diaPrevRender}
+                  </td>
+                  <td className={`px-3 py-3 text-[12px] leading-tight line-clamp-2 ${fontColor}`} style={{ color: fontColorHex }} title={atv.obsInstalacao || ""}>
+                    {atv.obsInstalacao || "-"}
+                  </td>
+                  <td className={`px-3 py-3 font-medium whitespace-nowrap ${fontColor}`} style={{ color: fontColorHex }}>
+                    {atv.vencimentoParecer || "-"}
+                  </td>
+                  <td className={`px-3 py-3 font-medium whitespace-nowrap ${fontColor}`} style={{ color: fontColorHex }}>
+                    {atv.automaticoPrevInstala || "-"}
+                  </td>
+                  <td className="px-3 py-3">
+                     <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-tighter ${ (isUrgentParecer || atv.prioridade || atv.atividadeExtra) ? 'bg-white/20 text-white' : 'bg-[#0A192F]/5 text-[#0A192F]'}`}>
+                        {atv.status || "Pendente"}
+                     </span>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+
+        {/* Rodapé de Paginação da TV */}
+        {totalPages > 1 && (
+          <div className="bg-slate-100 px-4 py-2 text-center border-t border-slate-200 flex justify-center items-center" style={{ backgroundColor: '#f1f5f9', display: 'flex', justifyContent: 'center' }}>
+             <div className="flex" style={{ display: 'flex' }}>
+               {Array.from({ length: totalPages }).map((_, i) => (
+                 <div key={i} className={`h-2 w-2 rounded-full transition-all mr-1 ${currentPage === i ? 'bg-[#00BFA5] scale-125' : 'bg-slate-300'}`} style={{ backgroundColor: currentPage === i ? '#00BFA5' : '#cbd5e1', width: '8px', height: '8px', borderRadius: '50%', marginRight: '4px' }} />
+               ))}
+             </div>
+             <span className="text-xs font-bold text-slate-500 ml-3" style={{ fontSize: '12px', marginLeft: '12px' }}>Página {currentPage + 1} de {totalPages}</span>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Desktop/Mobile View
   return (
     <>
-      {/* Table Desktop / TV View */}
-      <div className={`${isTV ? 'block' : 'hidden lg:block'} bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden relative`}>
+      {/* Table Desktop View */}
+      <div className="hidden lg:block bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden relative">
         <table className="w-full text-[13px] text-left table-fixed">
           <thead className="text-[11px] text-slate-500 uppercase bg-slate-50/80 border-b border-slate-100">
             <tr>
@@ -85,31 +190,22 @@ export default function AtividadesClientView({ atividades, settings, isAdmin, is
               if (atv.daysPrev !== null) {
                  if (atv.daysPrev >= settings.limiteVerde) {
                     bgColorCss = "bg-green-100 text-green-900 h-[65px]";
-                    if (isTV) inlineStyle = { backgroundColor: '#dcfce7', color: '#14532d' };
                  } else if (atv.daysPrev >= settings.limiteAmarelo) {
                     bgColorCss = "bg-yellow-100 text-yellow-900 h-[65px]";
-                    if (isTV) inlineStyle = { backgroundColor: '#fef9c3', color: '#713f12' };
                  } else {
                     bgColorCss = "bg-red-100 text-red-900 h-[65px]";
-                    if (isTV) inlineStyle = { backgroundColor: '#fee2e2', color: '#7f1d1d' };
                  }
                  diaPrevRender = `${atv.daysPrev} dias`;
               }
 
               if (atv.prioridade) {
                  bgColorCss = "bg-purple-600 text-white font-medium shadow-md z-20 relative h-[65px]";
-                 if (isTV) {
-                    bgColorCss = "bg-purple-600 text-white font-medium h-[65px] animate-pulse";
-                    inlineStyle = { backgroundColor: '#9333ea', color: '#ffffff' };
-                 }
                  fontColor = "text-white";
               } else if (atv.atividadeExtra) {
                  bgColorCss = "bg-[#1E3A8A] text-white font-medium shadow-md z-15 relative h-[65px]";
-                 if (isTV) inlineStyle = { backgroundColor: '#1E3A8A', color: '#ffffff' };
                  fontColor = "text-white";
               } else if (isUrgentParecer) {
                  bgColorCss = "bg-red-600 text-white font-medium shadow-md z-10 relative h-[65px] animate-pulse";
-                 if (isTV) inlineStyle = { backgroundColor: '#dc2626', color: '#ffffff' };
                  fontColor = "text-white";
               }
 
@@ -156,22 +252,10 @@ export default function AtividadesClientView({ atividades, settings, isAdmin, is
             })}
           </tbody>
         </table>
-
-        {/* Rodapé de Paginação da TV */}
-        {isTV && totalPages > 1 && (
-          <div className="bg-slate-100 px-4 py-2 text-center border-t border-slate-200 flex justify-center items-center">
-             <div className="flex">
-               {Array.from({ length: totalPages }).map((_, i) => (
-                 <div key={i} className={`h-2 w-2 rounded-full transition-all mr-1 ${currentPage === i ? 'bg-[#00BFA5] scale-125' : 'bg-slate-300'}`} />
-               ))}
-             </div>
-             <span className="text-xs font-bold text-slate-500 ml-3">Página {currentPage + 1} de {totalPages}</span>
-          </div>
-        )}
       </div>
 
-      {/* Mobile Card View (and Tablet/Laptop) */}
-      <div className={`${isTV ? 'hidden' : 'lg:hidden'} grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4`}>
+      {/* Mobile Card View */}
+      <div className="lg:hidden grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
         {currentSlice.map((atv: any) => {
           const isUrgentParecer = atv.daysParecer !== null && atv.daysParecer < settings.limiteParecer;
           let urgencyColor = "border-slate-100 bg-white";

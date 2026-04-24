@@ -92,20 +92,27 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   });
 
   return (
-    <div className="flex h-screen w-full bg-slate-50 overflow-hidden text-slate-800">
+    <div 
+      className="flex h-screen w-full bg-slate-50 overflow-hidden text-slate-800" 
+      style={isTV ? { display: 'flex', height: '100vh', width: '100%', overflow: 'hidden', backgroundColor: '#f8fafc' } : {}}
+    >
 
       {/* TV Header */}
       {isTV && (
-        <div className="fixed top-0 left-0 right-0 w-full h-14 bg-[#0A192F] text-white flex items-center justify-between px-6 z-50 shadow-lg" style={{ top: 0, left: 0, right: 0 }}>
-          <div className="flex items-center">
-            <img src="/logo.png" alt="Logo" className="h-7 object-contain mr-3" />
+        <div 
+          className="fixed top-0 left-0 right-0 w-full h-14 bg-[#0A192F] text-white flex items-center justify-between px-6 z-50 shadow-lg" 
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, height: '56px', backgroundColor: '#0A192F', display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingLeft: '24px', paddingRight: '24px', zIndex: 100 }}
+        >
+          <div className="flex items-center" style={{ display: 'flex', alignItems: 'center' }}>
+            <img src="/logo.png" alt="Logo" className="h-7 object-contain mr-3" style={{ height: '28px', marginRight: '12px' }} />
             <span className="font-bold">Cordeiro Energia | Monitoramento TV</span>
           </div>
           <button 
             onClick={() => signOut({ callbackUrl: '/login' })} 
             className="flex items-center px-3 py-1.5 bg-red-500/20 text-red-400 hover:bg-red-500/30 rounded-lg text-sm font-medium"
+            style={{ display: 'flex', alignItems: 'center', backgroundColor: 'rgba(239, 68, 68, 0.2)', color: '#f87171', border: 'none', borderRadius: '8px', padding: '6px 12px', cursor: 'pointer' }}
           >
-            <LogOut className="w-4 h-4 mr-2" /> Sair
+            <LogOut className="w-4 h-4 mr-2" style={{ width: '16px', height: '16px', marginRight: '8px' }} /> Sair
           </button>
         </div>
       )}
@@ -205,8 +212,14 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         </aside>
       )}
 
-      <main className={clsx("flex-1 flex flex-col min-w-0 overflow-y-auto", isTV ? "pt-14" : "pt-16 md:pt-0")}>
-        <div className={clsx("flex-1", isTV ? "p-0" : "p-4 md:p-8")}>
+      <main 
+        className={clsx("flex-1 flex flex-col min-w-0 overflow-y-auto", isTV ? "pt-14" : "pt-16 md:pt-0")}
+        style={isTV ? { flex: 1, display: 'flex', flexDirection: 'column', paddingTop: '56px', overflowY: 'auto' } : {}}
+      >
+        <div 
+          className={clsx("flex-1", isTV ? "p-0" : "p-4 md:p-8")}
+          style={isTV ? { flex: 1, padding: 0 } : {}}
+        >
           {children}
         </div>
       </main>

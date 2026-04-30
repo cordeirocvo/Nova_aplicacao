@@ -42,6 +42,7 @@ export interface FinanceiroBESS {
   vpl: number;
   tir: number;
   economiaMensalEstimada: number;
+  lcos?: number; // Levelized Cost of Storage (R$/kWh)
 }
 
 /**
@@ -198,6 +199,7 @@ export function simularTimeShifting(
 export function calcularFinanceiroBESS(
   investimento: number,
   economiaMensal: number,
+  energiaDescarregadaDiariaKWh: number = 0,
   vidaUtilAnos: number = 10,
   taxaDescontoAnual: number = 0.12
 ): FinanceiroBESS {
@@ -219,10 +221,181 @@ export function calcularFinanceiroBESS(
     tir = tir + (npv / investimento) * 0.1;
   }
 
+  // Cálculo do LCOS (Levelized Cost of Storage)
+  // LCOS Simplificado = Investimento / Somatório(Energia Descarregada Descontada)
+  let lcos = 0;
+  if (energiaDescarregadaDiariaKWh > 0) {
+     const energiaAnual = energiaDescarregadaDiariaKWh * 365;
+     let energiaDescontadaTotal = 0;
+     for (let ano = 1; ano <= vidaUtilAnos; ano++) {
+        energiaDescontadaTotal += energiaAnual / Math.pow(1 + taxaDescontoAnual, ano);
+     }
+     lcos = investimento / energiaDescontadaTotal;
+  }
+
   return {
     paybackAnos: parseFloat(payback.toFixed(1)),
     vpl: parseFloat(vpl.toFixed(2)),
     tir: parseFloat((tir * 100).toFixed(2)),
-    economiaMensalEstimada: parseFloat(economiaMensal.toFixed(2))
+    economiaMensalEstimada: parseFloat(economiaMensal.toFixed(2)),
+    lcos: lcos > 0 ? parseFloat(lcos.toFixed(2)) : undefined
+  };
+}
+
+/**
+ * Simulação BESS de Alta Precisão (Minuto a Minuto - 1440 pontos/dia)
+ * Permite capturar transições exatas e limites de potência na ordem de minutos.
+ */
+export interface BESSMinutoResult {
+  minutoDoDia: number; // 0 a 1439
+  horaFormatada: string;
+  geracaoSolarKW: number;
+  consumoOriginalKW: number;
+  consumoRedeKW: number;
+  potenciaBateriaKW: number; // + Carga, - Descarga
+  soc: number; // %
+}
+
+export function simularBESSMinutoAMinuto(
+  curvaConsumoHoraria: Array<{ hora: number; kw: number }>,
+  solarKWp: number,
+  hspCity: number,
+  config: BESSConfig & { standbyLossesKW?: number }
+): { series: BESSMinutoResult[]; energiaInjetadaRedeKWh: number; energiaImportadaRedeKWh: number; ciclosEstimadosDia: number } {
+  const { capacidadeKWh, potenciaInversorKW, dodMax, eficienciaRTE, estratégia = 'HYBRID', standbyLossesKW = 0.1 } = config;
+  
+  const socMin = (1 - dodMax) * 100;
+  let currentSoCKWh = (socMin / 100) * capacidadeKWh; 
+  if (estratégia === 'ARBITRAGE' || estratégia === 'HYBRID') {
+    currentSoCKWh = capacidadeKWh; // Começa o dia em 100% (assumindo carga noturna)
+  }
+
+  const efChg = Math.sqrt(eficienciaRTE);
+  const efDis = Math.sqrt(eficienciaRTE);
+
+  const series: BESSMinutoResult[] = [];
+  let totalInjetadoKWh = 0;
+  let totalImportadoKWh = 0;
+  let totalDescargakWh = 0; // Para calcular ciclos
+
+  // Helper para curva solar contínua inspirada em Clear Sky (pvlib)
+  // Utiliza seno elevado a 1.5 para uma curva mais sino/realista que o seno puro.
+  const solarPerMinute = (minuto: number) => {
+    const horaDecimal = minuto / 60;
+    const nascerSol = 6.0;
+    const porDoSol = 18.0;
+    if (horaDecimal < nascerSol || horaDecimal > porDoSol) return 0;
+    
+    // Normaliza o tempo do dia entre 0 e PI
+    const tNorm = Math.PI * ((horaDecimal - nascerSol) / (porDoSol - nascerSol));
+    
+    // Fator de escala para garantir que a integral(G) = hspCity * solarKWp
+    // Integral de sin(x)^1.5 de 0 a PI é aprox 1.75.
+    // Duração do dia = 12 horas.
+    const peakPower = (solarKWp * hspCity * Math.PI) / (12 * 1.75);
+    
+    return peakPower * Math.pow(Math.sin(tNorm), 1.5);
+  };
+
+  // Interpolação Linear de Consumo
+  const consumoPerMinute = (minuto: number) => {
+    const horaFloor = Math.floor(minuto / 60);
+    const horaNext = (horaFloor + 1) % 24;
+    const fraction = (minuto % 60) / 60;
+    
+    const kwA = curvaConsumoHoraria.find(c => c.hora === horaFloor)?.kw || 0;
+    const kwB = curvaConsumoHoraria.find(c => c.hora === horaNext)?.kw || kwA; // Assume kwA se não achar o próximo
+    
+    return kwA + (kwB - kwA) * fraction;
+  };
+
+  const deltaHoras = 1 / 60; // 1 minuto em horas
+
+  for (let m = 0; m < 1440; m++) {
+    const genKW = solarPerMinute(m);
+    const consKW = consumoPerMinute(m);
+    const isHFP = m < (17 * 60) || m >= (20 * 60); // Simplificação de Ponta (17h-20h)
+
+    let netKW = genKW - consKW;
+    let potBatKW = 0;
+
+    // Carga
+    if (netKW > 0 || (isHFP && (estratégia === 'HYBRID' || estratégia === 'ARBITRAGE'))) {
+      let chargeLimitKW = 0;
+      if (netKW > 0) {
+         chargeLimitKW = netKW; // Carrega com excedente solar
+      } else if (isHFP && (estratégia === 'HYBRID' || estratégia === 'ARBITRAGE')) {
+         chargeLimitKW = potenciaInversorKW; // Carrega da rede no HFP se não estiver cheio
+      }
+
+      // Quanto posso carregar fisicamente?
+      const capDisponivelKWh = capacidadeKWh - currentSoCKWh;
+      const powerLimitToFullKW = (capDisponivelKWh / efChg) / deltaHoras;
+      
+      // Simulação da Fase CV (Constant Voltage) a partir de 80% de SoC
+      let dynamicChargeLimit = potenciaInversorKW;
+      const socPerc = currentSoCKWh / capacidadeKWh;
+      if (socPerc > 0.8) {
+         // Fator de degradação linear: 100% de potência a 80%, reduzindo a 0% a 100% de SoC.
+         const throttleFactor = Math.max(0, (1.0 - socPerc) / 0.2);
+         dynamicChargeLimit = potenciaInversorKW * throttleFactor;
+      }
+      
+      const actualChgKW = Math.max(0, Math.min(chargeLimitKW, dynamicChargeLimit, powerLimitToFullKW));
+      
+      potBatKW = actualChgKW;
+      currentSoCKWh += actualChgKW * efChg * deltaHoras;
+    } 
+    // Descarga
+    else if (netKW < 0) {
+      const deficitKW = Math.abs(netKW);
+      
+      // Quanto posso descarregar fisicamente?
+      const capMinKWh = (socMin / 100) * capacidadeKWh;
+      const energyAvailKWh = currentSoCKWh - capMinKWh;
+      const powerLimitToEmptyKW = (energyAvailKWh * efDis) / deltaHoras;
+
+      const actualDisKW = Math.max(0, Math.min(deficitKW, potenciaInversorKW, powerLimitToEmptyKW));
+      
+      potBatKW = -actualDisKW;
+      currentSoCKWh -= (actualDisKW / efDis) * deltaHoras;
+      totalDescargakWh += (actualDisKW / efDis) * deltaHoras;
+    }
+
+    // Calcular o fluxo de rede final (Grid)
+    // Consumo Final = ConsumoOriginal - Geracao + PotenciaBateria(Carga=+, Descarga=-)
+    const consumoRedeInstKW = consKW - genKW + potBatKW;
+
+    if (consumoRedeInstKW > 0) {
+      totalImportadoKWh += consumoRedeInstKW * deltaHoras;
+    } else {
+      totalInjetadoKWh += Math.abs(consumoRedeInstKW) * deltaHoras;
+    }
+
+    // Aplicação de Perdas em Stand-by (IEC 62933) - Auto-consumo eletrônico do Inversor/BMS
+    currentSoCKWh = Math.max((socMin / 100) * capacidadeKWh, currentSoCKWh - (standbyLossesKW * deltaHoras));
+
+    // Salvar no array (Downsampling leve no futuro, se necessário. Mas aqui retornamos tudo)
+    const hStr = Math.floor(m / 60).toString().padStart(2, '0');
+    const mStr = (m % 60).toString().padStart(2, '0');
+
+    series.push({
+      minutoDoDia: m,
+      horaFormatada: `${hStr}:${mStr}`,
+      geracaoSolarKW: Number(genKW.toFixed(2)),
+      consumoOriginalKW: Number(consKW.toFixed(2)),
+      consumoRedeKW: Number(consumoRedeInstKW.toFixed(2)),
+      potenciaBateriaKW: Number(potBatKW.toFixed(2)),
+      soc: Number(((currentSoCKWh / capacidadeKWh) * 100).toFixed(2))
+    });
+  }
+
+  const ciclosEstimadosDia = totalDescargakWh / capacidadeKWh;
+
+  return { 
+    series, 
+    energiaInjetadaRedeKWh: Number(totalInjetadoKWh.toFixed(2)), 
+    energiaImportadaRedeKWh: Number(totalImportadoKWh.toFixed(2)),
+    ciclosEstimadosDia: Number(ciclosEstimadosDia.toFixed(2))
   };
 }

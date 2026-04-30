@@ -1,0 +1,273 @@
+
+
+Ampla Energia e Serviços S. A.
+Avenida Oscar Niemeyer, nº 2000, Bloco 01, Sala 701, Aqwa Corporate,
+Santo Cristo, Rio de Janeiro - RJ, CEP: 20220-297
+CNPJ 33.050.071/0001-58 - Inscrição Estadual: 80.046.561
+MENSAGENS IMPORTANTES
+R
+ESPON
+S
+Á
+VEL PELA
+ ILUMI
+NAÇÃO PÚBLICA E
+M
+ S
+UA
+RUA/
+R
+EGIÃ
+O
+GRANDEZAS CONTRATADAS
+TRIBUTOSBASE CALC
+(R$)
+ALÍQUOTA
+(%)
+VALOR
+(R$)
+DESCRIÇÃO DO FATURAMENTO
+DADOS DE MEDIÇÃO
+HISTÓRICO DO FATURAMENTO
+NOTIFICAÇÃO/REAVISO DE CONTAS VENCIDAS
+CADASTRO    DÉBITO AUTOMÁTICO
+RESERVADO AO FISCO
+MÊS/ANO
+TOTAL A PAGAR
+UC
+LEITURA
+ANTER
+IOR
+LEITURA
+A
+T
+UAL
+P
+R
+ÓXIMA LEITURA
+Nº
+D
+E 
+D
+I
+A
+S
+DATAS DE
+LEITURA
+TIPO DE FORNECIMENTO
+CLASSIFICAÇÃO DA UNIDADE CONSUMIDORA
+INFORMAÇÕES FISCAIS
+VENCIMENTO
+C
+M
+Y
+CM
+MY
+CY
+CMY
+K
+ES-0065-25-CONTA-GA-RJv3.pdf   1   31/10/2025   11:41:53
+     A4 HORO VERDE LIVRE Comercial
+  Comercial
+TRIFÁSICO
+31/01/202628/02/20262831/03/2026
+ CASA DO ALEMAO INDUSTRIA E COMERCIO DE L
+ ROD WASHINGTON LUIZ, KM 13 SENT RJ FILIAL 2  13 SENT
+RJ FILIAL 2
+ CH RIO-PETROPOL DUQUE DE CAXIAS RJ
+ CEP: 25000-001
+ CPF/CNPJ: 31.130.537/0003-61 INSC EST: 80191294
+02/2026
+13/03/2026
+2029071 / 2029071       R$ 15.535,51
+B^^^B:o&8U2od7VubS ef7d=8AjB^^^B
+>	 +~Dt;7XZ{)JWY-;+a;)WuP0#&!(
+4Ey8AhV!&7:Ik{nE~aluJG];;w}=cuQp
+I2G:gQ+V-#!T!1UM*#77#WV;UV
+.	
+>R.2nV!c?cfoZhS@W*`Z
+;u4QHN0oezU
+;;;/gKcC9yS#7!cc;)##Aq+/;ouyu
+NOTA FISCAL Nº 125035921 - SÉRIE ÚNICA / DATA DE EMISSÃO: 04/03/2026
+Consulte pela Chave de Acesso em:
+http://dfe-portal.sefazvirtual.rs.gov.br/NF3e/consulta
+chave de acesso:
+3326 0333 0500 7100 0158 6600 0125 0359 2110 0850 8235
+Protocolo de autorização: 3332600014822621 - 04/03/2026 às 23:00:35-03:00
+CFOP 5257: VENDA E. ELETRICA CONSUMO POR DEMANDA CONTRATADA
+Data de apresentação: 06/03/2026
+Períodos: Band. Tarif.: Verde : 01/02 - 28/02 Bandeira verde em março/26, sem custos adicionais na fatura. Informações: www.aneel.gov.br. - Unid. consumidora enquadrada na subclasse Comercial , faturada com desc. tarifário de R$ 3.943,74 .
+ MedidorGrandezasPostos
+Tarifários
+Leitura
+Anterior
+Leitura
+Atual
+Const.
+Medidor
+Consumo
+kWh
+ 33405087-LND-476Energia Ativa-kWhFORA PONTA30.409,0035.933,004.200023.200,80
+ 33405087-LND-476Energia Ativa-kWhPONTA327.648,00389.371,000.04202.592,36
+ 33405087-LND-476Demanda Faturada-kWFORA PONTA2.839,333.365,330.168088,36
+ 33405087-LND-476Demanda Faturada-kWPONTA2.213,612.641,610.168071,90
+ 33405087-LND-476Demanda Reativa-kVArFORA PONTA8.392,3610.043,550.042069,34
+ 33405087-LND-476Demanda Reativa-kVArPONTA3.377,843.452,120.04203,11
+ 33405087-LND-476Energia Reativa-kVArhFORA PONTA130,00154,004.2000100,80
+ 33405087-LND-476Energia Reativa-kVArhPONTA1.286,001.360,000.04203,10
+Itens de FaturaUnid.Quant.Preço unit (R$)
+com tributos
+Valor (R$)PIS/COFINSBase Calc
+ICMS (R$)
+Alíquota
+ICMS
+ICMSTarifa
+unit (R$)
+Consumo Reativo Excedente FpkVA100,8000,4113141,461,9441,4624,00%9,950,29341
+Consumo Reativo Excedente NpkVA3,1080,406451,260,051,2624,00%0,300,29341
+Diferença Demanda RetroativakW0,0000,000004,250,004,250,00%0,000,00000
+Encargo Escassez Hídrica309,7214,61309,7224,00%74,33
+Benefício Tarifário Bruto5.532,69261,115.532,6924,00%1.327,84
+TUSD fora pontakWh23.200,8000,210444.882,27230,414.882,2724,00%1.171,740,15000
+TUSD pontakWh2.592,3661,461863.789,68178,843.789,6824,00%909,521,04203
+Demanda DistribuiçãokW88,36825,899842.288,51108,002.288,5124,00%549,2418,46000
+Demanda Distribuição Ult.kW18,368103,635621.902,7589,801.902,7524,00%456,6673,84000
+CIP - ILUM PUB PREF MUNICIPAL726,660,000,000,00%0,00
+Benefício Tarifário Líquido3.943,74-0,000,000,00%0,00
+Subtotal Faturamento
+18.752,59
+Subtotal Outros
+3.217,08-
+TOTAL
+15.535,51884,7618.748,344.499,58
+PIS/PASEP14.248,761,11158,12
+COFINS14.248,765,10726,64
+ICMS18.748,3424,004.499,58
+DEMANDA FORA PONTA - KW70,00
+   Novo modelo de Nota Fiscal de Energia Elétrica nos termos do Ajuste Sinief 01/2019 (CONFAZ)
+MÊS/ANODemanda kW
+Hora PontaHora Fora Ponta
+Consumo Faturado kWh
+Hora PontaHora Fora Ponta
+Nº DIAS
+FAT
+FEV / 202671,9088,372592,3723200,8028
+JAN / 202675,4386,692755,4525418,4031
+DEZ / 202574,4286,352976,7926140,8031
+NOV / 202560,8282,992109,1620752,2030
+OUT / 202561,6679,462273,1719706,4031
+SET / 202550,9065,352093,6216069,2030
+AGO / 202548,6576,161553,0319630,8031
+JUL / 202548,6576,161065,8825704,0031
+JUN / 202548,7076,16856,6325040,4030
+MAI / 202548,8576,20858,7325972,8031
+ABR / 202551,9376,351076,1224880,8030
+MAR / 202561,1583,66725,0926796,0031
+FEV / 20251,0178,6244,5223377,2028
+Se você ainda não tem débito automático, cadastra-se na sua instituição bancária utilizando o código 2029071
+PREFEITURA MUNICIPAL DUQUE DE CAXIAS
+åÔ×¶ ̧Þ ̈ÐÀÇÛÈæ
+B^^^B^s>mFgN9tF&5n	04,'2B^^^B
+?#5#+;Ef`Mr;T7NI)R'Rye!1(,	=
+)C1V5&&8hh@UmMj +Pi%9D4hp^a%%{G-\
+DK>=++)2c&b&M4]$.|](l!)	0ds@LJw.W
+RF:BRJVU_@L:(g_<m/x61c*|aZ$8>]HKL<0
+;;;QwsO1ea[9O?QA93a#Gu}95+uIKc-
+Pague via PIX!
+Utilize este QR Code
+enel
+Grupo A
+    Fatura No.
+       0202603125035921
+    No. da UC
+ 2029071
+     No. de Controle
+300392579632
+   Fatura de
+ 02/2026
+   Vencimento
+13/03/2026
+   Valor Total (R$)
+15.535,51
+          Autenticacao Mecanica
+{BARCODE}
+Não constam débitos relativos às faturas vencidas no ano de 2025 e anos anteriores. Excluem-se desta declaração os valores
+eventualmente não       faturados em razão de irregularidades constatadas posteriormente. Esta   declaração substitui as quitações dos
+faturamentos mensais do ano de       referência e  dos anos anteriores.FATURA COM LANÇAMENTO PARA DÉBITO AUTOMÁTICO EM
+CONTA CORRENTE.
+838600001553 355100193001 392579632076 000020290713
+
+Ampla Energia e Serviços S. A.
+Avenida Oscar Niemeyer, nº 2000, Bloco 01, Sala 701, Aqwa Corporate,
+Santo Cristo, Rio de Janeiro - RJ, CEP: 20220-297
+CNPJ 33.050.071/0001-58 - Inscrição Estadual: 80.046.561
+Agência Nacionalde Energia Elét   rica(Ligaçãogratuit   a de telefones fixose móveis).ANEEL | 167
+CONHEÇA NOSSOS CANAIS DE ATENDIMENTO
+CONHEÇA NOSSOS CANAIS DIGITAIS
+INFORMAÇÕES AOS CLIENTES
+Siga as nossas redes sociais
+@enelbrasil
+@enelclientesbr
+Agência Virtual
+www.enel.com.br
+Para ter acesso a vários serviços como 2° via de fatura, religação, 
+informar falta de energia e muito mais.
+Central de Relacionamento 
+0800 280 2375
+Atendimento de Emergência disponível 24 horas por dia e 
+Atendimento Comercial disponível de segunda a sexta-feira, 
+das 8h às 18h (exceto feriados). A ligação é gratuita.
+Ouvidoria 08000012000
+Atendimento   em dias útei   s
+das8h às18h
+Paraacionara O uvidoriaénecessárioque vocêjá tenha
+procuradoos   nossos   Canais de Atendimento e nos inf  orme
+o númerodeprotocolo.
+Atendimento para 
+Deficientes Auditivos  
+24 horas  0800 282 1887
+Atendimento exclusivo para deficientes auditivos para 
+comunicar falta de energia, tirar dúvidas, solicitar serviços 
+ou fazer uma reclamação. A ligação é gratuita.
+Atendimento disponívelde segundaa s exta-feira, das8hàs16h(exceto
+feriados). Adicioneaos seus contatos   o atendente c orporativovirtual
+e envie umamensagemvia WhatsAppparasolicitar inf  ormações, pedir
+religaç  ãodeenergia, inf  ormar falt  a deenergia, cadastrar faturapore-mail
+e consult  ar statusdesolicitações emandamento.
+Atendimento   Corporativo Virtual
+(21) 99997-9695
+(exclusivo para
+Clie  ntesCorporativos)
+•  Informações suplementares desta fatura podem ser consultadas no site, na área reservada ao cliente.
+•  As condições gerais de fornecimento, tarifas, produtos, serviços prestados e tributos, entre outras 
+informações, podem ser consultadas no site e nos demais canais de atendimento.
+•  A falta de pagamento desta fatura implicará a suspensão do fornecimento de energia a partir do 16° dia 
+da notificação de débito. No caso de Tarifa Social de Baixa Renda, a suspensão do fornecimento deverá 
+ocorrer com intervalo mínimo de 30 dias entre a data de vencimento e a efetiva suspensão.
+•  Fatura pagas após o vencimento terão multa de 2%, juros de mora de 0,033% ao dia e atualização 
+financeira na próxima fatura.
+•  Todos os significados das siglas e abreviações utilizadas nesta fatura de energia estão disponíveis no site 
+da distribuidora, no campo: “Corporativo e Governo, Informativo e Glossário - Contas de energia”.
+•  Informações sobre a contribuição para custeio do serviço de Iluminação Pública do seu município estão 
+disponíveis no site da distribuidora, no campo “Corporativo e Governo, Tarifas, Taxas e Impostos”.
+•  Você pode solicitar o cancelamento da cobrança de serviços de terceiros incluídos em sua fatura, bem como 
+a emissão de uma nova sem essa cobrança.
+Quer mais facilidade? Acesse sua conta de onde estiver,
+pelo celular ou computador.
+Cadastre-se já usando o QR Code ao lado.
+RECEBA SUA CONTA POR E-MAIL
+Ampla Energia e Serviços S. A.
+Avenida Oscar Niemeyer, nº 2000, Bloco 01, Sala 701, Aqwa Corporate,
+Santo Cristo, Rio de Janeiro - RJ, CEP: 20220-297
+CNPJ 33.050.071/0001-58 - Inscrição Estadual: 80.046.561
+Endereço para devolução - uso exclusivo dos Correios
+Data de emissãoConta referente aVencimento
+Unid. de entregaSequênciaNº medidor
+Informações Importantes
+DC031AJ120033405087-LND-476
+ CASA DO ALEMAO INDUSTRIA E COMERCIO DE L
+ ROD WASHINGTON LUIZ, KM 13 SENT RJ FILIAL 2
+ 13 SENT RJ FILIAL 2 DUQUE DE CAXIAS CH RIO-PETROPOL 25000-001
+ DC031AJ1 200
+ 2029071
+04/03/202602/202613/03/2026

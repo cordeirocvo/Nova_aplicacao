@@ -28,16 +28,22 @@ export default function NovaAtividadePage() {
   const handleUpload = async (files: File[], bucket: string) => {
     const urls: string[] = [];
     for (const file of files) {
-      const fileName = `${Date.now()}-${file.name}`;
-      const { data, error } = await supabase.storage
-        .from(bucket)
-        .upload(fileName, file);
+      try {
+        const fileName = `${Date.now()}-${file.name}`;
+        const { data, error } = await supabase.storage
+          .from(bucket)
+          .upload(fileName, file);
 
-      if (data) {
-        const { data: publicData } = supabase.storage.from(bucket).getPublicUrl(fileName);
-        urls.push(publicData.publicUrl);
+        if (data) {
+          const { data: publicData } = supabase.storage.from(bucket).getPublicUrl(fileName);
+          urls.push(publicData.publicUrl);
+        }
+        if (error) {
+          console.warn("Supabase Storage error (bucket might not exist):", error.message);
+        }
+      } catch (err) {
+        console.warn(`Storage falhou ao enviar para o bucket '${bucket}'. Verifique se ele existe no Supabase.`, err);
       }
-      if (error) console.error("Upload error", error);
     }
     return urls;
   };

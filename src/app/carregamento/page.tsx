@@ -67,7 +67,11 @@ export default function CarregamentoDashboard() {
       ) : (
         <div className="grid grid-cols-1 gap-4">
           {projects.map((p) => (
-            <div key={p.id} className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-shadow group">
+            <Link 
+              href={`/carregamento/${p.id}`} 
+              key={p.id} 
+              className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-shadow group cursor-pointer"
+            >
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 group-hover:text-[#1E3A8A] transition-colors">
                   <FileText className="w-6 h-6" />
@@ -83,17 +87,17 @@ export default function CarregamentoDashboard() {
               <div className="flex items-center gap-6">
                 <div className="text-right hidden sm:block">
                   <p className="text-xs font-bold text-slate-400 uppercase">Cabo Calculado</p>
-                  <p className="text-sm font-bold text-slate-700">{p.calculatedCableGauge} mm²</p>
+                  <p className="text-sm font-bold text-slate-700">{p.calculatedCableGauge || 0} mm²</p>
                 </div>
                 <div className="text-right hidden sm:block">
                   <p className="text-xs font-bold text-slate-400 uppercase">Proteção</p>
-                  <p className="text-sm font-bold text-slate-700">{p.calculatedBreaker}A</p>
+                  <p className="text-sm font-bold text-slate-700">{p.calculatedBreaker || 0}A</p>
                 </div>
                 <div className="p-2 rounded-full bg-slate-50 group-hover:bg-[#00BFA5]/10 group-hover:text-[#00BFA5] transition-all">
                   <ChevronRight className="w-5 h-5" />
                 </div>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       )}

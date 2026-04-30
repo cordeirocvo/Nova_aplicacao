@@ -254,29 +254,41 @@ function SolarContent() {
       peso = ((modulo as any).pesoKg || 25) * qteModulos;
     }
 
-    const monthlyGeneration = Array.from({ length: 12 }, (_, i) => {
-      const mesNum = i + 1;
+    const daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    let totalAnual = 0;
+    
+    // Arrays para guardar as somas mensais
+    const monthlyGens = new Array(12).fill(0);
+    const monthlyHsps = new Array(12).fill(0);
+
+    for (let mesIdx = 0; mesIdx < 12; mesIdx++) {
+      const mesNum = mesIdx + 1;
       const pvgisMatch = pvgisData.find(m => m.mes === mesNum);
       
-      let geracaoCalculada = 0;
-      let hsp = 0;
+      const sazonalidade = 1 + 0.15 * Math.cos((2 * Math.PI * (mesNum - 1)) / 12);
+      const deltaAz = Math.abs(config.azimuth - 0);
+      const projectionFactor = Math.cos((config.tilt * Math.PI) / 180) * Math.cos((deltaAz * Math.PI) / 360);
       
-      if (pvgisMatch && pvgisMatch.energySpecific) {
-        hsp = pvgisMatch.hsp;
-        geracaoCalculada = pvgisMatch.energySpecific * (kwpAtual || 0);
-      } else {
-        // Fallback dinâmico: Curva senoidal + Fator de Projeção Geométrica (Cos θ)
-        // Isso dá feedback instantâneo ao usuário enquanto o PVGIS não carrega.
-        const sazonalidade = 1 + 0.15 * Math.cos((2 * Math.PI * (mesNum - 1)) / 12);
-        
-        // Fator de perda simplificado por orientação:
-        // Ideal para Brasil (Hemisfério Sul) é Norte. Com a inversão, Norte agora é 0°.
-        const deltaAz = Math.abs(config.azimuth - 0);
-        const projectionFactor = Math.cos((config.tilt * Math.PI) / 180) * Math.cos((deltaAz * Math.PI) / 360);
-        
-        hsp = (pvgisMatch ? pvgisMatch.hsp : config.hspManual) || 5.2;
-        geracaoCalculada = hsp * 30 * (kwpAtual || 0) * (config.pr || 0) * sazonalidade * Math.max(0.5, projectionFactor);
+      const hsp = (pvgisMatch ? pvgisMatch.hsp : config.hspManual) || 5.2;
+      monthlyHsps[mesIdx] = hsp;
+
+      // Iteração dia a dia para este mês
+      const diasDoMes = daysInMonth[mesIdx];
+      let geracaoMes = 0;
+      
+      for (let dia = 1; dia <= diasDoMes; dia++) {
+         const geracaoDia = hsp * (kwpAtual || 0) * (config.pr || 0) * sazonalidade * Math.max(0.5, projectionFactor);
+         geracaoMes += geracaoDia;
       }
+      
+      monthlyGens[mesIdx] = geracaoMes;
+      totalAnual += geracaoMes;
+    }
+
+    const monthlyGeneration = Array.from({ length: 12 }, (_, i) => {
+      const mesNum = i + 1;
+      const geracaoCalculada = monthlyGens[i];
+      const hsp = monthlyHsps[i];
 
       const realConsumo = (projetoBase?.analiseFatura?.consumoMeses as any[])?.find((m: any) => {
          if (typeof m.mes === 'string') {
@@ -392,17 +404,11 @@ function SolarContent() {
             >
                ← Voltar para Análise de Consumo
             </button>
-            <h1 className="text-2xl font-black text-slate-800">Sistema Fotovoltaico</h1>
-            <p className="text-slate-500 text-sm">Dimensionamento de Geração e Strings</p>
+            <h1 className="text-2xl font-black text-slate-800">Sistema Fotovoltaico <span className="text-[#00BFA5] text-sm ml-2 bg-emerald-50 px-2 py-1 rounded-lg">Teste (Precisão Diária)</span></h1>
+            <p className="text-slate-500 text-sm">Dimensionamento de Geração Diário (365 dias)</p>
           </div>
         </div>
         <div className="flex gap-3">
-          <button 
-            onClick={() => router.push(`/engenharia/solar-teste?projetoId=${projetoId}`)}
-            className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-4 py-2.5 rounded-xl flex items-center gap-2 font-bold text-sm hover:bg-emerald-100 transition-all"
-          >
-            Testar Simulador Diário
-          </button>
           <select 
             className="px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-medium bg-slate-50 outline-none focus:ring-2 focus:ring-[#00BFA5]"
             value={projetoId}

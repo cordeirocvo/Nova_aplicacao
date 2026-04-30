@@ -1,13 +1,14 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Package, Zap, Sun, Battery, Box, Plus, Settings2, Trash2, Edit3, Loader2 } from "lucide-react";
+import { Package, Zap, Sun, Battery, Box, Plus, Settings2, Trash2, Edit3, Loader2, BatteryCharging } from "lucide-react";
 
-type TipoEquipamento = 'inversores' | 'modulos' | 'baterias' | 'estruturas';
+type TipoEquipamento = 'inversores' | 'modulos' | 'baterias' | 'estruturas' | 'carregadores';
 
 const TABS: { id: TipoEquipamento; label: string; icon: React.ElementType }[] = [
   { id: 'inversores', label: 'Inversores', icon: Zap },
   { id: 'modulos', label: 'Módulos FV', icon: Sun },
   { id: 'baterias', label: 'Baterias', icon: Battery },
+  { id: 'carregadores', label: 'Carregadores VE', icon: BatteryCharging },
   { id: 'estruturas', label: 'Estruturas', icon: Box },
 ];
 
@@ -22,7 +23,16 @@ export default function EquipamentosPage() {
   const fetchData = async () => {
     setLoading(true);
     const res = await fetch(`/api/engenharia/equipamentos/${activeTab}`);
-    if (res.ok) setData(await res.json());
+    if (res.ok) {
+      const json = await res.json();
+      // Map brand/model to fabricante/modelo for chargers
+      const normalized = json.map((item: any) => ({
+        ...item,
+        fabricante: item.brand || item.fabricante,
+        modelo: item.model || item.modelo
+      }));
+      setData(normalized);
+    }
     setLoading(false);
   };
 
@@ -32,38 +42,36 @@ export default function EquipamentosPage() {
     e.preventDefault();
     setSaving(true);
 
-    // Lista de campos válidos por modelo (obriga a filtragem para evitar erro de 'Unknown argument' no Prisma)
+    // Lista de campos válidos por modelo
     const validFields: Record<string, string[]> = {
       inversores: ['fabricante', 'modelo', 'potenciaNominalKW', 'tipoConexao', 'tensaoEntradaMinV', 'tensaoEntradaMaxV', 'correnteMaxCC', 'numeroStringsMPPT', 'potenciaMPPTKW', 'tensaoSaidaVAC', 'fatorPotencia', 'eficiencia', 'comunicacao', 'ipBD', 'datasheetUrl', 'fase'],
       modulos: ['fabricante', 'modelo', 'potenciaPicoWp', 'Vmp', 'Imp', 'Voc', 'Isc', 'eficiencia', 'dimensoes', 'pesoKg', 'coefTempVoc', 'coefTempIsc', 'garantiaAnos', 'datasheetUrl'],
       baterias: ['fabricante', 'modelo', 'tecnologia', 'capacidadeNomKWh', 'tensaoNominalV', 'profundidadeDescarga', 'ciclosVida', 'correnteMaxCarga', 'correnteMaxDescarga', 'tempOperacaoMin', 'tempOperacaoMax', 'datasheetUrl'],
-      estruturas: ['fabricante', 'modelo', 'tipoTelhado', 'materialEstrutura', 'cargaMaxVentoKNm2', 'modulosMaxFileira', 'anguloMin', 'anguloMax', 'datasheetUrl']
+      estruturas: ['fabricante', 'modelo', 'tipoTelhado', 'materialEstrutura', 'cargaMaxVentoKNm2', 'modulosMaxFileira', 'anguloMin', 'anguloMax', 'datasheetUrl'],
+      carregadores: ['fabricante', 'modelo', 'power', 'voltage', 'phases', 'current', 'connectorType', 'datasheetUrl']
     };
 
     const numericFields: Record<string, string[]> = {
       inversores: ['potenciaNominalKW', 'tensaoEntradaMinV', 'tensaoEntradaMaxV', 'correnteMaxCC', 'numeroStringsMPPT', 'potenciaMPPTKW', 'tensaoSaidaVAC', 'fatorPotencia', 'eficiencia', 'fase'],
       modulos: ['potenciaPicoWp', 'Vmp', 'Imp', 'Voc', 'Isc', 'eficiencia', 'pesoKg', 'coefTempVoc', 'coefTempIsc', 'garantiaAnos'],
       baterias: ['capacidadeNomKWh', 'tensaoNominalV', 'profundidadeDescarga', 'ciclosVida', 'correnteMaxCarga', 'correnteMaxDescarga', 'tempOperacaoMin', 'tempOperacaoMax'],
-      estruturas: ['cargaMaxVentoKNm2', 'modulosMaxFileira', 'anguloMin', 'anguloMax']
+      estruturas: ['cargaMaxVentoKNm2', 'modulosMaxFileira', 'anguloMin', 'anguloMax'],
+      carregadores: ['power', 'voltage', 'phases', 'current']
     };
 
     const allowed = validFields[activeTab] || [];
     const fieldsToConvert = numericFields[activeTab] || [];
 
-    // Cria os dados finais filtrados
     const finalData: any = {};
-    if (formData.id) finalData.id = formData.id; // Preserva o ID para PATCH
+    if (formData.id) finalData.id = formData.id;
 
     allowed.forEach(key => {
       if (formData[key] !== undefined) {
         let val = formData[key];
-        
-        // Converte se for campo numérico
         if (fieldsToConvert.includes(key) && val !== null && val !== '') {
           val = parseFloat(val.toString().replace(',', '.'));
           if (isNaN(val)) val = null;
         }
-        
         finalData[key] = val;
       }
     });
@@ -99,6 +107,11 @@ export default function EquipamentosPage() {
       if (activeTab === 'baterias') defaults.tecnologia = 'LFP';
       if (activeTab === 'inversores') defaults.tipoConexao = 'ON_GRID';
       if (activeTab === 'estruturas') defaults.tipoTelhado = 'CERAMICO';
+      if (activeTab === 'carregadores') {
+         defaults.voltage = 220;
+         defaults.phases = 1;
+         defaults.connectorType = 'TIPO_2';
+      }
       setFormData(defaults);
     }
     setShowModal(true);
@@ -111,7 +124,7 @@ export default function EquipamentosPage() {
           <h1 className="text-3xl font-black text-slate-800 flex items-center gap-2">
             <Package className="w-8 h-8 text-[#00BFA5]" /> Equipamentos
           </h1>
-          <p className="text-slate-500 mt-1 text-sm">Biblioteca de componentes para dimensionamento (Solar e BESS)</p>
+          <p className="text-slate-500 mt-1 text-sm">Biblioteca de componentes para dimensionamento (Solar, BESS e EV)</p>
         </div>
         <button onClick={() => openModal()} className="bg-gradient-to-r from-[#1E3A8A] to-[#00BFA5] text-white px-5 py-3 rounded-xl flex items-center gap-2 shadow-lg font-bold text-sm">
           <Plus className="w-5 h-5" /> Adicionar {TABS.find(t => t.id === activeTab)?.label}
@@ -150,6 +163,9 @@ export default function EquipamentosPage() {
                 {activeTab === 'baterias' && <th className="p-4">Tecnologia</th>}
                 {activeTab === 'baterias' && <th className="p-4">Capacidade (kWh)</th>}
                 {activeTab === 'baterias' && <th className="p-4">Tensão Nominal (V)</th>}
+                {activeTab === 'carregadores' && <th className="p-4">Potência (kW)</th>}
+                {activeTab === 'carregadores' && <th className="p-4">Corrente (A)</th>}
+                {activeTab === 'carregadores' && <th className="p-4">Fases</th>}
                 {activeTab === 'estruturas' && <th className="p-4">Tipo Telhado</th>}
                 {activeTab === 'estruturas' && <th className="p-4">Material</th>}
                 <th className="p-4 text-right">Ações</th>
@@ -172,6 +188,10 @@ export default function EquipamentosPage() {
                   {activeTab === 'baterias' && <td className="p-4"><span className="bg-amber-100 text-amber-700 px-2 py-1 rounded text-xs">{item.tecnologia}</span></td>}
                   {activeTab === 'baterias' && <td className="p-4 font-medium">{item.capacidadeNomKWh} kWh</td>}
                   {activeTab === 'baterias' && <td className="p-4">{item.tensaoNominalV ? `${item.tensaoNominalV}V` : '-'}</td>}
+
+                  {activeTab === 'carregadores' && <td className="p-4 font-medium text-[#00BFA5]">{item.power} kW</td>}
+                  {activeTab === 'carregadores' && <td className="p-4 font-bold">{item.current}A</td>}
+                  {activeTab === 'carregadores' && <td className="p-4">{item.phases}F ({item.voltage}V)</td>}
                   
                   {activeTab === 'estruturas' && <td className="p-4 font-medium"><span className="bg-slate-200 text-slate-700 px-2 py-1 rounded text-xs">{item.tipoTelhado}</span></td>}
                   {activeTab === 'estruturas' && <td className="p-4">{item.materialEstrutura || '-'}</td>}
@@ -237,6 +257,16 @@ export default function EquipamentosPage() {
                     <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">Tecnologia *</label><select required className="w-full px-4 py-2.5 rounded-xl border border-slate-200" value={formData.tecnologia || 'LFP'} onChange={e => setFormData({ ...formData, tecnologia: e.target.value })}><option value="LFP">LFP (LiFePO4)</option><option value="NMC">NMC</option><option value="AGM">Chumbo-Ácido (AGM)</option><option value="VRLA">Chumbo-Ácido (VRLA)</option></select></div>
                     <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">Tensão Nominal (V)</label><input type="text" className="w-full px-4 py-2.5 rounded-xl border border-slate-200" value={formData.tensaoNominalV || ''} onChange={e => setFormData({ ...formData, tensaoNominalV: e.target.value })} /></div>
                     <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">Profundidade de Descarga (DOD %)</label><input type="text" placeholder="0.80 para 80%" className="w-full px-4 py-2.5 rounded-xl border border-slate-200" value={formData.profundidadeDescarga || ''} onChange={e => setFormData({ ...formData, profundidadeDescarga: e.target.value })} /></div>
+                  </>
+                )}
+
+                {activeTab === 'carregadores' && (
+                  <>
+                    <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">Potência (kW) *</label><input required type="text" className="w-full px-4 py-2.5 rounded-xl border border-slate-200" value={formData.power || ''} onChange={e => setFormData({ ...formData, power: e.target.value })} /></div>
+                    <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">Tensão (V) *</label><input required type="text" className="w-full px-4 py-2.5 rounded-xl border border-slate-200" value={formData.voltage || ''} onChange={e => setFormData({ ...formData, voltage: e.target.value })} /></div>
+                    <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">Fases (1 ou 3) *</label><input required type="text" className="w-full px-4 py-2.5 rounded-xl border border-slate-200" value={formData.phases || ''} onChange={e => setFormData({ ...formData, phases: e.target.value })} /></div>
+                    <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">Corrente Nominal (A) *</label><input required type="text" className="w-full px-4 py-2.5 rounded-xl border border-slate-200" value={formData.current || ''} onChange={e => setFormData({ ...formData, current: e.target.value })} /></div>
+                    <div className="col-span-2"><label className="block text-xs font-bold text-slate-500 uppercase mb-1">Tipo de Conector</label><input type="text" placeholder="Ex: Tipo 2, CCS-2, GB/T" className="w-full px-4 py-2.5 rounded-xl border border-slate-200" value={formData.connectorType || ''} onChange={e => setFormData({ ...formData, connectorType: e.target.value })} /></div>
                   </>
                 )}
 

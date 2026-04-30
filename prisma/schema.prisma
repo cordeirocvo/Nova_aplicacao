@@ -128,6 +128,25 @@ model ProjetoDimensionamento {
   groundingAnalysis    String?
   isServiceEntranceOk  Boolean    @default(true)
   analysisNotes        String?
+  
+  // Novos campos para Transformador e Proteção Avançada
+  hasTransformer             Boolean @default(false)
+  transformerPrimaryVoltage  Float?  @default(220)
+  transformerSecondaryVoltage Float?  @default(380)
+  transformerDistance        Float?  @default(10) // QGBT até Transfo
+  chargerDistance            Float?  @default(10) // Transfo até Carregador
+  groundingType              String? @default("TT")
+  calculatedPrimaryCable     Float?
+  calculatedPrimaryBreaker   Float?
+  calculatedDPS              String?
+  calculatedIDR              String?
+  
+  // Novos campos para CEMIG e Gestão
+  existingLoadKW             Float?  @default(0)
+  simultaneityFactor         Float?  @default(0.8)
+  isCollective               Boolean @default(false)
+  location                   String? @default("urbano")
+
   createdAt            DateTime   @default(now())
   updatedAt            DateTime   @updatedAt
   charger              Carregador @relation(fields: [chargerId], references: [id])
@@ -243,6 +262,10 @@ model InversorSolar {
   comunicacao       String?
   ipBD              String?
   datasheetUrl      String?
+  ieee1547Compliant Boolean? @default(false)
+  responseTimeMs    Float?
+  thdMax            Float?
+  powerFactorControl Boolean? @default(false)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
   fase              Int?     @default(1)
@@ -281,6 +304,10 @@ model BateriaSistema {
   correnteMaxDescarga  Float?
   tempOperacaoMin      Float?
   tempOperacaoMax      Float?
+  roundTripEfficiency  Float?
+  standbyLossesKW      Float?
+  thermalBufferLower   Float?   @default(0.1)
+  thermalBufferUpper   Float?   @default(0.9)
   datasheetUrl         String?
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   Zap, ChevronRight, ChevronLeft, Check, AlertTriangle,
   Info, Shield, Loader2, Plus, Trash2, FileText, ExternalLink,
-  BatteryCharging, Building2, MapPin, CheckCircle2
+  BatteryCharging, Building2, MapPin, CheckCircle2, Box
 } from "lucide-react";
 import {
   calcularPadraoEntrada, CHARGER_PRESETS, CEMIG_DOCS,
@@ -37,9 +37,17 @@ export default function NovoDimensionamento() {
     { powerKW: 7.4, quantity: 1, phases: 1, chargerType: "AC" },
   ]);
 
-  // Etapa 2 — parâmetros elétricos (NBR 5410)
+  // Etapa 2 — parâmetros elétricos
   const [distance, setDistance] = useState(20);
   const [method, setMethod] = useState<"B1" | "C">("B1");
+  const [groundingType, setGroundingType] = useState("TT");
+  
+  // Transformador
+  const [hasTransformer, setHasTransformer] = useState(false);
+  const [primaryVoltage, setPrimaryVoltage] = useState(220); // Solicitar tensão entre fases
+  const [secondaryVoltage, setSecondaryVoltage] = useState(380);
+  const [primaryDistance, setPrimaryDistance] = useState(10); // Painel -> Transfo
+  const [chargerDistance, setChargerDistance] = useState(10); // Transfo -> Carregador
 
   // Resultado
   const [cemigResult, setCemigResult] = useState<CemigResult | null>(null);
@@ -79,14 +87,18 @@ export default function NovoDimensionamento() {
     });
     setCemigResult(cResult);
 
-    // Calcular dimensionamento elétrico do maior carregador (NBR 5410)
+    // Calcular dimensionamento elétrico do maior carregador
     const biggest = [...chargers].sort((a, b) => b.powerKW - a.powerKW)[0];
     const sResult = calculateSizing({
       powerkW: biggest.powerKW,
-      voltage: biggest.phases === 3 ? 380 : 220,
+      voltage: hasTransformer ? secondaryVoltage : (biggest.phases === 3 ? 380 : 220),
       phases: biggest.phases,
-      distance,
+      distance: hasTransformer ? chargerDistance : distance,
       method: method as any,
+      hasTransformer,
+      primaryVoltage,
+      primaryDistance,
+      groundingType
     });
     setSizingResult(sResult);
 
@@ -97,25 +109,23 @@ export default function NovoDimensionamento() {
     if (!cemigResult || !sizingResult) return;
     setSaving(true);
     try {
-      // Salva o maior carregador como base do projeto
       const biggest = [...chargers].sort((a, b) => b.powerKW - a.powerKW)[0];
-      // 1. Criar/buscar carregador
+      
       const chargerRes = await fetch("/api/ev/chargers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           brand: "Configuração CEMIG",
           model: projectName,
-          power: cemigResult.totalChargersKW,
-          voltage: biggest.phases === 3 ? 380 : 220,
+          power: biggest.powerKW,
+          voltage: hasTransformer ? secondaryVoltage : (biggest.phases === 3 ? 380 : 220),
           phases: biggest.phases,
           current: sizingResult.current,
         }),
       });
       const { charger } = await chargerRes.json();
 
-      // 2. Salvar projeto de dimensionamento
-      await fetch("/api/ev/sizing", {
+      const saveRes = await fetch("/api/ev/sizing", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -123,46 +133,55 @@ export default function NovoDimensionamento() {
           clientName,
           utility: "CEMIG",
           entranceCategory: cemigResult.tipoUC,
-          distance,
+          distance: hasTransformer ? chargerDistance : distance,
           installationMethod: method,
           chargerId: charger.id,
-          calculatedCurrent: sizingResult.current,
-          calculatedCableGauge: sizingResult.cableGauge,
-          calculatedBreaker: sizingResult.breaker,
-          calculatedDR: sizingResult.drType,
-          calculatedConduit: sizingResult.conduitSize,
-          voltageDrop: sizingResult.voltageDrop,
-          groundingAnalysis: "TT (haste de aço cobreado, resistência ≤ 100Ω)",
-          isServiceEntranceOk: cemigResult.tipoUC !== "MT",
+          hasTransformer,
+          transformerPrimaryVoltage: primaryVoltage,
+          transformerSecondaryVoltage: secondaryVoltage,
+          transformerDistance: primaryDistance,
+          chargerDistance,
+          groundingType,
+          existingLoadKW,
+          simultaneityFactor,
+          isCollective,
+          location,
           analysisNotes: `${cemigResult.padraoEntrada} | ${cemigResult.ramalTipo} | ${cemigResult.demandaFaixa}`,
         }),
       });
+      const saveData = await saveRes.json();
 
-      router.push("/carregamento");
-    } catch {
-      alert("Erro ao salvar projeto");
+      if (!saveRes.ok) {
+        throw new Error(saveData.error || "Erro ao salvar dimensionamento");
+      }
+
+      if (saveData.project?.id) {
+        router.push(`/carregamento/${saveData.project.id}`);
+      } else {
+        router.push("/carregamento");
+      }
+    } catch (error: any) {
+      console.error(error);
+      alert(error.message || "Erro inesperado ao salvar projeto. Tente novamente.");
     } finally {
       setSaving(false);
     }
   };
 
-  /* ─── Render ────────────────────────────────────────────────────────────── */
   const steps = [
     { n: 1, label: "Instalação & Carregadores" },
     { n: 2, label: "Parâmetros Elétricos" },
-    { n: 3, label: "Laudo CEMIG" },
+    { n: 3, label: "Relatório de Dimensionamento" },
   ];
 
   const totalKW = chargers.reduce((s, c) => s + c.powerKW * c.quantity, 0) + existingLoadKW;
   const canGoStep2 = projectName.trim() && chargers.length > 0;
-  const canCalc = distance > 0;
 
   return (
     <div className="max-w-5xl mx-auto pb-20">
-      {/* Título */}
       <div className="mb-8">
         <h1 className="text-3xl font-black text-slate-800">Novo Dimensionamento</h1>
-        <p className="text-slate-500 mt-1 text-sm">Conforme CEMIG ND-5.1 (NOV/2024) + NBR 5410 + REN 1000/2021</p>
+        <p className="text-slate-500 mt-1 text-sm">Cálculos conforme NBR 5410, NBR 17019 e CEMIG ND-5.1</p>
       </div>
 
       {/* Stepper */}
@@ -183,12 +202,10 @@ export default function NovoDimensionamento() {
       </div>
 
       <div className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
-
-        {/* ── STEP 1 ──────────────────────────────────────────────────────── */}
         {step === 1 && (
           <div className="p-8 space-y-8">
-            {/* Dados Gerais */}
-            <div>
+             {/* Dados Gerais */}
+             <div>
               <div className="flex items-center gap-2 mb-4 border-b border-slate-100 pb-3">
                 <Building2 className="w-5 h-5 text-[#00BFA5]" />
                 <h2 className="text-lg font-bold text-slate-800">Identificação do Projeto</h2>
@@ -196,7 +213,7 @@ export default function NovoDimensionamento() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className={labelCls}>Nome do Projeto *</label>
-                  <input type="text" className={inputCls} placeholder="Ex: Posto Beija-Flor — 4 carregadores" value={projectName} onChange={e => setProjectName(e.target.value)} />
+                  <input type="text" className={inputCls} placeholder="Ex: Projeto Residencial X" value={projectName} onChange={e => setProjectName(e.target.value)} />
                 </div>
                 <div>
                   <label className={labelCls}>Cliente</label>
@@ -205,8 +222,8 @@ export default function NovoDimensionamento() {
                 <div>
                   <label className={labelCls}>Tipo de Edificação</label>
                   <select className={inputCls} value={isCollective ? "coletiva" : "individual"} onChange={e => setIsCollective(e.target.value === "coletiva")}>
-                    <option value="individual">Individual (residência, comércio único)</option>
-                    <option value="coletiva">Coletiva (condomínio, shopping, posto)</option>
+                    <option value="individual">Individual</option>
+                    <option value="coletiva">Coletiva</option>
                   </select>
                 </div>
                 <div>
@@ -219,26 +236,20 @@ export default function NovoDimensionamento() {
               </div>
             </div>
 
-            {/* Cargas Existentes */}
+            {/* Cargas */}
             <div>
               <div className="flex items-center gap-2 mb-4 border-b border-slate-100 pb-3">
                 <Zap className="w-5 h-5 text-[#1E3A8A]" />
-                <h2 className="text-lg font-bold text-slate-800">Cargas Existentes e Simultaneidade</h2>
+                <h2 className="text-lg font-bold text-slate-800">Cargas Existentes</h2>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className={labelCls}>Carga instalada existente (kW) — sem os carregadores</label>
+                  <label className={labelCls}>Carga instalada atual (kW)</label>
                   <input type="number" min={0} step={0.5} className={inputCls} value={existingLoadKW} onChange={e => setExistingLoadKW(parseFloat(e.target.value) || 0)} />
-                  <p className="text-[11px] text-slate-400 mt-1">Soma de todas as cargas já existentes no imóvel (iluminação, tomadas, ar-cond., etc.)</p>
                 </div>
                 <div>
                   <label className={labelCls}>Fator de Simultaneidade ({Math.round(simultaneityFactor * 100)}%)</label>
                   <input type="range" min={0.3} max={1} step={0.05} className="w-full mt-2" value={simultaneityFactor} onChange={e => setSimultaneityFactor(parseFloat(e.target.value))} />
-                  <div className="flex justify-between text-[10px] text-slate-400 mt-1">
-                    <span>30% — Poucos simultâneos</span>
-                    <span>100% — Todos juntos</span>
-                  </div>
-                  <p className="text-[11px] text-slate-400 mt-1">Para postos com gestão de carga (OCPP/smart), usar 50–70%. Sem gestão: 80–100%.</p>
                 </div>
               </div>
             </div>
@@ -250,85 +261,56 @@ export default function NovoDimensionamento() {
                   <BatteryCharging className="w-5 h-5 text-[#00BFA5]" />
                   <h2 className="text-lg font-bold text-slate-800">Carregadores EV</h2>
                 </div>
-                <button onClick={addCharger} className="flex items-center gap-1.5 text-sm font-bold text-[#00BFA5] hover:text-[#00a892] transition-colors px-3 py-1.5 rounded-lg hover:bg-[#00BFA5]/10">
+                <button onClick={addCharger} className="flex items-center gap-1.5 text-sm font-bold text-[#00BFA5] px-3 py-1.5 rounded-lg hover:bg-[#00BFA5]/10">
                   <Plus className="w-4 h-4" /> Adicionar
                 </button>
               </div>
-
               <div className="space-y-4">
                 {chargers.map((c, i) => (
                   <div key={i} className="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 relative">
                     <div className="flex items-center justify-between mb-3">
                       <span className="text-xs font-black text-slate-400 uppercase">Carregador {i + 1}</span>
                       {chargers.length > 1 && (
-                        <button onClick={() => removeCharger(i)} className="text-red-400 hover:text-red-600 p-1 rounded">
+                        <button onClick={() => removeCharger(i)} className="text-red-400 hover:text-red-600 p-1">
                           <Trash2 className="w-4 h-4" />
                         </button>
                       )}
                     </div>
-
-                    {/* Preset Selector */}
                     <div className="mb-3">
-                      <label className={labelCls}>Selecionar por tipo</label>
-                      <select
-                        className={inputCls}
-                        onChange={e => {
-                          const p = CHARGER_PRESETS[parseInt(e.target.value)];
-                          if (p) applyPreset(i, p);
-                        }}
-                        defaultValue=""
-                      >
-                        <option value="" disabled>— Selecione um padrão de carregador —</option>
+                      <label className={labelCls}>Modelo de Referência</label>
+                      <select className={inputCls} onChange={e => applyPreset(i, CHARGER_PRESETS[parseInt(e.target.value)])}>
+                        <option value="">— Selecione um modelo —</option>
                         {CHARGER_PRESETS.map((p, pi) => (
                           <option key={pi} value={pi}>{p.label}</option>
                         ))}
                       </select>
                     </div>
-
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                       <div>
                         <label className={labelCls}>Potência (kW)</label>
-                        <input type="number" min={1} step={0.5} className={inputCls} value={c.powerKW} onChange={e => updateCharger(i, "powerKW", parseFloat(e.target.value) || 0)} />
+                        <input type="number" min={1} className={inputCls} value={c.powerKW} onChange={e => updateCharger(i, "powerKW", parseFloat(e.target.value) || 0)} />
                       </div>
                       <div>
                         <label className={labelCls}>Quantidade</label>
-                        <input type="number" min={1} max={100} className={inputCls} value={c.quantity} onChange={e => updateCharger(i, "quantity", parseInt(e.target.value) || 1)} />
+                        <input type="number" min={1} className={inputCls} value={c.quantity} onChange={e => updateCharger(i, "quantity", parseInt(e.target.value) || 1)} />
                       </div>
                       <div>
                         <label className={labelCls}>Fases</label>
                         <select className={inputCls} value={c.phases} onChange={e => updateCharger(i, "phases", parseInt(e.target.value))}>
-                          <option value={1}>Monofásico (1F)</option>
-                          <option value={3}>Trifásico (3F)</option>
+                          <option value={1}>Monofásico</option>
+                          <option value={3}>Trifásico</option>
                         </select>
                       </div>
                       <div>
                         <label className={labelCls}>Tipo</label>
                         <select className={inputCls} value={c.chargerType} onChange={e => updateCharger(i, "chargerType", e.target.value)}>
-                          <option value="AC">AC (Wallbox)</option>
-                          <option value="DC">DC (Rápido/DCFC)</option>
+                          <option value="AC">AC</option>
+                          <option value="DC">DC</option>
                         </select>
                       </div>
                     </div>
-                    <p className="text-[11px] text-slate-400 mt-2">
-                      Subtotal: <strong>{(c.powerKW * c.quantity).toFixed(1)} kW</strong>
-                      {c.chargerType === "DC" && c.powerKW >= 22 && (
-                        <span className="ml-2 text-orange-500 font-bold">⚠ Pode ser carga perturbadora (harmônicos)</span>
-                      )}
-                    </p>
                   </div>
                 ))}
-              </div>
-
-              {/* Resumo */}
-              <div className="mt-4 p-4 rounded-2xl bg-gradient-to-r from-[#1E3A8A]/5 to-[#00BFA5]/5 border border-[#1E3A8A]/10 flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-slate-500 font-bold uppercase">Carga Total Estimada</p>
-                  <p className="text-2xl font-black text-[#1E3A8A]">{totalKW.toFixed(1)} <span className="text-sm font-medium">kW instalado</span></p>
-                </div>
-                <div className="text-right">
-                  <p className="text-xs text-slate-500 font-bold uppercase">Apenas Carregadores</p>
-                  <p className="text-lg font-black text-[#00BFA5]">{chargers.reduce((s, c) => s + c.powerKW * c.quantity, 0).toFixed(1)} kW</p>
-                </div>
               </div>
             </div>
 
@@ -340,220 +322,209 @@ export default function NovoDimensionamento() {
           </div>
         )}
 
-        {/* ── STEP 2 ──────────────────────────────────────────────────────── */}
         {step === 2 && (
           <div className="p-8 space-y-8">
             <div className="flex items-center gap-2 mb-2 border-b border-slate-100 pb-3">
               <MapPin className="w-5 h-5 text-[#00BFA5]" />
-              <h2 className="text-lg font-bold text-slate-800">Parâmetros Elétricos (NBR 5410)</h2>
+              <h2 className="text-lg font-bold text-slate-800">Parâmetros de Instalação</h2>
+            </div>
+
+            {/* Opção Transformador */}
+            <div className="bg-[#1E3A8A]/5 border border-[#1E3A8A]/10 rounded-2xl p-6">
+               <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <Box className="w-6 h-6 text-[#1E3A8A]" />
+                    <div>
+                      <p className="font-black text-slate-800">Uso de Transformador</p>
+                      <p className="text-xs text-slate-500">Obrigatório para carregadores de 380V em redes 220V</p>
+                    </div>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" className="sr-only peer" checked={hasTransformer} onChange={e => setHasTransformer(e.target.checked)} />
+                    <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#00BFA5]"></div>
+                  </label>
+               </div>
+
+               {hasTransformer && (
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in slide-in-from-top-2 duration-300">
+                    <div className="space-y-4">
+                      <p className="text-xs font-black text-[#1E3A8A] uppercase">Lado Primário (Rede)</p>
+                      <div>
+                        <label className={labelCls}>Tensão entre Fases (V)</label>
+                        <input type="number" className={inputCls} value={primaryVoltage} onChange={e => setPrimaryVoltage(parseFloat(e.target.value))} />
+                      </div>
+                      <div>
+                        <label className={labelCls}>Distância Quadro → Transfo (m)</label>
+                        <input type="number" className={inputCls} value={primaryDistance} onChange={e => setPrimaryDistance(parseFloat(e.target.value))} />
+                      </div>
+                    </div>
+                    <div className="space-y-4">
+                      <p className="text-xs font-black text-[#00BFA5] uppercase">Lado Secundário (Carregador)</p>
+                      <div>
+                        <label className={labelCls}>Tensão de Saída (V)</label>
+                        <input type="number" className={inputCls} value={secondaryVoltage} onChange={e => setSecondaryVoltage(parseFloat(e.target.value))} />
+                      </div>
+                      <div>
+                        <label className={labelCls}>Distância Transfo → Carregador (m)</label>
+                        <input type="number" className={inputCls} value={chargerDistance} onChange={e => setChargerDistance(parseFloat(e.target.value))} />
+                      </div>
+                    </div>
+                 </div>
+               )}
+
+               {!hasTransformer && (
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className={labelCls}>Distância do Painel até o Carregador (m)</label>
+                      <input type="number" className={inputCls} value={distance} onChange={e => setDistance(parseFloat(e.target.value))} />
+                    </div>
+                    <div>
+                      <label className={labelCls}>Método de Instalação</label>
+                      <select className={inputCls} value={method} onChange={e => setMethod(e.target.value as any)}>
+                        <option value="B1">Eletroduto embutido (B1)</option>
+                        <option value="C">Cabo fixado em parede/eletrocalha (C)</option>
+                      </select>
+                    </div>
+                 </div>
+               )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className={labelCls}>Distância do Quadro de Distribuição até o Carregador (m)</label>
-                <input type="number" min={1} step={1} className={inputCls} value={distance} onChange={e => setDistance(parseInt(e.target.value) || 1)} />
-                <p className="text-[11px] text-slate-400 mt-1">Comprimento total do percurso do cabo (fase + neutro).</p>
-              </div>
-              <div>
-                <label className={labelCls}>Método de Instalação — NBR 5410 Tabela 36</label>
-                <select className={inputCls} value={method} onChange={e => setMethod(e.target.value as any)}>
-                  <option value="B1">B1 — Eletroduto embutido em parede/laje</option>
-                  <option value="C">C — Cabo fixado em parede/eletrocalha (melhor)</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4 flex gap-3">
-              <Info className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
-              <div className="text-sm text-blue-700">
-                <p className="font-bold mb-1">Critérios de dimensionamento (NBR 5410 / NBR 17019)</p>
-                <ul className="space-y-1 list-disc list-inside text-blue-600 text-xs">
-                  <li>Corrente admissível (Iz ≥ 1,25 × Ib — carga contínua)</li>
-                  <li>Queda de tensão máxima 4% (iluminação e força)</li>
-                  <li>Coordenação com disjuntor: Ib ≤ In ≤ Iz</li>
-                  <li>Proteção DR obrigatória para EV: Tipo A ou B, 30mA + detecção 6mA DC</li>
-                </ul>
-              </div>
+                <div>
+                  <label className={labelCls}>Sistema de Aterramento</label>
+                  <select className={inputCls} value={groundingType} onChange={e => setGroundingType(e.target.value)}>
+                    <option value="TT">TT (Haste Independente)</option>
+                    <option value="TN-S">TN-S (Neutro e Terra Separados)</option>
+                    <option value="TN-C-S">TN-C-S (Neutro e Terra Separados após entrada)</option>
+                  </select>
+                </div>
             </div>
 
             <div className="flex justify-between pt-4">
               <button onClick={() => setStep(1)} className="px-8 py-3 text-slate-500 font-bold flex items-center gap-2 hover:underline">
                 <ChevronLeft className="w-5 h-5" /> Voltar
               </button>
-              <button disabled={!canCalc} onClick={handleCalculate} className="px-8 py-3 bg-gradient-to-r from-[#1E3A8A] to-[#00BFA5] text-white rounded-xl font-bold flex items-center gap-2 shadow-lg disabled:opacity-40 hover:opacity-90 transition-all">
-                <Zap className="w-5 h-5" /> Gerar Laudo CEMIG
+              <button onClick={handleCalculate} className="px-8 py-3 bg-gradient-to-r from-[#1E3A8A] to-[#00BFA5] text-white rounded-xl font-bold flex items-center gap-2 shadow-lg">
+                <Zap className="w-5 h-5" /> Calcular Dimensionamento
               </button>
             </div>
           </div>
         )}
 
-        {/* ── STEP 3 ──────────────────────────────────────────────────────── */}
         {step === 3 && cemigResult && sizingResult && (
           <div className="p-8 space-y-8 animate-in fade-in duration-500">
-            {/* Header resultado */}
-            <div className="flex items-start justify-between border-b border-slate-100 pb-4">
+             <div className="flex items-start justify-between border-b border-slate-100 pb-4">
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <CheckCircle2 className="w-6 h-6 text-[#00BFA5]" />
-                  <h2 className="text-2xl font-black text-slate-800">Laudo Técnico — CEMIG ND-5.1</h2>
+                  <h2 className="text-2xl font-black text-slate-800">Resultado do Dimensionamento</h2>
                 </div>
-                <p className="text-sm text-slate-500">{projectName} {clientName && `— ${clientName}`}</p>
+                <p className="text-sm text-slate-500">{projectName}</p>
               </div>
-              <button onClick={() => window.print()} className="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all">
+              <button onClick={() => window.print()} className="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all no-print">
                 <FileText className="w-4 h-4" /> Imprimir
               </button>
             </div>
 
-            {/* Classificação CEMIG */}
+            {/* Resumo CEMIG */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className={`p-5 rounded-2xl border-2 ${cemigResult.tipoUC === "MT" ? "border-red-300 bg-red-50" : "border-[#1E3A8A]/20 bg-[#1E3A8A]/5"}`}>
-                <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Tipo de UC / Padrão de Entrada</p>
-                <p className={`text-xl font-black ${cemigResult.tipoUC === "MT" ? "text-red-700" : "text-[#1E3A8A]"}`}>{cemigResult.tipoUC === "MT" ? "⚡ Média Tensão" : `Tipo ${cemigResult.tipoUC}`}</p>
-                <p className="text-xs text-slate-600 mt-1">{cemigResult.tipoUCDesc}</p>
-              </div>
-              <div className={`p-5 rounded-2xl border-2 ${cemigResult.ramalTipo === "Subterrâneo" ? "border-amber-300 bg-amber-50" : cemigResult.ramalTipo === "MT" ? "border-red-300 bg-red-50" : "border-slate-200 bg-slate-50"}`}>
-                <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Ramal de Conexão</p>
-                <p className="text-xl font-black text-slate-800">{cemigResult.ramalTipo}</p>
-                {cemigResult.caixaInspecao && (
-                  <p className="text-xs font-bold text-amber-700 mt-1">Caixa de inspeção: {cemigResult.caixaInspecao}</p>
-                )}
-              </div>
-              <div className="p-5 rounded-2xl border-2 border-[#00BFA5]/20 bg-[#00BFA5]/5">
-                <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Demanda Calculada</p>
-                <p className="text-xl font-black text-[#00BFA5]">{cemigResult.demandaKVA} <span className="text-sm">kVA</span></p>
-                <p className="text-xs text-slate-600 mt-1">{cemigResult.demandaFaixa}</p>
-              </div>
+               <div className="p-5 rounded-2xl bg-[#1E3A8A]/5 border-2 border-[#1E3A8A]/10">
+                  <p className="text-[10px] font-black text-slate-400 uppercase">Padrão CEMIG</p>
+                  <p className="text-lg font-black text-[#1E3A8A]">Tipo {cemigResult.tipoUC}</p>
+                  <p className="text-[10px] text-slate-500 mt-1">{cemigResult.padraoEntrada}</p>
+               </div>
+               <div className="p-5 rounded-2xl bg-slate-50 border-2 border-slate-200">
+                  <p className="text-[10px] font-black text-slate-400 uppercase">Demanda</p>
+                  <p className="text-lg font-black text-slate-700">{cemigResult.demandaKVA} kVA</p>
+                  <p className="text-[10px] text-slate-500 mt-1">{cemigResult.demandaFaixa}</p>
+               </div>
+               <div className="p-5 rounded-2xl bg-[#00BFA5]/5 border-2 border-[#00BFA5]/10">
+                  <p className="text-[10px] font-black text-slate-400 uppercase">Corrente (Maior Carregador)</p>
+                  <p className="text-lg font-black text-[#00BFA5]">{sizingResult.current} A</p>
+               </div>
             </div>
 
-            {/* Grid: NBR 5410 + CEMIG */}
+            {/* Dimensionamento Detalhado */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* NBR 5410 */}
-              <div className="bg-[#0A192F] text-white p-6 rounded-3xl">
-                <div className="flex items-center gap-2 mb-5 border-b border-white/10 pb-3">
-                  <Zap className="w-5 h-5 text-[#00BFA5]" />
-                  <h3 className="font-bold">Dimensionamento NBR 5410</h3>
-                  <span className="text-[10px] opacity-50 ml-auto">Maior carregador</span>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  {[
-                    { label: "Bitola do Cabo", value: `${sizingResult.cableGauge} mm²`, color: "text-[#00BFA5]" },
-                    { label: "Disjuntor", value: `${sizingResult.breaker} A`, color: "text-[#00BFA5]" },
-                    { label: "Queda de Tensão", value: `${sizingResult.voltageDrop}%`, color: sizingResult.voltageDrop > 4 ? "text-red-400" : "text-green-400" },
-                    { label: "Eletroduto", value: sizingResult.conduitSize, color: "text-white" },
-                  ].map(item => (
-                    <div key={item.label} className="p-3 bg-white/5 rounded-xl border border-white/10">
-                      <p className="text-[10px] opacity-50 uppercase mb-1">{item.label}</p>
-                      <p className={`font-black text-lg ${item.color}`}>{item.value}</p>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-4 p-3 bg-white/5 rounded-xl border border-white/10">
-                  <p className="text-[10px] opacity-50 uppercase mb-1">Proteção DR (NBR 17019)</p>
-                  <p className="text-xs font-bold text-[#00BFA5]">{sizingResult.drType}</p>
-                </div>
-              </div>
-
-              {/* CEMIG Padrão */}
-              <div className="space-y-4">
-                <div className="p-5 border border-slate-200 rounded-2xl">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Shield className="w-5 h-5 text-[#1E3A8A]" />
-                    <h3 className="font-bold text-slate-800">Padrão de Entrada CEMIG</h3>
+               <div className="bg-[#0A192F] text-white p-6 rounded-3xl">
+                  <div className="flex items-center gap-2 mb-5 border-b border-white/10 pb-3">
+                    <Zap className="w-5 h-5 text-[#00BFA5]" />
+                    <h3 className="font-bold">Circuitos e Cabos</h3>
                   </div>
-                  <p className="font-black text-[#1E3A8A] text-base">{cemigResult.padraoEntrada}</p>
-                  <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">{cemigResult.padraoDesc}</p>
-                </div>
-                <div className="p-5 border border-slate-200 rounded-2xl">
-                  <p className="text-[10px] font-black text-slate-400 uppercase mb-1.5">Norma Aplicável</p>
-                  <p className="font-bold text-slate-700 text-sm">{cemigResult.normaAplicavel}</p>
-                  <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">{cemigResult.ramalDesc}</p>
-                </div>
-              </div>
-            </div>
+                  
+                  <div className="space-y-6">
+                    {sizingResult.primary && (
+                      <div>
+                        <p className="text-[10px] font-black text-[#00BFA5] uppercase mb-3">Lado Primário (Painel → Transfo)</p>
+                        <div className="grid grid-cols-2 gap-3">
+                           <div className="bg-white/5 p-3 rounded-xl border border-white/10">
+                             <p className="text-[9px] opacity-50 uppercase">Cabo</p>
+                             <p className="font-bold">{sizingResult.primary.cableGauge} mm²</p>
+                           </div>
+                           <div className="bg-white/5 p-3 rounded-xl border border-white/10">
+                             <p className="text-[9px] opacity-50 uppercase">Proteção</p>
+                             <p className="font-bold">{sizingResult.primary.breaker} A (3P)</p>
+                           </div>
+                        </div>
+                      </div>
+                    )}
 
-            {/* Alertas */}
-            {cemigResult.alertas.length > 0 && (
-              <div className="space-y-3">
-                <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wider">Alertas Técnicos</h3>
-                {cemigResult.alertas.map((a, i) => (
-                  <div key={i} className={`p-4 rounded-2xl flex gap-3 border ${
-                    a.nivel === "critico" ? "bg-red-50 border-red-200" :
-                    a.nivel === "atencao" ? "bg-amber-50 border-amber-200" :
-                    "bg-blue-50 border-blue-100"
-                  }`}>
-                    <AlertTriangle className={`w-5 h-5 shrink-0 mt-0.5 ${
-                      a.nivel === "critico" ? "text-red-500" :
-                      a.nivel === "atencao" ? "text-amber-500" : "text-blue-400"
-                    }`} />
                     <div>
-                      <p className={`font-bold text-sm ${
-                        a.nivel === "critico" ? "text-red-800" :
-                        a.nivel === "atencao" ? "text-amber-800" : "text-blue-800"
-                      }`}>{a.titulo}</p>
-                      <p className={`text-xs mt-0.5 leading-relaxed ${
-                        a.nivel === "critico" ? "text-red-700" :
-                        a.nivel === "atencao" ? "text-amber-700" : "text-blue-700"
-                      }`}>{a.descricao}</p>
+                      <p className="text-[10px] font-black text-[#00BFA5] uppercase mb-3">
+                        {hasTransformer ? "Lado Secundário (Transfo → Carregador)" : "Circuito de Alimentação"}
+                      </p>
+                      <div className="grid grid-cols-2 gap-3">
+                         <div className="bg-white/5 p-3 rounded-xl border border-white/10">
+                           <p className="text-[9px] opacity-50 uppercase">Cabo</p>
+                           <p className="font-bold">{sizingResult.cableGauge} mm²</p>
+                         </div>
+                         <div className="bg-white/5 p-3 rounded-xl border border-white/10">
+                           <p className="text-[9px] opacity-50 uppercase">Proteção</p>
+                           <p className="font-bold">{sizingResult.breaker} A</p>
+                         </div>
+                         <div className="bg-white/5 p-3 rounded-xl border border-white/10">
+                           <p className="text-[9px] opacity-50 uppercase">Queda de Tensão</p>
+                           <p className={`font-bold ${sizingResult.voltageDrop > 4 ? "text-red-400" : "text-green-400"}`}>{sizingResult.voltageDrop}%</p>
+                         </div>
+                         <div className="bg-white/5 p-3 rounded-xl border border-white/10">
+                           <p className="text-[9px] opacity-50 uppercase">Eletroduto</p>
+                           <p className="font-bold">{sizingResult.conduitSize}</p>
+                         </div>
+                      </div>
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
+               </div>
 
-            {/* Ações Obrigatórias */}
-            <div className="space-y-3">
-              <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wider">Ações Obrigatórias (fluxo CEMIG)</h3>
-              {cemigResult.acoes.map((a, i) => (
-                <div key={i} className={`p-4 rounded-2xl border flex gap-3 ${
-                  a.tipo === "obrigatoria" ? "bg-slate-50 border-slate-200" :
-                  a.tipo === "warning" ? "bg-orange-50 border-orange-200" :
-                  "bg-green-50 border-green-100"
-                }`}>
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5 text-xs font-black ${
-                    a.tipo === "obrigatoria" ? "bg-[#1E3A8A] text-white" :
-                    a.tipo === "warning" ? "bg-orange-500 text-white" : "bg-green-500 text-white"
-                  }`}>
-                    {i + 1}
+               <div className="space-y-4">
+                  <div className="p-5 border border-slate-200 rounded-2xl bg-slate-50/50">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Shield className="w-5 h-5 text-[#1E3A8A]" />
+                      <h3 className="font-bold text-slate-800">Proteções Adicionais</h3>
+                    </div>
+                    <div className="space-y-4">
+                       <div>
+                          <p className="text-[10px] font-black text-slate-400 uppercase">Dispositivo DR (NBR 17019)</p>
+                          <p className="text-sm font-bold text-[#1E3A8A]">{sizingResult.idrType}</p>
+                       </div>
+                       <div>
+                          <p className="text-[10px] font-black text-slate-400 uppercase">DPS (Proteção de Surto)</p>
+                          <p className="text-sm font-bold text-[#1E3A8A]">{sizingResult.dpsType}</p>
+                       </div>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-bold text-sm text-slate-800">{a.titulo}</p>
-                    <p className="text-xs text-slate-600 mt-0.5 leading-relaxed">{a.descricao}</p>
-                    <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase">{a.referencia}</p>
+                  <div className="p-5 border border-slate-200 rounded-2xl">
+                    <p className="text-[10px] font-black text-slate-400 uppercase mb-2">Análise de Aterramento</p>
+                    <p className="text-xs text-slate-600 leading-relaxed font-medium">{sizingResult.groundingAnalysis}</p>
                   </div>
-                </div>
-              ))}
+               </div>
             </div>
 
-            {/* Links Normas */}
-            <div className="border border-slate-100 rounded-2xl p-5">
-              <p className="text-xs font-black text-slate-400 uppercase mb-3">Documentos CEMIG Aplicáveis</p>
-              <div className="flex flex-wrap gap-2">
-                {[
-                  { label: "ND-5.1", url: CEMIG_DOCS.nd51 },
-                  { label: "ND-5.2", url: CEMIG_DOCS.nd52 },
-                  { label: "ND-5.3", url: CEMIG_DOCS.nd53 },
-                  { label: "ND-5.30", url: CEMIG_DOCS.nd530 },
-                  { label: "ED-5.58 (Perturbadoras)", url: CEMIG_DOCS.ed558 },
-                  { label: "PEC-11", url: CEMIG_DOCS.pec11 },
-                  { label: "Formulário APR Web", url: CEMIG_DOCS.aprWeb },
-                ].map(doc => (
-                  <a key={doc.label} href={doc.url} target="_blank" rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-[11px] font-bold text-[#1E3A8A] bg-[#1E3A8A]/5 hover:bg-[#1E3A8A]/10 px-3 py-1.5 rounded-full transition-colors">
-                    <ExternalLink className="w-3 h-3" /> {doc.label}
-                  </a>
-                ))}
-              </div>
-            </div>
-
-            {/* Botões */}
-            <div className="flex justify-between pt-4 border-t border-slate-100">
-              <button onClick={() => setStep(2)} className="px-6 py-3 text-slate-500 font-bold hover:underline flex items-center gap-2">
-                <ChevronLeft className="w-4 h-4" /> Recalcular
-              </button>
-              <button onClick={handleSave} disabled={saving} className="px-10 py-3 bg-gradient-to-r from-[#1E3A8A] to-[#00BFA5] text-white rounded-xl font-black shadow-lg hover:opacity-90 transition-all flex items-center gap-2 disabled:opacity-50">
-                {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Check className="w-5 h-5" />}
-                {saving ? "Salvando..." : "Salvar Projeto"}
-              </button>
+            <div className="flex justify-between pt-6 border-t border-slate-100">
+               <button onClick={() => setStep(2)} className="px-6 py-3 text-slate-500 font-bold hover:underline">Recalcular</button>
+               <button onClick={handleSave} disabled={saving} className="px-10 py-3 bg-gradient-to-r from-[#1E3A8A] to-[#00BFA5] text-white rounded-xl font-black shadow-lg hover:opacity-90 disabled:opacity-50 transition-all flex items-center gap-2">
+                 {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Check className="w-5 h-5" />}
+                 {saving ? "Salvando..." : "Confirmar e Salvar"}
+               </button>
             </div>
           </div>
         )}

@@ -52,6 +52,6 @@ export async function POST(req: Request) {
 
   } catch (error: any) {
     console.error("AI_PRIORITIZE_ERROR", error?.response?.data || error);
-    return new NextResponse("Internal Server Error", { status: 500 });
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

@@ -315,9 +315,25 @@ export const CHARGER_PRESETS = [
   { label: '7,4 kW — Wallbox Nível 1 (monofásico)', powerKW: 7.4, phases: 1, type: 'AC' as const },
   { label: '11 kW — Wallbox Nível 2 (trifásico 16A)', powerKW: 11, phases: 3, type: 'AC' as const },
   { label: '22 kW — Wallbox Nível 2 (trifásico 32A)', powerKW: 22, phases: 3, type: 'AC' as const },
+  
+  // Komeco
+  { label: 'Komeco KOEV 7kW (Monofásico)', powerKW: 7, phases: 1, type: 'AC' as const },
+  { label: 'Komeco KOEV 22kW (Trifásico)', powerKW: 22, phases: 3, type: 'AC' as const },
+  
+  // WEG
+  { label: 'WEG WEMOB Wall 7,4kW (Monofásico)', powerKW: 7.4, phases: 1, type: 'AC' as const },
+  { label: 'WEG WEMOB Parking 22kW (Trifásico)', powerKW: 22, phases: 3, type: 'AC' as const },
+  { label: 'WEG WEMOB Station 60kW (DC Rápido)', powerKW: 60, phases: 3, type: 'DC' as const },
+  { label: 'WEG WEMOB Station 150kW (DC Ultra-Rápido)', powerKW: 150, phases: 3, type: 'DC' as const },
+  
+  // BENY
+  { label: 'BENY BCP 7,4kW (AC Monofásico)', powerKW: 7.4, phases: 1, type: 'AC' as const },
+  { label: 'BENY BCP 22kW (AC Trifásico)', powerKW: 22, phases: 3, type: 'AC' as const },
+  { label: 'BENY DC 20kW (Rápido)', powerKW: 20, phases: 3, type: 'DC' as const },
+  { label: 'BENY DC 120kW (Ultra-Rápido)', powerKW: 120, phases: 3, type: 'DC' as const },
+
   { label: '50 kW — DCFC Rápido (DC)', powerKW: 50, phases: 3, type: 'DC' as const },
   { label: '100 kW — DCFC Ultra-rápido (DC)', powerKW: 100, phases: 3, type: 'DC' as const },
-  { label: '150 kW — DCFC Ultra-rápido (DC)', powerKW: 150, phases: 3, type: 'DC' as const },
   { label: '350 kW — HPC (High Power Charging)', powerKW: 350, phases: 3, type: 'DC' as const },
 ];
 

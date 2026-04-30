@@ -42,6 +42,7 @@ function AnaliseConsumoContent() {
   const [faturaFile, setFaturaFile] = useState<File | null>(null);
   const [faturaResult, setFaturaResult] = useState<any>(null);
   const [faturaError, setFaturaError] = useState("");
+  const [faturaPassword, setFaturaPassword] = useState("");
   const [isConfirming, setIsConfirming] = useState(false);
   const [tempData, setTempData] = useState<any>(null);
 
@@ -99,6 +100,7 @@ function AnaliseConsumoContent() {
     const fd = new FormData();
     fd.append("file", faturaFile);
     fd.append("projetoId", projetoId);
+    if (faturaPassword) fd.append("password", faturaPassword);
     
     try {
       const res = await fetch("/api/engenharia/fatura", { method: "POST", body: fd });
@@ -229,6 +231,17 @@ function AnaliseConsumoContent() {
                 <p className="text-[10px] text-slate-400 mt-1 uppercase">PDF, PNG ou JPG — CEMIG, CPFL, CELESC, ENEL...</p>
                 <input id="faturaInput" type="file" accept=".pdf,.png,.jpg,.jpeg" className="hidden"
                   onChange={e => setFaturaFile(e.target.files?.[0] || null)} />
+              </div>
+
+              <div>
+                <label className={labelCls}>Senha do PDF (Opcional)</label>
+                <input 
+                  type="text" 
+                  placeholder="Ex: 31130 ou CNPJ se protegido"
+                  className={inputCls} 
+                  value={faturaPassword} 
+                  onChange={e => setFaturaPassword(e.target.value)} 
+                />
               </div>
 
               {faturaError && (

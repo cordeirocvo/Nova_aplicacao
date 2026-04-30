@@ -9,17 +9,96 @@ function parseNumberExtracted(valStr: string | undefined | null): number | null 
   return isNaN(num) ? null : num;
 }
 
-export async function extrairDadosCemigRegex(fileBuffer: Buffer): Promise<any> {
+export async function extrairDadosCemigRegex(fileBuffer: Buffer, password?: string): Promise<any> {
   const extracted: any = {
-    concessionaria: "CEMIG-D", // Sabemos que é CEMIG se chegou até aqui
+    concessionaria: "CEMIG-D", // Default, pode ser alterado abaixo
     extraidoPorRegex: true // flag
   };
 
   try {
-    const data = await pdfParse(fileBuffer, { max: 1 }); // A primeira página costuma ter tudo
+    const pdfInput = password ? { data: fileBuffer, password } : fileBuffer;
+    const data = await pdfParse(pdfInput, { max: 1 }); // A primeira página costuma ter tudo
     const texto = data.text;
 
-    // ----- Regras Sugeridas pelo Usuário + Adaptações para o Frontend -----
+    // Detectar Concessionária
+    const isEnel = /Ampla Energia/i.test(texto) || /Enel/i.test(texto);
+    if (isEnel) {
+       extracted.concessionaria = "Enel";
+    }
+
+    if (isEnel) {
+       // Extração para Enel Brasil
+       // UC
+       const ucMatch = texto.match(/No\.\s*da\s*UC\s*(\d+)/i) || texto.match(/UC[\s\S]*?(\d{6,8})/);
+       if (ucMatch) extracted.numeroInstalacao = ucMatch[1];
+       
+       // Vencimento
+       const vencMatch = texto.match(/Vencimento\s*(\d{2}\/\d{2}\/\d{4})/i) || texto.match(/Vencimento[\s\S]*?(\d{2}\/\d{2}\/\d{4})/i);
+       if (vencMatch) extracted.vencimento = vencMatch[1].trim();
+
+       // Total a pagar
+       const totalMatch = texto.match(/Valor Total \(R\$\)\s*([\d\.]+(?:,\d{2}))/i) || texto.match(/TOTAL\s+A\s+PAGAR[\s\S]*?([\d\.]+(?:,\d{2}))/i);
+       if (totalMatch) extracted.valorUltimaFatura = parseNumberExtracted(totalMatch[1]);
+
+       // Mês de Referência
+       const mesRefMatch = texto.match(/Fatura de\s*(\d{2}\/\d{4})/i) || texto.match(/MÊS\/ANO[\s\S]*?(\d{2}\/\d{4})/i);
+       if (mesRefMatch) extracted.mesReferencia = mesRefMatch[1].trim();
+
+       // Demanda Contratada
+       const demContratadaMatch = texto.match(/DEMANDA FORA PONTA - KW\s*([\d\.,]+)/i);
+       if (demContratadaMatch) extracted.demandaContratadaKW = parseNumberExtracted(demContratadaMatch[1]);
+
+       // Demanda Medida HFP e HP
+       const demHFPMatch = texto.match(/Demanda Faturada-kW\s*FORA PONTA[\s\d\.,]+?([\d\.,]+)/i);
+       if (demHFPMatch) extracted.demandaMedidaHFPKW = parseNumberExtracted(demHFPMatch[1]);
+
+       const demHPMatch = texto.match(/Demanda Faturada-kW\s*PONTA[\s\d\.,]+?([\d\.,]+)/i);
+       if (demHPMatch) extracted.demandaMedidaHPKW = parseNumberExtracted(demHPMatch[1]);
+
+       // Histórico de Consumo
+       const regexConsumoEnel = /\b([A-Z]{3} \/ \d{4})(\d+,\d{2})(\d+,\d{2})(\d+,\d{2})(\d+,\d{2})(\d{2,3})\b/gi;
+       let m;
+       const historico = [];
+       while ((m = regexConsumoEnel.exec(texto)) !== null) {
+          const eHP = parseNumberExtracted(m[4]) || 0;
+          const eHFP = parseNumberExtracted(m[5]) || 0;
+          historico.push({
+             mes: m[1],
+             demandaHP: parseNumberExtracted(m[2]) || 0,
+             demandaHFP: parseNumberExtracted(m[3]) || 0,
+             energiaHP: eHP,
+             energiaHFP: eHFP,
+             kwh: eHP + eHFP,
+             injetadoKWh: 0,
+             bandeira: "Verde"
+          });
+       }
+
+       if (historico.length > 0) {
+          extracted.consumoMeses = historico;
+          // Se não encontrou as demandas medidas em outro lugar, pega do mês mais recente
+          if (!extracted.demandaMedidaHPKW) extracted.demandaMedidaHPKW = historico[0].demandaHP;
+          if (!extracted.demandaMedidaHFPKW) extracted.demandaMedidaHFPKW = historico[0].demandaHFP;
+       }
+
+       // CNPJ/CPF Titular
+       const cnpjCpfMatch = texto.match(/CPF\/CNPJ:\s*(\d{2,3}\.\d{3}\.\d{3}\/?\d{0,4}-?\d{2})/i);
+       if (cnpjCpfMatch) extracted.cnpjCpfTitular = cnpjCpfMatch[1];
+
+       // Nome Cliente (tentativa de capturar a linha antes do endereço ou usando Regex)
+       // Para a Enel geralmente fica logo acima do CPF/CNPJ
+       const linhas = texto.split('\n');
+       const linhaCnpjIdx = linhas.findIndex((l: string) => l.includes('CPF/CNPJ:'));
+       if (linhaCnpjIdx > 2) {
+          // A Enel costuma colocar o endereço logo acima e o nome acima do endereço
+          extracted.endereco = linhas[linhaCnpjIdx - 2].trim() + " " + linhas[linhaCnpjIdx - 1].trim();
+          extracted.nomeCliente = linhas[linhaCnpjIdx - 3].trim();
+       }
+
+       return extracted;
+    }
+
+    // ----- Regras CEMIG (Mantidas) -----
     // Nome do cliente e endereço
     const numInstLineIndex = texto.indexOf("Nº DA INSTALAÇÃO");
     if (numInstLineIndex !== -1) {
@@ -143,6 +222,6 @@ export async function extrairDadosCemigRegex(fileBuffer: Buffer): Promise<any> {
 
   } catch (err: any) {
     console.error('Erro ao ler PDF offline com Regex:', err);
-    throw new Error('Falha na extração de texto nativa.');
+    throw new Error('Falha na extração de texto nativa. ' + (password ? 'Verifique a senha.' : ''));
   }
 }

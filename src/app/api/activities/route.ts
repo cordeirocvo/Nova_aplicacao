@@ -8,12 +8,12 @@ export async function POST(req: Request) {
 
     if (!prisma) {
       console.error("FATAL: Prisma client is undefined in API route");
-      return new NextResponse("Database initialization failed", { status: 500 });
+      return NextResponse.json({ error: "Database initialization failed" }, { status: 500 });
     }
 
     if (!prisma.planilhaInstalacao) {
        console.error("FATAL: PlanilhaInstalacao model missing from Prisma client", Object.keys(prisma));
-       return new NextResponse("Database model missing", { status: 500 });
+       return NextResponse.json({ error: "Database model missing" }, { status: 500 });
     }
     
     const newActivity = await prisma.planilhaInstalacao.create({

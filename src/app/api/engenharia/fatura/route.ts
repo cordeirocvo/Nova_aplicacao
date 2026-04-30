@@ -13,6 +13,7 @@ export async function POST(req: NextRequest) {
     const formData = await req.formData();
     const file = formData.get('file') as File | null;
     const projetoId = formData.get('projetoId') as string;
+    const password = formData.get('password') as string | null;
 
     if (!file || !projetoId) {
       return NextResponse.json({ error: 'Arquivo e projetoId são obrigatórios.' }, { status: 400 });
@@ -41,7 +42,7 @@ export async function POST(req: NextRequest) {
     let isCemigRegexSuccess = false;
     
     try {
-      const regexData = await extrairDadosCemigRegex(nodeBuffer);
+      const regexData = await extrairDadosCemigRegex(nodeBuffer, password || undefined);
       // Validamos sucesso se achou pelo menos a Instalação ou Vencimento (fortes indícios)
       if (regexData && (regexData.numeroInstalacao || regexData.vencimento)) {
         extracted = regexData;
@@ -53,6 +54,11 @@ export async function POST(req: NextRequest) {
 
     // ── Extração via Gemini Vision (Fallback ou Complemento) ───────────────
     if (!isCemigRegexSuccess) {
+      if (password) {
+         // Se a fatura tem senha, o Gemini não consegue ler o PDF criptografado nativamente.
+         return NextResponse.json({ error: 'Para faturas com senha, apenas a extração nativa está disponível, e ela falhou para este arquivo.' }, { status: 400 });
+      }
+
       const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
     const prompt = `Você é um especialista em análise de faturas de energia elétrica brasileiras.

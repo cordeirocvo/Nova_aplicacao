@@ -164,6 +164,8 @@ model EngeProjeto {
   analiseMassa  AnaliseMassaDados[]
   estudoBESS    EstudoBESS?
   estudoSolar   EstudoSolar?
+  levantamentoCargas Json?
+  usinaFotovoltaica UsinaFotovoltaica?
 }
 
 model AnaliseFatura {
@@ -379,4 +381,51 @@ model EstudoSolar {
   inversoresSugeridos   Json?
   overEnclosureAlvo     Float?      @default(1.40)
   projeto               EngeProjeto @relation(fields: [projetoId], references: [id], onDelete: Cascade)
+}
+
+model UsinaFotovoltaica {
+  id             String @id @default(cuid())
+  projetoId      String? @unique
+  projeto        EngeProjeto? @relation(fields: [projetoId], references: [id], onDelete: Cascade)
+  nome           String
+  localizacao    String?
+  equipamentos   EquipamentoUsina[]
+  manutencoes    ManutencaoUsina[]
+}
+
+model EquipamentoUsina {
+  id               String @id @default(cuid())
+  usinaId          String
+  usina            UsinaFotovoltaica @relation(fields: [usinaId], references: [id], onDelete: Cascade)
+  nome             String
+  tag              String
+  localizacao      String?
+  criticidade      String?
+  periodicidadeDias Int?
+  fotoBase64       String?
+  manutencoes      ManutencaoUsina[]
+}
+
+model ManutencaoUsina {
+  id               String @id @default(cuid())
+  usinaId          String
+  usina            UsinaFotovoltaica @relation(fields: [usinaId], references: [id], onDelete: Cascade)
+  equipamentoId    String?
+  equipamento      EquipamentoUsina? @relation(fields: [equipamentoId], references: [id], onDelete: SetNull)
+  tipo             String
+  dataAgendada     DateTime
+  dataRealizada    DateTime?
+  status           String @default("Pendente")
+  descricao        String?
+  pecasTrocadas    String?
+  custoMateriais   Float?
+  custoMaoDeObra   Float?
+  tempoInicio      DateTime?
+  tempoFim         DateTime?
+  fotosUrls        String[]
+  fotosDetalhes    Json?
+  documentosUrls   String[]
+  responsavel      String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 }

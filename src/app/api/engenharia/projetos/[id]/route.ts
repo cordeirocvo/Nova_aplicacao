@@ -30,3 +30,29 @@ export async function GET(
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
   }
 }
+
+export async function PUT(
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await context.params;
+    const body = await req.json();
+    
+    if (!id) {
+      return NextResponse.json({ error: 'ID do projeto é obrigatório' }, { status: 400 });
+    }
+
+    const projeto = await prisma.engeProjeto.update({
+      where: { id },
+      data: {
+        ...(body.levantamentoCargas !== undefined && { levantamentoCargas: body.levantamentoCargas })
+      }
+    });
+
+    return NextResponse.json(projeto);
+  } catch (error: any) {
+    console.error("ERRO AO ATUALIZAR PROJETO:", error);
+    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
+  }
+}

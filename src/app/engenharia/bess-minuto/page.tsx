@@ -1,14 +1,19 @@
 "use client";
-import { useState, useEffect, useMemo, Suspense } from "react";
+import { useState, useEffect, useMemo, Suspense, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { 
-  Battery, Zap, Loader2, Settings2, Info, AlertCircle, ArrowRightLeft 
+  Battery, Zap, Loader2, Settings2, Info, AlertCircle, ArrowRightLeft, FileText, Database, Keyboard, LayoutGrid, Upload, CheckCircle2
 } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, 
   ResponsiveContainer, Legend
 } from "recharts";
 import { simularBESSMinutoAMinuto, BESSConfig } from "@/lib/engenharia/bessEngine";
+import LevantamentoCarga, { EquipamentoCarga } from "./LevantamentoCarga";
+import ConsumoFormPreview from "./ConsumoFormPreview";
+
+type Step = 'DADOS' | 'SIMULACAO';
+type DataTab = 'PDF' | 'MASSA' | 'MANUAL' | 'LEVANTAMENTO';
 
 function BESSMinutoContent() {
   const searchParams = useSearchParams();
@@ -27,39 +32,134 @@ function BESSMinutoContent() {
     eficienciaRTE: 0.9,
     custoSistema: 0,
     estratégia: 'HYBRID',
-    standbyLossesKW: 0.1 // 100W padrão de consumo eletrônico do BESS
+    standbyLossesKW: 0.1
   });
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      const resProj = await fetch("/api/engenharia/projetos");
-      if (resProj.ok) setProjetos(await resProj.json());
-      
-      if (projetoId) {
-        const resEstudo = await fetch(`/api/engenharia/bess?projetoId=${projetoId}`);
-        if (resEstudo.ok) {
-          const d = await resEstudo.json();
-          setProjetoBase(d.base || d.estudo?.projeto);
-          if (d.estudo) {
-            setConfig(prev => ({
-              ...prev,
-              capacidadeKWh: (d.estudo.quantidadeBaterias || 1) * 100,
-              potenciaInversorKW: 50,
-              potenciaSolarKWp: d.base?.estudoSolar?.potenciaNecessariaKWp || 50,
-              estratégia: d.estudo.estratégia || 'HYBRID'
-            }));
-          }
-        }
+  const [step, setStep] = useState<Step>('DADOS');
+  const [dataTab, setDataTab] = useState<DataTab>('LEVANTAMENTO');
+  const [curvaManual, setCurvaManual] = useState<Array<{hora: number, kw: number}> | null>(null);
+  const [equipamentosSalvos, setEquipamentosSalvos] = useState<EquipamentoCarga[]>([]);
+  
+  // Upload states
+  const [fileToUpload, setFileToUpload] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
+  
+  const [faturaPreviewData, setFaturaPreviewData] = useState<any>(null);
+  const [showFaturaPreview, setShowFaturaPreview] = useState(false);
+  const [showMassaPreview, setShowMassaPreview] = useState(false);
+
+  // Fetch data
+  const fetchData = useCallback(async () => {
+    if (!projetoId) return;
+    setLoading(true);
+    const resProj = await fetch("/api/engenharia/projetos");
+    if (resProj.ok) setProjetos(await resProj.json());
+    
+    const resEstudo = await fetch(`/api/engenharia/bess?projetoId=${projetoId}`);
+    if (resEstudo.ok) {
+      const d = await resEstudo.json();
+      setProjetoBase(d.base || d.estudo?.projeto);
+      if (d.estudo) {
+        setConfig(prev => ({
+          ...prev,
+          capacidadeKWh: (d.estudo.quantidadeBaterias || 1) * 100,
+          potenciaInversorKW: 50,
+          potenciaSolarKWp: d.base?.estudoSolar?.potenciaNecessariaKWp || 50,
+          estratégia: d.estudo.estratégia || 'HYBRID'
+        }));
       }
-      setLoading(false);
-    };
-    fetchData();
+      if (d.base?.levantamentoCargas) {
+          try {
+            setEquipamentosSalvos(typeof d.base.levantamentoCargas === 'string' ? JSON.parse(d.base.levantamentoCargas) : d.base.levantamentoCargas);
+          } catch(e) {}
+      }
+    }
+    setLoading(false);
   }, [projetoId]);
 
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const handleUploadPDF = async () => {
+    if (!fileToUpload || !projetoId) return;
+    setUploading(true); setUploadError("");
+    const fd = new FormData();
+    fd.append("file", fileToUpload);
+    fd.append("projetoId", projetoId);
+    
+    try {
+      const res = await fetch("/api/engenharia/fatura", { method: "POST", body: fd });
+      const text = await res.text();
+      const data = JSON.parse(text);
+      if (!res.ok) throw new Error(data.error || "Erro ao processar fatura PDF");
+      await fetchData(); // Recarrega projetoBase
+      setFaturaPreviewData(data.extraido || data.analise);
+      setShowFaturaPreview(true);
+    } catch (err: any) {
+      setUploadError(err.message);
+    } finally {
+      setUploading(false);
+      setFileToUpload(null);
+    }
+  };
+
+  const handleUploadMassa = async () => {
+    if (!fileToUpload || !projetoId) return;
+    setUploading(true); setUploadError("");
+    const fd = new FormData();
+    fd.append("files", fileToUpload);
+    fd.append("projetoId", projetoId);
+    
+    try {
+      const res = await fetch("/api/engenharia/memoria-massa", { method: "POST", body: fd });
+      if (!res.ok) throw new Error("Erro ao processar Memória de Massa");
+      await fetchData(); // Recarrega projetoBase
+      setShowMassaPreview(true);
+    } catch (err: any) {
+      setUploadError(err.message);
+    } finally {
+      setUploading(false);
+      setFileToUpload(null);
+    }
+  };
+
+  const handleManualSave = async (data: any) => {
+    // Calcula o consumo medio mensal para criar curva de 24h
+    let consumoMedio = 0;
+    if (data.consumoMeses && data.consumoMeses.length > 0) {
+      const total = data.consumoMeses.reduce((acc: number, m: any) => acc + Number(m.kwh || 0), 0);
+      consumoMedio = total / data.consumoMeses.length;
+    }
+    const kwhDia = consumoMedio / 30;
+    const kwMedioHora = kwhDia / 24;
+    const curvaSintetica = Array.from({ length: 24 }, (_, i) => ({ hora: i, kw: kwMedioHora }));
+    
+    // Salvar no banco
+    if (projetoId) {
+      await fetch("/api/engenharia/fatura", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ projetoId, ...data }),
+      });
+    }
+    
+    setCurvaManual(curvaSintetica);
+    setShowFaturaPreview(false);
+    setStep('SIMULACAO');
+  };
+
   const simulacao = useMemo(() => {
-    if (!projetoBase?.analiseMassa?.[0]?.curvaMediaDiaria) return null;
-    const curva = projetoBase.analiseMassa[0].curvaMediaDiaria as any[];
+    let curva: Array<{ hora: number; kw: number }> = [];
+
+    if (curvaManual) {
+      curva = curvaManual;
+    } else if (projetoBase?.analiseMassa?.[0]?.curvaMediaDiaria) {
+      curva = projetoBase.analiseMassa[0].curvaMediaDiaria as any[];
+    } else {
+      return null;
+    }
     
     let solarKWp = config.potenciaSolarKWp;
     const hspCity = projetoBase.estudoSolar?.hspCity || 5.2;
@@ -105,14 +205,187 @@ function BESSMinutoContent() {
         <div className="bg-slate-100 rounded-3xl p-20 text-center">
           <Info className="w-12 h-12 text-slate-300 mx-auto mb-4" />
           <h3 className="text-xl font-bold text-slate-700">Aguardando Projeto</h3>
+          <p className="text-slate-500 mt-2">Selecione um projeto acima para iniciar o dimensionamento.</p>
+        </div>
+      ) : step === 'DADOS' ? (
+        <div className="space-y-6">
+          <div className="flex gap-4 p-2 bg-slate-100 rounded-2xl w-full max-w-3xl mx-auto mb-8">
+            <button 
+              onClick={() => setDataTab('PDF')}
+              className={`flex-1 py-3 rounded-xl flex items-center justify-center gap-2 font-bold text-sm transition-all ${dataTab === 'PDF' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+            >
+              <FileText className="w-4 h-4"/> Fatura PDF
+            </button>
+            <button 
+              onClick={() => setDataTab('MASSA')}
+              className={`flex-1 py-3 rounded-xl flex items-center justify-center gap-2 font-bold text-sm transition-all ${dataTab === 'MASSA' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+            >
+              <Database className="w-4 h-4"/> Memória Massa
+            </button>
+            <button 
+              onClick={() => setDataTab('MANUAL')}
+              className={`flex-1 py-3 rounded-xl flex items-center justify-center gap-2 font-bold text-sm transition-all ${dataTab === 'MANUAL' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+            >
+              <Keyboard className="w-4 h-4"/> Dados Manuais
+            </button>
+            <button 
+              onClick={() => setDataTab('LEVANTAMENTO')}
+              className={`flex-1 py-3 rounded-xl flex items-center justify-center gap-2 font-bold text-sm transition-all ${dataTab === 'LEVANTAMENTO' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+            >
+              <LayoutGrid className="w-4 h-4"/> Levantamento
+            </button>
+          </div>
+
+          {dataTab === 'LEVANTAMENTO' && (
+            <LevantamentoCarga 
+              projetoId={projetoId} 
+              savedData={equipamentosSalvos}
+              onCurveGenerated={async (curva, equipamentos) => {
+                setEquipamentosSalvos(equipamentos);
+                setCurvaManual(curva);
+                
+                // Salvar no banco
+                if (projetoId) {
+                   try {
+                     await fetch(`/api/engenharia/projetos/${projetoId}`, {
+                       method: 'PUT',
+                       headers: { 'Content-Type': 'application/json' },
+                       body: JSON.stringify({ levantamentoCargas: equipamentos })
+                     });
+                   } catch(e) { console.error("Erro ao salvar levantamento", e); }
+                }
+
+                setStep('SIMULACAO');
+              }} 
+            />
+          )}
+
+          {dataTab === 'PDF' && (
+            <div className="bg-white rounded-3xl p-10 border border-slate-100 shadow-sm max-w-2xl mx-auto">
+              {!showFaturaPreview ? (
+                <>
+                  <h3 className="font-bold text-slate-800 text-lg mb-2 flex items-center gap-2"><FileText className="w-5 h-5 text-indigo-500"/> Fatura de Energia (PDF)</h3>
+                  <p className="text-slate-500 mb-6">Nossa Inteligência Artificial lerá sua conta de energia (CEMIG, Enel) para estimar o perfil horário de consumo.</p>
+                  
+                  <div className="border-2 border-dashed border-indigo-200 bg-indigo-50/50 rounded-2xl p-8 text-center relative group">
+                    <input 
+                      type="file" 
+                      accept="application/pdf" 
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      onChange={e => setFileToUpload(e.target.files?.[0] || null)}
+                    />
+                    {!fileToUpload ? (
+                      <>
+                        <Upload className="w-10 h-10 text-indigo-400 mx-auto mb-3" />
+                        <p className="text-indigo-900 font-bold">Arraste a Fatura PDF ou clique aqui</p>
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto mb-3" />
+                        <p className="text-emerald-900 font-bold">{fileToUpload.name}</p>
+                      </>
+                    )}
+                  </div>
+                  
+                  {uploadError && <p className="text-red-500 text-sm mt-4 text-center font-bold">{uploadError}</p>}
+                  
+                  <button 
+                    disabled={!fileToUpload || uploading}
+                    onClick={handleUploadPDF}
+                    className="w-full mt-6 bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-bold flex justify-center items-center gap-2 disabled:opacity-50"
+                  >
+                    {uploading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Processar e Visualizar'}
+                  </button>
+                </>
+              ) : (
+                <ConsumoFormPreview 
+                  initialData={faturaPreviewData} 
+                  onSave={handleManualSave} 
+                  onCancel={() => setShowFaturaPreview(false)}
+                />
+              )}
+            </div>
+          )}
+
+          {dataTab === 'MASSA' && (
+            <div className="bg-white rounded-3xl p-10 border border-slate-100 shadow-sm max-w-2xl mx-auto">
+              {!showMassaPreview ? (
+                <>
+                  <h3 className="font-bold text-slate-800 text-lg mb-2 flex items-center gap-2"><Database className="w-5 h-5 text-emerald-500"/> Memória de Massa</h3>
+                  <p className="text-slate-500 mb-6">Faça o upload do arquivo XLS/CSV fornecido pela concessionária com os dados de medição minuto-a-minuto ou 15 em 15min.</p>
+                  
+                  <div className="border-2 border-dashed border-emerald-200 bg-emerald-50/50 rounded-2xl p-8 text-center relative group">
+                    <input 
+                      type="file" 
+                      accept=".csv, .xls, .xlsx" 
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      onChange={e => setFileToUpload(e.target.files?.[0] || null)}
+                    />
+                    {!fileToUpload ? (
+                      <>
+                        <Upload className="w-10 h-10 text-emerald-400 mx-auto mb-3" />
+                        <p className="text-emerald-900 font-bold">Arraste a Memória de Massa ou clique aqui</p>
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto mb-3" />
+                        <p className="text-emerald-900 font-bold">{fileToUpload.name}</p>
+                      </>
+                    )}
+                  </div>
+                  
+                  {uploadError && <p className="text-red-500 text-sm mt-4 text-center font-bold">{uploadError}</p>}
+
+                  <button 
+                    disabled={!fileToUpload || uploading}
+                    onClick={handleUploadMassa}
+                    className="w-full mt-6 bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-bold flex justify-center items-center gap-2 disabled:opacity-50"
+                  >
+                    {uploading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Importar Dados'}
+                  </button>
+                </>
+              ) : (
+                <div className="text-center py-8">
+                  <CheckCircle2 className="w-16 h-16 text-emerald-500 mx-auto mb-4" />
+                  <h3 className="text-xl font-black text-slate-800">1440 Pontos Lidos com Sucesso!</h3>
+                  <p className="text-slate-500 mt-2 mb-8">A curva diária horária foi processada a partir do histórico de faturamento bruto.</p>
+                  <button 
+                    onClick={() => setStep('SIMULACAO')}
+                    className="bg-emerald-500 text-white px-8 py-3 rounded-xl font-bold hover:bg-emerald-600"
+                  >
+                    Ir para Simulação Minuto-a-Minuto
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {dataTab === 'MANUAL' && (
+            <div className="max-w-2xl mx-auto">
+                <ConsumoFormPreview 
+                  initialData={projetoBase?.analiseFatura} 
+                  onSave={handleManualSave} 
+                  title="Entrada Manual de Fatura"
+                  subtitle="Insira manualmente o perfil de 12 meses"
+                />
+            </div>
+          )}
         </div>
       ) : !simulacao ? (
         <div className="bg-amber-50 rounded-3xl p-12 text-center text-amber-700 border border-amber-200">
           <AlertCircle className="w-10 h-10 mx-auto mb-2" />
-          Este projeto não possui Curva de Carga importada.
+          Este projeto não possui Curva de Carga. Volte ao Passo 1.
+          <br/>
+          <button onClick={() => setStep('DADOS')} className="mt-4 px-4 py-2 bg-amber-200 rounded-xl font-bold">Voltar</button>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          
+          <div className="lg:col-span-4 flex justify-end">
+             <button onClick={() => setStep('DADOS')} className="flex items-center gap-2 text-slate-500 hover:text-slate-800 font-bold bg-slate-100 px-4 py-2 rounded-xl">
+               <ArrowRightLeft className="w-4 h-4" /> Alterar Dados de Entrada
+             </button>
+          </div>
           
           {/* Controls */}
           <div className="lg:col-span-1 space-y-4">

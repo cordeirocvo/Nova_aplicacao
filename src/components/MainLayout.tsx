@@ -7,7 +7,7 @@ import { useSession, signOut } from 'next-auth/react';
 import { 
   LayoutDashboard, ListTodo, PlusCircle, Settings, LogOut,
   Menu, X, Zap, Users, Sun, Battery, BarChart3, Package,
-  BatteryCharging, ChevronDown, ChevronRight
+  BatteryCharging, ChevronDown, ChevronRight, Calendar
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -20,6 +20,7 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, adminOnly: true },
       { name: 'Atividades', href: '/atividades', icon: ListTodo },
+      { name: 'Cronograma Semanal', href: '/cronograma', icon: Calendar },
       { name: 'Nova Atividade', href: '/atividades/nova', icon: PlusCircle },
       { name: 'Gestão de Usuários', href: '/admin/usuarios', icon: Users, adminOnly: true },
       { name: 'Config. de Status', href: '/admin/status', icon: Settings, adminOnly: true },
@@ -32,6 +33,7 @@ const NAV_SECTIONS: NavSection[] = [
       { name: 'Análise de Consumo', href: '/engenharia/analise-consumo', icon: Sun },
       { name: 'Dimensionamento BESS', href: '/engenharia/bess', icon: Battery },
       { name: 'Sistema Fotovoltaico', href: '/engenharia/solar', icon: Sun },
+      { name: 'Operação & Manutenção', href: '/engenharia/om', icon: Settings },
       { name: 'Equipamentos', href: '/engenharia/equipamentos', icon: Package },
       { name: 'Carregadores VE', href: '/carregamento', icon: BatteryCharging },
       { name: 'Dimensionamento Elétrico', href: '/engenharia/eletrica', icon: Zap },

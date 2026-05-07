@@ -12,6 +12,7 @@ export interface BESSConfig {
   eficienciaRTE: number; // Round-trip efficiency (ex: 0.85 ou 85%)
   custoSistema: number;
   estratégia?: BESSStrategy;
+  standbyLossesKW?: number;
 }
 
 export interface BESSSimResult {

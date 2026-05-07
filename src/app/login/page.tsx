@@ -39,10 +39,16 @@ export default function LoginPage() {
     });
 
     if (res?.error) {
-      setError("Email ou senha inválidos.");
+      if (res.error === "CredentialsSignin") {
+        setError("E-mail ou senha incorretos.");
+      } else {
+        setError("Erro ao conectar com o servidor. Verifique sua conexão.");
+      }
       setLoading(false);
     } else {
-      // The useEffect above will handle the redirect once the session validates
+      // Forçar refresh para garantir que o middleware/layout pegue a nova sessão
+      router.refresh();
+      // O useEffect lidará com o redirecionamento
     }
   };
 

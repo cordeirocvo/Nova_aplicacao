@@ -64,4 +64,6 @@ export const authOptions: NextAuthOptions = {
     strategy: "jwt"
   },
   secret: process.env.NEXTAUTH_SECRET,
+  debug: process.env.NODE_ENV === 'development',
+  useSecureCookies: process.env.NODE_ENV === 'production' && !process.env.NEXTAUTH_URL?.includes('localhost'),
 };

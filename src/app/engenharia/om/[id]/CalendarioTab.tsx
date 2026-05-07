@@ -79,7 +79,15 @@ export default function CalendarioTab({ usinaId, usina, onRefresh }: { usinaId: 
       }
 
       setShowCompleteModal(null);
-      setReportData({ descricao: "", pecasTrocadas: "", custoMateriais: "", tempoInicio: "", tempoFim: "", fotosDetalhes: [] });
+      setReportData({ 
+        descricao: "", 
+        pecasTrocadas: "", 
+        custoMateriais: "", 
+        custoMaoDeObra: "", 
+        tempoInicio: "", 
+        tempoFim: "", 
+        fotosDetalhes: [] 
+      });
       onRefresh();
     } catch (err) {
       console.error(err);

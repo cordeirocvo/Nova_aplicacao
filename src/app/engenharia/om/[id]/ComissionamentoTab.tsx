@@ -25,7 +25,7 @@ export default function ComissionamentoTab({ usinaId, usina, onRefresh }: { usin
     try {
       const res = await fetch(`/api/engenharia/om/comissionamento?usinaId=${usinaId}`);
       const data = await res.json();
-      setReports(data);
+      setReports(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error(err);
     } finally {

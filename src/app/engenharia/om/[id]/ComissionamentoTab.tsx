@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Trash2, FileText, Download, Edit2, CheckCircle2, AlertCircle } from "lucide-react";
+import { Plus, Trash2, FileText, Download, Edit2, CheckCircle2, AlertCircle, Users } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import Link from "next/link";

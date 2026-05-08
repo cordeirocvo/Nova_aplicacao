@@ -18,7 +18,7 @@ import { useRouter } from 'next/navigation';
 
 export default function ProfissionaisPage() {
   const router = useRouter();
-  const [items, setItems] = useState([]);
+  const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");

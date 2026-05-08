@@ -77,7 +77,7 @@ export default function EquipamentosTab({ usinaId, usina, onRefresh }: { usinaId
         if (ctx) {
           ctx.drawImage(img, 0, 0, width, height);
           const base64 = canvas.toDataURL("image/jpeg", 0.7);
-          setEquip(prev => ({ ...prev, fotoBase64: base64 }));
+          setEquip((prev: any) => ({ ...prev, fotoBase64: base64 }));
         }
       };
       img.src = event.target?.result as string;

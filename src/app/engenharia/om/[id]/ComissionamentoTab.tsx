@@ -9,6 +9,7 @@ import Link from "next/link";
 export default function ComissionamentoTab({ usinaId, usina, onRefresh }: { usinaId: string, usina: any, onRefresh: () => void }) {
   const [reports, setReports] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [report, setReport] = useState<any>({
@@ -38,6 +39,8 @@ export default function ComissionamentoTab({ usinaId, usina, onRefresh }: { usin
   }, [usinaId]);
 
   const handleSave = async () => {
+    if (saving) return;
+    setSaving(true);
     try {
       const res = await fetch("/api/engenharia/om/comissionamento", {
         method: editMode ? "PATCH" : "POST",
@@ -48,10 +51,38 @@ export default function ComissionamentoTab({ usinaId, usina, onRefresh }: { usin
         setShowModal(false);
         fetchReports();
         setReport({ id: "", tipo: "Frio", data: format(new Date(), "yyyy-MM-dd"), responsavel: "", numero: "", observacoes: "", dadosTecnicos: [] });
+      } else {
+        const err = await res.json();
+        alert("Erro ao salvar: " + (err.error || "Erro desconhecido"));
       }
     } catch (err) {
       console.error(err);
+      alert("Erro de conexão ao salvar.");
+    } finally {
+      setSaving(false);
     }
+  };
+
+  const handlePaste = (e: React.ClipboardEvent) => {
+    const text = e.clipboardData.getData("text");
+    if (!text) return;
+
+    const rows = text.split(/\r?\n/).filter(row => row.trim() !== "");
+    const newDados = rows.map((row, idx) => {
+      const cols = row.split("\t");
+      return {
+        string: cols[0] || (report.dadosTecnicos.length + idx + 1).toString().padStart(2, '0'),
+        mppt: cols[1] || "",
+        tensao: cols[2] || "",
+        polaridade: cols[3] === "X" ? "X" : "OK",
+        contPos: cols[4] === "X" ? "X" : "OK",
+        contNeg: cols[5] === "X" ? "X" : "OK",
+        meggerPos: cols[6] || "5.5 GΩ",
+        meggerNeg: cols[7] || "5.5 GΩ"
+      };
+    });
+
+    setReport({ ...report, dadosTecnicos: [...report.dadosTecnicos, ...newDados] });
   };
 
   const addStringRow = () => {
@@ -164,21 +195,27 @@ export default function ComissionamentoTab({ usinaId, usina, onRefresh }: { usin
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div 
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onPaste={handlePaste}
+        >
           <div className="bg-white rounded-3xl w-full max-w-5xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col">
             <div className="p-6 border-b border-slate-100 flex justify-between items-center shrink-0">
-              <h2 className="text-2xl font-black text-slate-800">
-                {editMode ? "Editar Relatório de Comissionamento" : "Novo Relatório de Comissionamento"}
-              </h2>
+              <div>
+                <h2 className="text-2xl font-black text-slate-800">
+                  {editMode ? "Editar Relatório de Comissionamento" : "Novo Relatório de Comissionamento"}
+                </h2>
+                <p className="text-xs text-slate-400 font-bold uppercase mt-1">Dica: Você pode colar dados direto do Excel aqui (Ctrl+V)</p>
+              </div>
               <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600 p-2">✕</button>
             </div>
             
-            <div className="p-8 overflow-y-auto space-y-8 flex-1 custom-scrollbar">
-              <div className="grid grid-cols-4 gap-6">
+            <div className="p-4 md:p-8 overflow-y-auto space-y-6 flex-1 custom-scrollbar">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6">
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Tipo de Relatório</label>
                   <select 
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 font-bold text-slate-700 focus:ring-2 focus:ring-emerald-500 outline-none"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 font-bold text-slate-700 focus:ring-2 focus:ring-emerald-500 outline-none text-base"
                     value={report.tipo}
                     onChange={e => setReport({...report, tipo: e.target.value})}
                   >
@@ -191,7 +228,7 @@ export default function ComissionamentoTab({ usinaId, usina, onRefresh }: { usin
                   <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Data do Teste</label>
                   <input 
                     type="date" 
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 font-bold text-slate-700 focus:ring-2 focus:ring-emerald-500 outline-none"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 font-bold text-slate-700 focus:ring-2 focus:ring-emerald-500 outline-none text-base"
                     value={report.data}
                     onChange={e => setReport({...report, data: e.target.value})}
                   />
@@ -201,7 +238,7 @@ export default function ComissionamentoTab({ usinaId, usina, onRefresh }: { usin
                   <input 
                     type="text" 
                     placeholder="Ex: 01"
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 font-bold text-slate-700 focus:ring-2 focus:ring-emerald-500 outline-none"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 font-bold text-slate-700 focus:ring-2 focus:ring-emerald-500 outline-none text-base"
                     value={report.numero}
                     onChange={e => setReport({...report, numero: e.target.value})}
                   />
@@ -211,7 +248,7 @@ export default function ComissionamentoTab({ usinaId, usina, onRefresh }: { usin
                   <input 
                     type="text" 
                     placeholder="Nome do inspetor"
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 font-bold text-slate-700 focus:ring-2 focus:ring-emerald-500 outline-none"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 font-bold text-slate-700 focus:ring-2 focus:ring-emerald-500 outline-none text-base"
                     value={report.responsavel}
                     onChange={e => setReport({...report, responsavel: e.target.value})}
                   />
@@ -219,21 +256,21 @@ export default function ComissionamentoTab({ usinaId, usina, onRefresh }: { usin
               </div>
 
               <div>
-                <div className="flex justify-between items-end mb-4">
+                <div className="flex flex-col md:flex-row justify-between md:items-end mb-4 gap-4">
                   <div>
                     <h3 className="text-lg font-black text-slate-800 uppercase tracking-tight">Testes de Inspeção (Strings CC)</h3>
-                    <p className="text-sm text-slate-500">Insira os dados medidos em campo para cada série fotovoltaica.</p>
+                    <p className="text-sm text-slate-500">Cole do Excel ou use o botão para adicionar linhas.</p>
                   </div>
                   <button 
                     onClick={addStringRow}
-                    className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 border border-slate-200"
+                    className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-3 md:py-2 rounded-xl text-sm font-bold flex items-center justify-center gap-2 border border-slate-200"
                   >
                     <Plus className="w-4 h-4" /> Adicionar String
                   </button>
                 </div>
 
-                <div className="border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
-                  <table className="w-full text-left border-collapse text-sm">
+                <div className="border border-slate-200 rounded-2xl overflow-x-auto shadow-sm bg-white">
+                  <table className="w-full text-left border-collapse text-sm min-w-[800px]">
                     <thead className="bg-slate-50 text-slate-500 text-[10px] uppercase font-black tracking-widest border-b border-slate-200">
                       <tr>
                         <th className="p-3">String</th>
@@ -248,36 +285,39 @@ export default function ComissionamentoTab({ usinaId, usina, onRefresh }: { usin
                     <tbody>
                       {report.dadosTecnicos.map((row: any, idx: number) => (
                         <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                          <td className="p-2"><input className="w-12 p-2 rounded-lg border-none bg-transparent font-bold text-center" value={row.string} onChange={e => updateRow(idx, 'string', e.target.value)} /></td>
-                          <td className="p-2"><input className="w-12 p-2 rounded-lg border border-slate-100 bg-white" placeholder="1" value={row.mppt} onChange={e => updateRow(idx, 'mppt', e.target.value)} /></td>
-                          <td className="p-2"><input className="w-20 p-2 rounded-lg border border-slate-100 bg-white" placeholder="980" value={row.tensao} onChange={e => updateRow(idx, 'tensao', e.target.value)} /></td>
+                          <td className="p-2"><input className="w-12 p-3 rounded-lg border-none bg-transparent font-black text-center" value={row.string} onChange={e => updateRow(idx, 'string', e.target.value)} /></td>
+                          <td className="p-2"><input className="w-12 p-3 rounded-lg border border-slate-100 bg-white font-bold" placeholder="1" value={row.mppt} onChange={e => updateRow(idx, 'mppt', e.target.value)} /></td>
+                          <td className="p-2"><input className="w-24 p-3 rounded-lg border border-slate-100 bg-white font-bold" placeholder="980" value={row.tensao} onChange={e => updateRow(idx, 'tensao', e.target.value)} /></td>
                           <td className="p-2">
-                            <select className="p-2 rounded-lg border border-slate-100 bg-white text-xs font-bold" value={row.polaridade} onChange={e => updateRow(idx, 'polaridade', e.target.value)}>
+                            <select className="p-3 rounded-lg border border-slate-100 bg-white text-xs font-bold w-full" value={row.polaridade} onChange={e => updateRow(idx, 'polaridade', e.target.value)}>
                               <option value="OK">OK</option>
                               <option value="X">X</option>
                             </select>
                           </td>
                           <td className="p-2">
-                            <select className="p-2 rounded-lg border border-slate-100 bg-white text-xs font-bold" value={row.contPos} onChange={e => updateRow(idx, 'contPos', e.target.value)}>
+                            <select className="p-3 rounded-lg border border-slate-100 bg-white text-xs font-bold w-full" value={row.contPos} onChange={e => updateRow(idx, 'contPos', e.target.value)}>
                               <option value="OK">OK</option>
                               <option value="X">X</option>
                             </select>
                           </td>
                           <td className="p-2">
-                            <select className="p-2 rounded-lg border border-slate-100 bg-white text-xs font-bold" value={row.contNeg} onChange={e => updateRow(idx, 'contNeg', e.target.value)}>
+                            <select className="p-3 rounded-lg border border-slate-100 bg-white text-xs font-bold w-full" value={row.contNeg} onChange={e => updateRow(idx, 'contNeg', e.target.value)}>
                               <option value="OK">OK</option>
                               <option value="X">X</option>
                             </select>
                           </td>
-                          <td className="p-2"><input className="w-24 p-2 rounded-lg border border-slate-100 bg-white text-xs" value={row.meggerPos} onChange={e => updateRow(idx, 'meggerPos', e.target.value)} /></td>
-                          <td className="p-2"><input className="w-24 p-2 rounded-lg border border-slate-100 bg-white text-xs" value={row.meggerNeg} onChange={e => updateRow(idx, 'meggerNeg', e.target.value)} /></td>
+                          <td className="p-2"><input className="w-32 p-3 rounded-lg border border-slate-100 bg-white text-xs font-bold" value={row.meggerPos} onChange={e => updateRow(idx, 'meggerPos', e.target.value)} /></td>
+                          <td className="p-2"><input className="w-32 p-3 rounded-lg border border-slate-100 bg-white text-xs font-bold" value={row.meggerNeg} onChange={e => updateRow(idx, 'meggerNeg', e.target.value)} /></td>
                           <td className="p-2">
-                            <button onClick={() => removeRow(idx)} className="p-2 text-red-300 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
+                            <button onClick={() => removeRow(idx)} className="p-2 text-red-300 hover:text-red-500"><Trash2 className="w-5 h-5" /></button>
                           </td>
                         </tr>
                       ))}
                       {report.dadosTecnicos.length === 0 && (
-                        <tr><td colSpan={9} className="p-6 text-center text-slate-400 italic">Nenhuma medição adicionada.</td></tr>
+                        <tr><td colSpan={9} className="p-12 text-center text-slate-400 italic">
+                          <p className="font-bold text-slate-500 mb-2">Nenhuma medição adicionada.</p>
+                          <p className="text-xs">Dica: Selecione esta área e cole dados do Excel (Ctrl+V) para preenchimento automático.</p>
+                        </td></tr>
                       )}
                     </tbody>
                   </table>
@@ -287,7 +327,7 @@ export default function ComissionamentoTab({ usinaId, usina, onRefresh }: { usin
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Observações Adicionais</label>
                 <textarea 
-                  className="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50 min-h-[100px] focus:ring-2 focus:ring-emerald-500 outline-none"
+                  className="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50 min-h-[100px] focus:ring-2 focus:ring-emerald-500 outline-none text-base"
                   placeholder="Descreva anomalias ou detalhes observados durante os testes..."
                   value={report.observacoes}
                   onChange={e => setReport({...report, observacoes: e.target.value})}
@@ -295,18 +335,23 @@ export default function ComissionamentoTab({ usinaId, usina, onRefresh }: { usin
               </div>
             </div>
 
-            <div className="p-8 border-t border-slate-100 bg-slate-50 flex gap-4 shrink-0">
+            <div className="p-4 md:p-8 border-t border-slate-100 bg-slate-50 flex flex-col md:flex-row gap-4 shrink-0">
               <button 
                 onClick={() => setShowModal(false)}
-                className="flex-1 py-4 text-slate-500 font-black border-2 border-slate-200 rounded-2xl hover:bg-white transition-all"
+                className="order-2 md:order-1 flex-1 py-4 text-slate-500 font-black border-2 border-slate-200 rounded-2xl hover:bg-white transition-all"
               >
                 CANCELAR
               </button>
               <button 
                 onClick={handleSave}
-                className="flex-[2] py-4 bg-emerald-600 text-white font-black rounded-2xl shadow-lg shadow-emerald-100 hover:bg-emerald-700 transition-all flex items-center justify-center gap-2"
+                disabled={saving}
+                className="order-1 md:order-2 flex-[2] py-4 bg-emerald-600 text-white font-black rounded-2xl shadow-lg shadow-emerald-100 hover:bg-emerald-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <CheckCircle2 className="w-5 h-5" /> {editMode ? "ATUALIZAR RELATÓRIO" : "SALVAR E CONCLUIR"}
+                {saving ? (
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                ) : (
+                  <><CheckCircle2 className="w-5 h-5" /> {editMode ? "ATUALIZAR RELATÓRIO" : "SALVAR E CONCLUIR"}</>
+                )}
               </button>
             </div>
           </div>

@@ -163,8 +163,8 @@ export default function ComissionamentoRelatorio() {
                {/* Space for actual signature */}
             </div>
             <div className="h-[2px] w-full bg-gradient-to-r from-transparent via-[#212529] to-transparent mb-3 opacity-20"></div>
-            <p className="text-[10px] font-black uppercase text-[#212529]">Responsável Técnico</p>
-            <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Cordeiro Energia</p>
+            <p className="text-[10px] font-black uppercase text-[#212529]">{report.responsavel || "Responsável Técnico"}</p>
+            <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">{report.crea ? `CREA: ${report.crea}` : "Cordeiro Energia"}</p>
           </div>
           <div className="text-center">
             <div className="h-16 flex items-end justify-center mb-4">

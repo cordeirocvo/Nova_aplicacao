@@ -439,10 +439,25 @@ model ComissionamentoUsina {
   tipo             String // "Frio", "Quente", "Entrega"
   data             DateTime
   responsavel      String?
+  crea             String? // Registro CREA do responsável
+  profissionalId   String?
+  profissional     Profissional? @relation(fields: [profissionalId], references: [id])
   numero           String? // Nº no relatório
   status           String @default("Concluído")
   dadosTecnicos    Json?   // Para armazenar os testes de string, megger, etc.
   observacoes      String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model Profissional {
+  id               String @id @default(cuid())
+  nome             String
+  telefone         String?
+  email            String?
+  crea             String?
+  observacao       String?
+  comissionamentos ComissionamentoUsina[]
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 }

@@ -10,6 +10,7 @@ export async function GET(req: Request) {
 
     const data = await prisma.comissionamentoUsina.findMany({
       where: { usinaId },
+      include: { profissional: true },
       orderBy: { data: "desc" },
     });
     return NextResponse.json(data);
@@ -27,6 +28,8 @@ export async function POST(req: Request) {
         tipo: data.tipo,
         data: new Date(data.data),
         responsavel: data.responsavel,
+        crea: data.crea,
+        profissionalId: data.profissionalId || null,
         numero: data.numero,
         dadosTecnicos: data.dadosTecnicos || [],
         observacoes: data.observacoes,
@@ -48,6 +51,8 @@ export async function PATCH(req: Request) {
         tipo: data.tipo,
         data: data.data ? new Date(data.data) : undefined,
         responsavel: data.responsavel,
+        crea: data.crea,
+        profissionalId: data.profissionalId || null,
         numero: data.numero,
         dadosTecnicos: data.dadosTecnicos,
         observacoes: data.observacoes,

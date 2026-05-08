@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(req: Request) {
+  console.log("Prisma keys:", Object.keys(prisma).filter(k => !k.startsWith("_")));
   try {
     const { searchParams } = new URL(req.url);
     const usinaId = searchParams.get("usinaId");

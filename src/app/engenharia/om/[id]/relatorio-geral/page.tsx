@@ -283,6 +283,10 @@ function RelatorioGeralContent() {
 
       <style jsx global>{`
         @media print {
+          @page {
+            size: A4;
+            margin: 10mm;
+          }
           body * {
             visibility: hidden;
           }
@@ -303,11 +307,24 @@ function RelatorioGeralContent() {
             page-break-after: always;
             box-shadow: none !important;
             border: none !important;
-            padding: 0 !important;
+            padding: 5mm !important;
             margin-bottom: 0 !important;
+            height: 277mm; /* Aproximadamente altura A4 menos margens */
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
           }
           .printable-page:last-child {
             page-break-after: auto;
+          }
+          .printable-page img.h-16 {
+            height: 40px !important;
+          }
+          .printable-page h1 {
+            font-size: 1.5rem !important;
+          }
+          .printable-page .grid-cols-4 img {
+            height: 80px !important;
           }
         }
       `}</style>

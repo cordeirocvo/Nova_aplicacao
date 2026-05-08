@@ -1,15 +1,16 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Plus, Trash2, Edit2, Camera } from "lucide-react";
+import { Plus, Trash2, Edit2, Camera, Paperclip, FileText, Download, X } from "lucide-react";
 
 export default function EquipamentosTab({ usinaId, usina, onRefresh }: { usinaId: string, usina: any, onRefresh: () => void }) {
   const [showModal, setShowModal] = useState(false);
   const [editMode, setEditMode] = useState(false);
-  const [equip, setEquip] = useState({
-    id: "", usinaId, nome: "", tag: "", localizacao: "", criticidade: "B", periodicidadeDias: "180", fotoBase64: ""
+  const [equip, setEquip] = useState<any>({
+    id: "", usinaId, nome: "", tag: "", localizacao: "", criticidade: "B", periodicidadeDias: "180", fotoBase64: "", anexos: []
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const attachmentInputRef = useRef<HTMLInputElement>(null);
 
   const handleSave = async () => {
     if (!equip.nome || !equip.tag) return;
@@ -20,7 +21,7 @@ export default function EquipamentosTab({ usinaId, usina, onRefresh }: { usinaId
         body: JSON.stringify(equip),
       });
       setShowModal(false);
-      setEquip({ id: "", usinaId, nome: "", tag: "", localizacao: "", criticidade: "B", periodicidadeDias: "180", fotoBase64: "" });
+      setEquip({ id: "", usinaId, nome: "", tag: "", localizacao: "", criticidade: "B", periodicidadeDias: "180", fotoBase64: "", anexos: [] });
       setEditMode(false);
       onRefresh();
     } catch (err) {
@@ -37,7 +38,8 @@ export default function EquipamentosTab({ usinaId, usina, onRefresh }: { usinaId
       localizacao: e.localizacao || "",
       criticidade: e.criticidade || "B",
       periodicidadeDias: e.periodicidadeDias?.toString() || "",
-      fotoBase64: e.fotoBase64 || ""
+      fotoBase64: e.fotoBase64 || "",
+      anexos: e.anexos || []
     });
     setEditMode(true);
     setShowModal(true);
@@ -83,6 +85,30 @@ export default function EquipamentosTab({ usinaId, usina, onRefresh }: { usinaId
     reader.readAsDataURL(file);
   };
 
+  const handleAttachmentUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    Array.from(files).forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const base64 = event.target?.result as string;
+        setEquip((prev: any) => ({
+          ...prev,
+          anexos: [...(prev.anexos || []), { name: file.name, type: file.type, urlBase64: base64 }]
+        }));
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const removeAttachment = (index: number) => {
+    setEquip((prev: any) => ({
+      ...prev,
+      anexos: prev.anexos.filter((_: any, i: number) => i !== index)
+    }));
+  };
+
   const handleDelete = async (id: string) => {
     if (!confirm("Tem certeza que deseja excluir este equipamento?")) return;
     try {
@@ -109,7 +135,7 @@ export default function EquipamentosTab({ usinaId, usina, onRefresh }: { usinaId
         </h2>
         <button 
           onClick={() => {
-            setEquip({ id: "", usinaId, nome: "", tag: "", localizacao: "", criticidade: "B", periodicidadeDias: "180", fotoBase64: "" });
+            setEquip({ id: "", usinaId, nome: "", tag: "", localizacao: "", criticidade: "B", periodicidadeDias: "180", fotoBase64: "", anexos: [] });
             setEditMode(false);
             setShowModal(true);
           }}
@@ -134,7 +160,11 @@ export default function EquipamentosTab({ usinaId, usina, onRefresh }: { usinaId
           </thead>
           <tbody>
             {usina.equipamentos?.map((eq: any) => (
-              <tr key={eq.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+              <tr 
+                key={eq.id} 
+                className="border-b border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer"
+                onClick={() => openEdit(eq)}
+              >
                 <td className="p-4">
                   {eq.fotoBase64 ? (
                     <img src={eq.fotoBase64} alt={eq.nome} className="w-12 h-12 rounded object-cover border border-slate-200" />
@@ -152,12 +182,14 @@ export default function EquipamentosTab({ usinaId, usina, onRefresh }: { usinaId
                 </td>
                 <td className="p-4 text-slate-600 font-medium">{eq.periodicidadeDias ? `A cada ${eq.periodicidadeDias} dias` : "-"}</td>
                 <td className="p-4 text-right">
-                  <button onClick={() => openEdit(eq)} className="p-2 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors mr-1">
-                    <Edit2 className="w-4 h-4" />
-                  </button>
-                  <button onClick={() => handleDelete(eq.id)} className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  <div className="flex justify-end gap-1">
+                    <button onClick={(e) => { e.stopPropagation(); openEdit(eq); }} className="p-2 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button onClick={(e) => { e.stopPropagation(); handleDelete(eq.id); }} className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -230,6 +262,36 @@ export default function EquipamentosTab({ usinaId, usina, onRefresh }: { usinaId
                     {equip.fotoBase64 && (
                       <button type="button" onClick={() => setEquip({...equip, fotoBase64: ""})} className="text-red-500 text-sm font-medium hover:underline">Remover</button>
                     )}
+                  </div>
+                </div>
+
+                <div className="col-span-2">
+                  <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Arquivos Anexos (PDF, DOC, Fotos)</label>
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <input type="file" multiple className="hidden" ref={attachmentInputRef} onChange={handleAttachmentUpload} />
+                      <button 
+                        type="button"
+                        onClick={() => attachmentInputRef.current?.click()}
+                        className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 border border-slate-200 w-full justify-center"
+                      >
+                        <Paperclip className="w-4 h-4" /> Anexar Arquivos
+                      </button>
+                    </div>
+                    
+                    <div className="max-h-32 overflow-y-auto space-y-1 custom-scrollbar">
+                      {equip.anexos?.map((file: any, idx: number) => (
+                        <div key={idx} className="flex items-center justify-between p-2 bg-slate-50 border border-slate-100 rounded-lg text-xs">
+                          <div className="flex items-center gap-2 truncate">
+                            <FileText className="w-3 h-3 text-blue-500 shrink-0" />
+                            <span className="truncate text-slate-600 font-medium">{file.name}</span>
+                          </div>
+                          <button type="button" onClick={() => removeAttachment(idx)} className="text-red-400 hover:text-red-600 p-1">
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>

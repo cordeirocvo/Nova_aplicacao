@@ -403,6 +403,7 @@ model EquipamentoUsina {
   criticidade      String?
   periodicidadeDias Int?
   fotoBase64       String?
+  anexos           Json?
   manutencoes      ManutencaoUsina[]
 }
 

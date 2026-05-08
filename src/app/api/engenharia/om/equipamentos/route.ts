@@ -30,6 +30,7 @@ export async function POST(req: Request) {
         criticidade: data.criticidade,
         periodicidadeDias: data.periodicidadeDias ? parseInt(data.periodicidadeDias) : null,
         fotoBase64: data.fotoBase64 || null,
+        anexos: data.anexos || null,
       },
     });
     return NextResponse.json(equipamento);
@@ -50,6 +51,7 @@ export async function PATCH(req: Request) {
         criticidade: data.criticidade,
         periodicidadeDias: data.periodicidadeDias ? parseInt(data.periodicidadeDias) : null,
         fotoBase64: data.fotoBase64 !== undefined ? data.fotoBase64 : undefined,
+        anexos: data.anexos !== undefined ? data.anexos : undefined,
       },
     });
     return NextResponse.json(equipamento);

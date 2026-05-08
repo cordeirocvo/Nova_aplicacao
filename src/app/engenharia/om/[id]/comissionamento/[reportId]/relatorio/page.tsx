@@ -22,8 +22,13 @@ export default function ComissionamentoRelatorio() {
 
         const resReports = await fetch(`/api/engenharia/om/comissionamento?usinaId=${id}`);
         const reports = await resReports.json();
-        const found = reports.find((r: any) => r.id === reportId);
-        setReport(found);
+        
+        if (Array.isArray(reports)) {
+          const found = reports.find((r: any) => r.id === reportId);
+          setReport(found);
+        } else {
+          console.error("Reports response is not an array:", reports);
+        }
       } catch (err) {
         console.error(err);
       } finally {

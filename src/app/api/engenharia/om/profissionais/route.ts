@@ -8,6 +8,7 @@ export async function GET() {
     });
     return NextResponse.json(data);
   } catch (error: any) {
+    console.error("GET /profissionais error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
@@ -15,6 +16,7 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const data = await req.json();
+    console.log("POST /profissionais data:", data);
     const item = await prisma.profissional.create({
       data: {
         nome: data.nome,
@@ -26,6 +28,7 @@ export async function POST(req: Request) {
     });
     return NextResponse.json(item);
   } catch (error: any) {
+    console.error("POST /profissionais error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
@@ -45,6 +48,7 @@ export async function PATCH(req: Request) {
     });
     return NextResponse.json(item);
   } catch (error: any) {
+    console.error("PATCH /profissionais error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
@@ -58,6 +62,7 @@ export async function DELETE(req: Request) {
     await prisma.profissional.delete({ where: { id } });
     return NextResponse.json({ success: true });
   } catch (error: any) {
+    console.error("DELETE /profissionais error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

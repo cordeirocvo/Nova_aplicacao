@@ -7,12 +7,13 @@ import Link from "next/link";
 import EquipamentosTab from "./EquipamentosTab";
 import CalendarioTab from "./CalendarioTab";
 import EstatisticasTab from "./EstatisticasTab";
+import ComissionamentoTab from "./ComissionamentoTab";
 
 export default function UsinaDetails() {
   const params = useParams();
   const id = params?.id as string;
   const [usina, setUsina] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<"EQUIPAMENTOS" | "CALENDARIO" | "ESTATISTICAS">("EQUIPAMENTOS");
+  const [activeTab, setActiveTab] = useState<"EQUIPAMENTOS" | "CALENDARIO" | "ESTATISTICAS" | "COMISSIONAMENTO">("EQUIPAMENTOS");
   const [loading, setLoading] = useState(true);
 
   const fetchUsina = async () => {
@@ -81,12 +82,21 @@ export default function UsinaDetails() {
         >
           <PenTool className="w-4 h-4" /> Estatísticas & KPIs
         </button>
+        <button
+          onClick={() => setActiveTab("COMISSIONAMENTO")}
+          className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all whitespace-nowrap ${
+            activeTab === "COMISSIONAMENTO" ? "bg-blue-600 text-white shadow-md shadow-blue-200" : "text-slate-500 hover:bg-slate-50"
+          }`}
+        >
+          <FileText className="w-4 h-4" /> Comissionamento
+        </button>
       </div>
 
       <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 min-h-[500px]">
         {activeTab === "EQUIPAMENTOS" && <EquipamentosTab usinaId={id} usina={usina} onRefresh={fetchUsina} />}
         {activeTab === "CALENDARIO" && <CalendarioTab usinaId={id} usina={usina} onRefresh={fetchUsina} />}
         {activeTab === "ESTATISTICAS" && <EstatisticasTab usina={usina} />}
+        {activeTab === "COMISSIONAMENTO" && <ComissionamentoTab usinaId={id} usina={usina} onRefresh={fetchUsina} />}
       </div>
     </div>
   );

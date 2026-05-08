@@ -391,6 +391,7 @@ model UsinaFotovoltaica {
   localizacao    String?
   equipamentos   EquipamentoUsina[]
   manutencoes    ManutencaoUsina[]
+  comissionamentos ComissionamentoUsina[]
 }
 
 model EquipamentoUsina {
@@ -427,6 +428,21 @@ model ManutencaoUsina {
   fotosDetalhes    Json?
   documentosUrls   String[]
   responsavel      String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model ComissionamentoUsina {
+  id               String @id @default(cuid())
+  usinaId          String
+  usina            UsinaFotovoltaica @relation(fields: [usinaId], references: [id], onDelete: Cascade)
+  tipo             String // "Frio", "Quente", "Entrega"
+  data             DateTime
+  responsavel      String?
+  numero           String? // Nº no relatório
+  status           String @default("Concluído")
+  dadosTecnicos    Json?   // Para armazenar os testes de string, megger, etc.
+  observacoes      String?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 }

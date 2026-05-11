@@ -2,18 +2,19 @@
 
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
-import { ArrowLeft, Box, Calendar, Plus, PenTool, AlertCircle, FileText } from "lucide-react";
+import { ArrowLeft, Box, Calendar, Plus, PenTool, AlertCircle, FileText, Camera } from "lucide-react";
 import Link from "next/link";
 import EquipamentosTab from "./EquipamentosTab";
 import CalendarioTab from "./CalendarioTab";
 import EstatisticasTab from "./EstatisticasTab";
 import ComissionamentoTab from "./ComissionamentoTab";
+import TermografiaTab from "./TermografiaTab";
 
 export default function UsinaDetails() {
   const params = useParams();
   const id = params?.id as string;
   const [usina, setUsina] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<"EQUIPAMENTOS" | "CALENDARIO" | "ESTATISTICAS" | "COMISSIONAMENTO">("EQUIPAMENTOS");
+  const [activeTab, setActiveTab] = useState<"EQUIPAMENTOS" | "CALENDARIO" | "ESTATISTICAS" | "COMISSIONAMENTO" | "TERMOGRAFIA">("EQUIPAMENTOS");
   const [loading, setLoading] = useState(true);
 
   const fetchUsina = async () => {
@@ -90,6 +91,14 @@ export default function UsinaDetails() {
         >
           <FileText className="w-4 h-4" /> Comissionamento
         </button>
+        <button
+          onClick={() => setActiveTab("TERMOGRAFIA")}
+          className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all whitespace-nowrap ${
+            activeTab === "TERMOGRAFIA" ? "bg-[#EB5E28] text-white shadow-md shadow-orange-200" : "text-slate-500 hover:bg-slate-50"
+          }`}
+        >
+          <Camera className="w-4 h-4" /> Termografia
+        </button>
       </div>
 
       <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 min-h-[500px]">
@@ -97,6 +106,7 @@ export default function UsinaDetails() {
         {activeTab === "CALENDARIO" && <CalendarioTab usinaId={id} usina={usina} onRefresh={fetchUsina} />}
         {activeTab === "ESTATISTICAS" && <EstatisticasTab usina={usina} />}
         {activeTab === "COMISSIONAMENTO" && <ComissionamentoTab usinaId={id} usina={usina} onRefresh={fetchUsina} />}
+        {activeTab === "TERMOGRAFIA" && <TermografiaTab usinaId={id} usina={usina} onRefresh={fetchUsina} />}
       </div>
     </div>
   );

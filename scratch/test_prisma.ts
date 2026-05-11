@@ -1,13 +1,24 @@
-import { prisma } from "../src/lib/prisma";
+import { PrismaClient } from '../prisma/generated-client';
 
-async function test() {
+const prisma = new PrismaClient();
+
+async function main() {
   try {
-    console.log("Prisma keys:", Object.keys(prisma));
-    const count = await (prisma as any).planilhaInstalacao.count();
-    console.log("Count:", count);
-  } catch (err) {
-    console.error("Test failed:", err);
+    console.log("Testing Prisma connection...");
+    const usinas = await prisma.usinaFotovoltaica.findMany({ take: 1 });
+    console.log("Connection successful. Found usinas:", usinas.length);
+    
+    console.log("Testing RelatorioTermografia query...");
+    const termografias = await prisma.relatorioTermografia.findMany({
+      include: { itens: true }
+    });
+    console.log("Query successful. Found reports:", termografias.length);
+    
+  } catch (error) {
+    console.error("Prisma test failed:", error);
+  } finally {
+    await prisma.$disconnect();
   }
 }
 
-test();
+main();

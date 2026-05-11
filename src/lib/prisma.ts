@@ -1,6 +1,5 @@
-// Prisma Client Singleton - Last Sync: 2026-05-08
 import "dotenv/config";
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from '../../prisma/generated-client'
 import { Pool } from 'pg'
 import { PrismaPg } from '@prisma/adapter-pg'
 
@@ -13,9 +12,9 @@ const prismaClientSingleton = () => {
 }
 
 declare global {
-  var prisma: undefined | ReturnType<typeof prismaClientSingleton>
+  var prisma_v2: undefined | ReturnType<typeof prismaClientSingleton>
 }
 
-export const prisma = globalThis.prisma ?? prismaClientSingleton()
+export const prisma = globalThis.prisma_v2 ?? prismaClientSingleton()
 
-if (process.env.NODE_ENV !== 'production') globalThis.prisma = prisma
+if (process.env.NODE_ENV !== 'production') globalThis.prisma_v2 = prisma

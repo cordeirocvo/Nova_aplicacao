@@ -102,7 +102,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       {/* TV Header */}
       {isTV && (
         <div 
-          className="fixed top-0 left-0 right-0 w-full h-14 bg-[#0A192F] text-white flex items-center justify-between px-6 z-50 shadow-lg" 
+          className="fixed top-0 left-0 right-0 w-full h-14 bg-[#0A192F] text-white flex items-center justify-between px-6 z-50 shadow-lg print:hidden" 
           style={{ position: 'fixed', top: 0, left: 0, right: 0, height: '56px', backgroundColor: '#0A192F', display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingLeft: '24px', paddingRight: '24px', zIndex: 100 }}
         >
           <div className="flex items-center" style={{ display: 'flex', alignItems: 'center' }}>
@@ -121,7 +121,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
       {/* Mobile Header */}
       {!isTV && (
-        <div className="md:hidden fixed top-0 left-0 right-0 w-full h-16 bg-[#0A192F] text-white flex items-center justify-between px-4 z-40 shadow-md">
+        <div className="md:hidden fixed top-0 left-0 right-0 w-full h-16 bg-[#0A192F] text-white flex items-center justify-between px-4 z-40 shadow-md print:hidden">
           <div className="flex items-center font-bold text-lg">
             <img src="/logo.png" alt="Logo" className="h-8 object-contain mr-2" />
             <span>Cordeiro Energia</span>
@@ -135,7 +135,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       {/* Sidebar */}
       {!isTV && (
         <aside className={clsx(
-          "fixed md:static top-0 bottom-0 left-0 z-50 w-64 bg-[#0A192F] text-slate-300 transition-transform duration-300 ease-in-out flex flex-col",
+          "fixed md:static top-0 bottom-0 left-0 z-50 w-64 bg-[#0A192F] text-slate-300 transition-transform duration-300 ease-in-out flex flex-col print:hidden",
           isMobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         )}>
           <div className="h-16 hidden md:flex items-center px-6 bg-[#081324] border-b border-slate-800">
@@ -215,11 +215,11 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       )}
 
       <main 
-        className={clsx("flex-1 flex flex-col min-w-0 overflow-y-auto", isTV ? "pt-14" : "pt-16 md:pt-0")}
+        className={clsx("flex-1 flex flex-col min-w-0 overflow-y-auto print:overflow-visible print:bg-white", isTV ? "pt-14" : "pt-16 md:pt-0")}
         style={isTV ? { flex: 1, display: 'flex', flexDirection: 'column', paddingTop: '56px', overflowY: 'auto' } : {}}
       >
         <div 
-          className={clsx("flex-1", isTV ? "p-0" : "p-4 md:p-8")}
+          className={clsx("flex-1", isTV ? "p-0" : "p-4 md:p-8 print:p-0")}
           style={isTV ? { flex: 1, padding: 0 } : {}}
         >
           {children}

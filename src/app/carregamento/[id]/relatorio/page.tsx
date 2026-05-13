@@ -79,7 +79,7 @@ export default function EVReportPage() {
         {isMounted && project && (
           <PDFDownloadLink
             document={<EVReportPDF project={project} />}
-            fileName={`Laudo_EV_${project.projectName.replace(/\s+/g, '_')}.pdf`}
+            fileName={`Laudo_EV_${(project.projectName || "Projeto").replace(/[^a-z0-9]/gi, '_').toUpperCase()}.pdf`}
           >
             {({ loading: pdfLoading }) => (
               <button 
@@ -91,7 +91,7 @@ export default function EVReportPage() {
                 ) : (
                   <Download className="w-6 h-6" />
                 )}
-                {pdfLoading ? "PREPARANDO..." : "BAIXAR LAUDO PDF"}
+                {pdfLoading ? "PREPARANDO PDF..." : "BAIXAR LAUDO PDF"}
               </button>
             )}
           </PDFDownloadLink>
@@ -388,25 +388,32 @@ export default function EVReportPage() {
             margin: 0;
           }
           body {
-            background-color: white;
+            background: white !important;
             -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+          aside, nav, button, .fixed, .print\:hidden {
+            display: none !important;
+          }
+          main {
+            padding: 0 !important;
+            margin: 0 !important;
+            display: block !important;
           }
           #printable-area {
-            width: 210mm;
-            margin: 0;
-            padding: 15mm;
-            box-shadow: none;
-            border: none;
+            width: 210mm !important;
+            min-height: 297mm !important;
+            margin: 0 auto !important;
+            padding: 15mm !important;
+            box-shadow: none !important;
+            border: none !important;
+            position: relative !important;
+            display: block !important;
           }
-          .bg-[#F8FAFC] { background-color: #F8FAFC !important; }
-          .bg-[#0A192F] { background-color: #0A192F !important; }
-          .bg-[#1E3A8A] { background-color: #1E3A8A !important; }
-          .bg-slate-50 { background-color: #F8FAFC !important; }
-          .bg-red-50 { background-color: #FEF2F2 !important; }
-          .text-white { color: white !important; }
-          .text-[#00BFA5] { color: #00BFA5 !important; }
-          .text-[#1E3A8A] { color: #1E3A8A !important; }
-          .border { border: 1px solid #e2e8f0 !important; }
+          * {
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
         }
       `}</style>
     </div>

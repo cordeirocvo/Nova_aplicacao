@@ -73,7 +73,7 @@ export default function EVReportPage() {
       <div id="printable-area" className="flex flex-col gap-12 print:gap-0 items-center w-full">
         
         {/* === PÁGINA 1 === */}
-        <div className="w-[210mm] min-h-[297mm] bg-white p-[15mm] shadow-[0_20px_60px_rgba(30,58,138,0.15)] print:shadow-none print:p-0 relative border border-slate-200 flex flex-col print:border-none page-break-after">
+        <div className="w-[210mm] h-[297mm] bg-white p-[15mm] shadow-[0_20px_60px_rgba(30,58,138,0.15)] print:shadow-none print:w-[210mm] print:h-[297mm] print:p-[15mm] print:m-0 relative border border-slate-200 flex flex-col print:border-none page-break-after print:overflow-hidden box-border">
 
         {/* Header Section */}
         <div className="flex justify-between items-start mb-12 relative z-10">
@@ -237,7 +237,7 @@ export default function EVReportPage() {
       </div>
 
       {/* === PÁGINA 2 === */}
-      <div className="w-[210mm] min-h-[297mm] bg-white p-[15mm] shadow-[0_20px_60px_rgba(30,58,138,0.15)] print:shadow-none print:p-0 relative border border-slate-200 flex flex-col print:border-none page-break-after">
+      <div className="w-[210mm] h-[297mm] bg-white p-[15mm] shadow-[0_20px_60px_rgba(30,58,138,0.15)] print:shadow-none print:w-[210mm] print:h-[297mm] print:p-[15mm] print:m-0 relative border border-slate-200 flex flex-col print:border-none page-break-after print:overflow-hidden box-border">
         {/* Protections & Safety Section */}
         <div className="grid grid-cols-2 gap-8 mb-10 print:break-inside-avoid">
 

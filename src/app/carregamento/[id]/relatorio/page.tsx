@@ -10,15 +10,11 @@ import {
   MapPin, BatteryCharging, FileText, ChevronLeft,
   Info, Box, Building2, FlameKindling, Download, Loader2
 } from "lucide-react";
+import { EVReportPDF } from "@/components/ev/EVReportPDF";
 
-// Importação dinâmica do componente PDF para evitar erros de SSR
+// Importação dinâmica apenas do Link para evitar erros de SSR em ambientes que não suportam Blob/URL
 const PDFDownloadLink = dynamic(
   () => import("@react-pdf/renderer").then((mod) => mod.PDFDownloadLink),
-  { ssr: false }
-);
-
-const EVReportPDF = dynamic(
-  () => import("@/components/ev/EVReportPDF").then((mod) => mod.EVReportPDF),
   { ssr: false }
 );
 
@@ -27,8 +23,10 @@ export default function EVReportPage() {
   const router = useRouter();
   const [project, setProject] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
+    setIsMounted(true);
     fetch(`/api/ev/sizing/${params.id}`)
       .then(res => res.json())
       .then(data => {
@@ -78,7 +76,7 @@ export default function EVReportPage() {
           IMPRIMIR
         </button>
 
-        {project && (
+        {isMounted && project && (
           <PDFDownloadLink
             document={<EVReportPDF project={project} />}
             fileName={`Laudo_EV_${project.projectName.replace(/\s+/g, '_')}.pdf`}

@@ -69,9 +69,12 @@ export default function EVReportPage() {
         </button>
       </div>
 
-      {/* Report Container (A4) */}
-      <div className="max-w-[210mm] mx-auto bg-white p-[15mm] shadow-[0_20px_60px_rgba(30,58,138,0.15)] print:shadow-none print:p-0 print:overflow-visible relative border border-slate-100" id="printable-area">
+      {/* Report Container (A4 pages) */}
+      <div id="printable-area" className="flex flex-col gap-12 print:gap-0 items-center w-full">
         
+        {/* === PÁGINA 1 === */}
+        <div className="w-[210mm] min-h-[297mm] bg-white p-[15mm] shadow-[0_20px_60px_rgba(30,58,138,0.15)] print:shadow-none print:p-0 relative border border-slate-200 flex flex-col print:border-none page-break-after">
+
         {/* Header Section */}
         <div className="flex justify-between items-start mb-12 relative z-10">
           <div className="space-y-6">
@@ -223,8 +226,21 @@ export default function EVReportPage() {
            <div className="absolute right-[-30px] top-[-30px] w-64 h-64 bg-[#00BFA5] rounded-full opacity-[0.03] pointer-events-none"></div>
         </div>
 
+        {/* Footer Página 1 */}
+        <div className="mt-auto pt-10 flex justify-between items-center opacity-40 border-t border-slate-100">
+          <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.4em]">Cordeiro Energia • Sistema de Gestão de Infraestrutura EV</p>
+          <div className="flex items-center gap-2">
+             <span className="text-[8px] font-black text-[#1E3A8A]">POWERED BY</span>
+             <h2 className="text-[#1E3A8A] text-xs font-black uppercase tracking-tighter">Cordeiro SaaS</h2>
+          </div>
+        </div>
+      </div>
+
+      {/* === PÁGINA 2 === */}
+      <div className="w-[210mm] min-h-[297mm] bg-white p-[15mm] shadow-[0_20px_60px_rgba(30,58,138,0.15)] print:shadow-none print:p-0 relative border border-slate-200 flex flex-col print:border-none page-break-after">
         {/* Protections & Safety Section */}
         <div className="grid grid-cols-2 gap-8 mb-10 print:break-inside-avoid">
+
            <div className="space-y-6">
               <div className="p-8 border-2 border-slate-100 rounded-[2.5rem] bg-slate-50/30">
                  <h4 className="text-[11px] font-black text-[#1E3A8A] uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
@@ -344,8 +360,8 @@ export default function EVReportPage() {
             </div>
           </div>
 
-          {/* Footer Branding */}
-          <div className="mt-16 flex justify-between items-center opacity-40 pt-10">
+          {/* Footer Página 2 */}
+          <div className="mt-auto flex justify-between items-center opacity-40 pt-10">
             <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.4em]">Cordeiro Energia • Sistema de Gestão de Infraestrutura EV</p>
             <div className="flex items-center gap-2">
                <span className="text-[8px] font-black text-[#1E3A8A]">POWERED BY</span>
@@ -353,6 +369,7 @@ export default function EVReportPage() {
             </div>
           </div>
         </div>
+      </div>
       </div>
 
       <style jsx global>{`
@@ -375,14 +392,14 @@ export default function EVReportPage() {
             display: block !important;
           }
           #printable-area {
-            width: 210mm !important;
-            min-height: 297mm !important;
-            margin: 0 auto !important;
-            padding: 15mm !important;
-            box-shadow: none !important;
-            border: none !important;
-            position: relative !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
             display: block !important;
+          }
+          .page-break-after {
+            page-break-after: always !important;
+            break-after: page !important;
           }
           * {
             -webkit-print-color-adjust: exact;

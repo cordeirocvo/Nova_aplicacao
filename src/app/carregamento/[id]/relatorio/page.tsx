@@ -4,11 +4,23 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import dynamic from "next/dynamic";
 import { 
   Zap, Shield, AlertTriangle, CheckCircle2, 
   MapPin, BatteryCharging, FileText, ChevronLeft,
-  Info, Box, Building2, FlameKindling
+  Info, Box, Building2, FlameKindling, Download, Loader2
 } from "lucide-react";
+
+// Importação dinâmica do componente PDF para evitar erros de SSR
+const PDFDownloadLink = dynamic(
+  () => import("@react-pdf/renderer").then((mod) => mod.PDFDownloadLink),
+  { ssr: false }
+);
+
+const EVReportPDF = dynamic(
+  () => import("@/components/ev/EVReportPDF").then((mod) => mod.EVReportPDF),
+  { ssr: false }
+);
 
 export default function EVReportPage() {
   const params = useParams();
@@ -57,13 +69,36 @@ export default function EVReportPage() {
         </button>
       </div>
 
-      <button 
-        onClick={() => window.print()} 
-        className="fixed top-8 right-8 bg-[#1E3A8A] text-white px-8 py-4 rounded-full font-black shadow-2xl hover:scale-105 transition-all z-50 flex items-center gap-3 print:hidden border-none cursor-pointer"
-      >
-        <FileText className="w-6 h-6" />
-        IMPRIMIR LAUDO
-      </button>
+      <div className="fixed top-8 right-8 flex gap-4 z-50 print:hidden">
+        <button 
+          onClick={() => window.print()} 
+          className="bg-white text-slate-600 px-6 py-4 rounded-full font-bold shadow-xl hover:bg-slate-50 transition-all flex items-center gap-2 border border-slate-200"
+        >
+          <FileText className="w-5 h-5" />
+          IMPRIMIR
+        </button>
+
+        {project && (
+          <PDFDownloadLink
+            document={<EVReportPDF project={project} />}
+            fileName={`Laudo_EV_${project.projectName.replace(/\s+/g, '_')}.pdf`}
+          >
+            {({ loading: pdfLoading }) => (
+              <button 
+                disabled={pdfLoading}
+                className="bg-[#1E3A8A] text-white px-8 py-4 rounded-full font-black shadow-2xl hover:scale-105 transition-all flex items-center gap-3 border-none cursor-pointer disabled:opacity-50"
+              >
+                {pdfLoading ? (
+                  <Loader2 className="w-6 h-6 animate-spin" />
+                ) : (
+                  <Download className="w-6 h-6" />
+                )}
+                {pdfLoading ? "PREPARANDO..." : "BAIXAR LAUDO PDF"}
+              </button>
+            )}
+          </PDFDownloadLink>
+        )}
+      </div>
 
       {/* Report Container (A4) */}
       <div className="max-w-[210mm] mx-auto bg-white p-[15mm] shadow-[0_20px_60px_rgba(30,58,138,0.15)] print:shadow-none print:p-0 overflow-hidden relative border border-slate-100" id="printable-area">

@@ -228,8 +228,8 @@ export const EVReportPDF: React.FC<EVReportPDFProps> = ({ project }) => {
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        {/* Header */}
-        <View style={styles.header}>
+        {/* Header - Fixed on all pages */}
+        <View style={styles.header} fixed>
           <Image src="/logo.png" style={styles.logo} />
           <View style={styles.headerRight}>
             <Text style={styles.reportTitle}>Laudo de Infraestrutura EV</Text>
@@ -237,152 +237,158 @@ export const EVReportPDF: React.FC<EVReportPDFProps> = ({ project }) => {
           </View>
         </View>
 
-        {/* Informações Básicas */}
-        <View style={styles.section}>
-          <View style={styles.infoGrid}>
-            <View style={styles.infoItem}>
-              <Text style={styles.label}>Projeto</Text>
-              <Text style={styles.value}>{project.projectName}</Text>
-            </View>
-            <View style={styles.infoItem}>
-              <Text style={styles.label}>Cliente</Text>
-              <Text style={styles.value}>{project.clientName || 'Geral'}</Text>
-            </View>
-            <View style={styles.infoItem}>
-              <Text style={styles.label}>Data de Emissão</Text>
-              <Text style={styles.value}>{dateStr}</Text>
-            </View>
-            <View style={styles.infoItem}>
-              <Text style={styles.label}>Localização</Text>
-              <Text style={styles.value}>{project.location || 'Urbano'}</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Resumo Técnico */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Resumo Técnico do Dimensionamento</Text>
-          <View style={styles.techGrid}>
-            <View style={styles.techCard}>
-              <Text style={styles.label}>Potência Carregador</Text>
-              <Text style={styles.techValue}>{project.charger?.power} kW</Text>
-            </View>
-            <View style={styles.techCard}>
-              <Text style={styles.label}>Corrente Calculada</Text>
-              <Text style={styles.techValue}>{project.calculatedCurrent.toFixed(1)} A</Text>
-            </View>
-            <View style={styles.techCard}>
-              <Text style={styles.label}>Disjuntor Principal</Text>
-              <Text style={styles.techValue}>{project.calculatedBreaker} A (Curva C)</Text>
+        {/* Content Section - Allows wrapping */}
+        <View style={{ flexGrow: 1 }}>
+          {/* Informações Básicas */}
+          <View style={styles.section}>
+            <View style={styles.infoGrid}>
+              <View style={styles.infoItem}>
+                <Text style={styles.label}>Projeto</Text>
+                <Text style={styles.value}>{project.projectName}</Text>
+              </View>
+              <View style={styles.infoItem}>
+                <Text style={styles.label}>Cliente</Text>
+                <Text style={styles.value}>{project.clientName || 'Geral'}</Text>
+              </View>
+              <View style={styles.infoItem}>
+                <Text style={styles.label}>Data de Emissão</Text>
+                <Text style={styles.value}>{dateStr}</Text>
+              </View>
+              <View style={styles.infoItem}>
+                <Text style={styles.label}>Localização</Text>
+                <Text style={styles.value}>{project.location || 'Urbano'}</Text>
+              </View>
             </View>
           </View>
-        </View>
 
-        {/* Engenharia Detalhada */}
-        <View style={styles.engineeringBox}>
-          <Text style={styles.engineeringTitle}>Especificações de Condutores e Circuitos</Text>
-          
-          {project.hasTransformer && (
-            <View style={{ marginBottom: 20 }}>
-              <Text style={{ color: '#00bfa5', fontSize: 8, fontWeight: 'bold', marginBottom: 10 }}>LADO PRIMÁRIO (TRANSFORMADOR)</Text>
-              <View style={styles.engRow}>
-                <View style={styles.engCol}>
-                  <Text style={styles.engLabel}>Cabo Recomendado</Text>
-                  <Text style={styles.engValue}>{project.calculatedPrimaryCable} mm²</Text>
+          {/* Resumo Técnico */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Resumo Técnico do Dimensionamento</Text>
+            <View style={styles.techGrid}>
+              <View style={styles.techCard}>
+                <Text style={styles.label}>Potência Carregador</Text>
+                <Text style={styles.techValue}>{project.charger?.power} kW</Text>
+              </View>
+              <View style={styles.techCard}>
+                <Text style={styles.label}>Corrente Calculada</Text>
+                <Text style={styles.techValue}>{project.calculatedCurrent.toFixed(1)} A</Text>
+              </View>
+              <View style={styles.techCard}>
+                <Text style={styles.label}>Disjuntor Principal</Text>
+                <Text style={styles.techValue}>{project.calculatedBreaker} A (Curva C)</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Engenharia Detalhada */}
+          <View style={styles.engineeringBox} wrap={false}>
+            <Text style={styles.engineeringTitle}>Especificações de Condutores e Circuitos</Text>
+            
+            {project.hasTransformer && (
+              <View style={{ marginBottom: 20 }}>
+                <Text style={{ color: '#00bfa5', fontSize: 8, fontWeight: 'bold', marginBottom: 10 }}>LADO PRIMÁRIO (TRANSFORMADOR)</Text>
+                <View style={styles.engRow}>
+                  <View style={styles.engCol}>
+                    <Text style={styles.engLabel}>Cabo Recomendado</Text>
+                    <Text style={styles.engValue}>{project.calculatedPrimaryCable} mm²</Text>
+                  </View>
+                  <View style={styles.engCol}>
+                    <Text style={styles.engLabel}>Proteção Primária</Text>
+                    <Text style={styles.engValue}>{project.calculatedPrimaryBreaker} A</Text>
+                  </View>
+                  <View style={styles.engCol}>
+                    <Text style={styles.engLabel}>Distância Lançada</Text>
+                    <Text style={styles.engValue}>{project.transformerDistance} m</Text>
+                  </View>
                 </View>
-                <View style={styles.engCol}>
-                  <Text style={styles.engLabel}>Proteção Primária</Text>
-                  <Text style={styles.engValue}>{project.calculatedPrimaryBreaker} A</Text>
+              </View>
+            )}
+
+            <Text style={{ color: '#00bfa5', fontSize: 8, fontWeight: 'bold', marginBottom: 10 }}>
+              {project.hasTransformer ? 'LADO SECUNDÁRIO / CARREGADOR' : 'CIRCUITO DE ALIMENTAÇÃO DIRETA'}
+            </Text>
+            <View style={styles.engRow}>
+              <View style={styles.engCol}>
+                <Text style={styles.engLabel}>Cabo do Circuito</Text>
+                <Text style={styles.engValue}>{project.calculatedCableGauge} mm²</Text>
+              </View>
+              <View style={styles.engCol}>
+                <Text style={styles.engLabel}>Eletroduto</Text>
+                <Text style={styles.engValue}>{project.calculatedConduit}</Text>
+              </View>
+              <View style={styles.engCol}>
+                <Text style={styles.engLabel}>Queda de Tensão</Text>
+                <Text style={[styles.engValue, project.voltageDrop > 4 ? { color: '#fb7185' } : {}]}>{project.voltageDrop}%</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Segurança e Normas */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Segurança e Conformidade Normativa</Text>
+            <View style={styles.safetySection}>
+              <View style={styles.safetyBox}>
+                <Text style={styles.safetyTitle}>Bombeiros / AVCB (IT 41)</Text>
+                <View style={styles.safetyItem}>
+                  <Text style={styles.bullet}>•</Text>
+                  <Text style={styles.safetyText}>Extintor: {project.fireExtinguisherType}</Text>
                 </View>
-                <View style={styles.engCol}>
-                  <Text style={styles.engLabel}>Distância Lançada</Text>
-                  <Text style={styles.engValue}>{project.transformerDistance} m</Text>
+                <View style={styles.safetyItem}>
+                  <Text style={styles.bullet}>•</Text>
+                  <Text style={styles.safetyText}>Botão Emergência: Obrigatório a 5m (Tipo Cogumelo)</Text>
+                </View>
+                <View style={styles.safetyItem}>
+                  <Text style={styles.bullet}>•</Text>
+                  <Text style={styles.safetyText}>Sinalização: Pintura e Placas conforme NBR 17019</Text>
+                </View>
+              </View>
+              <View style={[styles.safetyBox, { backgroundColor: '#f0fdf4', borderColor: '#dcfce7' }]}>
+                <Text style={[styles.safetyTitle, { color: '#16a34a' }]}>Proteções Elétricas</Text>
+                <View style={styles.safetyItem}>
+                  <Text style={[styles.bullet, { color: '#16a34a' }]}>•</Text>
+                  <Text style={[styles.safetyText, { color: '#064e3b' }]}>DR/IDR: {project.calculatedIDR || project.calculatedDR}</Text>
+                </View>
+                <View style={styles.safetyItem}>
+                  <Text style={[styles.bullet, { color: '#16a34a' }]}>•</Text>
+                  <Text style={[styles.safetyText, { color: '#064e3b' }]}>DPS: {project.calculatedDPS}</Text>
+                </View>
+                <View style={styles.safetyItem}>
+                  <Text style={[styles.bullet, { color: '#16a34a' }]}>•</Text>
+                  <Text style={[styles.safetyText, { color: '#064e3b' }]}>Aterramento: {project.groundingType} - {project.groundingAnalysis}</Text>
                 </View>
               </View>
             </View>
-          )}
+          </View>
 
-          <Text style={{ color: '#00bfa5', fontSize: 8, fontWeight: 'bold', marginBottom: 10 }}>
-            {project.hasTransformer ? 'LADO SECUNDÁRIO / CARREGADOR' : 'CIRCUITO DE ALIMENTAÇÃO DIRETA'}
-          </Text>
-          <View style={styles.engRow}>
-            <View style={styles.engCol}>
-              <Text style={styles.engLabel}>Cabo do Circuito</Text>
-              <Text style={styles.engValue}>{project.calculatedCableGauge} mm²</Text>
-            </View>
-            <View style={styles.engCol}>
-              <Text style={styles.engLabel}>Eletroduto</Text>
-              <Text style={styles.engValue}>{project.calculatedConduit}</Text>
-            </View>
-            <View style={styles.engCol}>
-              <Text style={styles.engLabel}>Queda de Tensão</Text>
-              <Text style={[styles.engValue, project.voltageDrop > 4 ? { color: '#fb7185' } : {}]}>{project.voltageDrop}%</Text>
+          {/* Normas Aplicáveis */}
+          <View style={styles.section} wrap={false}>
+            <View style={styles.standardsBox}>
+               <Text style={styles.label}>Normas ABNT Aplicáveis</Text>
+               <Text style={styles.standardItem}>{project.abntStandards}</Text>
+               <Text style={[styles.label, { marginTop: 8 }]}>Instrução Técnica Bombeiros</Text>
+               <Text style={styles.standardItem}>{project.fireDeptStandards || 'IT 41/2023 - CBMG'}</Text>
             </View>
           </View>
-        </View>
 
-        {/* Segurança e Normas */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Segurança e Conformidade Normativa</Text>
-          <View style={styles.safetySection}>
-            <View style={styles.safetyBox}>
-              <Text style={styles.safetyTitle}>Bombeiros / AVCB (IT 41)</Text>
-              <View style={styles.safetyItem}>
-                <Text style={styles.bullet}>•</Text>
-                <Text style={styles.safetyText}>Extintor: {project.fireExtinguisherType}</Text>
-              </View>
-              <View style={styles.safetyItem}>
-                <Text style={styles.bullet}>•</Text>
-                <Text style={styles.safetyText}>Botão Emergência: Obrigatório a 5m (Tipo Cogumelo)</Text>
-              </View>
-              <View style={styles.safetyItem}>
-                <Text style={styles.bullet}>•</Text>
-                <Text style={styles.safetyText}>Sinalização: Pintura e Placas conforme NBR 17019</Text>
-              </View>
+          {/* Assinaturas */}
+          <View style={styles.signatureContainer} wrap={false}>
+            <View style={styles.signatureLine}>
+              <Text style={styles.signatureName}>Engenharia Responsável</Text>
+              <Text style={styles.signatureRole}>Cordeiro Energia O&M</Text>
             </View>
-            <View style={[styles.safetyBox, { backgroundColor: '#f0fdf4', borderColor: '#dcfce7' }]}>
-              <Text style={[styles.safetyTitle, { color: '#16a34a' }]}>Proteções Elétricas</Text>
-              <View style={styles.safetyItem}>
-                <Text style={[styles.bullet, { color: '#16a34a' }]}>•</Text>
-                <Text style={[styles.safetyText, { color: '#064e3b' }]}>DR/IDR: {project.calculatedIDR || project.calculatedDR}</Text>
-              </View>
-              <View style={styles.safetyItem}>
-                <Text style={[styles.bullet, { color: '#16a34a' }]}>•</Text>
-                <Text style={[styles.safetyText, { color: '#064e3b' }]}>DPS: {project.calculatedDPS}</Text>
-              </View>
-              <View style={styles.safetyItem}>
-                <Text style={[styles.bullet, { color: '#16a34a' }]}>•</Text>
-                <Text style={[styles.safetyText, { color: '#064e3b' }]}>Aterramento: {project.groundingType} - {project.groundingAnalysis}</Text>
-              </View>
+            <View style={styles.signatureLine}>
+              <Text style={styles.signatureName}>Cliente / Contratante</Text>
+              <Text style={styles.signatureRole}>Aceite e Aprovação</Text>
             </View>
           </View>
         </View>
 
-        {/* Normas Aplicáveis */}
-        <View style={styles.section}>
-          <View style={styles.standardsBox}>
-             <Text style={styles.label}>Normas ABNT Aplicáveis</Text>
-             <Text style={styles.standardItem}>{project.abntStandards}</Text>
-             <Text style={[styles.label, { marginTop: 8 }]}>Instrução Técnica Bombeiros</Text>
-             <Text style={styles.standardItem}>{project.fireDeptStandards || 'IT 41/2023 - CBMG'}</Text>
-          </View>
-        </View>
-
-        {/* Assinaturas */}
-        <View style={styles.signatureContainer}>
-          <View style={styles.signatureLine}>
-            <Text style={styles.signatureName}>Engenharia Responsável</Text>
-            <Text style={styles.signatureRole}>Cordeiro Energia O&M</Text>
-          </View>
-          <View style={styles.signatureLine}>
-            <Text style={styles.signatureName}>Cliente / Contratante</Text>
-            <Text style={styles.signatureRole}>Aceite e Aprovação</Text>
-          </View>
-        </View>
-
-        {/* Footer */}
-        <View style={styles.footer}>
+        {/* Footer - Fixed on all pages */}
+        <View style={styles.footer} fixed>
           <Text style={styles.footerText}>Cordeiro Energia • Sistema de Gestão de Infraestrutura EV • www.cordeiroenergia.com.br</Text>
+          <Text style={[styles.footerText, { marginTop: 4 }]} render={({ pageNumber, totalPages }) => (
+            `Página ${pageNumber} de ${totalPages}`
+          )} />
         </View>
       </Page>
     </Document>

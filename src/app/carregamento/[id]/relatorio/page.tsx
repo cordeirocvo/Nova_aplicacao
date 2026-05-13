@@ -99,7 +99,7 @@ export default function EVReportPage() {
       </div>
 
       {/* Report Container (A4) */}
-      <div className="max-w-[210mm] mx-auto bg-white p-[15mm] shadow-[0_20px_60px_rgba(30,58,138,0.15)] print:shadow-none print:p-0 overflow-hidden relative border border-slate-100" id="printable-area">
+      <div className="max-w-[210mm] mx-auto bg-white p-[15mm] shadow-[0_20px_60px_rgba(30,58,138,0.15)] print:shadow-none print:p-0 print:overflow-visible relative border border-slate-100" id="printable-area">
         
         {/* Header Section */}
         <div className="flex justify-between items-start mb-12 relative z-10">
@@ -129,7 +129,7 @@ export default function EVReportPage() {
         </div>
 
         {/* Project Context Strip */}
-        <div className="grid grid-cols-4 gap-4 bg-[#F8FAFC] rounded-[2.5rem] p-8 mb-10 border border-slate-100 relative overflow-hidden">
+        <div className="grid grid-cols-4 gap-4 bg-[#F8FAFC] rounded-[2.5rem] p-8 mb-10 border border-slate-100 relative overflow-hidden print:break-inside-avoid">
           <div className="relative z-10">
             <span className="text-[9px] font-black text-[#00BFA5] uppercase block mb-1 opacity-80">Identificação</span>
             <span className="text-xs font-black text-[#1E3A8A] uppercase leading-tight">{project.projectName}</span>
@@ -149,7 +149,7 @@ export default function EVReportPage() {
         </div>
 
         {/* Technical Summary Blocks */}
-        <div className="grid grid-cols-3 gap-6 mb-10">
+        <div className="grid grid-cols-3 gap-6 mb-10 print:break-inside-avoid">
            <div className="bg-white border-2 border-slate-100 rounded-[2rem] p-6 shadow-sm hover:border-[#1E3A8A]/30 transition-all">
               <div className="flex items-center gap-2 mb-3">
                  <Building2 className="w-4 h-4 text-[#1E3A8A]" />
@@ -180,7 +180,7 @@ export default function EVReportPage() {
         </div>
 
         {/* Detailed Engineering Section */}
-        <div className="bg-[#0A192F] text-white p-10 rounded-[3rem] shadow-2xl mb-10 relative overflow-hidden">
+        <div className="bg-[#0A192F] text-white p-10 rounded-[3rem] shadow-2xl mb-10 relative overflow-hidden print:break-inside-avoid">
            <div className="flex items-center gap-3 mb-8 border-b border-white/10 pb-5">
               <Zap className="w-6 h-6 text-[#00BFA5]" />
               <h3 className="text-xl font-black uppercase tracking-tight">Dimensionamento de Condutores e Circuitos</h3>
@@ -253,7 +253,7 @@ export default function EVReportPage() {
         </div>
 
         {/* Protections & Safety Section */}
-        <div className="grid grid-cols-2 gap-8 mb-10">
+        <div className="grid grid-cols-2 gap-8 mb-10 print:break-inside-avoid">
            <div className="space-y-6">
               <div className="p-8 border-2 border-slate-100 rounded-[2.5rem] bg-slate-50/30">
                  <h4 className="text-[11px] font-black text-[#1E3A8A] uppercase tracking-[0.2em] mb-6 flex items-center gap-2">

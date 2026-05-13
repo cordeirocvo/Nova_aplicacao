@@ -4,15 +4,11 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import dynamic from "next/dynamic";
 import { 
   Zap, Shield, AlertTriangle, CheckCircle2, 
   MapPin, BatteryCharging, FileText, ChevronLeft,
   Info, Box, Building2, FlameKindling, Download, Loader2
 } from "lucide-react";
-import { EVReportPDF } from "@/components/ev/EVReportPDF";
-
-// Importação dinâmica apenas do Link para evitar erros de SSR em ambientes que não suportam Blob/URL
 const PDFDownloadLink = dynamic(
   () => import("@react-pdf/renderer").then((mod) => mod.PDFDownloadLink),
   { ssr: false }
@@ -70,32 +66,11 @@ export default function EVReportPage() {
       <div className="fixed top-8 right-8 flex gap-4 z-50 print:hidden">
         <button 
           onClick={() => window.print()} 
-          className="bg-white text-slate-600 px-6 py-4 rounded-full font-bold shadow-xl hover:bg-slate-50 transition-all flex items-center gap-2 border border-slate-200"
+          className="bg-[#1E3A8A] text-white px-8 py-4 rounded-full font-black shadow-2xl hover:scale-105 transition-all flex items-center gap-3 border-none cursor-pointer"
         >
-          <FileText className="w-5 h-5" />
-          IMPRIMIR
+          <Download className="w-6 h-6" />
+          GERAR / BAIXAR PDF
         </button>
-
-        {isMounted && project && (
-          <PDFDownloadLink
-            document={<EVReportPDF project={project} logoUrl={typeof window !== 'undefined' ? `${window.location.origin}/logo.png` : undefined} />}
-            fileName={`Laudo_EV_${(project.projectName || "Projeto").replace(/[^a-z0-9]/gi, '_').toUpperCase()}.pdf`}
-          >
-            {({ loading: pdfLoading }) => (
-              <button 
-                disabled={pdfLoading}
-                className="bg-[#1E3A8A] text-white px-8 py-4 rounded-full font-black shadow-2xl hover:scale-105 transition-all flex items-center gap-3 border-none cursor-pointer disabled:opacity-50"
-              >
-                {pdfLoading ? (
-                  <Loader2 className="w-6 h-6 animate-spin" />
-                ) : (
-                  <Download className="w-6 h-6" />
-                )}
-                {pdfLoading ? "PREPARANDO PDF..." : "BAIXAR LAUDO PDF"}
-              </button>
-            )}
-          </PDFDownloadLink>
-        )}
       </div>
 
       {/* Report Container (A4) */}
@@ -342,41 +317,44 @@ export default function EVReportPage() {
         </div>
 
         {/* Final Disclaimer */}
-        <div className="text-[9px] text-slate-400 leading-relaxed text-justify px-4">
-           Este laudo técnico foi gerado com base nas especificações do fabricante e normas técnicas vigentes na data de emissão. 
-           A responsabilidade pela execução da obra deve ser de profissional habilitado com emissão de ART/TRT. 
-           A instalação do transformador, quando necessária, deve prever ventilação adequada e proteção contra intempéries.
-        </div>
+        {/* Footer Group - Kept together on print */}
+        <div className="print:break-inside-avoid print:mt-12">
+          <div className="text-[9px] text-slate-400 leading-relaxed text-justify px-4">
+             Este laudo técnico foi gerado com base nas especificações do fabricante e normas técnicas vigentes na data de emissão. 
+             A responsabilidade pela execução da obra deve ser de profissional habilitado com emissão de ART/TRT. 
+             A instalação do transformador, quando necessária, deve prever ventilação adequada e proteção contra intempéries.
+          </div>
 
-        {/* Signature Area */}
-        <div className="mt-20 pt-10 border-t border-slate-100">
-          <div className="grid grid-cols-2 gap-20 px-10">
-            <div className="text-center">
-              <div className="h-20 flex items-end justify-center mb-4 relative">
-                 <div className="absolute inset-0 flex items-center justify-center opacity-[0.03]">
-                    <Zap className="w-20 h-20 text-[#1E3A8A]" />
-                 </div>
-                 <p className="text-[9px] font-black uppercase text-slate-300 tracking-[0.5em] rotate-[-2deg]">Assinatura Engenharia</p>
+          {/* Signature Area */}
+          <div className="mt-12 pt-10 border-t border-slate-100">
+            <div className="grid grid-cols-2 gap-20 px-10">
+              <div className="text-center">
+                <div className="h-20 flex items-end justify-center mb-4 relative">
+                   <div className="absolute inset-0 flex items-center justify-center opacity-[0.03]">
+                      <Zap className="w-20 h-20 text-[#1E3A8A]" />
+                   </div>
+                   <p className="text-[9px] font-black uppercase text-slate-300 tracking-[0.5em] rotate-[-2deg]">Assinatura Engenharia</p>
+                </div>
+                <div className="h-[1px] w-full bg-slate-300 mb-3"></div>
+                <p className="text-[11px] font-[900] uppercase text-[#1E3A8A]">Eng. Responsável Técnico</p>
+                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-1">Cordeiro Energia O&M</p>
               </div>
-              <div className="h-[1px] w-full bg-slate-300 mb-3"></div>
-              <p className="text-[11px] font-[900] uppercase text-[#1E3A8A]">Eng. Responsável Técnico</p>
-              <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-1">Cordeiro Energia O&M</p>
-            </div>
-            <div className="text-center">
-              <div className="h-20 flex items-end justify-center mb-4"></div>
-              <div className="h-[1px] w-full bg-slate-300 mb-3"></div>
-              <p className="text-[11px] font-[900] uppercase text-slate-800">Aceite e Aprovação</p>
-              <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-1">{project.clientName || "Cliente Contratante"}</p>
+              <div className="text-center">
+                <div className="h-20 flex items-end justify-center mb-4"></div>
+                <div className="h-[1px] w-full bg-slate-300 mb-3"></div>
+                <p className="text-[11px] font-[900] uppercase text-slate-800">Aceite e Aprovação</p>
+                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-1">{project.clientName || "Cliente Contratante"}</p>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Footer Branding */}
-        <div className="mt-20 flex justify-between items-center opacity-40 pt-10">
-          <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.4em]">Cordeiro Energia • Sistema de Gestão de Infraestrutura EV</p>
-          <div className="flex items-center gap-2">
-             <span className="text-[8px] font-black text-[#1E3A8A]">POWERED BY</span>
-             <h2 className="text-[#1E3A8A] text-xs font-black uppercase tracking-tighter">Cordeiro SaaS</h2>
+          {/* Footer Branding */}
+          <div className="mt-16 flex justify-between items-center opacity-40 pt-10">
+            <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.4em]">Cordeiro Energia • Sistema de Gestão de Infraestrutura EV</p>
+            <div className="flex items-center gap-2">
+               <span className="text-[8px] font-black text-[#1E3A8A]">POWERED BY</span>
+               <h2 className="text-[#1E3A8A] text-xs font-black uppercase tracking-tighter">Cordeiro SaaS</h2>
+            </div>
           </div>
         </div>
       </div>

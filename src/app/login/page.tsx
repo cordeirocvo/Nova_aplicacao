@@ -14,18 +14,16 @@ export default function LoginPage() {
   const router = useRouter();
 
   useEffect(() => {
+    // Redirecionamento automático se já estiver logado
     if (status === "authenticated" && session && session.user) {
       const user = session.user as any;
       const role = user.role || "USER";
-      if (role === "TV") {
-        window.location.href = "/atividades";
-      } else if (role === "USER") {
-        window.location.href = "/atividades/nova";
-      } else {
-        window.location.href = "/dashboard";
-      }
+      const target = role === "TV" ? "/atividades" : (role === "USER" ? "/atividades/nova" : "/dashboard");
+      
+      console.log("Sessão ativa detectada, redirecionando para:", target);
+      router.replace(target);
     }
-  }, [status, session]);
+  }, [status, session, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,16 +37,21 @@ export default function LoginPage() {
     });
 
     if (res?.error) {
+      console.error("Erro no login:", res.error);
       if (res.error === "CredentialsSignin") {
         setError("E-mail ou senha incorretos.");
       } else {
         setError("Erro ao conectar com o servidor. Verifique sua conexão.");
       }
       setLoading(false);
+    } else if (res?.ok) {
+      console.log("Login OK, redirecionando...");
+      // O useEffect lidará com o redirecionamento baseado no status da sessão que mudará
+      // Mas podemos forçar uma atualização do roteador
+      router.push("/dashboard"); // Redirecionamento padrão, o useEffect corrigirá se necessário
     } else {
-      // Forçar refresh para garantir que o middleware/layout pegue a nova sessão
-      router.refresh();
-      // O useEffect lidará com o redirecionamento
+      setError("Ocorreu um erro inesperado. Tente novamente.");
+      setLoading(false);
     }
   };
 

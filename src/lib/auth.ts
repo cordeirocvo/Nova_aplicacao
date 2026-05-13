@@ -12,32 +12,41 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Senha", type: "password" }
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null;
-
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email }
-        });
-
-        if (user && await bcrypt.compare(credentials.password, user.password)) {
-          return {
-            id: user.id,
-            email: user.email,
-            name: user.name,
-            role: user.role,
-          };
-        }
-        
-        // Temporary fallback for migration
-        if (user && user.password === credentials.password) {
-           return {
-            id: user.id,
-            email: user.email,
-            name: user.name,
-            role: user.role,
-          };
+        console.log("Authorize attempt for:", credentials?.email);
+        if (!credentials?.email || !credentials?.password) {
+          console.log("Missing credentials");
+          return null;
         }
 
-        return null;
+        try {
+          const user = await prisma.user.findUnique({
+            where: { email: credentials.email }
+          });
+
+          if (!user) {
+            console.log("User not found:", credentials.email);
+            return null;
+          }
+
+          const passwordMatch = await bcrypt.compare(credentials.password, user.password);
+          const plainMatch = user.password === credentials.password;
+
+          if (passwordMatch || plainMatch) {
+            console.log("Login successful for:", credentials.email);
+            return {
+              id: user.id,
+              email: user.email,
+              name: user.name,
+              role: user.role,
+            };
+          }
+          
+          console.log("Invalid password for:", credentials.email);
+          return null;
+        } catch (error) {
+          console.error("Error in authorize:", error);
+          return null;
+        }
       }
     })
   ],

@@ -329,7 +329,8 @@ export const CHARGER_PRESETS = [
   // BENY
   { label: 'BENY BCP 7,4kW (AC Monofásico)', powerKW: 7.4, phases: 1, type: 'AC' as const },
   { label: 'BENY BCP 22kW (AC Trifásico)', powerKW: 22, phases: 3, type: 'AC' as const },
-  { label: 'BENY DC 20kW (Rápido)', powerKW: 20, phases: 3, type: 'DC' as const },
+  { label: 'BENY DC 20kW G2 (Rápido Wallbox)', powerKW: 20, phases: 3, type: 'DC' as const },
+  { label: 'BENY DC 40kW G2 (Rápido Wallbox)', powerKW: 40, phases: 3, type: 'DC' as const },
   { label: 'BENY DC 120kW (Ultra-Rápido)', powerKW: 120, phases: 3, type: 'DC' as const },
 
   { label: '50 kW — DCFC Rápido (DC)', powerKW: 50, phases: 3, type: 'DC' as const },

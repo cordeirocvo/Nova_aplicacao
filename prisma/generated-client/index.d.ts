@@ -10004,6 +10004,12 @@ export namespace Prisma {
     calculatedPrimaryBreaker: number | null
     calculatedDPS: string | null
     calculatedIDR: string | null
+    fireExtinguisherType: string | null
+    hasEmergencyButton5m: boolean | null
+    requiresWarningSigns: boolean | null
+    fireDeptStandards: string | null
+    abntStandards: string | null
+    specificSafetyNotes: string | null
     existingLoadKW: number | null
     simultaneityFactor: number | null
     isCollective: boolean | null
@@ -10040,6 +10046,12 @@ export namespace Prisma {
     calculatedPrimaryBreaker: number | null
     calculatedDPS: string | null
     calculatedIDR: string | null
+    fireExtinguisherType: string | null
+    hasEmergencyButton5m: boolean | null
+    requiresWarningSigns: boolean | null
+    fireDeptStandards: string | null
+    abntStandards: string | null
+    specificSafetyNotes: string | null
     existingLoadKW: number | null
     simultaneityFactor: number | null
     isCollective: boolean | null
@@ -10076,6 +10088,12 @@ export namespace Prisma {
     calculatedPrimaryBreaker: number
     calculatedDPS: number
     calculatedIDR: number
+    fireExtinguisherType: number
+    hasEmergencyButton5m: number
+    requiresWarningSigns: number
+    fireDeptStandards: number
+    abntStandards: number
+    specificSafetyNotes: number
     existingLoadKW: number
     simultaneityFactor: number
     isCollective: number
@@ -10146,6 +10164,12 @@ export namespace Prisma {
     calculatedPrimaryBreaker?: true
     calculatedDPS?: true
     calculatedIDR?: true
+    fireExtinguisherType?: true
+    hasEmergencyButton5m?: true
+    requiresWarningSigns?: true
+    fireDeptStandards?: true
+    abntStandards?: true
+    specificSafetyNotes?: true
     existingLoadKW?: true
     simultaneityFactor?: true
     isCollective?: true
@@ -10182,6 +10206,12 @@ export namespace Prisma {
     calculatedPrimaryBreaker?: true
     calculatedDPS?: true
     calculatedIDR?: true
+    fireExtinguisherType?: true
+    hasEmergencyButton5m?: true
+    requiresWarningSigns?: true
+    fireDeptStandards?: true
+    abntStandards?: true
+    specificSafetyNotes?: true
     existingLoadKW?: true
     simultaneityFactor?: true
     isCollective?: true
@@ -10218,6 +10248,12 @@ export namespace Prisma {
     calculatedPrimaryBreaker?: true
     calculatedDPS?: true
     calculatedIDR?: true
+    fireExtinguisherType?: true
+    hasEmergencyButton5m?: true
+    requiresWarningSigns?: true
+    fireDeptStandards?: true
+    abntStandards?: true
+    specificSafetyNotes?: true
     existingLoadKW?: true
     simultaneityFactor?: true
     isCollective?: true
@@ -10341,6 +10377,12 @@ export namespace Prisma {
     calculatedPrimaryBreaker: number | null
     calculatedDPS: string | null
     calculatedIDR: string | null
+    fireExtinguisherType: string | null
+    hasEmergencyButton5m: boolean
+    requiresWarningSigns: boolean
+    fireDeptStandards: string | null
+    abntStandards: string | null
+    specificSafetyNotes: string | null
     existingLoadKW: number | null
     simultaneityFactor: number | null
     isCollective: boolean
@@ -10396,6 +10438,12 @@ export namespace Prisma {
     calculatedPrimaryBreaker?: boolean
     calculatedDPS?: boolean
     calculatedIDR?: boolean
+    fireExtinguisherType?: boolean
+    hasEmergencyButton5m?: boolean
+    requiresWarningSigns?: boolean
+    fireDeptStandards?: boolean
+    abntStandards?: boolean
+    specificSafetyNotes?: boolean
     existingLoadKW?: boolean
     simultaneityFactor?: boolean
     isCollective?: boolean
@@ -10433,6 +10481,12 @@ export namespace Prisma {
     calculatedPrimaryBreaker?: boolean
     calculatedDPS?: boolean
     calculatedIDR?: boolean
+    fireExtinguisherType?: boolean
+    hasEmergencyButton5m?: boolean
+    requiresWarningSigns?: boolean
+    fireDeptStandards?: boolean
+    abntStandards?: boolean
+    specificSafetyNotes?: boolean
     existingLoadKW?: boolean
     simultaneityFactor?: boolean
     isCollective?: boolean
@@ -10470,6 +10524,12 @@ export namespace Prisma {
     calculatedPrimaryBreaker?: boolean
     calculatedDPS?: boolean
     calculatedIDR?: boolean
+    fireExtinguisherType?: boolean
+    hasEmergencyButton5m?: boolean
+    requiresWarningSigns?: boolean
+    fireDeptStandards?: boolean
+    abntStandards?: boolean
+    specificSafetyNotes?: boolean
     existingLoadKW?: boolean
     simultaneityFactor?: boolean
     isCollective?: boolean
@@ -10507,6 +10567,12 @@ export namespace Prisma {
     calculatedPrimaryBreaker?: boolean
     calculatedDPS?: boolean
     calculatedIDR?: boolean
+    fireExtinguisherType?: boolean
+    hasEmergencyButton5m?: boolean
+    requiresWarningSigns?: boolean
+    fireDeptStandards?: boolean
+    abntStandards?: boolean
+    specificSafetyNotes?: boolean
     existingLoadKW?: boolean
     simultaneityFactor?: boolean
     isCollective?: boolean
@@ -10515,7 +10581,7 @@ export namespace Prisma {
     updatedAt?: boolean
   }
 
-  export type ProjetoDimensionamentoOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "projectName" | "clientName" | "utility" | "entranceCategory" | "distance" | "installationMethod" | "chargerId" | "calculatedCurrent" | "calculatedCableGauge" | "calculatedBreaker" | "calculatedDR" | "calculatedConduit" | "voltageDrop" | "groundingAnalysis" | "isServiceEntranceOk" | "analysisNotes" | "hasTransformer" | "transformerPrimaryVoltage" | "transformerSecondaryVoltage" | "transformerDistance" | "chargerDistance" | "groundingType" | "calculatedPrimaryCable" | "calculatedPrimaryBreaker" | "calculatedDPS" | "calculatedIDR" | "existingLoadKW" | "simultaneityFactor" | "isCollective" | "location" | "createdAt" | "updatedAt", ExtArgs["result"]["projetoDimensionamento"]>
+  export type ProjetoDimensionamentoOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "projectName" | "clientName" | "utility" | "entranceCategory" | "distance" | "installationMethod" | "chargerId" | "calculatedCurrent" | "calculatedCableGauge" | "calculatedBreaker" | "calculatedDR" | "calculatedConduit" | "voltageDrop" | "groundingAnalysis" | "isServiceEntranceOk" | "analysisNotes" | "hasTransformer" | "transformerPrimaryVoltage" | "transformerSecondaryVoltage" | "transformerDistance" | "chargerDistance" | "groundingType" | "calculatedPrimaryCable" | "calculatedPrimaryBreaker" | "calculatedDPS" | "calculatedIDR" | "fireExtinguisherType" | "hasEmergencyButton5m" | "requiresWarningSigns" | "fireDeptStandards" | "abntStandards" | "specificSafetyNotes" | "existingLoadKW" | "simultaneityFactor" | "isCollective" | "location" | "createdAt" | "updatedAt", ExtArgs["result"]["projetoDimensionamento"]>
   export type ProjetoDimensionamentoInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     charger?: boolean | CarregadorDefaultArgs<ExtArgs>
   }
@@ -10559,6 +10625,12 @@ export namespace Prisma {
       calculatedPrimaryBreaker: number | null
       calculatedDPS: string | null
       calculatedIDR: string | null
+      fireExtinguisherType: string | null
+      hasEmergencyButton5m: boolean
+      requiresWarningSigns: boolean
+      fireDeptStandards: string | null
+      abntStandards: string | null
+      specificSafetyNotes: string | null
       existingLoadKW: number | null
       simultaneityFactor: number | null
       isCollective: boolean
@@ -11016,6 +11088,12 @@ export namespace Prisma {
     readonly calculatedPrimaryBreaker: FieldRef<"ProjetoDimensionamento", 'Float'>
     readonly calculatedDPS: FieldRef<"ProjetoDimensionamento", 'String'>
     readonly calculatedIDR: FieldRef<"ProjetoDimensionamento", 'String'>
+    readonly fireExtinguisherType: FieldRef<"ProjetoDimensionamento", 'String'>
+    readonly hasEmergencyButton5m: FieldRef<"ProjetoDimensionamento", 'Boolean'>
+    readonly requiresWarningSigns: FieldRef<"ProjetoDimensionamento", 'Boolean'>
+    readonly fireDeptStandards: FieldRef<"ProjetoDimensionamento", 'String'>
+    readonly abntStandards: FieldRef<"ProjetoDimensionamento", 'String'>
+    readonly specificSafetyNotes: FieldRef<"ProjetoDimensionamento", 'String'>
     readonly existingLoadKW: FieldRef<"ProjetoDimensionamento", 'Float'>
     readonly simultaneityFactor: FieldRef<"ProjetoDimensionamento", 'Float'>
     readonly isCollective: FieldRef<"ProjetoDimensionamento", 'Boolean'>
@@ -32037,6 +32115,12 @@ export namespace Prisma {
     calculatedPrimaryBreaker: 'calculatedPrimaryBreaker',
     calculatedDPS: 'calculatedDPS',
     calculatedIDR: 'calculatedIDR',
+    fireExtinguisherType: 'fireExtinguisherType',
+    hasEmergencyButton5m: 'hasEmergencyButton5m',
+    requiresWarningSigns: 'requiresWarningSigns',
+    fireDeptStandards: 'fireDeptStandards',
+    abntStandards: 'abntStandards',
+    specificSafetyNotes: 'specificSafetyNotes',
     existingLoadKW: 'existingLoadKW',
     simultaneityFactor: 'simultaneityFactor',
     isCollective: 'isCollective',
@@ -33149,6 +33233,12 @@ export namespace Prisma {
     calculatedPrimaryBreaker?: FloatNullableFilter<"ProjetoDimensionamento"> | number | null
     calculatedDPS?: StringNullableFilter<"ProjetoDimensionamento"> | string | null
     calculatedIDR?: StringNullableFilter<"ProjetoDimensionamento"> | string | null
+    fireExtinguisherType?: StringNullableFilter<"ProjetoDimensionamento"> | string | null
+    hasEmergencyButton5m?: BoolFilter<"ProjetoDimensionamento"> | boolean
+    requiresWarningSigns?: BoolFilter<"ProjetoDimensionamento"> | boolean
+    fireDeptStandards?: StringNullableFilter<"ProjetoDimensionamento"> | string | null
+    abntStandards?: StringNullableFilter<"ProjetoDimensionamento"> | string | null
+    specificSafetyNotes?: StringNullableFilter<"ProjetoDimensionamento"> | string | null
     existingLoadKW?: FloatNullableFilter<"ProjetoDimensionamento"> | number | null
     simultaneityFactor?: FloatNullableFilter<"ProjetoDimensionamento"> | number | null
     isCollective?: BoolFilter<"ProjetoDimensionamento"> | boolean
@@ -33186,6 +33276,12 @@ export namespace Prisma {
     calculatedPrimaryBreaker?: SortOrderInput | SortOrder
     calculatedDPS?: SortOrderInput | SortOrder
     calculatedIDR?: SortOrderInput | SortOrder
+    fireExtinguisherType?: SortOrderInput | SortOrder
+    hasEmergencyButton5m?: SortOrder
+    requiresWarningSigns?: SortOrder
+    fireDeptStandards?: SortOrderInput | SortOrder
+    abntStandards?: SortOrderInput | SortOrder
+    specificSafetyNotes?: SortOrderInput | SortOrder
     existingLoadKW?: SortOrderInput | SortOrder
     simultaneityFactor?: SortOrderInput | SortOrder
     isCollective?: SortOrder
@@ -33226,6 +33322,12 @@ export namespace Prisma {
     calculatedPrimaryBreaker?: FloatNullableFilter<"ProjetoDimensionamento"> | number | null
     calculatedDPS?: StringNullableFilter<"ProjetoDimensionamento"> | string | null
     calculatedIDR?: StringNullableFilter<"ProjetoDimensionamento"> | string | null
+    fireExtinguisherType?: StringNullableFilter<"ProjetoDimensionamento"> | string | null
+    hasEmergencyButton5m?: BoolFilter<"ProjetoDimensionamento"> | boolean
+    requiresWarningSigns?: BoolFilter<"ProjetoDimensionamento"> | boolean
+    fireDeptStandards?: StringNullableFilter<"ProjetoDimensionamento"> | string | null
+    abntStandards?: StringNullableFilter<"ProjetoDimensionamento"> | string | null
+    specificSafetyNotes?: StringNullableFilter<"ProjetoDimensionamento"> | string | null
     existingLoadKW?: FloatNullableFilter<"ProjetoDimensionamento"> | number | null
     simultaneityFactor?: FloatNullableFilter<"ProjetoDimensionamento"> | number | null
     isCollective?: BoolFilter<"ProjetoDimensionamento"> | boolean
@@ -33263,6 +33365,12 @@ export namespace Prisma {
     calculatedPrimaryBreaker?: SortOrderInput | SortOrder
     calculatedDPS?: SortOrderInput | SortOrder
     calculatedIDR?: SortOrderInput | SortOrder
+    fireExtinguisherType?: SortOrderInput | SortOrder
+    hasEmergencyButton5m?: SortOrder
+    requiresWarningSigns?: SortOrder
+    fireDeptStandards?: SortOrderInput | SortOrder
+    abntStandards?: SortOrderInput | SortOrder
+    specificSafetyNotes?: SortOrderInput | SortOrder
     existingLoadKW?: SortOrderInput | SortOrder
     simultaneityFactor?: SortOrderInput | SortOrder
     isCollective?: SortOrder
@@ -33307,6 +33415,12 @@ export namespace Prisma {
     calculatedPrimaryBreaker?: FloatNullableWithAggregatesFilter<"ProjetoDimensionamento"> | number | null
     calculatedDPS?: StringNullableWithAggregatesFilter<"ProjetoDimensionamento"> | string | null
     calculatedIDR?: StringNullableWithAggregatesFilter<"ProjetoDimensionamento"> | string | null
+    fireExtinguisherType?: StringNullableWithAggregatesFilter<"ProjetoDimensionamento"> | string | null
+    hasEmergencyButton5m?: BoolWithAggregatesFilter<"ProjetoDimensionamento"> | boolean
+    requiresWarningSigns?: BoolWithAggregatesFilter<"ProjetoDimensionamento"> | boolean
+    fireDeptStandards?: StringNullableWithAggregatesFilter<"ProjetoDimensionamento"> | string | null
+    abntStandards?: StringNullableWithAggregatesFilter<"ProjetoDimensionamento"> | string | null
+    specificSafetyNotes?: StringNullableWithAggregatesFilter<"ProjetoDimensionamento"> | string | null
     existingLoadKW?: FloatNullableWithAggregatesFilter<"ProjetoDimensionamento"> | number | null
     simultaneityFactor?: FloatNullableWithAggregatesFilter<"ProjetoDimensionamento"> | number | null
     isCollective?: BoolWithAggregatesFilter<"ProjetoDimensionamento"> | boolean
@@ -35946,6 +36060,12 @@ export namespace Prisma {
     calculatedPrimaryBreaker?: number | null
     calculatedDPS?: string | null
     calculatedIDR?: string | null
+    fireExtinguisherType?: string | null
+    hasEmergencyButton5m?: boolean
+    requiresWarningSigns?: boolean
+    fireDeptStandards?: string | null
+    abntStandards?: string | null
+    specificSafetyNotes?: string | null
     existingLoadKW?: number | null
     simultaneityFactor?: number | null
     isCollective?: boolean
@@ -35983,6 +36103,12 @@ export namespace Prisma {
     calculatedPrimaryBreaker?: number | null
     calculatedDPS?: string | null
     calculatedIDR?: string | null
+    fireExtinguisherType?: string | null
+    hasEmergencyButton5m?: boolean
+    requiresWarningSigns?: boolean
+    fireDeptStandards?: string | null
+    abntStandards?: string | null
+    specificSafetyNotes?: string | null
     existingLoadKW?: number | null
     simultaneityFactor?: number | null
     isCollective?: boolean
@@ -36018,6 +36144,12 @@ export namespace Prisma {
     calculatedPrimaryBreaker?: NullableFloatFieldUpdateOperationsInput | number | null
     calculatedDPS?: NullableStringFieldUpdateOperationsInput | string | null
     calculatedIDR?: NullableStringFieldUpdateOperationsInput | string | null
+    fireExtinguisherType?: NullableStringFieldUpdateOperationsInput | string | null
+    hasEmergencyButton5m?: BoolFieldUpdateOperationsInput | boolean
+    requiresWarningSigns?: BoolFieldUpdateOperationsInput | boolean
+    fireDeptStandards?: NullableStringFieldUpdateOperationsInput | string | null
+    abntStandards?: NullableStringFieldUpdateOperationsInput | string | null
+    specificSafetyNotes?: NullableStringFieldUpdateOperationsInput | string | null
     existingLoadKW?: NullableFloatFieldUpdateOperationsInput | number | null
     simultaneityFactor?: NullableFloatFieldUpdateOperationsInput | number | null
     isCollective?: BoolFieldUpdateOperationsInput | boolean
@@ -36055,6 +36187,12 @@ export namespace Prisma {
     calculatedPrimaryBreaker?: NullableFloatFieldUpdateOperationsInput | number | null
     calculatedDPS?: NullableStringFieldUpdateOperationsInput | string | null
     calculatedIDR?: NullableStringFieldUpdateOperationsInput | string | null
+    fireExtinguisherType?: NullableStringFieldUpdateOperationsInput | string | null
+    hasEmergencyButton5m?: BoolFieldUpdateOperationsInput | boolean
+    requiresWarningSigns?: BoolFieldUpdateOperationsInput | boolean
+    fireDeptStandards?: NullableStringFieldUpdateOperationsInput | string | null
+    abntStandards?: NullableStringFieldUpdateOperationsInput | string | null
+    specificSafetyNotes?: NullableStringFieldUpdateOperationsInput | string | null
     existingLoadKW?: NullableFloatFieldUpdateOperationsInput | number | null
     simultaneityFactor?: NullableFloatFieldUpdateOperationsInput | number | null
     isCollective?: BoolFieldUpdateOperationsInput | boolean
@@ -36091,6 +36229,12 @@ export namespace Prisma {
     calculatedPrimaryBreaker?: number | null
     calculatedDPS?: string | null
     calculatedIDR?: string | null
+    fireExtinguisherType?: string | null
+    hasEmergencyButton5m?: boolean
+    requiresWarningSigns?: boolean
+    fireDeptStandards?: string | null
+    abntStandards?: string | null
+    specificSafetyNotes?: string | null
     existingLoadKW?: number | null
     simultaneityFactor?: number | null
     isCollective?: boolean
@@ -36126,6 +36270,12 @@ export namespace Prisma {
     calculatedPrimaryBreaker?: NullableFloatFieldUpdateOperationsInput | number | null
     calculatedDPS?: NullableStringFieldUpdateOperationsInput | string | null
     calculatedIDR?: NullableStringFieldUpdateOperationsInput | string | null
+    fireExtinguisherType?: NullableStringFieldUpdateOperationsInput | string | null
+    hasEmergencyButton5m?: BoolFieldUpdateOperationsInput | boolean
+    requiresWarningSigns?: BoolFieldUpdateOperationsInput | boolean
+    fireDeptStandards?: NullableStringFieldUpdateOperationsInput | string | null
+    abntStandards?: NullableStringFieldUpdateOperationsInput | string | null
+    specificSafetyNotes?: NullableStringFieldUpdateOperationsInput | string | null
     existingLoadKW?: NullableFloatFieldUpdateOperationsInput | number | null
     simultaneityFactor?: NullableFloatFieldUpdateOperationsInput | number | null
     isCollective?: BoolFieldUpdateOperationsInput | boolean
@@ -36162,6 +36312,12 @@ export namespace Prisma {
     calculatedPrimaryBreaker?: NullableFloatFieldUpdateOperationsInput | number | null
     calculatedDPS?: NullableStringFieldUpdateOperationsInput | string | null
     calculatedIDR?: NullableStringFieldUpdateOperationsInput | string | null
+    fireExtinguisherType?: NullableStringFieldUpdateOperationsInput | string | null
+    hasEmergencyButton5m?: BoolFieldUpdateOperationsInput | boolean
+    requiresWarningSigns?: BoolFieldUpdateOperationsInput | boolean
+    fireDeptStandards?: NullableStringFieldUpdateOperationsInput | string | null
+    abntStandards?: NullableStringFieldUpdateOperationsInput | string | null
+    specificSafetyNotes?: NullableStringFieldUpdateOperationsInput | string | null
     existingLoadKW?: NullableFloatFieldUpdateOperationsInput | number | null
     simultaneityFactor?: NullableFloatFieldUpdateOperationsInput | number | null
     isCollective?: BoolFieldUpdateOperationsInput | boolean
@@ -39035,6 +39191,12 @@ export namespace Prisma {
     calculatedPrimaryBreaker?: SortOrder
     calculatedDPS?: SortOrder
     calculatedIDR?: SortOrder
+    fireExtinguisherType?: SortOrder
+    hasEmergencyButton5m?: SortOrder
+    requiresWarningSigns?: SortOrder
+    fireDeptStandards?: SortOrder
+    abntStandards?: SortOrder
+    specificSafetyNotes?: SortOrder
     existingLoadKW?: SortOrder
     simultaneityFactor?: SortOrder
     isCollective?: SortOrder
@@ -39087,6 +39249,12 @@ export namespace Prisma {
     calculatedPrimaryBreaker?: SortOrder
     calculatedDPS?: SortOrder
     calculatedIDR?: SortOrder
+    fireExtinguisherType?: SortOrder
+    hasEmergencyButton5m?: SortOrder
+    requiresWarningSigns?: SortOrder
+    fireDeptStandards?: SortOrder
+    abntStandards?: SortOrder
+    specificSafetyNotes?: SortOrder
     existingLoadKW?: SortOrder
     simultaneityFactor?: SortOrder
     isCollective?: SortOrder
@@ -39123,6 +39291,12 @@ export namespace Prisma {
     calculatedPrimaryBreaker?: SortOrder
     calculatedDPS?: SortOrder
     calculatedIDR?: SortOrder
+    fireExtinguisherType?: SortOrder
+    hasEmergencyButton5m?: SortOrder
+    requiresWarningSigns?: SortOrder
+    fireDeptStandards?: SortOrder
+    abntStandards?: SortOrder
+    specificSafetyNotes?: SortOrder
     existingLoadKW?: SortOrder
     simultaneityFactor?: SortOrder
     isCollective?: SortOrder
@@ -41784,6 +41958,12 @@ export namespace Prisma {
     calculatedPrimaryBreaker?: number | null
     calculatedDPS?: string | null
     calculatedIDR?: string | null
+    fireExtinguisherType?: string | null
+    hasEmergencyButton5m?: boolean
+    requiresWarningSigns?: boolean
+    fireDeptStandards?: string | null
+    abntStandards?: string | null
+    specificSafetyNotes?: string | null
     existingLoadKW?: number | null
     simultaneityFactor?: number | null
     isCollective?: boolean
@@ -41819,6 +41999,12 @@ export namespace Prisma {
     calculatedPrimaryBreaker?: number | null
     calculatedDPS?: string | null
     calculatedIDR?: string | null
+    fireExtinguisherType?: string | null
+    hasEmergencyButton5m?: boolean
+    requiresWarningSigns?: boolean
+    fireDeptStandards?: string | null
+    abntStandards?: string | null
+    specificSafetyNotes?: string | null
     existingLoadKW?: number | null
     simultaneityFactor?: number | null
     isCollective?: boolean
@@ -41884,6 +42070,12 @@ export namespace Prisma {
     calculatedPrimaryBreaker?: FloatNullableFilter<"ProjetoDimensionamento"> | number | null
     calculatedDPS?: StringNullableFilter<"ProjetoDimensionamento"> | string | null
     calculatedIDR?: StringNullableFilter<"ProjetoDimensionamento"> | string | null
+    fireExtinguisherType?: StringNullableFilter<"ProjetoDimensionamento"> | string | null
+    hasEmergencyButton5m?: BoolFilter<"ProjetoDimensionamento"> | boolean
+    requiresWarningSigns?: BoolFilter<"ProjetoDimensionamento"> | boolean
+    fireDeptStandards?: StringNullableFilter<"ProjetoDimensionamento"> | string | null
+    abntStandards?: StringNullableFilter<"ProjetoDimensionamento"> | string | null
+    specificSafetyNotes?: StringNullableFilter<"ProjetoDimensionamento"> | string | null
     existingLoadKW?: FloatNullableFilter<"ProjetoDimensionamento"> | number | null
     simultaneityFactor?: FloatNullableFilter<"ProjetoDimensionamento"> | number | null
     isCollective?: BoolFilter<"ProjetoDimensionamento"> | boolean
@@ -44046,6 +44238,12 @@ export namespace Prisma {
     calculatedPrimaryBreaker?: number | null
     calculatedDPS?: string | null
     calculatedIDR?: string | null
+    fireExtinguisherType?: string | null
+    hasEmergencyButton5m?: boolean
+    requiresWarningSigns?: boolean
+    fireDeptStandards?: string | null
+    abntStandards?: string | null
+    specificSafetyNotes?: string | null
     existingLoadKW?: number | null
     simultaneityFactor?: number | null
     isCollective?: boolean
@@ -44081,6 +44279,12 @@ export namespace Prisma {
     calculatedPrimaryBreaker?: NullableFloatFieldUpdateOperationsInput | number | null
     calculatedDPS?: NullableStringFieldUpdateOperationsInput | string | null
     calculatedIDR?: NullableStringFieldUpdateOperationsInput | string | null
+    fireExtinguisherType?: NullableStringFieldUpdateOperationsInput | string | null
+    hasEmergencyButton5m?: BoolFieldUpdateOperationsInput | boolean
+    requiresWarningSigns?: BoolFieldUpdateOperationsInput | boolean
+    fireDeptStandards?: NullableStringFieldUpdateOperationsInput | string | null
+    abntStandards?: NullableStringFieldUpdateOperationsInput | string | null
+    specificSafetyNotes?: NullableStringFieldUpdateOperationsInput | string | null
     existingLoadKW?: NullableFloatFieldUpdateOperationsInput | number | null
     simultaneityFactor?: NullableFloatFieldUpdateOperationsInput | number | null
     isCollective?: BoolFieldUpdateOperationsInput | boolean
@@ -44116,6 +44320,12 @@ export namespace Prisma {
     calculatedPrimaryBreaker?: NullableFloatFieldUpdateOperationsInput | number | null
     calculatedDPS?: NullableStringFieldUpdateOperationsInput | string | null
     calculatedIDR?: NullableStringFieldUpdateOperationsInput | string | null
+    fireExtinguisherType?: NullableStringFieldUpdateOperationsInput | string | null
+    hasEmergencyButton5m?: BoolFieldUpdateOperationsInput | boolean
+    requiresWarningSigns?: BoolFieldUpdateOperationsInput | boolean
+    fireDeptStandards?: NullableStringFieldUpdateOperationsInput | string | null
+    abntStandards?: NullableStringFieldUpdateOperationsInput | string | null
+    specificSafetyNotes?: NullableStringFieldUpdateOperationsInput | string | null
     existingLoadKW?: NullableFloatFieldUpdateOperationsInput | number | null
     simultaneityFactor?: NullableFloatFieldUpdateOperationsInput | number | null
     isCollective?: BoolFieldUpdateOperationsInput | boolean
@@ -44151,6 +44361,12 @@ export namespace Prisma {
     calculatedPrimaryBreaker?: NullableFloatFieldUpdateOperationsInput | number | null
     calculatedDPS?: NullableStringFieldUpdateOperationsInput | string | null
     calculatedIDR?: NullableStringFieldUpdateOperationsInput | string | null
+    fireExtinguisherType?: NullableStringFieldUpdateOperationsInput | string | null
+    hasEmergencyButton5m?: BoolFieldUpdateOperationsInput | boolean
+    requiresWarningSigns?: BoolFieldUpdateOperationsInput | boolean
+    fireDeptStandards?: NullableStringFieldUpdateOperationsInput | string | null
+    abntStandards?: NullableStringFieldUpdateOperationsInput | string | null
+    specificSafetyNotes?: NullableStringFieldUpdateOperationsInput | string | null
     existingLoadKW?: NullableFloatFieldUpdateOperationsInput | number | null
     simultaneityFactor?: NullableFloatFieldUpdateOperationsInput | number | null
     isCollective?: BoolFieldUpdateOperationsInput | boolean

@@ -33,6 +33,12 @@ export interface SizingResult {
   conduitSize: string;
   groundingAnalysis: string;
   
+  // Fire Safety & Standards
+  fireExtinguisher: string;
+  emergencyButton: string;
+  warningSigns: string[];
+  applicableStandards: string[];
+  
   // Secondary segment if transformer used
   primary?: SegmentResult;
 }
@@ -115,18 +121,20 @@ export function calculateSizing(input: SizingInput): SizingResult {
     primary = calculateSegment(pPower, pVoltage, 3, pDistance, method); // Transformers usually fed 3-phase
   }
 
-  // IDR Selection
+  // IDR Selection - NBR 17019
+  // IDR deve ser instalado APÓS o transformador para proteger o circuito final
   let idrType = "";
-  if (powerkW > 22) {
-    idrType = "IDR Tetrapolar Tipo B (Sensível a CC) 30mA";
+  if (powerkW >= 20) {
+    idrType = "IDR Tetrapolar 40A/30mA Tipo B (Obrigatório para Corrente Contínua)";
   } else if (phases === 3) {
-    idrType = "IDR Tetrapolar Tipo A 30mA + Detecção 6mA DC";
+    idrType = "IDR Tetrapolar 40A/30mA Tipo A + Proteção 6mA DC";
   } else {
-    idrType = "IDR Bipolar Tipo A 30mA";
+    idrType = "IDR Bipolar 40A/30mA Tipo A";
   }
 
   // DPS Selection
-  const dpsType = "DPS Classe II, Uc 275V, In 20kA, Imax 40kA (3F+N)";
+  // DPS deve ser instalado ANTES do transformador (proteção da entrada) e Opcionalmente após
+  const dpsType = "DPS Classe II, 275V, In 20kA, Imax 40kA (Instalar no painel primário)";
 
   // Conduit
   const selectedGauge = secondary.cableGauge;
@@ -134,15 +142,36 @@ export function calculateSizing(input: SizingInput): SizingResult {
 
   // Grounding
   const gType = groundingType || "TT";
-  const groundingAnalysis = `${gType} - Executar malha com haste 2.4m, resistência < 10 ohms recomendada para eletrônica sensível.`;
+  const groundingAnalysis = `${gType} - Resistência < 4Ω exigida pelo fabricante para eletrônica de potência. Malha dedicada recomendada.`;
+
+  // Fire Safety Logic
+  const fireExtinguisher = "CO2 6kg ou PQS 6kg (Classe B/C) - Instalar a no máximo 15m de distância.";
+  const emergencyButton = "Botão de Emergência (Cogumelo com trava) - Instalar a 5m do carregador (IT 41 CBMG).";
+  const warningSigns = [
+    "Placa: Risco de Choque Elétrico",
+    "Placa: Localização de Botão de Emergência",
+    "Placa: Instruções de Uso e Segurança",
+    "Pintura de solo conforme padrão NBR 17019"
+  ];
+  
+  const applicableStandards = [
+    "NBR 5410: Instalações elétricas de baixa tensão",
+    "NBR 17019: Instalações elétricas de baixa tensão — Veículos elétricos",
+    "IT 41 (Corpo de Bombeiros): Segurança contra incêndio em estacionamentos",
+    "NBR 14039: Instalações elétricas de média tensão (se aplicável)"
+  ];
 
   return {
     ...secondary,
     idrType,
-    drType: idrType, // Backward compatibility
+    drType: idrType,
     dpsType,
     conduitSize,
     groundingAnalysis,
+    fireExtinguisher,
+    emergencyButton,
+    warningSigns,
+    applicableStandards,
     primary
   };
 }

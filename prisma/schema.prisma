@@ -5,7 +5,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
@@ -142,6 +144,14 @@ model ProjetoDimensionamento {
   calculatedDPS              String?
   calculatedIDR              String?
   
+  // Segurança Contra Incêndio e Normas (AVCB/Bombeiros)
+  fireExtinguisherType       String? // ex: "CO2 6kg" ou "PQS 6kg B/C"
+  hasEmergencyButton5m       Boolean @default(true)
+  requiresWarningSigns       Boolean @default(true)
+  fireDeptStandards          String? // ex: "IT 41/2023 - CBMG"
+  abntStandards              String? // ex: "NBR 17019, NBR 5410"
+  specificSafetyNotes        String?
+
   // Novos campos para CEMIG e Gestão
   existingLoadKW             Float?  @default(0)
   simultaneityFactor         Float?  @default(0.8)

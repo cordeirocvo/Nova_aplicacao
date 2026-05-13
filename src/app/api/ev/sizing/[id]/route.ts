@@ -90,7 +90,15 @@ export async function PUT(
         existingLoadKW: data.existingLoadKW,
         simultaneityFactor: data.simultaneityFactor,
         isCollective: data.isCollective,
-        location: data.location
+        location: data.location,
+        
+        // Novos campos de segurança
+        fireExtinguisherType: data.fireExtinguisherType || result.fireExtinguisher,
+        hasEmergencyButton5m: data.hasEmergencyButton5m ?? true,
+        requiresWarningSigns: data.requiresWarningSigns ?? true,
+        fireDeptStandards: data.fireDeptStandards || "IT 41/2023 - CBMG",
+        abntStandards: data.abntStandards || result.applicableStandards.join(", "),
+        specificSafetyNotes: data.specificSafetyNotes || "Instalação exige sinalização visual e botão de emergência externo a 5 metros conforme norma de Bombeiros."
       }
     });
 

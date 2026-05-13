@@ -9,10 +9,12 @@ export const metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
-  const total = await prisma.planilhaInstalacao.count();
-  const pendentes = await prisma.planilhaInstalacao.count({ where: { status: "Pendente" } });
-  const concluidas = await prisma.planilhaInstalacao.count({ where: { status: "Concluído" } });
-  const emAndamento = await prisma.planilhaInstalacao.count({ where: { status: "Em Andamento" } });
+  const [total, pendentes, concluidas, emAndamento] = await Promise.all([
+    prisma.planilhaInstalacao.count(),
+    prisma.planilhaInstalacao.count({ where: { status: "Pendente" } }),
+    prisma.planilhaInstalacao.count({ where: { status: "Concluído" } }),
+    prisma.planilhaInstalacao.count({ where: { status: "Em Andamento" } }),
+  ]);
 
   // Group by status for chart (simulate if low data)
   const chartData = [

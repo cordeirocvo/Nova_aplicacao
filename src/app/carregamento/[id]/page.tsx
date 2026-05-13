@@ -21,7 +21,7 @@ export default function ProjetoDetalhes() {
   const [saving, setSaving] = useState(false);
 
   // Edit fields
-  const [editStep, setEditStep] = useState<1 | 2 | 3>(1);
+  const [editStep, setEditStep] = useState<1 | 2 | 3 | 4>(1);
   const [editData, setEditData] = useState<any>({
     projectName: "",
     clientName: "",
@@ -37,7 +37,13 @@ export default function ProjetoDetalhes() {
     transformerDistance: 10,
     chargerDistance: 10,
     groundingType: "TT",
-    analysisNotes: ""
+    analysisNotes: "",
+    fireExtinguisherType: "",
+    hasEmergencyButton5m: true,
+    requiresWarningSigns: true,
+    fireDeptStandards: "",
+    abntStandards: "",
+    specificSafetyNotes: ""
   });
 
   useEffect(() => {
@@ -60,7 +66,13 @@ export default function ProjetoDetalhes() {
           transformerDistance: data.transformerDistance || 10,
           chargerDistance: data.chargerDistance || 10,
           groundingType: data.groundingType || "TT",
-          analysisNotes: data.analysisNotes || ""
+          analysisNotes: data.analysisNotes || "",
+          fireExtinguisherType: data.fireExtinguisherType || "",
+          hasEmergencyButton5m: data.hasEmergencyButton5m ?? true,
+          requiresWarningSigns: data.requiresWarningSigns ?? true,
+          fireDeptStandards: data.fireDeptStandards || "",
+          abntStandards: data.abntStandards || "",
+          specificSafetyNotes: data.specificSafetyNotes || ""
         });
         setLoading(false);
       })
@@ -130,10 +142,10 @@ export default function ProjetoDetalhes() {
                 <Edit2 className="w-4 h-4" /> Editar Projeto
               </button>
               <button 
-                onClick={() => window.print()} 
+                onClick={() => router.push(`/carregamento/${params.id}/relatorio`)} 
                 className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-[#1E3A8A] to-[#00BFA5] text-white rounded-xl text-sm font-black shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all"
               >
-                <FileText className="w-4 h-4" /> Gerar Relatório PDF
+                <FileText className="w-4 h-4" /> Gerar Relatório Técnico (AVCB)
               </button>
             </>
           ) : (
@@ -160,7 +172,8 @@ export default function ProjetoDetalhes() {
                    {[
                      { n: 1, label: "Identificação & CEMIG" },
                      { n: 2, label: "Carregadores & Cargas" },
-                     { n: 3, label: "Parâmetros Elétricos" }
+                     { n: 3, label: "Parâmetros Elétricos" },
+                     { n: 4, label: "Segurança & Normas" }
                    ].map(s => (
                      <button 
                        key={s.n}
@@ -226,12 +239,6 @@ export default function ProjetoDetalhes() {
                     <label className={labelCls}>Fator de Simultaneidade (0.3 - 1.0)</label>
                     <input type="number" step="0.05" className={inputCls} value={editData.simultaneityFactor} onChange={e => setEditData({...editData, simultaneityFactor: parseFloat(e.target.value) || 0.8})} />
                   </div>
-                  <div className="md:col-span-2 p-4 bg-amber-50 rounded-xl border border-amber-100 flex gap-3">
-                     <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
-                     <p className="text-[10px] text-amber-800">
-                       Para alterar o modelo/potência do carregador, use as configurações na tela anterior. Aqui você ajusta os parâmetros da infraestrutura.
-                     </p>
-                  </div>
                </div>
              )}
 
@@ -286,6 +293,38 @@ export default function ProjetoDetalhes() {
                         <option value="C">Aparente (C)</option>
                       </select>
                     </div>
+                  </div>
+               </div>
+             )}
+
+             {/* TAB 4: SEGURANÇA */}
+             {editStep === 4 && (
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className={labelCls}>Modelo do Extintor</label>
+                    <input type="text" className={inputCls} value={editData.fireExtinguisherType || ""} onChange={e => setEditData({...editData, fireExtinguisherType: e.target.value})} placeholder="Ex: CO2 6kg ou PQS B/C 6kg" />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Normas Aplicáveis</label>
+                    <input type="text" className={inputCls} value={editData.abntStandards || ""} onChange={e => setEditData({...editData, abntStandards: e.target.value})} placeholder="Ex: NBR 17019, NBR 5410" />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Instruções Técnicas (Bombeiros)</label>
+                    <input type="text" className={inputCls} value={editData.fireDeptStandards || ""} onChange={e => setEditData({...editData, fireDeptStandards: e.target.value})} placeholder="Ex: IT 41/CBMG" />
+                  </div>
+                  <div className="flex items-center gap-6 p-4 bg-white rounded-xl border border-slate-200">
+                    <div className="flex items-center gap-2">
+                       <input type="checkbox" checked={editData.hasEmergencyButton5m} onChange={e => setEditData({...editData, hasEmergencyButton5m: e.target.checked})} />
+                       <span className="text-xs font-bold text-slate-700">Botão Emergência (5m)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                       <input type="checkbox" checked={editData.requiresWarningSigns} onChange={e => setEditData({...editData, requiresWarningSigns: e.target.checked})} />
+                       <span className="text-xs font-bold text-slate-700">Placas de Advertência</span>
+                    </div>
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className={labelCls}>Notas de Segurança AVCB</label>
+                    <textarea className={inputCls} rows={3} value={editData.specificSafetyNotes || ""} onChange={e => setEditData({...editData, specificSafetyNotes: e.target.value})} />
                   </div>
                </div>
              )}
@@ -396,6 +435,31 @@ export default function ProjetoDetalhes() {
                     <div>
                       <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Análise de Aterramento ({project.groundingType})</p>
                       <p className="text-xs text-slate-600 leading-relaxed font-medium">{project.groundingAnalysis}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-5 border border-slate-200 rounded-2xl bg-red-50/30 border-red-100">
+                  <div className="flex items-center gap-2 mb-4">
+                    <AlertTriangle className="w-5 h-5 text-red-600" />
+                    <h3 className="font-bold text-slate-800">Segurança & Bombeiros</h3>
+                  </div>
+                  <div className="space-y-4 text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-slate-500 font-bold uppercase text-[9px]">Extintor</span>
+                      <span className="font-bold text-slate-700">{project.fireExtinguisherType || 'PQS 6kg'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500 font-bold uppercase text-[9px]">Botão Emergência (5m)</span>
+                      <span className={`font-bold ${project.hasEmergencyButton5m ? 'text-green-600' : 'text-red-600'}`}>{project.hasEmergencyButton5m ? 'Sim (Obrigatório)' : 'Não'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500 font-bold uppercase text-[9px]">Sinalização Visual</span>
+                      <span className={`font-bold ${project.requiresWarningSigns ? 'text-green-600' : 'text-red-600'}`}>{project.requiresWarningSigns ? 'Obrigatória' : 'Não'}</span>
+                    </div>
+                    <div className="pt-2 border-t border-slate-200">
+                      <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Normas de Referência</p>
+                      <p className="text-[10px] font-bold text-slate-600">{project.abntStandards}</p>
                     </div>
                   </div>
                 </div>

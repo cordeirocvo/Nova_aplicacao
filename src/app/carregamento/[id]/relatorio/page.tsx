@@ -9,10 +9,6 @@ import {
   MapPin, BatteryCharging, FileText, ChevronLeft,
   Info, Box, Building2, FlameKindling, Download, Loader2
 } from "lucide-react";
-const PDFDownloadLink = dynamic(
-  () => import("@react-pdf/renderer").then((mod) => mod.PDFDownloadLink),
-  { ssr: false }
-);
 
 export default function EVReportPage() {
   const params = useParams();

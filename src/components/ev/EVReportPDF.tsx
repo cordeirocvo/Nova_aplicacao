@@ -219,18 +219,22 @@ const styles = StyleSheet.create({
 
 interface EVReportPDFProps {
   project: any;
+  logoUrl?: string;
 }
 
-export const EVReportPDF: React.FC<EVReportPDFProps> = ({ project }) => {
+export const EVReportPDF: React.FC<EVReportPDFProps> = ({ project, logoUrl }) => {
   const dateStr = format(new Date(project.createdAt), "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
   const projectId = project.id.substring(project.id.length - 8).toUpperCase();
+  
+  // URL absoluta é necessária para o @react-pdf/renderer no cliente
+  const safeLogoUrl = logoUrl || 'https://raw.githubusercontent.com/cordeirocvo/Nova_aplicacao/main/public/logo.png';
 
   return (
     <Document>
       <Page size="A4" style={styles.page}>
         {/* Header - Fixed on all pages */}
         <View style={styles.header} fixed>
-          <Image src="/logo.png" style={styles.logo} />
+          <Image src={safeLogoUrl} style={styles.logo} />
           <View style={styles.headerRight}>
             <Text style={styles.reportTitle}>Laudo de Infraestrutura EV</Text>
             <Text style={styles.projectNumber}>PROJETO Nº {projectId}</Text>

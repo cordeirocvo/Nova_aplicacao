@@ -78,7 +78,7 @@ export default function EVReportPage() {
 
         {isMounted && project && (
           <PDFDownloadLink
-            document={<EVReportPDF project={project} />}
+            document={<EVReportPDF project={project} logoUrl={typeof window !== 'undefined' ? `${window.location.origin}/logo.png` : undefined} />}
             fileName={`Laudo_EV_${(project.projectName || "Projeto").replace(/[^a-z0-9]/gi, '_').toUpperCase()}.pdf`}
           >
             {({ loading: pdfLoading }) => (

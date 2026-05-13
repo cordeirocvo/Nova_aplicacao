@@ -95,7 +95,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <div 
-      className="flex h-screen w-full bg-slate-50 overflow-hidden text-slate-800" 
+      className="flex h-screen w-full bg-slate-50 overflow-hidden text-slate-800 print:h-auto print:overflow-visible" 
       style={isTV ? { display: 'flex', height: '100vh', width: '100%', overflow: 'hidden', backgroundColor: '#f8fafc' } : {}}
     >
 

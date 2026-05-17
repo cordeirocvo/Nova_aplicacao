@@ -148,18 +148,24 @@ export default function NovoLeadPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col p-4 pb-12 md:p-8">
-      <div className="flex items-center gap-4 mb-8">
-        <button 
-          onClick={() => step === 1 ? router.back() : setStep(1)}
-          className="p-3 bg-white rounded-2xl shadow-sm text-slate-400 hover:text-[#1E3A8A] transition-colors"
-        >
-          <ChevronLeft className="w-5 h-5" />
-        </button>
-        <h1 className="text-xl font-black text-[#1E3A8A] uppercase tracking-tight">Nova Abordagem</h1>
+    <div className="min-h-screen bg-slate-50 flex flex-col pb-12">
+      {/* Top Brand Header Bar */}
+      <div className="w-full bg-[#0A192F] py-6 px-4 mb-6 shadow-lg flex items-center justify-between border-b border-white/5">
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => step === 1 ? router.back() : setStep(1)}
+            className="p-2.5 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white rounded-xl border border-white/10 transition-all"
+          >
+            <ChevronLeft className="w-5.5 h-5.5" />
+          </button>
+          <span className="text-sm font-black text-white uppercase tracking-wider">Nova Abordagem</span>
+        </div>
+        <div className="h-7 w-auto flex items-center justify-center">
+          <img src="/logo-white.svg" alt="Cordeiro Energia" className="h-full object-contain" />
+        </div>
       </div>
 
-      <div className="max-w-md mx-auto w-full space-y-6">
+      <div className="max-w-md mx-auto w-full px-4 space-y-6">
         {step === 1 && (
           <div className="space-y-8 animate-in slide-in-from-right duration-300">
             <div className="space-y-4">
@@ -263,7 +269,6 @@ export default function NovoLeadPage() {
                           <input 
                             type="file" 
                             accept="image/*" 
-                            capture="environment" 
                             className="hidden" 
                             disabled={uploading === tipo}
                             onChange={(e) => handleFileUpload(tipo, e)} 

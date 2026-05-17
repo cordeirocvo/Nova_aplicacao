@@ -265,16 +265,42 @@ export default function NovoLeadPage() {
                         </div>
                       ))}
                       {(form.midias[tipo] || []).length < 4 && (
-                        <label className={`aspect-square rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 flex items-center justify-center cursor-pointer hover:bg-slate-100 transition-colors ${uploading === tipo ? "opacity-50" : ""}`}>
-                          <input 
-                            type="file" 
-                            accept="image/*" 
-                            className="hidden" 
-                            disabled={uploading === tipo}
-                            onChange={(e) => handleFileUpload(tipo, e)} 
-                          />
-                          {uploading === tipo ? <Loader className="w-4 h-4 animate-spin text-[#1E3A8A]" /> : <Camera className="w-5 h-5 text-slate-300" />}
-                        </label>
+                        <>
+                          {/* Botão Tirar Foto (Câmera) */}
+                          <label className={`aspect-square rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-100 transition-all ${uploading === tipo ? "opacity-50" : ""}`} title="Tirar foto usando a câmera">
+                            <input 
+                              type="file" 
+                              accept="image/*" 
+                              capture="environment" 
+                              className="hidden" 
+                              disabled={uploading === tipo}
+                              onChange={(e) => handleFileUpload(tipo, e)} 
+                            />
+                            {uploading === tipo ? <Loader className="w-4 h-4 animate-spin text-[#1E3A8A]" /> : (
+                              <>
+                                <Camera className="w-4 h-4 text-slate-400" />
+                                <span className="text-[7px] font-black text-slate-400 mt-1 uppercase tracking-tighter text-center">Câmera</span>
+                              </>
+                            )}
+                          </label>
+
+                          {/* Botão Carregar Arquivo (Galeria) */}
+                          <label className={`aspect-square rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-100 transition-all ${uploading === tipo ? "opacity-50" : ""}`} title="Escolher imagem da galeria">
+                            <input 
+                              type="file" 
+                              accept="image/*" 
+                              className="hidden" 
+                              disabled={uploading === tipo}
+                              onChange={(e) => handleFileUpload(tipo, e)} 
+                            />
+                            {uploading === tipo ? <Loader className="w-4 h-4 animate-spin text-[#1E3A8A]" /> : (
+                              <>
+                                <Send className="w-4 h-4 text-slate-400 rotate-90" />
+                                <span className="text-[7px] font-black text-slate-400 mt-1 uppercase tracking-tighter text-center">Galeria</span>
+                              </>
+                            )}
+                          </label>
+                        </>
                       )}
                     </div>
                   </div>

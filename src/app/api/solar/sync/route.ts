@@ -11,3 +11,7 @@ export async function GET() {
     return NextResponse.json({ error: "Falha ao iniciar sincronização" }, { status: 500 });
   }
 }
+
+export async function POST() {
+  return GET();
+}

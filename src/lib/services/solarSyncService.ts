@@ -2,28 +2,37 @@ import { HuaweiSyncService } from "./huaweiSyncService";
 import { SolisSyncService } from "./solisSyncService";
 
 /**
- * Coordenador de Sincronização Solar
- * Delega para serviços independentes por fabricante
- * Isso garante que ajustes em um fabricante não afetem o outro.
+ * Coordenador de Sincronização Solar Decoplado e Isolado
+ * Executa as buscas de forma sequencial com tratamento de erro independente.
+ * Isso garante que problemas ou latências em um fabricante (como Solis) 
+ * nunca afetem ou travem o motor do outro fabricante (como Huawei).
  */
 export class SolarSyncService {
   /**
-   * Executa a sincronização de todas as usinas delegando para serviços especializados
+   * Executa a sincronização de todas as usinas sequencialmente
    */
   static async syncAllPlants() {
-    console.log(`[${new Date().toISOString()}] Iniciando sincronização global delegada...`);
+    console.log(`[${new Date().toISOString()}] Iniciando sincronização solar isolada...`);
     
+    // 1. Executa a sincronização da Huawei de forma isolada
     try {
-      // Executa as sincronizações em paralelo, mas com tratamento de erro independente
-      await Promise.all([
-        HuaweiSyncService.syncAll().catch(e => console.error("[COORDINATOR] Erro HuaweiSync:", e)),
-        SolisSyncService.syncAll().catch(e => console.error("[COORDINATOR] Erro SolisSync:", e))
-      ]);
-      
-      console.log(`[${new Date().toISOString()}] Sincronização global concluída.`);
-    } catch (error) {
-      console.error("[COORDINATOR] Erro crítico no coordenador SolarSyncService:", error);
+      console.log(`[${new Date().toISOString()}] [COORDINATOR] Iniciando motor HUAWEI...`);
+      await HuaweiSyncService.syncAll();
+      console.log(`[${new Date().toISOString()}] [COORDINATOR] Motor HUAWEI concluído.`);
+    } catch (e) {
+      console.error(`[COORDINATOR] Erro crítico no motor HUAWEI:`, e);
     }
+
+    // 2. Executa a sincronização da Solis de forma isolada
+    try {
+      console.log(`[${new Date().toISOString()}] [COORDINATOR] Iniciando motor SOLIS...`);
+      await SolisSyncService.syncAll();
+      console.log(`[${new Date().toISOString()}] [COORDINATOR] Motor SOLIS concluído.`);
+    } catch (e) {
+      console.error(`[COORDINATOR] Erro crítico no motor SOLIS:`, e);
+    }
+    
+    console.log(`[${new Date().toISOString()}] Sincronização global concluída.`);
   }
 
   /**

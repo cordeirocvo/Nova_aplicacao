@@ -115,6 +115,7 @@ export default function GestaoUsinasPage() {
     }
     setIsDiscovering(true);
     setDiscoveredUsinas([]);
+    setDiscoverySearch("");
     try {
       // Pega chaves se estiverem vazias
       let key = newUsina.apiKey;
@@ -249,16 +250,30 @@ export default function GestaoUsinasPage() {
 
                 {discoveredUsinas.length > 0 && (
                   <div className="bg-white/5 rounded-2xl p-4 space-y-3">
+                    <input 
+                      type="text"
+                      placeholder="🔍 Buscar usina no portal..."
+                      className="w-full px-4 py-3 bg-white/10 border border-white/10 rounded-xl text-xs text-white placeholder-white/40 focus:outline-none focus:border-cordeiro-orange transition-colors"
+                      value={discoverySearch}
+                      onChange={e => setDiscoverySearch(e.target.value)}
+                    />
+                    
                     <div className="grid grid-cols-1 gap-2 max-h-[180px] overflow-y-auto">
-                      {discoveredUsinas.map((d: any) => (
-                        <button key={d.id} type="button" onClick={() => setNewUsina({...newUsina, nome: d.nome || `Usina ${d.id}`, capacidadeKWp: d.capacidade || 0, apiId: d.id})} className="flex items-center justify-between p-4 bg-white/5 hover:bg-white/10 rounded-xl text-left transition-all">
-                          <div>
-                            <p className="text-[11px] font-black text-white uppercase">{d.nome || "NOME NÃO IDENTIFICADO"}</p>
-                            <span className="text-[9px] text-slate-500">ID: {d.id} | {d.capacidade} kWp</span>
-                          </div>
-                          <Link className="w-4 h-4 text-slate-600" />
-                        </button>
-                      ))}
+                      {discoveredUsinas
+                        .filter((d: any) => 
+                          (d.nome || "").toLowerCase().includes(discoverySearch.toLowerCase()) ||
+                          (d.id || "").toLowerCase().includes(discoverySearch.toLowerCase())
+                        )
+                        .map((d: any) => (
+                          <button key={d.id} type="button" onClick={() => setNewUsina({...newUsina, nome: d.nome || `Usina ${d.id}`, capacidadeKWp: d.capacidade || 0, apiId: d.id})} className="flex items-center justify-between p-4 bg-white/5 hover:bg-white/10 rounded-xl text-left transition-all">
+                            <div>
+                              <p className="text-[11px] font-black text-white uppercase">{d.nome || "NOME NÃO IDENTIFICADO"}</p>
+                              <span className="text-[9px] text-slate-500">ID: {d.id} | {d.capacidade} kWp</span>
+                            </div>
+                            <Link className="w-4 h-4 text-slate-600" />
+                          </button>
+                        ))
+                      }
                     </div>
                   </div>
                 )}

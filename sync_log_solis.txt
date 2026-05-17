@@ -1,0 +1,197 @@
+
+[2026-05-17T09:56:09.826Z] Início Solis Sync (Motor Isolado)
+Usinas Solis encontradas no banco: 1
+Processando Solis: Usina Alipio Lopes Lote 044-046 24KW
+[SOLIS-SYNC] Dados Estação: Power=0.31kW, Energy=0kWh
+[SOLIS-SYNC] Usina Alipio Lopes Lote 044-046 24KW: Final Power=1.17kW, Energy=0kWh
+[SOLIS-SYNC] Motor Finalizado com Sucesso.
+
+[2026-05-17T09:56:47.027Z] Início Solis Sync (Motor Isolado)
+Usinas Solis encontradas no banco: 1
+Processando Solis: Usina Alipio Lopes Lote 044-046 24KW
+[SOLIS-SYNC] Dados Estação: Power=0.44kW, Energy=0kWh
+[SOLIS-SYNC] Usina Alipio Lopes Lote 044-046 24KW: Final Power=1.18kW, Energy=0kWh
+[SOLIS-SYNC] Motor Finalizado com Sucesso.
+
+[2026-05-17T09:56:59.308Z] Início Solis Sync (Motor Isolado)
+Usinas Solis encontradas no banco: 1
+Processando Solis: Usina Alipio Lopes Lote 044-046 24KW
+[SOLIS-SYNC] Dados Estação: Power=0.44kW, Energy=0kWh
+[SOLIS-SYNC] Usina Alipio Lopes Lote 044-046 24KW: Final Power=1.18kW, Energy=0kWh
+[SOLIS-SYNC] Motor Finalizado com Sucesso.
+
+[2026-05-17T09:57:03.742Z] Início Solis Sync (Motor Isolado)
+Usinas Solis encontradas no banco: 1
+Processando Solis: Usina Alipio Lopes Lote 044-046 24KW
+[SOLIS-SYNC] Dados Estação: Power=0.44kW, Energy=0kWh
+[SOLIS-SYNC] Usina Alipio Lopes Lote 044-046 24KW: Final Power=1.19kW, Energy=0kWh
+[SOLIS-SYNC] Motor Finalizado com Sucesso.
+
+[2026-05-17T09:57:11.505Z] Início Solis Sync (Motor Isolado)
+Usinas Solis encontradas no banco: 1
+Processando Solis: Usina Alipio Lopes Lote 044-046 24KW
+[SOLIS-SYNC] Dados Estação: Power=0.44kW, Energy=0kWh
+[SOLIS-SYNC] Usina Alipio Lopes Lote 044-046 24KW: Final Power=1.19kW, Energy=0kWh
+[SOLIS-SYNC] Motor Finalizado com Sucesso.
+
+[2026-05-17T09:57:25.498Z] Início Solis Sync (Motor Isolado)
+Usinas Solis encontradas no banco: 1
+Processando Solis: Usina Alipio Lopes Lote 044-046 24KW
+[SOLIS-SYNC] Dados Estação: Power=0.44kW, Energy=0kWh
+[SOLIS-SYNC] Usina Alipio Lopes Lote 044-046 24KW: Final Power=1.25kW, Energy=0kWh
+[SOLIS-SYNC] Motor Finalizado com Sucesso.
+
+[2026-05-17T09:58:36.513Z] Início Solis Sync (Motor Isolado)
+Usinas Solis encontradas no banco: 1
+Processando Solis: Usina Alipio Lopes Lote 044-046 24KW
+[SOLIS-SYNC] Dados Estação: Power=0.44kW, Energy=0kWh
+[SOLIS-SYNC] Usina Alipio Lopes Lote 044-046 24KW: Final Power=1.26kW, Energy=0kWh
+[SOLIS-SYNC] Motor Finalizado com Sucesso.
+
+[2026-05-17T09:59:17.215Z] Início Solis Sync (Motor Isolado)
+Usinas Solis encontradas no banco: 1
+Processando Solis: Usina Alipio Lopes Lote 044-046 24KW
+
+[2026-05-17T09:59:17.986Z] Início Solis Sync (Motor Isolado)
+Usinas Solis encontradas no banco: 1
+[SOLIS-SYNC] Dados Estação: Power=0.44kW, Energy=0kWh
+Processando Solis: Usina Alipio Lopes Lote 044-046 24KW
+[SOLIS-SYNC] Dados Estação: Power=0.44kW, Energy=0kWh
+[SOLIS-SYNC] Usina Alipio Lopes Lote 044-046 24KW: Final Power=1.27kW, Energy=0kWh
+[SOLIS-SYNC] Motor Finalizado com Sucesso.
+[SOLIS-SYNC] Usina Alipio Lopes Lote 044-046 24KW: Final Power=1.27kW, Energy=0kWh
+[SOLIS-SYNC] Motor Finalizado com Sucesso.
+
+[2026-05-17T10:00:18.176Z] Início Solis Sync (Motor Isolado)
+Usinas Solis encontradas no banco: 2
+Processando Solis: Usina Alipio Lopes Lote 044-046 24KW
+[SOLIS-SYNC] Dados Estação: Power=0.44kW, Energy=0kWh
+
+[2026-05-17T10:00:19.902Z] Início Solis Sync (Motor Isolado)
+Usinas Solis encontradas no banco: 2
+Processando Solis: Usina Alipio Lopes Lote 044-046 24KW
+[SOLIS-SYNC] Dados Estação: Power=0.44kW, Energy=0kWh
+
+[2026-05-17T10:00:21.494Z] Início Solis Sync (Motor Isolado)
+Usinas Solis encontradas no banco: 2
+Processando Solis: Usina Alipio Lopes Lote 044-046 24KW
+[SOLIS-SYNC] Dados Estação: Power=0.44kW, Energy=0kWh
+[SOLIS-SYNC] Usina Alipio Lopes Lote 044-046 24KW: Final Power=1.35kW, Energy=0kWh
+Processando Solis: Usina Wellcas Comércio de Frutas LTDA
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=0kWh
+[SOLIS-SYNC] Usina Alipio Lopes Lote 044-046 24KW: Final Power=1.35kW, Energy=0kWh
+Processando Solis: Usina Wellcas Comércio de Frutas LTDA
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=0kWh
+[SOLIS-SYNC] Usina Wellcas Comércio de Frutas LTDA: Final Power=12.53kW, Energy=0kWh
+[SOLIS-SYNC] Motor Finalizado com Sucesso.
+[SOLIS-SYNC] Usina Alipio Lopes Lote 044-046 24KW: Final Power=1.35kW, Energy=0kWh
+Processando Solis: Usina Wellcas Comércio de Frutas LTDA
+[SOLIS-SYNC] Usina Wellcas Comércio de Frutas LTDA: Final Power=12.53kW, Energy=0kWh
+[SOLIS-SYNC] Motor Finalizado com Sucesso.
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=0kWh
+[SOLIS-SYNC] Usina Wellcas Comércio de Frutas LTDA: Final Power=12.53kW, Energy=0kWh
+[SOLIS-SYNC] Motor Finalizado com Sucesso.
+
+[2026-05-17T10:00:40.590Z] Início Solis Sync (Motor Isolado)
+
+[2026-05-17T10:00:40.700Z] Início Solis Sync (Motor Isolado)
+Usinas Solis encontradas no banco: 2
+Usinas Solis encontradas no banco: 2
+Processando Solis: Usina Alipio Lopes Lote 044-046 24KW
+Processando Solis: Usina Alipio Lopes Lote 044-046 24KW
+[SOLIS-SYNC] Dados Estação: Power=0.44kW, Energy=0kWh
+[SOLIS-SYNC] Dados Estação: Power=0.44kW, Energy=0kWh
+[SOLIS-SYNC] Usina Alipio Lopes Lote 044-046 24KW: Final Power=1.35kW, Energy=0kWh
+Processando Solis: Usina Wellcas Comércio de Frutas LTDA
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=0kWh
+[SOLIS-SYNC] Usina Alipio Lopes Lote 044-046 24KW: Final Power=1.35kW, Energy=0kWh
+Processando Solis: Usina Wellcas Comércio de Frutas LTDA
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=0kWh
+[SOLIS-SYNC] Usina Wellcas Comércio de Frutas LTDA: Final Power=12.53kW, Energy=0kWh
+[SOLIS-SYNC] Motor Finalizado com Sucesso.
+[SOLIS-SYNC] Usina Wellcas Comércio de Frutas LTDA: Final Power=12.53kW, Energy=0kWh
+[SOLIS-SYNC] Motor Finalizado com Sucesso.
+
+[2026-05-17T10:01:42.112Z] Início Solis Sync (Motor Isolado)
+Usinas Solis encontradas no banco: 3
+Processando Solis: Usina Alipio Lopes Lote 044-046 24KW
+
+[2026-05-17T10:01:42.458Z] Início Solis Sync (Motor Isolado)
+Usinas Solis encontradas no banco: 3
+Processando Solis: Usina Alipio Lopes Lote 044-046 24KW
+[SOLIS-SYNC] Dados Estação: Power=0.7kW, Energy=0kWh
+[SOLIS-SYNC] Dados Estação: Power=0.7kW, Energy=0kWh
+[SOLIS-SYNC] Usina Alipio Lopes Lote 044-046 24KW: Final Power=1.50kW, Energy=0kWh
+Processando Solis: Usina Wellcas Comércio de Frutas LTDA
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=0kWh
+[SOLIS-SYNC] Usina Wellcas Comércio de Frutas LTDA: Final Power=12.53kW, Energy=0kWh
+Processando Solis: Usina 75KW GD2 Evandro Diniz Jaíba
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=0kWh
+[SOLIS-SYNC] Usina Alipio Lopes Lote 044-046 24KW: Final Power=1.49kW, Energy=0kWh
+Processando Solis: Usina Wellcas Comércio de Frutas LTDA
+[SOLIS-SYNC] Usina 75KW GD2 Evandro Diniz Jaíba: Final Power=43.68kW, Energy=0kWh
+[SOLIS-SYNC] Motor Finalizado com Sucesso.
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=0kWh
+[SOLIS-SYNC] Usina Wellcas Comércio de Frutas LTDA: Final Power=12.53kW, Energy=0kWh
+Processando Solis: Usina 75KW GD2 Evandro Diniz Jaíba
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=0kWh
+[SOLIS-SYNC] Usina 75KW GD2 Evandro Diniz Jaíba: Final Power=43.68kW, Energy=0kWh
+[SOLIS-SYNC] Motor Finalizado com Sucesso.
+
+[2026-05-17T10:05:59.399Z] Início Solis Sync (Motor Isolado)
+Usinas Solis encontradas no banco: 3
+Processando Solis: Usina Alipio Lopes Lote 044-046 24KW
+
+[2026-05-17T10:06:00.490Z] Início Solis Sync (Motor Isolado)
+[SOLIS-SYNC] Dados Estação: Power=0.7kW, Energy=0kWh
+Usinas Solis encontradas no banco: 3
+Processando Solis: Usina Alipio Lopes Lote 044-046 24KW
+[SOLIS-SYNC] Dados Estação: Power=0.7kW, Energy=0kWh
+[SOLIS-SYNC] Usina Alipio Lopes Lote 044-046 24KW: Final Power=1.77kW, Energy=0kWh
+Processando Solis: Usina Wellcas Comércio de Frutas LTDA
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=0kWh
+[SOLIS-SYNC] Usina Alipio Lopes Lote 044-046 24KW: Final Power=1.77kW, Energy=0kWh
+Processando Solis: Usina Wellcas Comércio de Frutas LTDA
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=0kWh
+[SOLIS-SYNC] Usina Wellcas Comércio de Frutas LTDA: Final Power=12.53kW, Energy=0kWh
+Processando Solis: Usina 75KW GD2 Evandro Diniz Jaíba
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=0kWh
+[SOLIS-SYNC] Usina 75KW GD2 Evandro Diniz Jaíba: Final Power=43.68kW, Energy=0kWh
+[SOLIS-SYNC] Motor Finalizado com Sucesso.
+[SOLIS-SYNC] Usina Wellcas Comércio de Frutas LTDA: Final Power=12.53kW, Energy=0kWh
+Processando Solis: Usina 75KW GD2 Evandro Diniz Jaíba
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=0kWh
+[SOLIS-SYNC] Usina 75KW GD2 Evandro Diniz Jaíba: Final Power=43.68kW, Energy=0kWh
+[SOLIS-SYNC] Motor Finalizado com Sucesso.
+
+[2026-05-17T10:06:57.050Z] Início Solis Sync (Motor Isolado)
+Usinas Solis encontradas no banco: 4
+Processando Solis: Usina Alipio Lopes Lote 044-046 24KW
+
+[2026-05-17T10:06:57.890Z] Início Solis Sync (Motor Isolado)
+Usinas Solis encontradas no banco: 4
+Processando Solis: Usina Alipio Lopes Lote 044-046 24KW
+[SOLIS-SYNC] Dados Estação: Power=0.7kW, Energy=0.1kWh
+[SOLIS-SYNC] Dados Estação: Power=0.95kW, Energy=0.1kWh
+[SOLIS-SYNC] Usina Alipio Lopes Lote 044-046 24KW: Final Power=1.82kW, Energy=0.1kWh
+Processando Solis: Usina Wellcas Comércio de Frutas LTDA
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=0kWh
+[SOLIS-SYNC] Usina Wellcas Comércio de Frutas LTDA: Final Power=12.53kW, Energy=0kWh
+Processando Solis: Usina 75KW GD2 Evandro Diniz Jaíba
+[SOLIS-SYNC] Usina Alipio Lopes Lote 044-046 24KW: Final Power=1.79kW, Energy=0.1kWh
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=0kWh
+Processando Solis: Usina Wellcas Comércio de Frutas LTDA
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=0kWh
+[SOLIS-SYNC] Usina Wellcas Comércio de Frutas LTDA: Final Power=12.53kW, Energy=0kWh
+Processando Solis: Usina 75KW GD2 Evandro Diniz Jaíba
+[SOLIS-SYNC] Usina 75KW GD2 Evandro Diniz Jaíba: Final Power=43.68kW, Energy=0kWh
+Processando Solis: Usina 75KW GD2 Evandro Diniz Jaíba
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=0kWh
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=0kWh
+[SOLIS-SYNC] Usina 75KW GD2 Evandro Diniz Jaíba: Final Power=43.68kW, Energy=0kWh
+Processando Solis: Usina 75KW GD2 Evandro Diniz Jaíba
+[SOLIS-SYNC] Usina 75KW GD2 Evandro Diniz Jaíba: Final Power=43.68kW, Energy=0kWh
+[SOLIS-SYNC] Motor Finalizado com Sucesso.
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=0kWh
+[SOLIS-SYNC] Usina 75KW GD2 Evandro Diniz Jaíba: Final Power=43.68kW, Energy=0kWh
+[SOLIS-SYNC] Motor Finalizado com Sucesso.

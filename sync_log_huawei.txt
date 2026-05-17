@@ -1,0 +1,244 @@
+
+[2026-05-17T09:56:04.171Z] Início Huawei Sync (Motor Isolado)
+Usinas Huawei encontradas no banco: 2
+Processando conta Huawei: 'Cordeiroapihuawei'
+Login efetuado com sucesso para usuário: Cordeiroapihuawei
+Consultando KPIs para 8 inversores: 1000000045877645,1000000045877643,1000000045877644,1000000045877642,1000000044737958,1000000044745514,1000000044741866,1000000044744208
+Retornados 8 KPIs de dispositivos.
+USINA MANGA GRANDE UFV 1 1852: Match de 4 KPIs de inversores.
+  - Inversor 1000000045877642: CC=30.337kW, E(Dia)=7.66kWh
+  - Inversor 1000000045877643: CC=28.202kW, E(Dia)=7.18kWh
+  - Inversor 1000000045877644: CC=30.302kW, E(Dia)=7.47kWh
+  - Inversor 1000000045877645: CC=32.646kW, E(Dia)=7.77kWh
+[HUAWEI-SYNC] Gravando USINA MANGA GRANDE UFV 1 1852: Potência=121.49kW, Energia Dia=21.46kWh, Tensão=[817.7V, 816.8V, 813.7V]
+USINA MANGA GRANDE UFV 2 2243: Match de 4 KPIs de inversores.
+  - Inversor 1000000044741866: CC=36.523kW, E(Dia)=8.1kWh
+  - Inversor 1000000044737958: CC=30.689kW, E(Dia)=7.47kWh
+  - Inversor 1000000044744208: CC=34.209kW, E(Dia)=8kWh
+  - Inversor 1000000044745514: CC=36.865kW, E(Dia)=8.35kWh
+[HUAWEI-SYNC] Gravando USINA MANGA GRANDE UFV 2 2243: Potência=138.29kW, Energia Dia=22.43kWh, Tensão=[822.1V, 824.1V, 824.4V]
+[HUAWEI-SYNC] Motor Finalizado com Sucesso.
+
+[2026-05-17T09:56:44.355Z] Início Huawei Sync (Motor Isolado)
+Usinas Huawei encontradas no banco: 2
+Processando conta Huawei: 'Cordeiroapihuawei'
+Login efetuado com sucesso para usuário: Cordeiroapihuawei
+Consultando KPIs para 8 inversores: 1000000045877643,1000000045877645,1000000045877642,1000000045877644,1000000044737958,1000000044741866,1000000044745514,1000000044744208
+Retornados 8 KPIs de dispositivos.
+USINA MANGA GRANDE UFV 1 1852: Match de 4 KPIs de inversores.
+  - Inversor 1000000045877642: CC=30.337kW, E(Dia)=7.66kWh
+  - Inversor 1000000045877643: CC=28.202kW, E(Dia)=7.18kWh
+  - Inversor 1000000045877644: CC=30.302kW, E(Dia)=7.47kWh
+  - Inversor 1000000045877645: CC=32.646kW, E(Dia)=7.77kWh
+[HUAWEI-SYNC] Gravando USINA MANGA GRANDE UFV 1 1852: Potência=121.49kW, Energia Dia=30.08kWh, Tensão=[817.7V, 816.8V, 813.7V]
+USINA MANGA GRANDE UFV 2 2243: Match de 4 KPIs de inversores.
+  - Inversor 1000000044741866: CC=36.523kW, E(Dia)=8.1kWh
+  - Inversor 1000000044737958: CC=30.689kW, E(Dia)=7.47kWh
+  - Inversor 1000000044744208: CC=34.209kW, E(Dia)=8kWh
+  - Inversor 1000000044745514: CC=36.865kW, E(Dia)=8.35kWh
+[HUAWEI-SYNC] Gravando USINA MANGA GRANDE UFV 2 2243: Potência=138.29kW, Energia Dia=31.92kWh, Tensão=[822.1V, 824.1V, 824.4V]
+[HUAWEI-SYNC] Motor Finalizado com Sucesso.
+
+[2026-05-17T09:56:58.213Z] Início Huawei Sync (Motor Isolado)
+Usinas Huawei encontradas no banco: 2
+Processando conta Huawei: 'Cordeiroapihuawei'
+Login efetuado com sucesso para usuário: Cordeiroapihuawei
+Consultando KPIs para 8 inversores: 1000000045877644,1000000045877642,1000000045877643,1000000045877645,1000000044745514,1000000044737958,1000000044741866,1000000044744208
+Retornados 8 KPIs de dispositivos.
+[HUAWEI-SYNC] Erro no processamento de telemetria da usina USINA MANGA GRANDE UFV 1 1852: TypeError: allStationKpi.find is not a function
+[HUAWEI-SYNC] Erro no processamento de telemetria da usina USINA MANGA GRANDE UFV 2 2243: TypeError: allStationKpi.find is not a function
+[HUAWEI-SYNC] Motor Finalizado com Sucesso.
+
+[2026-05-17T09:57:03.079Z] Início Huawei Sync (Motor Isolado)
+Usinas Huawei encontradas no banco: 2
+Processando conta Huawei: 'Cordeiroapihuawei'
+Login efetuado com sucesso para usuário: Cordeiroapihuawei
+Consultando KPIs para 8 inversores: 1000000045877645,1000000045877643,1000000045877644,1000000045877642,1000000044737958,1000000044745514,1000000044741866,1000000044744208
+Retornados 28 KPIs de dispositivos.
+[HUAWEI-SYNC] Erro no processamento de telemetria da usina USINA MANGA GRANDE UFV 1 1852: TypeError: allStationKpi.find is not a function
+[HUAWEI-SYNC] Erro no processamento de telemetria da usina USINA MANGA GRANDE UFV 2 2243: TypeError: allStationKpi.find is not a function
+[HUAWEI-SYNC] Motor Finalizado com Sucesso.
+
+[2026-05-17T09:57:10.753Z] Início Huawei Sync (Motor Isolado)
+Usinas Huawei encontradas no banco: 2
+Processando conta Huawei: 'Cordeiroapihuawei'
+Login efetuado com sucesso para usuário: Cordeiroapihuawei
+Consultando KPIs para 8 inversores: 1000000045877644,1000000045877642,1000000045877643,1000000045877645,1000000044745514,1000000044737958,1000000044741866,1000000044744208
+Retornados 28 KPIs de dispositivos.
+[HUAWEI-SYNC] Erro no processamento de telemetria da usina USINA MANGA GRANDE UFV 1 1852: TypeError: allStationKpi.find is not a function
+[HUAWEI-SYNC] Erro no processamento de telemetria da usina USINA MANGA GRANDE UFV 2 2243: TypeError: allStationKpi.find is not a function
+[HUAWEI-SYNC] Motor Finalizado com Sucesso.
+
+[2026-05-17T09:57:24.540Z] Início Huawei Sync (Motor Isolado)
+Usinas Huawei encontradas no banco: 2
+Processando conta Huawei: 'Cordeiroapihuawei'
+Login efetuado com sucesso para usuário: Cordeiroapihuawei
+Consultando KPIs para 8 inversores: 1000000045877644,1000000045877642,1000000045877643,1000000045877645,1000000044745514,1000000044737958,1000000044741866,1000000044744208
+Retornados 28 KPIs de dispositivos.
+[HUAWEI-SYNC] Erro no processamento de telemetria da usina USINA MANGA GRANDE UFV 1 1852: TypeError: allStationKpi.find is not a function
+[HUAWEI-SYNC] Erro no processamento de telemetria da usina USINA MANGA GRANDE UFV 2 2243: TypeError: allStationKpi.find is not a function
+[HUAWEI-SYNC] Motor Finalizado com Sucesso.
+
+[2026-05-17T09:58:33.066Z] Início Huawei Sync (Motor Isolado)
+Usinas Huawei encontradas no banco: 2
+Processando conta Huawei: 'Cordeiroapihuawei'
+Login efetuado com sucesso para usuário: Cordeiroapihuawei
+Consultando KPIs para 8 inversores: 1000000045877644,1000000045877642,1000000045877643,1000000045877645,1000000044745514,1000000044737958,1000000044741866,1000000044744208
+Retornados 8 KPIs de dispositivos.
+[HUAWEI-SYNC] Erro no processamento de telemetria da usina USINA MANGA GRANDE UFV 1 1852: TypeError: allStationKpi.find is not a function
+[HUAWEI-SYNC] Erro no processamento de telemetria da usina USINA MANGA GRANDE UFV 2 2243: TypeError: allStationKpi.find is not a function
+[HUAWEI-SYNC] Motor Finalizado com Sucesso.
+
+[2026-05-17T09:59:14.426Z] Início Huawei Sync (Motor Isolado)
+
+[2026-05-17T09:59:15.526Z] Início Huawei Sync (Motor Isolado)
+Usinas Huawei encontradas no banco: 2
+Processando conta Huawei: 'Cordeiroapihuawei'
+Login efetuado com sucesso para usuário: Cordeiroapihuawei
+Usinas Huawei encontradas no banco: 2
+Processando conta Huawei: 'Cordeiroapihuawei'
+Login efetuado com sucesso para usuário: Cordeiroapihuawei
+Consultando KPIs para 8 inversores: 1000000045877645,1000000045877643,1000000045877644,1000000045877642,1000000044737958,1000000044745514,1000000044741866,1000000044744208
+Retornados 28 KPIs de dispositivos.
+USINA MANGA GRANDE UFV 1 1852: Match de 0 KPIs de inversores.
+[HUAWEI-SYNC] Gravando USINA MANGA GRANDE UFV 1 1852: Potência=0.00kW, Energia Dia=30.08kWh, Tensão=[0V, 0V, 0V]
+Consultando KPIs para 8 inversores: 1000000045877644,1000000045877642,1000000045877643,1000000045877645,1000000044745514,1000000044737958,1000000044741866,1000000044744208
+Retornados 28 KPIs de dispositivos.
+[HUAWEI-SYNC] Erro no processamento de telemetria da usina USINA MANGA GRANDE UFV 1 1852: TypeError: allStationKpi.find is not a function
+[HUAWEI-SYNC] Erro no processamento de telemetria da usina USINA MANGA GRANDE UFV 2 2243: TypeError: allStationKpi.find is not a function
+[HUAWEI-SYNC] Motor Finalizado com Sucesso.
+USINA MANGA GRANDE UFV 2 2243: Match de 0 KPIs de inversores.
+[HUAWEI-SYNC] Gravando USINA MANGA GRANDE UFV 2 2243: Potência=0.00kW, Energia Dia=31.92kWh, Tensão=[0V, 0V, 0V]
+[HUAWEI-SYNC] Motor Finalizado com Sucesso.
+
+[2026-05-17T10:00:17.397Z] Início Huawei Sync (Motor Isolado)
+Usinas Huawei encontradas no banco: 2
+Processando conta Huawei: 'Cordeiroapihuawei'
+Login efetuado com sucesso para usuário: Cordeiroapihuawei
+Consultando KPIs para 8 inversores: 1000000045877645,1000000045877643,1000000045877644,1000000045877642,1000000044737958,1000000044745514,1000000044741866,1000000044744208
+Retornados 8 KPIs de dispositivos.
+[HUAWEI-SYNC] Erro no processamento de telemetria da usina USINA MANGA GRANDE UFV 1 1852: TypeError: allStationKpi.find is not a function
+[HUAWEI-SYNC] Erro no processamento de telemetria da usina USINA MANGA GRANDE UFV 2 2243: TypeError: allStationKpi.find is not a function
+[HUAWEI-SYNC] Motor Finalizado com Sucesso.
+
+[2026-05-17T10:00:19.310Z] Início Huawei Sync (Motor Isolado)
+Usinas Huawei encontradas no banco: 2
+Processando conta Huawei: 'Cordeiroapihuawei'
+Login efetuado com sucesso para usuário: Cordeiroapihuawei
+Consultando KPIs para 8 inversores: 1000000045877645,1000000045877643,1000000045877644,1000000045877642,1000000044737958,1000000044745514,1000000044741866,1000000044744208
+Retornados 28 KPIs de dispositivos.
+[HUAWEI-SYNC] Erro no processamento de telemetria da usina USINA MANGA GRANDE UFV 1 1852: TypeError: allStationKpi.find is not a function
+[HUAWEI-SYNC] Erro no processamento de telemetria da usina USINA MANGA GRANDE UFV 2 2243: TypeError: allStationKpi.find is not a function
+[HUAWEI-SYNC] Motor Finalizado com Sucesso.
+
+[2026-05-17T10:00:20.898Z] Início Huawei Sync (Motor Isolado)
+Usinas Huawei encontradas no banco: 2
+Processando conta Huawei: 'Cordeiroapihuawei'
+Login efetuado com sucesso para usuário: Cordeiroapihuawei
+Consultando KPIs para 8 inversores: 1000000045877644,1000000045877642,1000000045877643,1000000045877645,1000000044745514,1000000044737958,1000000044741866,1000000044744208
+Retornados 28 KPIs de dispositivos.
+[HUAWEI-SYNC] Erro no processamento de telemetria da usina USINA MANGA GRANDE UFV 1 1852: TypeError: allStationKpi.find is not a function
+[HUAWEI-SYNC] Erro no processamento de telemetria da usina USINA MANGA GRANDE UFV 2 2243: TypeError: allStationKpi.find is not a function
+[HUAWEI-SYNC] Motor Finalizado com Sucesso.
+
+[2026-05-17T10:00:39.032Z] Início Huawei Sync (Motor Isolado)
+
+[2026-05-17T10:00:39.104Z] Início Huawei Sync (Motor Isolado)
+Usinas Huawei encontradas no banco: 2
+Usinas Huawei encontradas no banco: 2
+Processando conta Huawei: 'Cordeiroapihuawei'
+Login efetuado com sucesso para usuário: Cordeiroapihuawei
+Processando conta Huawei: 'Cordeiroapihuawei'
+Login efetuado com sucesso para usuário: Cordeiroapihuawei
+Consultando KPIs para 8 inversores: 1000000045877644,1000000045877642,1000000045877643,1000000045877645,1000000044745514,1000000044737958,1000000044741866,1000000044744208
+Retornados 28 KPIs de dispositivos.
+[HUAWEI-SYNC] Erro no processamento de telemetria da usina USINA MANGA GRANDE UFV 1 1852: TypeError: allStationKpi.find is not a function
+[HUAWEI-SYNC] Erro no processamento de telemetria da usina USINA MANGA GRANDE UFV 2 2243: TypeError: allStationKpi.find is not a function
+[HUAWEI-SYNC] Motor Finalizado com Sucesso.
+Consultando KPIs para 8 inversores: 1000000045877645,1000000045877643,1000000045877644,1000000045877642,1000000044737958,1000000044745514,1000000044741866,1000000044744208
+Retornados 28 KPIs de dispositivos.
+[HUAWEI-SYNC] Erro no processamento de telemetria da usina USINA MANGA GRANDE UFV 1 1852: TypeError: allStationKpi.find is not a function
+[HUAWEI-SYNC] Erro no processamento de telemetria da usina USINA MANGA GRANDE UFV 2 2243: TypeError: allStationKpi.find is not a function
+[HUAWEI-SYNC] Motor Finalizado com Sucesso.
+
+[2026-05-17T10:01:40.169Z] Início Huawei Sync (Motor Isolado)
+Usinas Huawei encontradas no banco: 2
+Processando conta Huawei: 'Cordeiroapihuawei'
+Login efetuado com sucesso para usuário: Cordeiroapihuawei
+Consultando KPIs para 8 inversores: 1000000045877644,1000000045877642,1000000045877643,1000000045877645,1000000044745514,1000000044737958,1000000044741866,1000000044744208
+Retornados 8 KPIs de dispositivos.
+USINA MANGA GRANDE UFV 1 1852: Match de 4 KPIs de inversores.
+  - Inversor 1000000045877642: CC=33.786kW, E(Dia)=10.18kWh
+  - Inversor 1000000045877643: CC=31.876kW, E(Dia)=9.61kWh
+  - Inversor 1000000045877644: CC=35.206kW, E(Dia)=10.12kWh
+  - Inversor 1000000045877645: CC=36.54kW, E(Dia)=10.53kWh
+[HUAWEI-SYNC] Gravando USINA MANGA GRANDE UFV 1 1852: Potência=137.41kW, Energia Dia=40.44kWh, Tensão=[816.9V, 815.8V, 812.9V]
+USINA MANGA GRANDE UFV 2 2243: Match de 4 KPIs de inversores.
+  - Inversor 1000000044741866: CC=41.627kW, E(Dia)=11.16kWh
+  - Inversor 1000000044737958: CC=34.93kW, E(Dia)=10.07kWh
+  - Inversor 1000000044744208: CC=37.48kW, E(Dia)=10.8kWh
+  - Inversor 1000000044745514: CC=42.904kW, E(Dia)=11.49kWh
+[HUAWEI-SYNC] Gravando USINA MANGA GRANDE UFV 2 2243: Potência=156.94kW, Energia Dia=43.52kWh, Tensão=[820.8V, 823.2V, 823.5V]
+
+[2026-05-17T10:01:41.813Z] Início Huawei Sync (Motor Isolado)
+Usinas Huawei encontradas no banco: 2
+Processando conta Huawei: 'Cordeiroapihuawei'
+Login efetuado com sucesso para usuário: Cordeiroapihuawei
+[HUAWEI-SYNC] Motor Finalizado com Sucesso.
+Consultando KPIs para 8 inversores: 1000000045877644,1000000045877642,1000000045877643,1000000045877645,1000000044745514,1000000044737958,1000000044741866,1000000044744208
+Retornados 28 KPIs de dispositivos.
+[HUAWEI-SYNC] Erro no processamento de telemetria da usina USINA MANGA GRANDE UFV 1 1852: TypeError: allStationKpi.find is not a function
+[HUAWEI-SYNC] Erro no processamento de telemetria da usina USINA MANGA GRANDE UFV 2 2243: TypeError: allStationKpi.find is not a function
+[HUAWEI-SYNC] Motor Finalizado com Sucesso.
+
+[2026-05-17T10:05:57.566Z] Início Huawei Sync (Motor Isolado)
+
+[2026-05-17T10:05:57.666Z] Início Huawei Sync (Motor Isolado)
+Usinas Huawei encontradas no banco: 2
+Usinas Huawei encontradas no banco: 2
+Processando conta Huawei: 'Cordeiroapihuawei'
+Login efetuado com sucesso para usuário: Cordeiroapihuawei
+Processando conta Huawei: 'Cordeiroapihuawei'
+Login efetuado com sucesso para usuário: Cordeiroapihuawei
+Consultando KPIs para 8 inversores: 1000000045877643,1000000045877645,1000000045877642,1000000045877644,1000000044737958,1000000044741866,1000000044745514,1000000044744208
+Consultando KPIs para 8 inversores: 1000000045877643,1000000045877645,1000000045877642,1000000045877644,1000000044737958,1000000044741866,1000000044745514,1000000044744208
+Retornados 8 KPIs de dispositivos.
+[HUAWEI-SYNC] Erro no processamento de telemetria da usina USINA MANGA GRANDE UFV 1 1852: TypeError: allStationKpi.find is not a function
+[HUAWEI-SYNC] Erro no processamento de telemetria da usina USINA MANGA GRANDE UFV 2 2243: TypeError: allStationKpi.find is not a function
+[HUAWEI-SYNC] Motor Finalizado com Sucesso.
+Retornados 8 KPIs de dispositivos.
+USINA MANGA GRANDE UFV 1 1852: Match de 4 KPIs de inversores.
+  - Inversor 1000000045877642: CC=37.441kW, E(Dia)=13.1kWh
+  - Inversor 1000000045877643: CC=35.586kW, E(Dia)=12.38kWh
+  - Inversor 1000000045877644: CC=37.439kW, E(Dia)=13.09kWh
+  - Inversor 1000000045877645: CC=38.153kW, E(Dia)=13.55kWh
+[HUAWEI-SYNC] Gravando USINA MANGA GRANDE UFV 1 1852: Potência=148.62kW, Energia Dia=52.12kWh, Tensão=[818.5V, 816.4V, 812.8V]
+USINA MANGA GRANDE UFV 2 2243: Match de 4 KPIs de inversores.
+  - Inversor 1000000044741866: CC=43.24kW, E(Dia)=14.64kWh
+  - Inversor 1000000044737958: CC=37.254kW, E(Dia)=13.04kWh
+  - Inversor 1000000044744208: CC=38.921kW, E(Dia)=13.92kWh
+  - Inversor 1000000044745514: CC=44.997kW, E(Dia)=15.1kWh
+[HUAWEI-SYNC] Gravando USINA MANGA GRANDE UFV 2 2243: Potência=164.41kW, Energia Dia=56.7kWh, Tensão=[820.9V, 823.5V, 823.9V]
+[HUAWEI-SYNC] Motor Finalizado com Sucesso.
+
+[2026-05-17T10:06:54.147Z] Início Huawei Sync (Motor Isolado)
+
+[2026-05-17T10:06:54.223Z] Início Huawei Sync (Motor Isolado)
+Usinas Huawei encontradas no banco: 2
+Usinas Huawei encontradas no banco: 2
+Processando conta Huawei: 'Cordeiroapihuawei'
+Login efetuado com sucesso para usuário: Cordeiroapihuawei
+Processando conta Huawei: 'Cordeiroapihuawei'
+Login efetuado com sucesso para usuário: Cordeiroapihuawei
+Consultando KPIs para 8 inversores: 1000000045877643,1000000045877645,1000000045877642,1000000045877644,1000000044737958,1000000044741866,1000000044745514,1000000044744208
+Consultando KPIs para 8 inversores: 1000000045877643,1000000045877645,1000000045877642,1000000045877644,1000000044737958,1000000044741866,1000000044745514,1000000044744208
+Retornados 28 KPIs de dispositivos.
+USINA MANGA GRANDE UFV 1 1852: Match de 0 KPIs de inversores.
+[HUAWEI-SYNC] Gravando USINA MANGA GRANDE UFV 1 1852: Potência=0.00kW, Energia Dia=52.12kWh, Tensão=[0V, 0V, 0V]
+Retornados 8 KPIs de dispositivos.
+[HUAWEI-SYNC] Erro no processamento de telemetria da usina USINA MANGA GRANDE UFV 1 1852: TypeError: allStationKpi.find is not a function
+[HUAWEI-SYNC] Erro no processamento de telemetria da usina USINA MANGA GRANDE UFV 2 2243: TypeError: allStationKpi.find is not a function
+[HUAWEI-SYNC] Motor Finalizado com Sucesso.
+USINA MANGA GRANDE UFV 2 2243: Match de 0 KPIs de inversores.
+[HUAWEI-SYNC] Gravando USINA MANGA GRANDE UFV 2 2243: Potência=0.00kW, Energia Dia=56.7kWh, Tensão=[0V, 0V, 0V]
+[HUAWEI-SYNC] Motor Finalizado com Sucesso.

@@ -2,6 +2,7 @@ import { prisma } from "../prisma";
 import fs from "fs";
 import path from "path";
 const https = require('https');
+const logFile = path.join(process.cwd(), 'sync_log.txt');
 
 /**
  * Serviço de Integração Huawei FusionSolar Northbound API
@@ -102,6 +103,20 @@ export class HuaweiIntegration {
     } catch (error) {
       console.error("Huawei Login Error:", error);
       throw error;
+    }
+  }
+
+  /**
+   * Lista todas as usinas (stations) associadas à conta
+   */
+  static async listStations(user?: string, pass?: string): Promise<any[]> {
+    try {
+      const login = await this.login(user, pass);
+      const res = await this.hwRequest('/getStationList', { pageNo: 1 }, login.token, login.cookie);
+      return res.data?.list || res.data || [];
+    } catch (error) {
+      console.error("Huawei listStations Error:", error);
+      return [];
     }
   }
 

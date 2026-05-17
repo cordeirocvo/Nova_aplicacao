@@ -3,18 +3,18 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET() {
   try {
-    const settings = await prisma.systemSettings.findFirst({
-      where: { id: "default" }
-    });
+    const manufacturers = await prisma.manufacturerAPI.findMany();
+    const huawei = manufacturers.find(m => m.name === "HUAWEI");
+    const solis = manufacturers.find(m => m.name === "SOLIS");
 
     return NextResponse.json({
       huawei: {
-        user: settings?.huaweiUser || "",
-        pass: settings?.huaweiPass ? "********" : "" // Proteção visual
+        user: huawei?.userKey || "",
+        pass: huawei?.secretKey ? "********" : "" // Proteção visual
       },
       solis: {
-        key: settings?.solisKey || "",
-        secret: settings?.solisSecret ? "********" : ""
+        key: solis?.userKey || "",
+        secret: solis?.secretKey ? "********" : ""
       }
     });
   } catch (error) {
@@ -28,22 +28,32 @@ export async function POST(req: Request) {
     const { huawei, solis } = body;
 
     // Buscamos as configurações atuais para não sobrescrever o que for "********"
-    const current = await prisma.systemSettings.findFirst({ where: { id: "default" } });
+    const currentHuawei = await prisma.manufacturerAPI.findUnique({ where: { name: "HUAWEI" } });
+    const currentSolis = await prisma.manufacturerAPI.findUnique({ where: { name: "SOLIS" } });
 
-    await prisma.systemSettings.upsert({
-      where: { id: "default" },
+    await prisma.manufacturerAPI.upsert({
+      where: { name: "HUAWEI" },
       create: {
-        id: "default",
-        huaweiUser: huawei.user,
-        huaweiPass: huawei.pass && !huawei.pass.includes("*") ? huawei.pass : current?.huaweiPass,
-        solisKey: solis.key,
-        solisSecret: solis.secret && !solis.secret.includes("*") ? solis.secret : current?.solisSecret,
+        name: "HUAWEI",
+        userKey: huawei.user,
+        secretKey: huawei.pass && !huawei.pass.includes("*") ? huawei.pass : currentHuawei?.secretKey,
       },
       update: {
-        huaweiUser: huawei.user,
-        huaweiPass: huawei.pass && !huawei.pass.includes("*") ? huawei.pass : current?.huaweiPass,
-        solisKey: solis.key,
-        solisSecret: solis.secret && !solis.secret.includes("*") ? solis.secret : current?.solisSecret,
+        userKey: huawei.user,
+        secretKey: huawei.pass && !huawei.pass.includes("*") ? huawei.pass : currentHuawei?.secretKey,
+      }
+    });
+
+    await prisma.manufacturerAPI.upsert({
+      where: { name: "SOLIS" },
+      create: {
+        name: "SOLIS",
+        userKey: solis.key,
+        secretKey: solis.secret && !solis.secret.includes("*") ? solis.secret : currentSolis?.secretKey,
+      },
+      update: {
+        userKey: solis.key,
+        secretKey: solis.secret && !solis.secret.includes("*") ? solis.secret : currentSolis?.secretKey,
       }
     });
 

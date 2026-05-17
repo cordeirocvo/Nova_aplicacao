@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, 
-  ReTooltip, ResponsiveContainer, Cell, Pie, PieChart as RePieChart
+  ResponsiveContainer, Cell, Pie, PieChart as RePieChart
 } from "recharts";
 
 const performanceData = [

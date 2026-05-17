@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
-  Upload, FileText, BarChart, AlertTriangle, CheckCircle,
+  Upload, FileText, BarChart as BarChartIcon, AlertTriangle, CheckCircle,
   Info, Sun, Zap, Loader, Plus, Settings, ChevronDown, ExternalLink, Edit, Save, Search, Battery
 } from "lucide-react";
 import {
@@ -199,7 +199,7 @@ function AnaliseConsumoContent() {
 
       {/* Tabs */}
       <div className="flex bg-slate-100 rounded-2xl p-1 gap-1 w-fit">
-        {([["fatura", "Fatura de Energia", FileText], ["massa", "Memória de Massa", BarChart], ["manual", "Inserção Manual", Edit]] as const).map(([key, label, Icon]) => (
+        {([["fatura", "Fatura de Energia", FileText], ["massa", "Memória de Massa", BarChartIcon], ["manual", "Inserção Manual", Edit]] as const).map(([key, label, Icon]) => (
           <button key={key} onClick={() => setTab(key)}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${tab === key ? "bg-white shadow-sm text-[#1E3A8A]" : "text-slate-500 hover:text-slate-700"}`}>
             <Icon className="w-4 h-4" /> {label}
@@ -311,7 +311,7 @@ function AnaliseConsumoContent() {
           {tab === "massa" && (
             <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 space-y-5">
               <div className="flex items-center gap-2 border-b border-slate-100 pb-4">
-                <BarChart className="w-5 h-5 text-amber-500" />
+                <BarChartIcon className="w-5 h-5 text-amber-500" />
                 <h2 className="font-bold text-slate-800">Memória de Massa XLS</h2>
               </div>
               <p className="text-xs text-slate-500 leading-relaxed">
@@ -338,7 +338,7 @@ function AnaliseConsumoContent() {
                 className="border-2 border-dashed border-amber-300/50 rounded-2xl p-6 text-center cursor-pointer hover:bg-amber-50/50 transition-colors relative"
                 onClick={() => document.getElementById('massaInput')?.click()}
               >
-                <BarChart className="w-8 h-8 text-amber-500 mx-auto mb-2" />
+                <BarChartIcon className="w-8 h-8 text-amber-500 mx-auto mb-2" />
                 {massaFiles.length === 0 ? (
                   <p className="text-sm font-medium text-slate-600">Clique para enviar arquivos XLS da Memória de Massa</p>
                 ) : (
@@ -353,7 +353,7 @@ function AnaliseConsumoContent() {
 
               <button onClick={handleMassaUpload} disabled={massaFiles.length === 0 || loading}
                 className="w-full py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl font-bold text-sm disabled:opacity-40 flex items-center justify-center gap-2">
-                {loading ? <><Loader className="w-4 h-4 animate-spin" /> Processando...</> : <><BarChart className="w-4 h-4" /> Processar Memória de Massa</>}
+                {loading ? <><Loader className="w-4 h-4 animate-spin" /> Processando...</> : <><BarChartIcon className="w-4 h-4" /> Processar Memória de Massa</>}
               </button>
 
               {massaError && (
@@ -598,7 +598,7 @@ function AnaliseConsumoContent() {
                 <div className="p-6 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-[#1E3A8A] text-white rounded-xl shadow-lg shadow-blue-100">
-                      <BarChart className="w-5 h-5" />
+                      <BarChartIcon className="w-5 h-5" />
                     </div>
                     <div>
                       <h3 className="font-black text-slate-800 uppercase tracking-tight">Painel de Memória de Massa</h3>

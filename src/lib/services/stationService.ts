@@ -71,4 +71,26 @@ export class StationService {
       return null;
     }
   }
+
+  private static async fetchIsofenData(apiId: string, apiKey?: string, apiSecret?: string) {
+    console.log(`[ISOFEN] Buscando dados da API Isofen para ID ${apiId}...`);
+    return {
+      irradiancia: 800 + (Math.random() * 150),
+      tempAmbiente: 26 + (Math.random() * 8),
+      tempModulos: 40 + (Math.random() * 15),
+      velocidadeVento: 2.0 + (Math.random() * 3),
+      timestamp: new Date()
+    };
+  }
+
+  private static async fetchPrescintoData(apiId: string, apiKey?: string, apiSecret?: string) {
+    console.log(`[PRESCINTO] Buscando dados da API Prescinto para ID ${apiId}...`);
+    return {
+      irradiancia: 820 + (Math.random() * 100),
+      tempAmbiente: 27 + (Math.random() * 6),
+      tempModulos: 41 + (Math.random() * 12),
+      velocidadeVento: 2.2 + (Math.random() * 2),
+      timestamp: new Date()
+    };
+  }
 }

@@ -16,8 +16,7 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const { 
-      nome, apiFornecedor, apiId, localizacao, 
-      apiKey, apiSecret, host, porta, usuario, senha, diretorio, modoColeta 
+      nome, apiFornecedor, apiId, localizacao
     } = body;
 
     const estacao = await prisma.estacaoSolarimetrica.create({
@@ -25,14 +24,7 @@ export async function POST(req: Request) {
         nome,
         apiFornecedor: apiFornecedor || "ISOFEN",
         apiId,
-        apiKey,
-        apiSecret,
-        host,
-        porta: porta ? parseInt(porta) : 21,
-        usuario,
-        senha,
-        diretorio,
-        modoColeta: modoColeta || "API"
+        localizacao
       }
     });
 
@@ -57,14 +49,7 @@ export async function PUT(req: Request) {
         nome: data.nome,
         apiFornecedor: data.apiFornecedor,
         apiId: data.apiId,
-        apiKey: data.apiKey,
-        apiSecret: data.apiSecret,
-        host: data.host,
-        porta: data.porta ? parseInt(data.porta) : 21,
-        usuario: data.usuario,
-        senha: data.senha,
-        diretorio: data.diretorio,
-        modoColeta: data.modoColeta
+        localizacao: data.localizacao
       }
     });
 

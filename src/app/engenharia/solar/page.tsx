@@ -3,7 +3,7 @@ import { useState, useEffect, useMemo, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { 
   Sun, Zap, MapPin, Settings, Info, Loader, Save, 
-  ChevronRight, BarChart, AlertTriangle, CheckCircle,
+  ChevronRight, BarChart as BarChartIcon, AlertTriangle, CheckCircle,
   Maximize, ArrowRight, Layers, Compass, MoveUp, Activity
 } from "lucide-react";
 import {
@@ -787,7 +787,7 @@ function SolarContent() {
               {/* Seasonal Generation Chart */}
               <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm flex flex-col">
                 <div className="flex items-center justify-between mb-6">
-                   <h3 className="font-bold text-slate-800 flex items-center gap-2"><BarChart className="w-5 h-5 text-amber-500" /> Sazonalidade (HSP)</h3>
+                   <h3 className="font-bold text-slate-800 flex items-center gap-2"><BarChartIcon className="w-5 h-5 text-amber-500" /> Sazonalidade (HSP)</h3>
                    {pvgisData.length > 0 && <span className="text-[10px] font-black bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full uppercase tracking-widest">via PVGIS</span>}
                 </div>
                 <div className="flex-1 h-64">

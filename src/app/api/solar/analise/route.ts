@@ -154,7 +154,7 @@ export async function GET(req: Request) {
       irradiancia: latest?.irradiancia || 0,
       tempAmbiente: latest?.tempAmbiente || 0,
       tempModulos: latest?.tempModulos || 0,
-      vento: latest?.vento || 0,
+      vento: 0,
       
       telemetrias: usina.telemetria.map(t => ({
         id: t.id,

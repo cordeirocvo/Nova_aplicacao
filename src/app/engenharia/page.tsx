@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { BarChart3, Plus, Sun, Battery, BatteryCharging, FileText, Calendar, ChevronRight, Loader2, Zap, Download } from "lucide-react";
+import { BarChart, Plus, Sun, Battery, BatteryCharging, FileText, Calendar, ChevronRight, Loader, Zap, Download } from "lucide-react";
 import { ReportButton } from "@/components/engenharia/ReportButton";
 
 const TIPO_ICONS: Record<string, React.ElementType> = {
@@ -111,7 +111,7 @@ export default function EngenhariaPage() {
               <button onClick={() => setShowNew(false)} className="flex-1 py-3 border border-slate-200 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-50">Cancelar</button>
               <button onClick={handleCreate} disabled={saving || !newForm.nome}
                 className="flex-1 py-3 bg-gradient-to-r from-[#1E3A8A] to-[#00BFA5] text-white rounded-xl font-bold text-sm disabled:opacity-50">
-                {saving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : "Criar Projeto"}
+                {saving ? <Loader className="w-4 h-4 animate-spin mx-auto" /> : "Criar Projeto"}
               </button>
             </div>
           </div>
@@ -120,10 +120,10 @@ export default function EngenhariaPage() {
 
       {/* Projects list */}
       {loading ? (
-        <div className="flex justify-center p-16"><Loader2 className="w-8 h-8 animate-spin text-[#00BFA5]" /></div>
+        <div className="flex justify-center p-16"><Loader className="w-8 h-8 animate-spin text-[#00BFA5]" /></div>
       ) : projetos.length === 0 ? (
         <div className="bg-white rounded-3xl p-16 text-center border-2 border-dashed border-slate-200">
-          <BarChart3 className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+          <BarChart className="w-12 h-12 text-slate-300 mx-auto mb-4" />
           <p className="text-slate-500 font-medium">Nenhum projeto de engenharia criado.</p>
           <button onClick={() => setShowNew(true)} className="text-[#00BFA5] font-bold mt-2 hover:underline">Criar primeiro projeto →</button>
         </div>
@@ -159,7 +159,7 @@ export default function EngenhariaPage() {
                     )}
                     {p.analiseMassa?.length > 0 && (
                       <span className="flex items-center gap-1 text-xs font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded-full">
-                        <BarChart3 className="w-3 h-3" /> Massa
+                        <BarChart className="w-3 h-3" /> Massa
                       </span>
                     )}
                     {p.analiseFatura?.grupoTarifario && (

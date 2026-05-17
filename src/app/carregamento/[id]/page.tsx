@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { 
   Zap, FileText, ChevronLeft, Shield, AlertTriangle, 
-  CheckCircle2, Loader2, MapPin, ExternalLink, Edit2, Save, X, Box,
+  CheckCircle, Loader, MapPin, ExternalLink, Edit, Save, X, Box,
   BatteryCharging
 } from "lucide-react";
 import { CEMIG_DOCS } from "@/lib/ev/cemigEngine";
@@ -105,7 +105,7 @@ export default function ProjetoDetalhes() {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center p-20">
-        <Loader2 className="w-10 h-10 animate-spin text-[#00BFA5]" />
+        <Loader className="w-10 h-10 animate-spin text-[#00BFA5]" />
         <p className="text-slate-500 mt-4 font-medium">Carregando detalhes do projeto...</p>
       </div>
     );
@@ -139,7 +139,7 @@ export default function ProjetoDetalhes() {
           {!isEditing ? (
             <>
               <button onClick={() => setIsEditing(true)} className="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all">
-                <Edit2 className="w-4 h-4" /> Editar Projeto
+                <Edit className="w-4 h-4" /> Editar Projeto
               </button>
               <button 
                 onClick={() => router.push(`/carregamento/${params.id}/relatorio`)} 
@@ -154,7 +154,7 @@ export default function ProjetoDetalhes() {
                 <X className="w-4 h-4" /> Cancelar
               </button>
               <button onClick={handleUpdate} disabled={saving} className="flex items-center gap-2 px-4 py-2 bg-[#00BFA5] text-white rounded-xl text-sm font-bold hover:opacity-90 transition-all disabled:opacity-50">
-                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                {saving ? <Loader className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 Salvar Alterações
               </button>
             </>
@@ -188,7 +188,7 @@ export default function ProjetoDetalhes() {
             ) : (
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <CheckCircle2 className="w-6 h-6 text-[#00BFA5]" />
+                  <CheckCircle className="w-6 h-6 text-[#00BFA5]" />
                   <h2 className="text-2xl font-black text-slate-800">Laudo Técnico — {project.projectName}</h2>
                 </div>
                 <p className="text-sm text-slate-500">{project.clientName || 'Cliente Geral'} — Atualizado em {new Date(project.updatedAt).toLocaleDateString()}</p>

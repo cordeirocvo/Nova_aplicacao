@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
-import { Circle, ArrowUpRight, Save, Trash2, X } from "lucide-react";
+import { Circle, ArrowUpRight, Save, Trash, X } from "lucide-react";
 
 interface ImageAnnotatorProps {
   file: File;

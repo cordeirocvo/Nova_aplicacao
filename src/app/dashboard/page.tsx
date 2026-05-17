@@ -9,14 +9,27 @@ export const metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
-  const [total, pendentes, concluidas, emAndamento] = await Promise.all([
-    prisma.planilhaInstalacao.count(),
-    prisma.planilhaInstalacao.count({ where: { status: "Pendente" } }),
-    prisma.planilhaInstalacao.count({ where: { status: "Concluído" } }),
-    prisma.planilhaInstalacao.count({ where: { status: "Em Andamento" } }),
-  ]);
+  let total = 0, pendentes = 0, concluidas = 0, emAndamento = 0;
 
-  // Group by status for chart (simulate if low data)
+  try {
+    const [counts, totalCount] = await Promise.all([
+      prisma.planilhaInstalacao.groupBy({
+        by: ['status'],
+        _count: { id: true }
+      }),
+      prisma.planilhaInstalacao.count()
+    ]);
+
+    total = totalCount;
+    counts.forEach((c: any) => {
+      if (c.status === "Pendente") pendentes = c._count.id;
+      if (c.status === "Concluído") concluidas = c._count.id;
+      if (c.status === "Em Andamento") emAndamento = c._count.id;
+    });
+  } catch (error) {
+    console.error("Dashboard DB Error:", error);
+  }
+
   const chartData = [
     { name: "Pendentes", value: pendentes },
     { name: "Em Andamento", value: emAndamento },

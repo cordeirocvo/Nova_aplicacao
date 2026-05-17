@@ -126,6 +126,10 @@ exports.Prisma.UserScalarFieldEnum = {
   password: 'password',
   role: 'role',
   name: 'name',
+  canAccessBudgets: 'canAccessBudgets',
+  canEditBudgets: 'canEditBudgets',
+  canAccessAppLeads: 'canAccessAppLeads',
+  canManageCRM: 'canManageCRM',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
@@ -584,6 +588,103 @@ exports.Prisma.ItemTermografiaScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
+exports.Prisma.OrcamentoProjetoScalarFieldEnum = {
+  id: 'id',
+  nome: 'nome',
+  cliente: 'cliente',
+  status: 'status',
+  idContaAzul: 'idContaAzul',
+  dataCriacao: 'dataCriacao',
+  dataAtualizacao: 'dataAtualizacao'
+};
+
+exports.Prisma.OrcamentoEtapaScalarFieldEnum = {
+  id: 'id',
+  projetoId: 'projetoId',
+  nome: 'nome',
+  ordem: 'ordem'
+};
+
+exports.Prisma.OrcamentoItemScalarFieldEnum = {
+  id: 'id',
+  etapaId: 'etapaId',
+  codigo: 'codigo',
+  descricao: 'descricao',
+  tipo: 'tipo',
+  unidade: 'unidade',
+  quantidade: 'quantidade',
+  precoBaseUnitario: 'precoBaseUnitario',
+  bdiPercent: 'bdiPercent'
+};
+
+exports.Prisma.FornecedorScalarFieldEnum = {
+  id: 'id',
+  razaoSocial: 'razaoSocial',
+  cnpj: 'cnpj',
+  contatoNome: 'contatoNome',
+  contatoEmail: 'contatoEmail',
+  contatoTelefone: 'contatoTelefone',
+  idContaAzul: 'idContaAzul'
+};
+
+exports.Prisma.FornecedorOrcamentoScalarFieldEnum = {
+  id: 'id',
+  projetoId: 'projetoId',
+  fornecedorId: 'fornecedorId',
+  statusConvite: 'statusConvite',
+  tokenAcesso: 'tokenAcesso',
+  dataEnvio: 'dataEnvio'
+};
+
+exports.Prisma.PropostaItemScalarFieldEnum = {
+  id: 'id',
+  itemId: 'itemId',
+  fornecedorId: 'fornecedorId',
+  precoUnitario: 'precoUnitario',
+  freteIncluso: 'freteIncluso',
+  prazoEntregaDias: 'prazoEntregaDias',
+  observacao: 'observacao',
+  dataProposta: 'dataProposta',
+  versao: 'versao'
+};
+
+exports.Prisma.OrcamentoTipoMaterialScalarFieldEnum = {
+  id: 'id',
+  nome: 'nome'
+};
+
+exports.Prisma.OrcamentoItemPadraoScalarFieldEnum = {
+  id: 'id',
+  codigo: 'codigo',
+  descricao: 'descricao',
+  tipo: 'tipo',
+  unidade: 'unidade',
+  precoBaseUnitario: 'precoBaseUnitario'
+};
+
+exports.Prisma.LeadScalarFieldEnum = {
+  id: 'id',
+  nome: 'nome',
+  telefone: 'telefone',
+  email: 'email',
+  tipo: 'tipo',
+  status: 'status',
+  latitude: 'latitude',
+  longitude: 'longitude',
+  observacoes: 'observacoes',
+  vendedorId: 'vendedorId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.LeadMidiaScalarFieldEnum = {
+  id: 'id',
+  leadId: 'leadId',
+  tipo: 'tipo',
+  arquivoUrl: 'arquivoUrl',
+  createdAt: 'createdAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -634,7 +735,17 @@ exports.Prisma.ModelName = {
   ComissionamentoUsina: 'ComissionamentoUsina',
   Profissional: 'Profissional',
   RelatorioTermografia: 'RelatorioTermografia',
-  ItemTermografia: 'ItemTermografia'
+  ItemTermografia: 'ItemTermografia',
+  OrcamentoProjeto: 'OrcamentoProjeto',
+  OrcamentoEtapa: 'OrcamentoEtapa',
+  OrcamentoItem: 'OrcamentoItem',
+  Fornecedor: 'Fornecedor',
+  FornecedorOrcamento: 'FornecedorOrcamento',
+  PropostaItem: 'PropostaItem',
+  OrcamentoTipoMaterial: 'OrcamentoTipoMaterial',
+  OrcamentoItemPadrao: 'OrcamentoItemPadrao',
+  Lead: 'Lead',
+  LeadMidia: 'LeadMidia'
 };
 
 /**

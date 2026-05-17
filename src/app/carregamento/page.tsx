@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Zap, Plus, FileText, Calendar, User, ChevronRight, Loader2 } from "lucide-react";
+import { Zap, Plus, FileText, Calendar, User, ChevronRight, Loader } from "lucide-react";
 
 export default function CarregamentoDashboard() {
   const [projects, setProjects] = useState<any[]>([]);
@@ -55,7 +55,7 @@ export default function CarregamentoDashboard() {
 
       {loading ? (
         <div className="flex justify-center p-12">
-          <Loader2 className="w-8 h-8 animate-spin text-[#00BFA5]" />
+          <Loader className="w-8 h-8 animate-spin text-[#00BFA5]" />
         </div>
       ) : projects.length === 0 ? (
         <div className="bg-white rounded-3xl p-12 text-center border-2 border-dashed border-slate-200">

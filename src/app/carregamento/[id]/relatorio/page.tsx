@@ -5,9 +5,9 @@ import { useParams, useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { 
-  Zap, Shield, AlertTriangle, CheckCircle2, 
+  Zap, Shield, AlertTriangle, CheckCircle, 
   MapPin, BatteryCharging, FileText, ChevronLeft,
-  Info, Box, Building2, FlameKindling, Download, Loader2
+  Info, Box, Building, FlameKindling, Download, Loader, X
 } from "lucide-react";
 
 export default function EVReportPage() {
@@ -126,7 +126,7 @@ export default function EVReportPage() {
         <div className="grid grid-cols-3 gap-6 mb-10 print:break-inside-avoid">
            <div className="bg-white border-2 border-slate-100 rounded-[2rem] p-6 shadow-sm hover:border-[#1E3A8A]/30 transition-all">
               <div className="flex items-center gap-2 mb-3">
-                 <Building2 className="w-4 h-4 text-[#1E3A8A]" />
+                 <Building className="w-4 h-4 text-[#1E3A8A]" />
                  <span className="text-[10px] font-black text-slate-400 uppercase">Padrão CEMIG</span>
               </div>
               <p className="text-xl font-[900] text-[#1E3A8A] leading-tight">TIPO {project.entranceCategory}</p>
@@ -273,7 +273,7 @@ export default function EVReportPage() {
                  <div className="space-y-5">
                     <div className="flex items-start gap-3">
                        <div className="w-5 h-5 rounded-full bg-red-600 flex items-center justify-center shrink-0 mt-0.5">
-                          <CheckCircle2 className="w-3 h-3 text-white" />
+                          <CheckCircle className="w-3 h-3 text-white" />
                        </div>
                        <div>
                           <p className="text-[10px] font-black text-slate-800 uppercase">Extintor de Incêndio</p>
@@ -281,21 +281,29 @@ export default function EVReportPage() {
                        </div>
                     </div>
                     <div className="flex items-start gap-3">
-                       <div className="w-5 h-5 rounded-full bg-red-600 flex items-center justify-center shrink-0 mt-0.5">
-                          <CheckCircle2 className="w-3 h-3 text-white" />
+                       <div className={`w-5 h-5 rounded-full ${project.hasEmergencyButton5m ? 'bg-red-600' : 'bg-slate-300'} flex items-center justify-center shrink-0 mt-0.5`}>
+                          {project.hasEmergencyButton5m ? <CheckCircle className="w-3 h-3 text-white" /> : <X className="w-3 h-3 text-white" />}
                        </div>
                        <div>
                           <p className="text-[10px] font-black text-slate-800 uppercase">Botão de Emergência (Ponto Remoto)</p>
-                          <p className="text-xs text-slate-600 font-bold">Obrigatório a 5m do equipamento (Instalar tipo Cogumelo com trava).</p>
+                          <p className="text-xs text-slate-600 font-bold">
+                            {project.hasEmergencyButton5m 
+                              ? "Obrigatório a 5m do equipamento (Instalar tipo Cogumelo com trava)." 
+                              : "Não obrigatório para esta configuração de instalação."}
+                          </p>
                        </div>
                     </div>
                     <div className="flex items-start gap-3">
-                       <div className="w-5 h-5 rounded-full bg-red-600 flex items-center justify-center shrink-0 mt-0.5">
-                          <CheckCircle2 className="w-3 h-3 text-white" />
+                       <div className={`w-5 h-5 rounded-full ${project.requiresWarningSigns ? 'bg-red-600' : 'bg-slate-300'} flex items-center justify-center shrink-0 mt-0.5`}>
+                          {project.requiresWarningSigns ? <CheckCircle className="w-3 h-3 text-white" /> : <X className="w-3 h-3 text-white" />}
                        </div>
                        <div>
                           <p className="text-[10px] font-black text-slate-800 uppercase">Sinalização de Advertência</p>
-                          <p className="text-xs text-slate-600 font-bold">Instalar placas conforme NBR 17019 e pintura de solo demarcatória.</p>
+                          <p className="text-xs text-slate-600 font-bold">
+                            {project.requiresWarningSigns 
+                              ? "Instalar placas conforme NBR 17019 e pintura de solo demarcatória." 
+                              : "Sinalização básica recomendada."}
+                          </p>
                        </div>
                     </div>
                  </div>

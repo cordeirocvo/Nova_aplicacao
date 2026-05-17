@@ -3,11 +3,11 @@
 import { useState, useEffect } from "react";
 import { 
   Plus, 
-  Trash2, 
+  Trash, 
   FileText, 
   Download, 
-  Edit2, 
-  CheckCircle2, 
+  Edit, 
+  CheckCircle, 
   AlertCircle, 
   Users, 
   Camera, 
@@ -288,7 +288,7 @@ export default function TermografiaTab({ usinaId, usina, onRefresh }: { usinaId:
                 : 'border-slate-200 group-hover:border-[#EB5E28]'
               }`}
             >
-              {selectedIds.length === filteredReports.length && filteredReports.length > 0 && <CheckCircle2 className="w-4 h-4 text-white" />}
+              {selectedIds.length === filteredReports.length && filteredReports.length > 0 && <CheckCircle className="w-4 h-4 text-white" />}
             </div>
             <span className="text-xs font-black text-slate-600 uppercase tracking-widest">Selecionar {dateFilter ? 'Filtrados' : 'Todos'}</span>
           </label>
@@ -341,7 +341,7 @@ export default function TermografiaTab({ usinaId, usina, onRefresh }: { usinaId:
             <div className={`absolute top-6 left-6 w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all z-20 ${
               selectedIds.includes(r.id) ? 'bg-[#EB5E28] border-[#EB5E28]' : 'bg-white border-slate-200 opacity-0 group-hover:opacity-100'
             }`}>
-              {selectedIds.includes(r.id) && <CheckCircle2 className="w-4 h-4 text-white" />}
+              {selectedIds.includes(r.id) && <CheckCircle className="w-4 h-4 text-white" />}
             </div>
 
             <div className="flex justify-between items-start mb-6 relative z-10 ml-8">
@@ -350,8 +350,8 @@ export default function TermografiaTab({ usinaId, usina, onRefresh }: { usinaId:
                 <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">{r.itens?.length || 0} Pontos Analisados</span>
               </div>
               <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button onClick={(e) => { e.stopPropagation(); openEdit(r); }} className="p-2 text-blue-500 hover:bg-blue-50 rounded-xl transition-all"><Edit2 className="w-4 h-4" /></button>
-                <button onClick={(e) => { e.stopPropagation(); handleDelete(r.id); }} className="p-2 text-red-500 hover:bg-red-50 rounded-xl transition-all"><Trash2 className="w-4 h-4" /></button>
+                <button onClick={(e) => { e.stopPropagation(); openEdit(r); }} className="p-2 text-blue-500 hover:bg-blue-50 rounded-xl transition-all"><Edit className="w-4 h-4" /></button>
+                <button onClick={(e) => { e.stopPropagation(); handleDelete(r.id); }} className="p-2 text-red-500 hover:bg-red-50 rounded-xl transition-all"><Trash className="w-4 h-4" /></button>
               </div>
             </div>
 
@@ -547,7 +547,7 @@ export default function TermografiaTab({ usinaId, usina, onRefresh }: { usinaId:
                           <option value="Crítica">Crítica</option>
                         </select>
                         <button onClick={() => removeItem(idx)} className="w-10 h-10 bg-white text-red-300 hover:text-red-500 rounded-xl flex items-center justify-center border border-slate-100 transition-all shadow-sm">
-                          <Trash2 className="w-4 h-4" />
+                          <Trash className="w-4 h-4" />
                         </button>
                       </div>
 
@@ -690,7 +690,7 @@ export default function TermografiaTab({ usinaId, usina, onRefresh }: { usinaId:
                 {saving ? (
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
                 ) : (
-                  <><CheckCircle2 className="w-5 h-5" /> {editMode ? "ATUALIZAR LAUDO" : "SALVAR E GERAR LAUDO"}</>
+                  <><CheckCircle className="w-5 h-5" /> {editMode ? "ATUALIZAR LAUDO" : "SALVAR E GERAR LAUDO"}</>
                 )}
               </button>
             </div>

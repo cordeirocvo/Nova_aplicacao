@@ -1,21 +1,34 @@
 @import "tailwindcss";
 
 @theme {
+  --color-cordeiro-orange: #E45318;
+  --color-cordeiro-green: #00B356;
+  --color-cordeiro-dark: #000000;
   --color-cordeiro-blue: #0A192F;
-  --color-cordeiro-green: #00BFA5;
   --color-cordeiro-light: #F8FAFC;
-  --color-cordeiro-brand: #1E3A8A;
+  --font-montserrat: var(--font-montserrat);
 }
 
 :root {
   --background: #F8FAFC;
-  --foreground: #0A192F;
+  --foreground: #000000;
+  --primary: #E45318;
+  --accent: #00B356;
 }
 
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family: var(--font-montserrat), sans-serif;
   margin: 0;
   padding: 0;
+}
+
+/* Custom Utilities */
+.btn-pill {
+  @apply rounded-full px-8 py-3 font-black uppercase tracking-wider transition-all duration-300;
+}
+
+.card-cordeiro {
+  @apply bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 border border-slate-100 p-8;
 }

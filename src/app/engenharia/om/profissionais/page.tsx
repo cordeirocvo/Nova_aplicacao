@@ -6,9 +6,9 @@ import {
   Plus, 
   Search, 
   Edit, 
-  Trash2, 
+  Trash, 
   X, 
-  CheckCircle2, 
+  CheckCircle, 
   Phone, 
   Mail, 
   Award,
@@ -177,7 +177,7 @@ export default function ProfissionaisPage() {
                           onClick={() => handleDelete(item.id)}
                           className="p-3 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-2xl transition-all"
                         >
-                          <Trash2 className="w-5 h-5" />
+                          <Trash className="w-5 h-5" />
                         </button>
                       </div>
                     </td>
@@ -270,7 +270,7 @@ export default function ProfissionaisPage() {
                 {saving ? (
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
                 ) : (
-                  <><CheckCircle2 className="w-5 h-5" /> {form.id ? "Atualizar" : "Cadastrar"}</>
+                  <><CheckCircle className="w-5 h-5" /> {form.id ? "Atualizar" : "Cadastrar"}</>
                 )}
               </button>
             </div>

@@ -6,12 +6,12 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import { 
   LayoutDashboard, ListTodo, PlusCircle, Settings, LogOut,
-  Menu, X, Zap, Users, Sun, Battery, BarChart3, Package,
-  BatteryCharging, ChevronDown, ChevronRight, Calendar
+  Menu, X, Zap, Users, Sun, Battery, BarChart, Package,
+  BatteryCharging, ChevronDown, ChevronRight, Calendar, Activity
 } from 'lucide-react';
 import clsx from 'clsx';
 
-interface NavItem { name: string; href: string; icon: React.ElementType; adminOnly?: boolean; badge?: string; }
+interface NavItem { name: string; href: string; icon: React.ElementType; adminOnly?: boolean; badge?: string; requiresBudgets?: boolean; requiresAppLeads?: boolean; requiresCRM?: boolean; requiresSIE?: boolean; }
 interface NavSection { title: string; items: NavItem[]; }
 
 const NAV_SECTIONS: NavSection[] = [
@@ -27,22 +27,31 @@ const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
+    title: 'Comercial & CRM',
+    items: [
+      { name: 'App Vendedor (Campo)', href: '/app-vendedor', icon: Zap, requiresAppLeads: true },
+      { name: 'Gestão de Leads (CRM)', href: '/crm', icon: LayoutDashboard, requiresCRM: true },
+    ],
+  },
+  {
     title: 'Engenharia & Cálculos',
     items: [
-      { name: 'Projetos', href: '/engenharia', icon: BarChart3 },
+      { name: 'Projetos', href: '/engenharia', icon: BarChart },
       { name: 'Análise de Consumo', href: '/engenharia/analise-consumo', icon: Sun },
       { name: 'Dimensionamento BESS', href: '/engenharia/bess', icon: Battery },
       { name: 'Sistema Fotovoltaico', href: '/engenharia/solar', icon: Sun },
+      { name: 'Solar Intelligence (SIE)', href: '/engenharia/solar/monitoramento', icon: Sun, badge: 'IA' },
       { name: 'Operação & Manutenção', href: '/engenharia/om', icon: Settings },
       { name: 'Equipamentos', href: '/engenharia/equipamentos', icon: Package },
       { name: 'Carregadores VE', href: '/carregamento', icon: BatteryCharging },
       { name: 'Dimensionamento Elétrico', href: '/engenharia/eletrica', icon: Zap },
+      { name: 'Gestão de Orçamentos (CAPEX)', href: '/orcamentos', icon: ListTodo, requiresBudgets: true },
     ],
   },
 ];
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const pathname = usePathname();
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -62,7 +71,15 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     }
   }, [session, pathname]);
 
-  if (!session) return <>{children}</>;
+  if (status === 'loading') {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-[#0A192F]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#00BFA5]"></div>
+      </div>
+    );
+  }
+
+  if (pathname === '/login' || !session) return <>{children}</>;
 
   const userObj = session.user as any;
   const role = userObj.role || 'USER';
@@ -83,10 +100,16 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   const visibleSections = NAV_SECTIONS.map(function(s) {
     return {
       ...s,
-      items: s.items.filter(function(item) {
+      items: s.items.filter(function(item: any) {
+        // ADMIN sempre vê tudo
         if (role === 'ADMIN') return true;
-        if (role === 'USER') return item.name === 'Nova Atividade';
-        return false;
+
+        if (item.requiresBudgets && !userObj.canAccessBudgets) return false;
+        if (item.requiresAppLeads && !userObj.canAccessAppLeads) return false;
+        if (item.requiresCRM && !userObj.canManageCRM) return false;
+        if (item.requiresSIE && !userObj.canAccessSIE) return false;
+        
+        return true;
       }),
     };
   }).filter(function(s) {
@@ -135,12 +158,12 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       {/* Sidebar */}
       {!isTV && (
         <aside className={clsx(
-          "fixed md:static top-0 bottom-0 left-0 z-50 w-64 bg-[#0A192F] text-slate-300 transition-transform duration-300 ease-in-out flex flex-col print:hidden",
+          "fixed md:static top-0 bottom-0 left-0 z-50 w-64 bg-black text-slate-300 transition-transform duration-300 ease-in-out flex flex-col print:hidden",
           isMobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         )}>
-          <div className="h-16 hidden md:flex items-center px-6 bg-[#081324] border-b border-slate-800">
-            <img src="/logo.png" alt="Logo" className="h-8 object-contain mr-3" />
-            <span className="text-white font-bold text-xl tracking-tight">Cordeiro</span>
+          <div className="h-20 hidden md:flex items-center px-6 bg-black border-b border-slate-900">
+            <img src="/logo.png" alt="Logo" className="h-10 object-contain mr-3" />
+            <span className="text-white font-black text-2xl tracking-tighter">CORDEIRO</span>
           </div>
 
           <div className="flex-1 overflow-y-auto py-4 px-3">
@@ -154,19 +177,19 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                     className="w-full flex items-center justify-between px-2 py-1.5 mb-1 rounded-lg hover:bg-slate-800/30 transition-colors"
                   >
                     <div className="flex items-center">
-                      {isEng && <Zap className="w-3 h-3 text-[#00BFA5] mr-2" />}
-                      <span className={clsx("text-[10px] font-black uppercase tracking-widest", isEng ? "text-[#00BFA5]" : "text-slate-500")}>
+                      {isEng && <Zap className="w-3 h-3 text-[#E45318] mr-2" />}
+                      <span className={clsx("text-[10px] font-black uppercase tracking-widest", isEng ? "text-[#E45318]" : "text-slate-500")}>
                         {section.title}
                       </span>
                     </div>
-                    {isCollapsed ? <ChevronRight className="w-3 h-3 text-slate-600" /> : <ChevronDown className="w-3 h-3 text-slate-600" />}
+                    {isCollapsed ? <ChevronRight className="w-3 h-3 text-slate-700" /> : <ChevronDown className="w-3 h-3 text-slate-700" />}
                   </button>
 
                   {!isCollapsed && (
                     <div className="space-y-0.5">
                       {section.items.map((item) => {
                         const isActive = pathname === item.href || (item.href !== '/' && pathname?.startsWith(item.href + '/'));
-                        const disabled = !!item.badge;
+                        const disabled = !!item.badge && item.badge !== 'IA' && item.badge !== 'NOVO';
                         return (
                           <Link
                             key={item.name}
@@ -179,10 +202,10 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                                 : "hover:bg-slate-800/50 hover:text-white"
                             )}
                           >
-                            <item.icon className={clsx("w-4 h-4 shrink-0 mr-3", isActive ? "text-[#00BFA5]" : "text-slate-400 group-hover:text-[#00BFA5]")} />
+                            <item.icon className={clsx("w-4 h-4 shrink-0 mr-3", isActive ? "text-white" : "text-slate-500 group-hover:text-[#E45318]")} />
                             <span className="text-sm flex-1">{item.name}</span>
                             {item.badge && (
-                              <span className="text-[9px] font-black bg-slate-700 text-slate-400 px-1.5 py-0.5 rounded-full uppercase">
+                              <span className={clsx("text-[9px] font-black px-1.5 py-0.5 rounded-full uppercase", item.badge === 'IA' ? 'bg-[#E45318] text-white' : 'bg-slate-700 text-slate-400')}>
                                 {item.badge}
                               </span>
                             )}

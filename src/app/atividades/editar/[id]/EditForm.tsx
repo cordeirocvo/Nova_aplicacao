@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
-import { Loader2, UploadCloud, Camera, CheckCircle2, ArrowLeft } from "lucide-react";
+import { Loader, UploadCloud, Camera, CheckCircle, ArrowLeft } from "lucide-react";
 
 export default function EditForm({ initialData, statuses }: { initialData: any, statuses: any[] }) {
   const router = useRouter();
@@ -96,7 +96,7 @@ export default function EditForm({ initialData, statuses }: { initialData: any, 
     return (
       <div className="flex flex-col items-center justify-center p-20 text-center">
         <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6">
-          <CheckCircle2 className="w-10 h-10 text-green-500" />
+          <CheckCircle className="w-10 h-10 text-green-500" />
         </div>
         <h2 className="text-2xl font-bold text-slate-800">Atividade Atualizada!</h2>
         <p className="text-slate-500 mt-2">Retornando para as atividades...</p>
@@ -206,7 +206,7 @@ export default function EditForm({ initialData, statuses }: { initialData: any, 
             disabled={loading}
             className="w-full md:w-auto px-8 py-4 bg-gradient-to-r from-[#1E3A8A] to-[#015299] hover:from-[#1e3470] hover:to-[#01417a] text-white font-medium rounded-xl shadow-lg transition-all focus:outline-none focus:ring-2 focus:ring-[#1E3A8A] border-none flex items-center justify-center gap-2"
           >
-            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
+            {loading ? <Loader className="w-5 h-5 animate-spin" /> : <CheckCircle className="w-5 h-5" />}
             {loading ? "Salvando Alterações..." : "Atualizar Atividade"}
           </button>
         </div>

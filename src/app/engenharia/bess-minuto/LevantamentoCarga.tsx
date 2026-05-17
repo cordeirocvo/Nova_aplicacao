@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Trash2, Clock, Zap, Calculator } from "lucide-react";
+import { Plus, Trash, Clock, Zap, Calculator } from "lucide-react";
 
 export interface EquipamentoCarga {
   id: string;
@@ -198,7 +198,7 @@ export default function LevantamentoCarga({ projetoId, onCurveGenerated, savedDa
                       onClick={() => handleRemove(eq.id)}
                       className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                     >
-                      <Trash2 className="w-5 h-5" />
+                      <Trash className="w-5 h-5" />
                     </button>
                   </td>
                 </tr>

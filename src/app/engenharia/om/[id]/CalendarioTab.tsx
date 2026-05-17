@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Plus, Calendar as CalendarIcon, CheckCircle2, Clock, AlertTriangle, PenTool, Upload, FileText, X, ChevronLeft, ChevronRight, List } from "lucide-react";
+import { Plus, Calendar as CalendarIcon, CheckCircle, Clock, AlertTriangle, PenTool, Upload, FileText, X, ChevronLeft, ChevronRight, List } from "lucide-react";
 import { format, isPast, isToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import Link from "next/link";
@@ -119,7 +119,7 @@ export default function CalendarioTab({ usinaId, usina, onRefresh }: { usinaId: 
 
   const getStatusBadge = (m: any) => {
     if (m.status === "Concluida") {
-      return <span className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 w-max"><CheckCircle2 className="w-3 h-3" /> Concluída</span>;
+      return <span className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 w-max"><CheckCircle className="w-3 h-3" /> Concluída</span>;
     }
     const agendada = new Date(m.dataAgendada);
     if (isPast(agendada) && !isToday(agendada)) {
@@ -286,7 +286,7 @@ export default function CalendarioTab({ usinaId, usina, onRefresh }: { usinaId: 
                 onClick={(e) => toggleSelection(m.id, e)}
               >
                 <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${selectedIds.includes(m.id) ? 'bg-blue-500 border-blue-500 text-white' : 'border-slate-300 bg-slate-50'}`}>
-                  {selectedIds.includes(m.id) && <CheckCircle2 className="w-4 h-4" />}
+                  {selectedIds.includes(m.id) && <CheckCircle className="w-4 h-4" />}
                 </div>
               </div>
               <div className="bg-slate-50 rounded-xl p-3 text-center min-w-[80px] border border-slate-100">
@@ -472,7 +472,7 @@ export default function CalendarioTab({ usinaId, usina, onRefresh }: { usinaId: 
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
             <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-emerald-50 shrink-0">
-              <h2 className="text-xl font-black text-emerald-800 flex items-center gap-2"><CheckCircle2 className="w-6 h-6" /> Relatório de Intervenção</h2>
+              <h2 className="text-xl font-black text-emerald-800 flex items-center gap-2"><CheckCircle className="w-6 h-6" /> Relatório de Intervenção</h2>
               <button onClick={() => setShowCompleteModal(null)} className="text-slate-400 hover:text-slate-600"><X className="w-6 h-6"/></button>
             </div>
             

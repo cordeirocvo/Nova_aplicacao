@@ -10,7 +10,7 @@ export default defineConfig({
     seed: "npx tsx prisma/seed.ts",
   },
   datasource: {
-    url: process.env["DATABASE_URL"],
+    url: process.env["DIRECT_URL"],
     // @ts-expect-error - Prisma CLI uses this but type is missing in some versions
     directUrl: process.env["DIRECT_URL"],
   },

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, CheckCircle2, Settings2 } from "lucide-react";
+import { Loader, CheckCircle, Settings } from "lucide-react";
 
 const labelCls = "block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5";
 const inputCls = "w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#00BFA5] text-sm transition-all";
@@ -59,7 +59,7 @@ export default function ConsumoFormPreview({
     <div className="flex flex-col h-full bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-100">
       <div className="p-6 border-b border-slate-100 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-amber-100 text-amber-600 rounded-xl"><Settings2 className="w-5 h-5" /></div>
+          <div className="p-2 bg-amber-100 text-amber-600 rounded-xl"><Settings className="w-5 h-5" /></div>
           <div>
             <h2 className="text-xl font-black text-slate-800">{title}</h2>
             <p className="text-xs text-slate-400">{subtitle}</p>
@@ -164,7 +164,7 @@ export default function ConsumoFormPreview({
         )}
         <button onClick={handleConfirm} disabled={saving}
           className="flex-[2] py-3 bg-[#00BFA5] text-white rounded-xl font-bold text-sm shadow-lg shadow-emerald-200 flex items-center justify-center gap-2 px-8 transition-colors hover:bg-emerald-500">
-          {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <><CheckCircle2 className="w-5 h-5" /> Salvar Dados e Simular BESS</>}
+          {saving ? <Loader className="w-5 h-5 animate-spin" /> : <><CheckCircle className="w-5 h-5" /> Salvar Dados e Simular BESS</>}
         </button>
       </div>
     </div>

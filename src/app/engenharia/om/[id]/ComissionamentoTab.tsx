@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Trash2, FileText, Download, Edit2, CheckCircle2, AlertCircle, Users } from "lucide-react";
+import { Plus, Trash, FileText, Download, Edit, CheckCircle, AlertCircle, Users } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import Link from "next/link";
@@ -189,8 +189,8 @@ export default function ComissionamentoTab({ usinaId, usina, onRefresh }: { usin
                 Comissionamento a {r.tipo}
               </div>
               <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button onClick={() => openEdit(r)} className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg"><Edit2 className="w-4 h-4" /></button>
-                <button onClick={() => handleDelete(r.id)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg"><Trash2 className="w-4 h-4" /></button>
+                <button onClick={() => openEdit(r)} className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg"><Edit className="w-4 h-4" /></button>
+                <button onClick={() => handleDelete(r.id)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg"><Trash className="w-4 h-4" /></button>
               </div>
             </div>
             <h3 className="font-black text-slate-800 text-lg mb-1">Relatório Nº {r.numero || "S/N"}</h3>
@@ -352,7 +352,7 @@ export default function ComissionamentoTab({ usinaId, usina, onRefresh }: { usin
                           <td className="p-2"><input className="w-32 p-3 rounded-lg border border-slate-100 bg-white text-xs font-bold" value={row.meggerPos} onChange={e => updateRow(idx, 'meggerPos', e.target.value)} /></td>
                           <td className="p-2"><input className="w-32 p-3 rounded-lg border border-slate-100 bg-white text-xs font-bold" value={row.meggerNeg} onChange={e => updateRow(idx, 'meggerNeg', e.target.value)} /></td>
                           <td className="p-2">
-                            <button onClick={() => removeRow(idx)} className="p-2 text-red-300 hover:text-red-500"><Trash2 className="w-5 h-5" /></button>
+                            <button onClick={() => removeRow(idx)} className="p-2 text-red-300 hover:text-red-500"><Trash className="w-5 h-5" /></button>
                           </td>
                         </tr>
                       ))}
@@ -393,7 +393,7 @@ export default function ComissionamentoTab({ usinaId, usina, onRefresh }: { usin
                 {saving ? (
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
                 ) : (
-                  <><CheckCircle2 className="w-5 h-5" /> {editMode ? "ATUALIZAR RELATÓRIO" : "SALVAR E CONCLUIR"}</>
+                  <><CheckCircle className="w-5 h-5" /> {editMode ? "ATUALIZAR RELATÓRIO" : "SALVAR E CONCLUIR"}</>
                 )}
               </button>
             </div>

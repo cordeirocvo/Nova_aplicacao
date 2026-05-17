@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Plus, Trash2, Edit2, Camera, Paperclip, FileText, Download, X } from "lucide-react";
+import { Plus, Trash, Edit, Camera, Paperclip, FileText, Download, X } from "lucide-react";
 
 export default function EquipamentosTab({ usinaId, usina, onRefresh }: { usinaId: string, usina: any, onRefresh: () => void }) {
   const [showModal, setShowModal] = useState(false);
@@ -184,10 +184,10 @@ export default function EquipamentosTab({ usinaId, usina, onRefresh }: { usinaId
                 <td className="p-4 text-right">
                   <div className="flex justify-end gap-1">
                     <button onClick={(e) => { e.stopPropagation(); openEdit(eq); }} className="p-2 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
-                      <Edit2 className="w-4 h-4" />
+                      <Edit className="w-4 h-4" />
                     </button>
                     <button onClick={(e) => { e.stopPropagation(); handleDelete(eq.id); }} className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                      <Trash2 className="w-4 h-4" />
+                      <Trash className="w-4 h-4" />
                     </button>
                   </div>
                 </td>

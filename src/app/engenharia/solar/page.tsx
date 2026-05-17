@@ -2,9 +2,9 @@
 import { useState, useEffect, useMemo, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { 
-  Sun, Zap, MapPin, Settings2, Info, Loader2, Save, 
-  ChevronRight, BarChart3, AlertTriangle, CheckCircle2,
-  Maximize2, ArrowRightLeft, Layers, Compass, MoveUp, RefreshCw
+  Sun, Zap, MapPin, Settings, Info, Loader, Save, 
+  ChevronRight, BarChart, AlertTriangle, CheckCircle,
+  Maximize, ArrowRight, Layers, Compass, MoveUp, Activity
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, 
@@ -375,7 +375,7 @@ function SolarContent() {
     setSaving(false);
   };
 
-  if (loading) return <div className="flex h-[80vh] items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-[#00BFA5]" /></div>;
+  if (loading) return <div className="flex h-[80vh] items-center justify-center"><Loader className="w-8 h-8 animate-spin text-[#00BFA5]" /></div>;
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
@@ -416,7 +416,7 @@ function SolarContent() {
             onClick={handleSave}
             className="bg-[#1E3A8A] text-white px-5 py-2.5 rounded-xl flex items-center gap-2 font-bold text-sm hover:bg-blue-900 transition-all disabled:opacity-40"
           >
-            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            {saving ? <Loader className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             Salvar Estudo
           </button>
         </div>
@@ -479,7 +479,7 @@ function SolarContent() {
                     onClick={fetchPvgis} disabled={fetchingPvgis}
                     className="flex-1 py-2 bg-amber-50 text-amber-700 border border-amber-200 rounded-xl text-[10px] font-bold hover:bg-amber-100 flex items-center justify-center gap-1 uppercase"
                   >
-                    {fetchingPvgis ? <Loader2 className="w-3 h-3 animate-spin" /> : <BarChart3 className="w-3 h-3" />}
+                    {fetchingPvgis ? <Loader className="w-3 h-3 animate-spin" /> : <BarChart className="w-3 h-3" />}
                     Atualizar p/ Lat/Lng
                   </button>
                   {projetoBase?.analiseFatura?.endereco && (
@@ -487,7 +487,7 @@ function SolarContent() {
                       onClick={fetchPvgisPorEndereco} disabled={fetchingPvgis}
                       className="flex-1 py-2 bg-[#1E3A8A] text-white rounded-xl text-[10px] font-bold hover:bg-blue-900 flex items-center justify-center gap-1 uppercase"
                     >
-                      {fetchingPvgis ? <Loader2 className="w-3 h-3 animate-spin" /> : <MapPin className="w-3 h-3" />}
+                      {fetchingPvgis ? <Loader className="w-3 h-3 animate-spin" /> : <MapPin className="w-3 h-3" />}
                       Automático Fatura
                     </button>
                   )}
@@ -559,7 +559,7 @@ function SolarContent() {
               </div>
 
               <h3 className="font-bold text-slate-800 flex items-center gap-2 border-b border-slate-50 pb-4 pt-2">
-                <Settings2 className="w-5 h-5 text-[#00BFA5]" /> Dimensionamento
+                <Settings className="w-5 h-5 text-[#00BFA5]" /> Dimensionamento
               </h3>
 
               <div className="space-y-4">
@@ -694,6 +694,48 @@ function SolarContent() {
                                    Usar
                                  </button>
                                )}
+
+                        {/* Detalhes do Inversor Selecionado */}
+                        {config.selectedInversorId && (
+                          (() => {
+                            const inv = inversores.find(i => i.id === config.selectedInversorId);
+                            if (!inv) return null;
+                            return (
+                              <div className="p-4 bg-[#0A192F] rounded-2xl border border-white/5 space-y-3 mt-4 animate-in fade-in slide-in-from-top-2">
+                                <div className="flex items-center justify-between">
+                                  <h4 className="text-[10px] font-black text-[#00BFA5] uppercase tracking-widest flex items-center gap-2">
+                                    <Info className="w-3 h-3 text-[#00BFA5]" /> Especificações Técnicas
+                                  </h4>
+                                  <div className="w-2 h-2 rounded-full bg-[#00BFA5] animate-pulse" />
+                                </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div>
+                                    <p className="text-[8px] text-white/30 uppercase font-black">Potência CA</p>
+                                    <p className="text-xs font-bold text-white tracking-wide">{inv.potenciaNominalKW} kW</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-[8px] text-white/30 uppercase font-black">MPPTs / Strings</p>
+                                    <p className="text-xs font-bold text-white tracking-wide">{inv.numeroStringsMPPT || 2} / {inv.numeroStringsMPPT || 2}</p>
+                                  </div>
+                                  <div className="col-span-2 py-2 border-t border-white/5 space-y-1">
+                                     <div className="flex justify-between">
+                                        <span className="text-[8px] text-white/30 uppercase">Tensão Ent. CC</span>
+                                        <span className="text-[10px] text-white font-medium">{inv.tensaoEntradaMinV || 100}V — {inv.tensaoEntradaMaxV || 1000}V</span>
+                                     </div>
+                                     <div className="flex justify-between">
+                                        <span className="text-[8px] text-white/30 uppercase">Corr. Máx. CC (A)</span>
+                                        <span className="text-[10px] text-white font-medium">{inv.correnteMaxCC || 12.5}A </span>
+                                     </div>
+                                     <div className="flex justify-between">
+                                        <span className="text-[8px] text-white/30 uppercase">Fator Pot. / Efic.</span>
+                                        <span className="text-[10px] text-white font-medium">{inv.fatorPotencia || 1.0} / {((inv.eficiencia || 0.98)*100).toFixed(1)}%</span>
+                                     </div>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })()
+                        )}
                              </div>
                            ))}
                          </div>
@@ -745,7 +787,7 @@ function SolarContent() {
               {/* Seasonal Generation Chart */}
               <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm flex flex-col">
                 <div className="flex items-center justify-between mb-6">
-                   <h3 className="font-bold text-slate-800 flex items-center gap-2"><BarChart3 className="w-5 h-5 text-amber-500" /> Sazonalidade (HSP)</h3>
+                   <h3 className="font-bold text-slate-800 flex items-center gap-2"><BarChart className="w-5 h-5 text-amber-500" /> Sazonalidade (HSP)</h3>
                    {pvgisData.length > 0 && <span className="text-[10px] font-black bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full uppercase tracking-widest">via PVGIS</span>}
                 </div>
                 <div className="flex-1 h-64">
@@ -803,7 +845,7 @@ function SolarContent() {
                     <div className="space-y-2">
                        {calculated.compatibilidade?.warnings.length === 0 && config.selectedModuloId && (
                          <div className="flex items-center gap-3 p-3 bg-emerald-50 text-emerald-700 rounded-xl text-xs font-medium border border-emerald-100">
-                           <CheckCircle2 className="w-4 h-4" /> Configuração elétrica compatível!
+                           <CheckCircle className="w-4 h-4" /> Configuração elétrica compatível!
                          </div>
                        )}
                        {calculated.compatibilidade?.warnings.map((w, i) => (
@@ -816,7 +858,7 @@ function SolarContent() {
 
                  <div className="mt-6 pt-6 border-t border-slate-50 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                       <Maximize2 className="w-4 h-4 text-slate-400" />
+                       <Maximize className="w-4 h-4 text-slate-400" />
                        <span className="text-xs text-slate-500">Overenclosure (CC/CA):</span>
                     </div>
                     <span className="text-sm font-bold text-slate-700">{(calculated.kwpAtual / (inversores.find(i => i.id === config.selectedInversorId)?.potenciaNominalKW || 1)).toFixed(2)}</span>
@@ -827,7 +869,7 @@ function SolarContent() {
             {/* Monthly Balance Chart */}
             <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
                 <div className="flex items-center justify-between mb-6">
-                   <h3 className="font-bold text-slate-800 flex items-center gap-2"><ArrowRightLeft className="w-5 h-5 text-[#00BFA5]" /> Balanço Energético Mensal</h3>
+                   <h3 className="font-bold text-slate-800 flex items-center gap-2"><ArrowRight className="w-5 h-5 text-[#00BFA5]" /> Balanço Energético Mensal</h3>
                    <div className="flex gap-4">
                      <div className="flex items-center gap-2">
                         <div className="w-3 h-3 bg-[#1E3A8A] rounded-full" />
@@ -865,7 +907,7 @@ function SolarContent() {
                         className="p-2.5 bg-white border border-slate-200 rounded-xl hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200 transition-all shadow-sm" 
                         title="Recarregar e Atualizar Saldo (Sinc. de Fatura)"
                       >
-                         <RefreshCw className="w-4 h-4" />
+                         <Activity className="w-4 h-4" />
                       </button>
                    </div>
                 </div>
@@ -874,7 +916,7 @@ function SolarContent() {
             {/* Inverter Choice Detail */}
             <div className="bg-[#0A192F] text-white p-8 rounded-3xl shadow-lg flex flex-col md:flex-row items-center gap-8">
                <div className="w-20 h-20 bg-white/10 rounded-3xl flex items-center justify-center">
-                  <ArrowRightLeft className="w-10 h-10 text-[#00BFA5]" />
+                  <ArrowRight className="w-10 h-10 text-[#00BFA5]" />
                </div>
                <div className="flex-1">
                   <h3 className="text-lg font-bold">Resumo do Dimensionamento</h3>
@@ -903,7 +945,7 @@ function SolarContent() {
 
 export default function DimensionamentoSolarPage() {
   return (
-    <Suspense fallback={<div className="flex h-[80vh] items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-[#00BFA5]" /></div>}>
+    <Suspense fallback={<div className="flex h-[80vh] items-center justify-center"><Loader className="w-8 h-8 animate-spin text-[#00BFA5]" /></div>}>
       <SolarContent />
     </Suspense>
   );

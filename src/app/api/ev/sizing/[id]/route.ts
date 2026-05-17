@@ -10,7 +10,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const project = await prisma.projetoDimensionamento.findUnique({
+    const project = await prisma.eVProject.findUnique({
       where: { id },
       include: { charger: true },
     });
@@ -35,7 +35,7 @@ export async function PUT(
     const data = await req.json();
     
     // Buscar projeto e carregador para recalcular
-    const existingProject = await prisma.projetoDimensionamento.findUnique({
+    const existingProject = await prisma.eVProject.findUnique({
       where: { id },
       include: { charger: true }
     });
@@ -61,7 +61,7 @@ export async function PUT(
       groundingType: data.groundingType
     });
 
-    const updated = await prisma.projetoDimensionamento.update({
+    const updated = await prisma.eVProject.update({
       where: { id },
       data: {
         projectName: data.projectName,

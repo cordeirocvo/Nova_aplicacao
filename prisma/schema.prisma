@@ -1,23 +1,25 @@
 generator client {
-  provider   = "prisma-client-js"
-  output     = "./generated-client"
-  engineType = "library"
+  provider = "prisma-client-js"
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "postgresql"
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String
-  role      String
-  name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                String   @id @default(cuid())
+  email             String   @unique
+  password          String
+  role              String
+  name              String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  canAccessBudgets  Boolean  @default(false)
+  canEditBudgets    Boolean  @default(false)
+  canAccessAppLeads Boolean  @default(false)
+  canManageCRM      Boolean  @default(false)
+  canAccessSIE      Boolean  @default(false)
+  leads             Lead[]   @relation("VendedorLeads")
 }
 
 model PlanilhaInstalacao {
@@ -57,8 +59,8 @@ model PlanilhaInstalacao {
   updatedAt             DateTime @updatedAt
   atividadeExtra        Boolean  @default(false)
   prioridade            Boolean  @default(false)
+  notificadoWhatsapp    Boolean  @default(false)
   telefoneVendedor      String?
-  notificadoWhatsapp     Boolean  @default(false)
 
   @@index([idInterno])
 }
@@ -95,8 +97,19 @@ model SystemSettings {
   updatedAt     DateTime @updatedAt
 }
 
+model ManufacturerAPI {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  userKey   String?
+  secretKey String?
+  apiUrl    String?
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model Carregador {
-  id            String                   @id @default(cuid())
+  id            String      @id @default(cuid())
   brand         String
   model         String
   power         Float
@@ -108,75 +121,68 @@ model Carregador {
   groundingReq  String?
   datasheetUrl  String?
   imageUrl      String?
-  createdAt     DateTime                 @default(now())
-  updatedAt     DateTime                 @updatedAt
-  projects      ProjetoDimensionamento[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  projects      EVProject[]
 }
 
-model ProjetoDimensionamento {
-  id                   String     @id @default(cuid())
-  projectName          String
-  clientName           String?
-  utility              String     @default("CEMIG")
-  entranceCategory     String?
-  distance             Float
-  installationMethod   String
-  chargerId            String
-  calculatedCurrent    Float
-  calculatedCableGauge Float
-  calculatedBreaker    Float
-  calculatedDR         String?
-  calculatedConduit    String?
-  voltageDrop          Float
-  groundingAnalysis    String?
-  isServiceEntranceOk  Boolean    @default(true)
-  analysisNotes        String?
-  
-  // Novos campos para Transformador e Proteção Avançada
-  hasTransformer             Boolean @default(false)
-  transformerPrimaryVoltage  Float?  @default(220)
-  transformerSecondaryVoltage Float?  @default(380)
-  transformerDistance        Float?  @default(10) // QGBT até Transfo
-  chargerDistance            Float?  @default(10) // Transfo até Carregador
-  groundingType              String? @default("TT")
-  calculatedPrimaryCable     Float?
-  calculatedPrimaryBreaker   Float?
-  calculatedDPS              String?
-  calculatedIDR              String?
-  
-  // Segurança Contra Incêndio e Normas (AVCB/Bombeiros)
-  fireExtinguisherType       String? // ex: "CO2 6kg" ou "PQS 6kg B/C"
-  hasEmergencyButton5m       Boolean @default(true)
-  requiresWarningSigns       Boolean @default(true)
-  fireDeptStandards          String? // ex: "IT 41/2023 - CBMG"
-  abntStandards              String? // ex: "NBR 17019, NBR 5410"
-  specificSafetyNotes        String?
-
-  // Novos campos para CEMIG e Gestão
-  existingLoadKW             Float?  @default(0)
-  simultaneityFactor         Float?  @default(0.8)
-  isCollective               Boolean @default(false)
-  location                   String? @default("urbano")
-
-  createdAt            DateTime   @default(now())
-  updatedAt            DateTime   @updatedAt
-  charger              Carregador @relation(fields: [chargerId], references: [id])
+model EVProject {
+  id                          String     @id @default(cuid())
+  projectName                 String
+  clientName                  String?
+  utility                     String     @default("CEMIG")
+  entranceCategory            String?
+  distance                    Float
+  installationMethod          String
+  chargerId                   String
+  calculatedCurrent           Float
+  calculatedCableGauge        Float
+  calculatedBreaker           Float
+  calculatedDR                String?
+  calculatedConduit           String?
+  voltageDrop                 Float
+  groundingAnalysis           String?
+  isServiceEntranceOk         Boolean    @default(true)
+  analysisNotes               String?
+  hasTransformer              Boolean    @default(false)
+  transformerPrimaryVoltage   Float?     @default(220)
+  transformerSecondaryVoltage Float?     @default(380)
+  transformerDistance         Float?     @default(10)
+  chargerDistance             Float?     @default(10)
+  groundingType               String?    @default("TT")
+  calculatedPrimaryCable      Float?
+  calculatedPrimaryBreaker    Float?
+  calculatedDPS               String?
+  calculatedIDR               String?
+  fireExtinguisherType        String?
+  hasEmergencyButton5m        Boolean    @default(true)
+  requiresWarningSigns        Boolean    @default(true)
+  fireDeptStandards           String?
+  abntStandards               String?
+  specificSafetyNotes         String?
+  existingLoadKW              Float?     @default(0)
+  simultaneityFactor          Float?     @default(0.8)
+  isCollective                Boolean    @default(false)
+  location                    String?    @default("urbano")
+  createdAt                   DateTime   @default(now())
+  updatedAt                   DateTime   @updatedAt
+  charger                     Carregador @relation(fields: [chargerId], references: [id])
 }
 
 model EngeProjeto {
-  id            String              @id @default(cuid())
-  nome          String
-  cliente       String?
-  tipo          String
-  status        String              @default("Rascunho")
-  createdAt     DateTime            @default(now())
-  updatedAt     DateTime            @updatedAt
-  analiseFatura AnaliseFatura?
-  analiseMassa  AnaliseMassaDados[]
-  estudoBESS    EstudoBESS?
-  estudoSolar   EstudoSolar?
+  id                 String              @id @default(cuid())
+  nome               String
+  cliente            String?
+  tipo               String
+  status             String              @default("Rascunho")
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
   levantamentoCargas Json?
-  usinaFotovoltaica UsinaFotovoltaica?
+  analiseFatura      AnaliseFatura?
+  analiseMassa       AnaliseMassaDados[]
+  estudoBESS         EstudoBESS?
+  estudoSolar        EstudoSolar?
+  usinaFotovoltaica  UsinaFotovoltaica?
 }
 
 model AnaliseFatura {
@@ -259,29 +265,29 @@ model AnaliseMassaDados {
 }
 
 model InversorSolar {
-  id                String   @id @default(cuid())
-  fabricante        String
-  modelo            String
-  potenciaNominalKW Float
-  tipoConexao       String
-  tensaoEntradaMinV Float?
-  tensaoEntradaMaxV Float?
-  correnteMaxCC     Float?
-  numeroStringsMPPT Int?
-  potenciaMPPTKW    Float?
-  tensaoSaidaVAC    Float?
-  fatorPotencia     Float?
-  eficiencia        Float?
-  comunicacao       String?
-  ipBD              String?
-  datasheetUrl      String?
-  ieee1547Compliant Boolean? @default(false)
-  responseTimeMs    Float?
-  thdMax            Float?
+  id                 String   @id @default(cuid())
+  fabricante         String
+  modelo             String
+  potenciaNominalKW  Float
+  tipoConexao        String
+  tensaoEntradaMinV  Float?
+  tensaoEntradaMaxV  Float?
+  correnteMaxCC      Float?
+  numeroStringsMPPT  Int?
+  potenciaMPPTKW     Float?
+  tensaoSaidaVAC     Float?
+  fatorPotencia      Float?
+  eficiencia         Float?
+  comunicacao        String?
+  ipBD               String?
+  datasheetUrl       String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  fase               Int?     @default(1)
+  ieee1547Compliant  Boolean? @default(false)
   powerFactorControl Boolean? @default(false)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  fase              Int?     @default(1)
+  responseTimeMs     Float?
+  thdMax             Float?
 }
 
 model ModuloFotovoltaico {
@@ -317,13 +323,13 @@ model BateriaSistema {
   correnteMaxDescarga  Float?
   tempOperacaoMin      Float?
   tempOperacaoMax      Float?
+  datasheetUrl         String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
   roundTripEfficiency  Float?
   standbyLossesKW      Float?
   thermalBufferLower   Float?   @default(0.1)
   thermalBufferUpper   Float?   @default(0.9)
-  datasheetUrl         String?
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
 }
 
 model EstruturaFotovoltaica {
@@ -395,120 +401,340 @@ model EstudoSolar {
 }
 
 model UsinaFotovoltaica {
-  id             String @id @default(cuid())
-  projetoId      String? @unique
-  projeto        EngeProjeto? @relation(fields: [projetoId], references: [id], onDelete: Cascade)
-  nome           String
-  localizacao    String?
-  equipamentos   EquipamentoUsina[]
-  manutencoes    ManutencaoUsina[]
+  id               String                 @id @default(cuid())
+  projetoId        String?                @unique
+  nome             String
+  localizacao      String?
   comissionamentos ComissionamentoUsina[]
+  equipamentos     EquipamentoUsina[]
+  manutencoes      ManutencaoUsina[]
   termografias     RelatorioTermografia[]
+  projeto          EngeProjeto?           @relation(fields: [projetoId], references: [id], onDelete: Cascade)
 }
 
 model EquipamentoUsina {
-  id               String @id @default(cuid())
-  usinaId          String
-  usina            UsinaFotovoltaica @relation(fields: [usinaId], references: [id], onDelete: Cascade)
-  nome             String
-  tag              String
-  localizacao      String?
-  criticidade      String?
+  id                String            @id @default(cuid())
+  usinaId           String
+  nome              String
+  tag               String
+  localizacao       String?
+  criticidade       String?
   periodicidadeDias Int?
-  fotoBase64       String?
-  anexos           Json?
-  manutencoes      ManutencaoUsina[]
+  fotoBase64        String?
+  anexos            Json?
+  usina             UsinaFotovoltaica @relation(fields: [usinaId], references: [id], onDelete: Cascade)
+  manutencoes       ManutencaoUsina[]
 }
 
 model ManutencaoUsina {
-  id               String @id @default(cuid())
-  usinaId          String
-  usina            UsinaFotovoltaica @relation(fields: [usinaId], references: [id], onDelete: Cascade)
-  equipamentoId    String?
-  equipamento      EquipamentoUsina? @relation(fields: [equipamentoId], references: [id], onDelete: SetNull)
-  tipo             String
-  dataAgendada     DateTime
-  dataRealizada    DateTime?
-  status           String @default("Pendente")
-  descricao        String?
-  pecasTrocadas    String?
-  custoMateriais   Float?
-  custoMaoDeObra   Float?
-  tempoInicio      DateTime?
-  tempoFim         DateTime?
-  fotosUrls        String[]
-  fotosDetalhes    Json?
-  documentosUrls   String[]
-  responsavel      String?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id             String            @id @default(cuid())
+  usinaId        String
+  equipamentoId  String?
+  tipo           String
+  dataAgendada   DateTime
+  dataRealizada  DateTime?
+  status         String            @default("Pendente")
+  descricao      String?
+  fotosUrls      String[]
+  documentosUrls String[]
+  responsavel    String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  custoMateriais Float?
+  fotosDetalhes  Json?
+  pecasTrocadas  String?
+  tempoFim       DateTime?
+  tempoInicio    DateTime?
+  custoMaoDeObra Float?
+  equipamento    EquipamentoUsina? @relation(fields: [equipamentoId], references: [id])
+  usina          UsinaFotovoltaica @relation(fields: [usinaId], references: [id], onDelete: Cascade)
 }
 
 model ComissionamentoUsina {
-  id               String @id @default(cuid())
-  usinaId          String
-  usina            UsinaFotovoltaica @relation(fields: [usinaId], references: [id], onDelete: Cascade)
-  tipo             String // "Frio", "Quente", "Entrega"
-  data             DateTime
-  responsavel      String?
-  crea             String? // Registro CREA do responsável
-  profissionalId   String?
-  profissional     Profissional? @relation(fields: [profissionalId], references: [id])
-  numero           String? // Nº no relatório
-  status           String @default("Concluído")
-  dadosTecnicos    Json?   // Para armazenar os testes de string, megger, etc.
-  observacoes      String?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id             String            @id @default(cuid())
+  usinaId        String
+  tipo           String
+  data           DateTime
+  responsavel    String?
+  numero         String?
+  status         String            @default("Concluído")
+  dadosTecnicos  Json?
+  observacoes    String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  crea           String?
+  profissionalId String?
+  profissional   Profissional?     @relation(fields: [profissionalId], references: [id])
+  usina          UsinaFotovoltaica @relation(fields: [usinaId], references: [id], onDelete: Cascade)
 }
 
 model Profissional {
-  id               String @id @default(cuid())
+  id               String                 @id @default(cuid())
   nome             String
   telefone         String?
   email            String?
   crea             String?
   observacao       String?
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
   comissionamentos ComissionamentoUsina[]
   termografias     RelatorioTermografia[]
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
 }
 
 model RelatorioTermografia {
-  id                  String   @id @default(cuid())
+  id                  String            @id @default(cuid())
   usinaId             String
-  usina               UsinaFotovoltaica @relation(fields: [usinaId], references: [id], onDelete: Cascade)
   profissionalId      String?
-  profissional        Profissional? @relation(fields: [profissionalId], references: [id])
-  dataInspecao        DateTime @default(now())
-  equipamentoCamera   String?  // Modelo da câmera térmica
+  dataInspecao        DateTime          @default(now())
+  equipamentoCamera   String?
   temperaturaAmbiente Float?
   irradiacao          Float?
   velocidadeVento     Float?
   umidadeRelativa     Float?
-  emissividade        Float?   @default(0.95)
-  distanciaRef        Float?   @default(1.0)
+  emissividade        Float?            @default(0.95)
+  distanciaRef        Float?            @default(1.0)
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
   itens               ItemTermografia[]
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  profissional        Profissional?     @relation(fields: [profissionalId], references: [id])
+  usina               UsinaFotovoltaica @relation(fields: [usinaId], references: [id], onDelete: Cascade)
 }
 
 model ItemTermografia {
-  id                  String   @id @default(cuid())
-  relatorioId         String
-  relatorio           RelatorioTermografia @relation(fields: [relatorioId], references: [id], onDelete: Cascade)
-  tipoEquipamento     String   // "Módulo", "Painel", "Transformador", "Conexão"
-  tag                 String   // Identificação (ex: INV-01, Módulo 04)
-  localizacao         String?
-  temperaturaMedida   Float
+  id                    String               @id @default(cuid())
+  relatorioId           String
+  tipoEquipamento       String
+  tag                   String
+  localizacao           String?
+  temperaturaMedida     Float
   temperaturaReferencia Float
-  deltaT              Float
-  severidade          String   // "Normal", "Observação", "Crítica"
-  causaProvavel       String?  // Ex: Hotspot, Diodo de Bypass, Conexão Frouxa
-  recomendacao        String?
-  imagemTermicaUrl    String?
-  imagemVisualUrl     String?
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  deltaT                Float
+  severidade            String
+  causaProvavel         String?
+  recomendacao          String?
+  imagemTermicaUrl      String?
+  imagemVisualUrl       String?
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+  relatorio             RelatorioTermografia @relation(fields: [relatorioId], references: [id], onDelete: Cascade)
+}
+
+model Lead {
+  id          String      @id @default(cuid())
+  nome        String
+  telefone    String
+  email       String?
+  tipo        String
+  status      String      @default("NOVO")
+  latitude    Float?
+  longitude   Float?
+  observacoes String?
+  vendedorId  String
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  endereco    String?
+  vendedor    User        @relation("VendedorLeads", fields: [vendedorId], references: [id])
+  midias      LeadMidia[]
+}
+
+model LeadMidia {
+  id         String   @id @default(cuid())
+  leadId     String
+  tipo       String
+  arquivoUrl String
+  createdAt  DateTime @default(now())
+  lead       Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+}
+
+model OrcamentoProjeto {
+  id              String                @id @default(cuid())
+  nome            String
+  cliente         String?
+  status          String                @default("Rascunho")
+  idContaAzul     String?
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  dataAtualizacao DateTime              @default(now())
+  fornecedores    FornecedorOrcamento[]
+  etapas          OrcamentoEtapa[]
+}
+
+model OrcamentoEtapa {
+  id        String           @id @default(cuid())
+  projetoId String
+  nome      String
+  ordem     Int              @default(0)
+  projeto   OrcamentoProjeto @relation(fields: [projetoId], references: [id], onDelete: Cascade)
+  itens     OrcamentoItem[]
+}
+
+model OrcamentoItem {
+  id                String         @id @default(cuid())
+  etapaId           String
+  codigo            String?
+  descricao         String
+  tipo              String
+  unidade           String
+  quantidade        Float
+  precoBaseUnitario Float?
+  bdiPercent        Float          @default(0)
+  etapa             OrcamentoEtapa @relation(fields: [etapaId], references: [id], onDelete: Cascade)
+  propostas         PropostaItem[]
+}
+
+model OrcamentoItemPadrao {
+  id                String   @id @default(cuid())
+  codigo            String?
+  descricao         String
+  tipo              String
+  unidade           String
+  precoBaseUnitario Float?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model OrcamentoTipoMaterial {
+  id        String   @id @default(cuid())
+  nome      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Fornecedor {
+  id              String                @id @default(cuid())
+  razaoSocial     String
+  contatoNome     String?
+  contatoEmail    String?
+  contatoTelefone String?
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  projetos        FornecedorOrcamento[]
+  propostas       PropostaItem[]
+}
+
+model FornecedorOrcamento {
+  id            String           @id @default(cuid())
+  projetoId     String
+  fornecedorId  String
+  tokenAcesso   String           @unique @default(cuid())
+  status        String           @default("Pendente")
+  createdAt     DateTime         @default(now())
+  statusConvite String?          @default("Pendente")
+  fornecedor    Fornecedor       @relation(fields: [fornecedorId], references: [id], onDelete: Cascade)
+  projeto       OrcamentoProjeto @relation(fields: [projetoId], references: [id], onDelete: Cascade)
+}
+
+model PropostaItem {
+  id            String        @id @default(cuid())
+  itemId        String
+  fornecedorId  String
+  precoUnitario Float
+  observacao    String?
+  createdAt     DateTime      @default(now())
+  dataProposta  DateTime?     @default(now())
+  versao        Int           @default(1)
+  fornecedor    Fornecedor    @relation(fields: [fornecedorId], references: [id], onDelete: Cascade)
+  item          OrcamentoItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@unique([itemId, fornecedorId, versao])
+}
+
+model Usina {
+  id              String                @id @default(cuid())
+  nome            String
+  capacidadeKWp   Float
+  localizacao     String?
+  orientacao      String?
+  inclinacao      Float?
+  apiFornecedor   String
+  apiId           String
+  createdAt       DateTime              @default(now())
+  coefSujidade    Float                 @default(0.03)
+  coefTemperatura Float                 @default(-0.0035)
+  taxaDegradacao  Float                 @default(0.005)
+  estacaoId       String?
+  apiKey          String?
+  apiSecret       String?
+  alarmes         Alarme[]
+  analises        AnalisePerda[]
+  inversores      Inversor[]
+  telemetria      Telemetria[]
+  estacao         EstacaoSolarimetrica? @relation(fields: [estacaoId], references: [id])
+}
+
+model EstacaoSolarimetrica {
+  id            String   @id @default(cuid())
+  nome          String
+  apiFornecedor String   @default("ISOFEN")
+  apiId         String
+  localizacao   String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  usinas        Usina[]
+}
+
+model Inversor {
+  id                String   @id @default(cuid())
+  usinaId           String
+  numeroSerie       String   @unique
+  modelo            String
+  potenciaNominalKW Float
+  status            String   @default("ONLINE")
+  createdAt         DateTime @default(now())
+  usina             Usina    @relation(fields: [usinaId], references: [id], onDelete: Cascade)
+}
+
+model Telemetria {
+  id                  String   @id @default(cuid())
+  usinaId             String
+  timestamp           DateTime @default(now())
+  potenciaAtivaKW     Float
+  energiaAcumuladaKWh Float
+  irradiancia         Float?
+  tempAmbiente        Float?
+  tempModulos         Float?
+  correnteCA_A        Float?
+  correnteCA_B        Float?
+  correnteCA_C        Float?
+  dadosStrings        Json?
+  frequenciaRede      Float?
+  potenciaCA_A        Float?
+  potenciaCA_B        Float?
+  potenciaCA_C        Float?
+  statusInversor      String?  @default("ONLINE")
+  tempIGBT            Float?
+  tensaoCA_A          Float?
+  tensaoCA_B          Float?
+  tensaoCA_C          Float?
+  usina               Usina    @relation(fields: [usinaId], references: [id], onDelete: Cascade)
+
+  @@index([usinaId, timestamp])
+}
+
+model Alarme {
+  id              String    @id @default(cuid())
+  usinaId         String
+  codigo          String
+  descricao       String
+  gravidade       String    @default("MEDIA")
+  solucaoSugerida String?
+  status          String    @default("ATIVO")
+  timestamp       DateTime  @default(now())
+  dataResolucao   DateTime?
+  usina           Usina     @relation(fields: [usinaId], references: [id], onDelete: Cascade)
+
+  @@index([usinaId, status])
+}
+
+model AnalisePerda {
+  id               String   @id @default(cuid())
+  usinaId          String
+  dataAnalise      DateTime @default(now())
+  perdaSujidade    Float    @default(0)
+  perdaClipping    Float    @default(0)
+  perdaDowntime    Float    @default(0)
+  perdaTemperatura Float    @default(0)
+  performanceRatio Float
+  insightsAI       String?
+  usina            Usina    @relation(fields: [usinaId], references: [id], onDelete: Cascade)
 }

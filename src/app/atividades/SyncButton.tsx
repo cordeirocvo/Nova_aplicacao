@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { RefreshCw, Play } from 'lucide-react';
+import { Activity, Play } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function SyncButton() {
@@ -48,7 +48,7 @@ export default function SyncButton() {
         title={autoSync ? "Pausar loop automático" : "Ligar loop automático"}
         className={`p-2 rounded-lg border transition ${autoSync ? 'bg-amber-100 border-amber-200 text-amber-700' : 'bg-slate-100 border-slate-200 text-slate-400 hover:bg-slate-200'}`}
       >
-        {autoSync ? <RefreshCw className="w-4 h-4 animate-[spin_4s_linear_infinite]" /> : <Play className="w-4 h-4" />}
+        {autoSync ? <Activity className="w-4 h-4 animate-[spin_4s_linear_infinite]" /> : <Play className="w-4 h-4" />}
       </button>
 
       <button
@@ -56,7 +56,7 @@ export default function SyncButton() {
         disabled={syncing}
         className="flex items-center gap-2 bg-[#00BFA5] hover:bg-[#009b85] disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-xs font-bold px-4 py-2 rounded-lg shadow-sm transition"
       >
-        <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
+        <Activity className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
         {syncing ? 'SINCRONIZANDO...' : 'SINC. PLANILHA'}
       </button>
     </div>

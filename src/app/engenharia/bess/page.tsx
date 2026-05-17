@@ -2,8 +2,8 @@
 import { useState, useEffect, useMemo, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { 
-  Battery, Zap, TrendingDown, DollarSign, Loader2, Save, 
-  Settings2, Info, ChevronRight, BarChart3, AlertCircle 
+  Battery, Zap, TrendingDown, DollarSign, Loader, Save, 
+  Settings, Info, ChevronRight, BarChart, AlertTriangle 
 } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, 
@@ -155,7 +155,7 @@ function BESSContent() {
     setSaving(false);
   };
 
-  if (loading) return <div className="flex h-[80vh] items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-[#00BFA5]" /></div>;
+  if (loading) return <div className="flex h-[80vh] items-center justify-center"><Loader className="w-8 h-8 animate-spin text-[#00BFA5]" /></div>;
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
@@ -190,7 +190,7 @@ function BESSContent() {
             onClick={handleSave}
             className="bg-[#1E3A8A] text-white px-5 py-2.5 rounded-xl flex items-center gap-2 font-bold text-sm hover:bg-blue-900 transition-all disabled:opacity-40"
           >
-            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            {saving ? <Loader className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             Salvar Estudo
           </button>
         </div>
@@ -204,7 +204,7 @@ function BESSContent() {
         </div>
       ) : !projetoBase?.analiseMassa?.[0] ? (
         <div className="bg-amber-50 rounded-3xl p-12 border border-amber-200 text-center">
-          <AlertCircle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
+          <AlertTriangle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
           <h3 className="text-xl font-bold text-amber-800">Falta Memória de Massa</h3>
           <p className="text-amber-700 mt-2">Este projeto ainda não possui análise de memória de massa. O dimensionamento BESS exige a curva de carga (XLS).</p>
           <button onClick={() => router.push(`/engenharia/analise-consumo?projetoId=${projetoId}`)} className="mt-4 bg-amber-500 text-white px-6 py-2 rounded-xl font-bold">Ir para Análise de Consumo</button>
@@ -216,7 +216,7 @@ function BESSContent() {
           <div className="lg:col-span-1 space-y-4">
             <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-6">
               <h3 className="font-bold text-slate-800 flex items-center gap-2 border-b border-slate-50 pb-4">
-                <Settings2 className="w-5 h-5 text-[#00BFA5]" /> Configuração
+                <Settings className="w-5 h-5 text-[#00BFA5]" /> Configuração
               </h3>
 
               <div className="space-y-4">
@@ -359,7 +359,7 @@ function BESSContent() {
               <div className="flex items-center justify-between mb-8">
                 <div>
                   <h3 className="font-bold text-slate-800 flex items-center gap-2">
-                    <BarChart3 className="w-5 h-5 text-[#00BFA5]" /> Simulação Dinâmica BESS
+                    <BarChart className="w-5 h-5 text-[#00BFA5]" /> Simulação Dinâmica BESS
                   </h3>
                   <p className="text-xs text-slate-400">Equilíbrio energético: Solar vs. Consumo vs. Bateria</p>
                 </div>
@@ -410,7 +410,7 @@ function BESSContent() {
               </div>
               
               <div className="mt-8 p-4 bg-slate-50 rounded-2xl flex items-center gap-3">
-                 <div className="bg-amber-100 p-2 rounded-lg text-amber-600"><AlertCircle className="w-5 h-5" /></div>
+                 <div className="bg-amber-100 p-2 rounded-lg text-amber-600"><AlertTriangle className="w-5 h-5" /></div>
                  <p className="text-xs text-slate-500 leading-relaxed">
                    <strong>Nota Técnica:</strong> Esta simulação dinâmica considera a eficiência RTE calculada e a estratégia de carga selecionada (<strong>{strategy}</strong>).
                  </p>
@@ -465,7 +465,7 @@ function BESSContent() {
 
 export default function DimensionamentoBESSPage() {
   return (
-    <Suspense fallback={<div className="flex h-[80vh] items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-[#00BFA5]" /></div>}>
+    <Suspense fallback={<div className="flex h-[80vh] items-center justify-center"><Loader className="w-8 h-8 animate-spin text-[#00BFA5]" /></div>}>
       <BESSContent />
     </Suspense>
   );

@@ -1,10 +1,21 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell } from "recharts";
 
 const COLORS = ['#ef4444', '#f59e0b', '#10b981'];
 
 export default function DashboardCharts({ data }: { data: any[] }) {
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  if (!isClient) {
+    return <div className="w-full h-full bg-slate-50 animate-pulse rounded-xl" />;
+  }
+
   if (data.every(d => d.value === 0)) {
     return (
       <div className="w-full h-full flex flex-col items-center justify-center text-slate-400">

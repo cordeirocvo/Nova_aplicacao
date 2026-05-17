@@ -3,9 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { 
-  Zap, Shield, Plus, Trash2, Check, ChevronRight, 
-  ChevronLeft, Building2, BatteryCharging, FileText, 
-  CheckCircle2, Loader2, MapPin, Box, AlertTriangle, Save 
+  Zap, Shield, Plus, Trash, Check, ChevronRight, 
+  ChevronLeft, Building, BatteryCharging, FileText, 
+  CheckCircle, Loader, MapPin, Box, AlertTriangle, Save 
 } from "lucide-react";
 import { CHARGER_PRESETS, ChargerConfig, calcularPadraoEntrada, CemigResult } from "@/lib/ev/cemigEngine";
 import { calculateSizing } from "@/lib/ev/sizingEngine";
@@ -161,7 +161,8 @@ export default function NovoDimensionamento() {
       }
     } catch (error: any) {
       console.error(error);
-      alert(error.message || "Erro inesperado ao salvar projeto.");
+      const errorMessage = error.message || "Erro inesperado ao salvar projeto.";
+      alert(errorMessage + (error.details ? "\n\nDetalhes: " + error.details : ""));
     } finally {
       setSaving(false);
     }
@@ -203,7 +204,7 @@ export default function NovoDimensionamento() {
           <div className="p-8 space-y-8 animate-in fade-in duration-500">
              <div>
               <div className="flex items-center gap-2 mb-4 border-b border-slate-100 pb-3">
-                <Building2 className="w-5 h-5 text-[#00BFA5]" />
+                <Building className="w-5 h-5 text-[#00BFA5]" />
                 <h2 className="text-lg font-bold text-slate-800">Identificação do Projeto</h2>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -266,7 +267,7 @@ export default function NovoDimensionamento() {
                       <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Equipamento {i + 1}</span>
                       {chargers.length > 1 && (
                         <button onClick={() => removeCharger(i)} className="text-red-400 hover:text-red-600 transition-colors">
-                          <Trash2 className="w-4 h-4" />
+                          <Trash className="w-4 h-4" />
                         </button>
                       )}
                     </div>
@@ -454,7 +455,7 @@ export default function NovoDimensionamento() {
               <div>
                 <div className="flex items-center gap-3 mb-2">
                   <div className="w-10 h-10 bg-[#00BFA5] rounded-full flex items-center justify-center text-white shadow-lg">
-                     <CheckCircle2 className="w-6 h-6" />
+                     <CheckCircle className="w-6 h-6" />
                   </div>
                   <h2 className="text-2xl font-black text-slate-800 tracking-tighter uppercase">Relatório Gerado com Sucesso</h2>
                 </div>
@@ -569,7 +570,7 @@ export default function NovoDimensionamento() {
             <div className="flex justify-between pt-10 border-t border-slate-100">
                <button onClick={() => setStep(2)} className="px-8 py-4 text-slate-500 font-bold hover:underline transition-all">Ajustar Parâmetros</button>
                <button onClick={handleSave} disabled={saving} className="px-12 py-4 bg-gradient-to-r from-[#1E3A8A] to-[#00BFA5] text-white rounded-2xl font-black shadow-2xl hover:opacity-90 disabled:opacity-50 transition-all flex items-center gap-3 active:scale-95">
-                 {saving ? <Loader2 className="w-6 h-6 animate-spin" /> : <Save className="w-6 h-6" />}
+                 {saving ? <Loader className="w-6 h-6 animate-spin" /> : <Save className="w-6 h-6" />}
                  {saving ? "Processando..." : "Confirmar e Salvar Projeto"}
                </button>
             </div>

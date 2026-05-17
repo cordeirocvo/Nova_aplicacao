@@ -1,14 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { UserPlus, Edit2, Trash2, Shield, User, Monitor, X, Check, Loader2 } from "lucide-react";
+import { UserPlus, Edit, Trash, Shield, User, Monitor, X, Check, Loader } from "lucide-react";
 
 export default function UsuariosPage() {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<any>(null);
-  const [form, setForm] = useState({ email: "", name: "", password: "", role: "USER" });
+  const [form, setForm] = useState({ email: "", name: "", password: "", role: "USER", canAccessBudgets: false, canEditBudgets: false, canAccessAppLeads: false, canManageCRM: false, canAccessSIE: false });
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -17,9 +17,15 @@ export default function UsuariosPage() {
 
   const fetchUsers = async () => {
     try {
-      const res = await fetch("/api/users");
+      const res = await fetch("/api/users", { cache: "no-store" });
       const data = await res.json();
-      setUsers(data);
+      if (Array.isArray(data)) {
+        setUsers(data);
+      } else {
+        console.error("API Error fetching users:", data);
+        setUsers([]);
+        alert(data.error || "Erro ao carregar os usuários");
+      }
     } catch (error) {
       console.error("Error fetching users:", error);
     } finally {
@@ -30,10 +36,30 @@ export default function UsuariosPage() {
   const openModal = (user: any = null) => {
     if (user) {
       setEditingUser(user);
-      setForm({ email: user.email, name: user.name || "", password: "", role: user.role });
+      setForm({ 
+        email: user.email, 
+        name: user.name || "", 
+        password: "", 
+        role: user.role, 
+        canAccessBudgets: user.canAccessBudgets || false, 
+        canEditBudgets: user.canEditBudgets || false,
+        canAccessAppLeads: user.canAccessAppLeads || false,
+        canManageCRM: user.canManageCRM || false,
+        canAccessSIE: user.canAccessSIE || false
+      });
     } else {
       setEditingUser(null);
-      setForm({ email: "", name: "", password: "", role: "USER" });
+      setForm({ 
+        email: "", 
+        name: "", 
+        password: "", 
+        role: "USER", 
+        canAccessBudgets: false, 
+        canEditBudgets: false,
+        canAccessAppLeads: false,
+        canManageCRM: false,
+        canAccessSIE: false
+      });
     }
     setModalOpen(true);
   };
@@ -111,7 +137,7 @@ export default function UsuariosPage() {
 
       {loading ? (
         <div className="flex justify-center p-20">
-          <Loader2 className="w-10 h-10 animate-spin text-[#00BFA5]" />
+          <Loader className="w-10 h-10 animate-spin text-[#00BFA5]" />
         </div>
       ) : (
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
@@ -122,6 +148,9 @@ export default function UsuariosPage() {
                   <th className="px-6 py-4 text-sm font-semibold text-slate-600">Nome</th>
                   <th className="px-6 py-4 text-sm font-semibold text-slate-600">Email</th>
                   <th className="px-6 py-4 text-sm font-semibold text-slate-600">Nível de Acesso</th>
+                  <th className="px-6 py-4 text-sm font-semibold text-slate-600 text-center">Acesso CAPEX</th>
+                  <th className="px-6 py-4 text-sm font-semibold text-slate-600 text-center">CRM & Leads</th>
+                  <th className="px-6 py-4 text-sm font-semibold text-slate-600 text-center">Solar IA</th>
                   <th className="px-6 py-4 text-sm font-semibold text-slate-600 text-right">Ações</th>
                 </tr>
               </thead>
@@ -131,13 +160,34 @@ export default function UsuariosPage() {
                     <td className="px-6 py-4 font-medium text-slate-800">{u.name || "-"}</td>
                     <td className="px-6 py-4 text-slate-600">{u.email}</td>
                     <td className="px-6 py-4">{getRoleBadge(u.role)}</td>
+                    <td className="px-6 py-4 text-center">
+                      {u.canAccessBudgets ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">Liberado</span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-500">Bloqueado</span>
+                      )}
+                    </td>
+                     <td className="px-6 py-4 text-center">
+                      <div className="flex flex-col gap-1 items-center">
+                        {u.canAccessAppLeads && <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-black bg-blue-100 text-blue-800 uppercase">Campo</span>}
+                        {u.canManageCRM && <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-black bg-indigo-100 text-indigo-800 uppercase">Sênior</span>}
+                        {!u.canAccessAppLeads && !u.canManageCRM && <span className="text-[10px] text-slate-300 font-bold uppercase">Sem Acesso</span>}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      {u.canAccessSIE ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-[#00BFA5]/10 text-[#00BFA5] uppercase">Ativado</span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-slate-100 text-slate-400 uppercase">Inativo</span>
+                      )}
+                    </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button onClick={() => openModal(u)} className="p-2 text-slate-400 hover:text-[#1E3A8A] hover:bg-[#1E3A8A]/5 rounded-lg transition-all">
-                          <Edit2 className="w-4 h-4" />
+                          <Edit className="w-4 h-4" />
                         </button>
                         <button onClick={() => handleDelete(u.id)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all">
-                          <Trash2 className="w-4 h-4" />
+                          <Trash className="w-4 h-4" />
                         </button>
                       </div>
                     </td>
@@ -214,6 +264,70 @@ export default function UsuariosPage() {
                 </select>
               </div>
 
+              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
+                <p className="text-sm font-bold text-slate-800">Permissões Específicas</p>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="w-5 h-5 rounded border-slate-300 text-[#00BFA5] focus:ring-[#00BFA5]"
+                    checked={form.canAccessBudgets}
+                    onChange={(e) => setForm({ ...form, canAccessBudgets: e.target.checked })}
+                  />
+                  <div>
+                    <p className="text-sm font-semibold text-slate-700">Acessar Gestão de Orçamentos (CAPEX)</p>
+                    <p className="text-xs text-slate-500">Permite ver a página de orçamentos</p>
+                  </div>
+                </label>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="w-5 h-5 rounded border-slate-300 text-[#00BFA5] focus:ring-[#00BFA5]"
+                    checked={form.canEditBudgets}
+                    onChange={(e) => setForm({ ...form, canEditBudgets: e.target.checked })}
+                  />
+                  <div>
+                    <p className="text-sm font-semibold text-slate-700">Criar/Editar Orçamentos (CAPEX)</p>
+                    <p className="text-xs text-slate-500">Permite cadastrar itens, equalizar preços e disparar convites</p>
+                  </div>
+                </label>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="w-5 h-5 rounded border-slate-300 text-[#00BFA5] focus:ring-[#00BFA5]"
+                    checked={form.canAccessAppLeads}
+                    onChange={(e) => setForm({ ...form, canAccessAppLeads: e.target.checked })}
+                  />
+                  <div>
+                    <p className="text-sm font-semibold text-slate-700">Acesso App Vendedor (Campo)</p>
+                    <p className="text-xs text-slate-500">Permite usar o aplicativo móvel de captura</p>
+                  </div>
+                </label>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="w-5 h-5 rounded border-slate-300 text-[#00BFA5] focus:ring-[#00BFA5]"
+                    checked={form.canManageCRM}
+                    onChange={(e) => setForm({ ...form, canManageCRM: e.target.checked })}
+                  />
+                  <div>
+                    <p className="text-sm font-semibold text-slate-700">Acesso Gestão CRM (Sênior)</p>
+                    <p className="text-xs text-slate-500">Permite ver e gerenciar o funil de vendas</p>
+                  </div>
+                </label>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="w-5 h-5 rounded border-slate-300 text-[#00BFA5] focus:ring-[#00BFA5]"
+                    checked={form.canAccessSIE}
+                    onChange={(e) => setForm({ ...form, canAccessSIE: e.target.checked })}
+                  />
+                  <div>
+                    <p className="text-sm font-semibold text-slate-700">Acesso Solar Intelligence (SIE)</p>
+                    <p className="text-xs text-slate-500">Habilita monitoramento e análise preditiva com IA</p>
+                  </div>
+                </label>
+              </div>
+
               <div className="pt-4 flex gap-3">
                 <button
                   type="button"
@@ -227,7 +341,7 @@ export default function UsuariosPage() {
                   disabled={submitting}
                   className="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-[#1E3A8A] to-[#015299] text-white font-bold shadow-lg hover:shadow-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                 >
-                  {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Check className="w-5 h-5" />}
+                  {submitting ? <Loader className="w-5 h-5 animate-spin" /> : <Check className="w-5 h-5" />}
                   {editingUser ? "Atualizar" : "Cadastrar"}
                 </button>
               </div>

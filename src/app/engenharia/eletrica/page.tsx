@@ -2,8 +2,8 @@
 
 import React, { useState } from 'react';
 import { 
-  Zap, Settings, Plus, Calculator, Trash2, Flashlight, 
-  Activity, AlertTriangle, FileCheck, CheckCircle2 
+  Zap, Settings, Plus, Calculator, Trash, Flashlight, 
+  Activity, AlertTriangle, FileCheck, CheckCircle 
 } from 'lucide-react';
 import { 
   dimensionarCircuitoBT, ParametrosCircuito, ResultadoEletrico,
@@ -165,7 +165,7 @@ export default function EletricaDimensionamentoPage() {
                     }}
                   />
                   <button onClick={() => removeCircuito(c.id)} className="text-red-400 hover:text-red-600">
-                    <Trash2 className="w-4 h-4" />
+                    <Trash className="w-4 h-4" />
                   </button>
                 </div>
 
@@ -224,7 +224,7 @@ export default function EletricaDimensionamentoPage() {
                 {c.resultado && (
                    <div className="bg-emerald-50 border-t border-emerald-100 p-4 grid grid-cols-2 lg:grid-cols-5 gap-3 items-center">
                      <div className="flex items-center col-span-2 gap-2">
-                        <CheckCircle2 className="w-8 h-8 text-emerald-500" />
+                        <CheckCircle className="w-8 h-8 text-emerald-500" />
                         <div>
                            <p className="text-[10px] uppercase font-bold text-emerald-600">Condutor NBR-5410</p>
                            <p className="font-bold text-emerald-900 text-lg">{c.resultado.secaoEscolhidaMM} mm² <span className="text-xs font-normal">({c.resultado.capacidadeCaboIz.toFixed(1)}A)</span></p>

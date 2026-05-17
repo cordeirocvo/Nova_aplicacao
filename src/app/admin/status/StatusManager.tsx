@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Trash2, Plus, Edit2, Check, X } from "lucide-react";
+import { Trash, Plus, Edit, Check, X } from "lucide-react";
 
 export default function StatusManager({ initialStatuses }: { initialStatuses: any[] }) {
   const router = useRouter();
@@ -113,13 +113,13 @@ export default function StatusManager({ initialStatuses }: { initialStatuses: an
                     onClick={() => { setEditingId(st.id); setEditName(st.name); }}
                     className="p-2 text-slate-400 hover:text-[#00BFA5] hover:bg-[#00BFA5]/10 rounded-lg transition-colors"
                   >
-                    <Edit2 className="w-4 h-4" />
+                    <Edit className="w-4 h-4" />
                   </button>
                   <button 
                     onClick={() => handleDelete(st.id)}
                     className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash className="w-4 h-4" />
                   </button>
                 </div>
               </>

@@ -3,8 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
-  Upload, FileText, BarChart3, AlertTriangle, CheckCircle2,
-  Info, Sun, Zap, Loader2, Plus, Settings2, ChevronDown, ExternalLink, Edit3, Save, Search, Battery
+  Upload, FileText, BarChart, AlertTriangle, CheckCircle,
+  Info, Sun, Zap, Loader, Plus, Settings, ChevronDown, ExternalLink, Edit, Save, Search, Battery
 } from "lucide-react";
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid,
@@ -199,7 +199,7 @@ function AnaliseConsumoContent() {
 
       {/* Tabs */}
       <div className="flex bg-slate-100 rounded-2xl p-1 gap-1 w-fit">
-        {([["fatura", "Fatura de Energia", FileText], ["massa", "Memória de Massa", BarChart3], ["manual", "Inserção Manual", Edit3]] as const).map(([key, label, Icon]) => (
+        {([["fatura", "Fatura de Energia", FileText], ["massa", "Memória de Massa", BarChart], ["manual", "Inserção Manual", Edit]] as const).map(([key, label, Icon]) => (
           <button key={key} onClick={() => setTab(key)}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${tab === key ? "bg-white shadow-sm text-[#1E3A8A]" : "text-slate-500 hover:text-slate-700"}`}>
             <Icon className="w-4 h-4" /> {label}
@@ -252,14 +252,14 @@ function AnaliseConsumoContent() {
 
               <button onClick={handleFaturaUpload} disabled={!faturaFile || loading}
                 className="w-full py-3 bg-gradient-to-r from-[#1E3A8A] to-[#00BFA5] text-white rounded-xl font-bold text-sm disabled:opacity-40 flex items-center justify-center gap-2">
-                {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Analisando com IA...</> : <><Zap className="w-4 h-4" /> Analisar Fatura</>}
+                {loading ? <><Loader className="w-4 h-4 animate-spin" /> Analisando com IA...</> : <><Zap className="w-4 h-4" /> Analisar Fatura</>}
               </button>
 
               {analise && (
                 <div className="p-5 bg-white border border-slate-200 shadow-sm rounded-2xl w-full">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
-                      <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                      <CheckCircle className="w-5 h-5 text-emerald-500" />
                       <h3 className="font-bold text-slate-800 text-sm uppercase">Dados Extraídos para Análise</h3>
                     </div>
                     <div className="flex gap-2">
@@ -275,7 +275,7 @@ function AnaliseConsumoContent() {
                         }} 
                         className="text-[11px] font-bold text-slate-600 flex items-center gap-1 bg-slate-100 px-3 py-1.5 rounded-lg hover:bg-slate-200 transition-colors"
                       >
-                         <Edit3 className="w-3 h-3" /> Editar
+                         <Edit className="w-3 h-3" /> Editar
                       </button>
                     </div>
                   </div>
@@ -311,7 +311,7 @@ function AnaliseConsumoContent() {
           {tab === "massa" && (
             <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 space-y-5">
               <div className="flex items-center gap-2 border-b border-slate-100 pb-4">
-                <BarChart3 className="w-5 h-5 text-amber-500" />
+                <BarChart className="w-5 h-5 text-amber-500" />
                 <h2 className="font-bold text-slate-800">Memória de Massa XLS</h2>
               </div>
               <p className="text-xs text-slate-500 leading-relaxed">
@@ -321,7 +321,7 @@ function AnaliseConsumoContent() {
               {/* Posto Config */}
               <div className="bg-slate-50 rounded-2xl p-4 space-y-3">
                 <div className="flex items-center gap-2 text-xs font-black text-slate-500 uppercase mb-2">
-                  <Settings2 className="w-3.5 h-3.5" /> Configuração de Postos Tarifários
+                  <Settings className="w-3.5 h-3.5" /> Configuração de Postos Tarifários
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   {[["HP Início", "hp_inicio"], ["HP Fim", "hp_fim"], ["HFP Início", "hfp_inicio"], ["HFP Fim", "hfp_fim"], ["HR Início (opt.)", "hr_inicio"], ["HR Fim (opt.)", "hr_fim"]].map(([label, key]) => (
@@ -338,7 +338,7 @@ function AnaliseConsumoContent() {
                 className="border-2 border-dashed border-amber-300/50 rounded-2xl p-6 text-center cursor-pointer hover:bg-amber-50/50 transition-colors relative"
                 onClick={() => document.getElementById('massaInput')?.click()}
               >
-                <BarChart3 className="w-8 h-8 text-amber-500 mx-auto mb-2" />
+                <BarChart className="w-8 h-8 text-amber-500 mx-auto mb-2" />
                 {massaFiles.length === 0 ? (
                   <p className="text-sm font-medium text-slate-600">Clique para enviar arquivos XLS da Memória de Massa</p>
                 ) : (
@@ -353,7 +353,7 @@ function AnaliseConsumoContent() {
 
               <button onClick={handleMassaUpload} disabled={massaFiles.length === 0 || loading}
                 className="w-full py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl font-bold text-sm disabled:opacity-40 flex items-center justify-center gap-2">
-                {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Processando...</> : <><BarChart3 className="w-4 h-4" /> Processar Memória de Massa</>}
+                {loading ? <><Loader className="w-4 h-4 animate-spin" /> Processando...</> : <><BarChart className="w-4 h-4" /> Processar Memória de Massa</>}
               </button>
 
               {massaError && (
@@ -368,7 +368,7 @@ function AnaliseConsumoContent() {
           {tab === "manual" && (
             <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 space-y-4">
               <div className="flex items-center gap-2 border-b border-slate-100 pb-4">
-                <Edit3 className="w-5 h-5 text-[#1E3A8A]" />
+                <Edit className="w-5 h-5 text-[#1E3A8A]" />
                 <h2 className="font-bold text-slate-800">Entrada Manual</h2>
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -409,7 +409,7 @@ function AnaliseConsumoContent() {
               <div className="flex items-center gap-2 mt-2">
                 <button onClick={buscarTarifasANEEL} disabled={loadingTarifas}
                   className="text-xs font-bold text-[#1E3A8A] border border-[#1E3A8A]/20 bg-[#1E3A8A]/5 hover:bg-[#1E3A8A]/10 px-3 py-1.5 rounded-full flex items-center gap-1.5 transition-all">
-                  {loadingTarifas ? <Loader2 className="w-3 h-3 animate-spin" /> : <ExternalLink className="w-3 h-3" />}
+                  {loadingTarifas ? <Loader className="w-3 h-3 animate-spin" /> : <ExternalLink className="w-3 h-3" />}
                   Buscar Tarifas ANEEL
                 </button>
                 {tarifas.length > 0 && <span className="text-[10px] text-green-600 font-bold">{tarifas.length} tarifas encontradas</span>}
@@ -462,7 +462,7 @@ function AnaliseConsumoContent() {
                 className={`w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${
                   saveSuccess ? "bg-emerald-500 text-white" : "bg-[#1E3A8A] text-white"
                 }`}>
-                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : saveSuccess ? <CheckCircle2 className="w-4 h-4" /> : <Save className="w-4 h-4" />} 
+                {saving ? <Loader className="w-4 h-4 animate-spin" /> : saveSuccess ? <CheckCircle className="w-4 h-4" /> : <Save className="w-4 h-4" />} 
                 {saveSuccess ? "Dados Salvos!" : "Salvar Dados"}
               </button>
 
@@ -481,7 +481,7 @@ function AnaliseConsumoContent() {
             <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
               <div className="p-6 border-b border-slate-100 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-amber-100 text-amber-600 rounded-xl"><Settings2 className="w-5 h-5" /></div>
+                  <div className="p-2 bg-amber-100 text-amber-600 rounded-xl"><Settings className="w-5 h-5" /></div>
                   <div>
                     <h2 className="text-xl font-black text-slate-800">Conferir Dados da Fatura</h2>
                     <p className="text-xs text-slate-400">Verifique se a IA extraiu as informações corretamente</p>
@@ -582,7 +582,7 @@ function AnaliseConsumoContent() {
                 <button onClick={() => setIsConfirming(false)} className="flex-1 py-3 border border-slate-200 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-50">Descartar</button>
                 <button onClick={() => handleManualSave(tempData)} disabled={saving}
                   className="flex-2 py-3 bg-[#00BFA5] text-white rounded-xl font-bold text-sm shadow-lg shadow-emerald-200 flex items-center justify-center gap-2 px-8">
-                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><CheckCircle2 className="w-4 h-4" /> Confirmar e Salvar</>}
+                  {saving ? <Loader className="w-4 h-4 animate-spin" /> : <><CheckCircle className="w-4 h-4" /> Confirmar e Salvar</>}
                 </button>
               </div>
             </div>
@@ -598,7 +598,7 @@ function AnaliseConsumoContent() {
                 <div className="p-6 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-[#1E3A8A] text-white rounded-xl shadow-lg shadow-blue-100">
-                      <BarChart3 className="w-5 h-5" />
+                      <BarChart className="w-5 h-5" />
                     </div>
                     <div>
                       <h3 className="font-black text-slate-800 uppercase tracking-tight">Painel de Memória de Massa</h3>
@@ -610,7 +610,7 @@ function AnaliseConsumoContent() {
                       onClick={() => { setMassaResult(tempDataMassa); setTempDataMassa(null); }}
                       className="px-6 py-2 bg-[#00BFA5] text-white rounded-xl font-bold text-sm shadow-lg shadow-emerald-100 flex items-center gap-2 hover:bg-[#00a690] transition-colors"
                     >
-                      <CheckCircle2 className="w-4 h-4" /> Confirmar Importação
+                      <CheckCircle className="w-4 h-4" /> Confirmar Importação
                     </button>
                   )}
                 </div>
@@ -800,7 +800,7 @@ function AnaliseConsumoContent() {
                 <div className="mt-4 space-y-2">
                   {(faturaResult.classificacao.regras as string[]).map((r, i) => (
                     <div key={i} className={`flex gap-2 p-3 rounded-xl text-xs ${r.startsWith('✅') ? 'bg-green-50 text-green-700' : 'bg-blue-50 text-blue-700'}`}>
-                      <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" /> {r}
+                      <CheckCircle className="w-4 h-4 shrink-0 mt-0.5" /> {r}
                     </div>
                   ))}
                 </div>
@@ -892,7 +892,7 @@ function AnaliseConsumoContent() {
            <div className="bg-[#0A192F] text-white p-4 rounded-3xl shadow-2xl shadow-blue-900/40 border border-white/10 backdrop-blur-md flex items-center justify-between">
               <div className="flex items-center gap-4 ml-2">
                  <div className="w-10 h-10 bg-[#00BFA5]/20 rounded-full flex items-center justify-center">
-                    <CheckCircle2 className="w-5 h-5 text-[#00BFA5]" />
+                    <CheckCircle className="w-5 h-5 text-[#00BFA5]" />
                  </div>
                  <div>
                     <p className="text-[10px] font-black text-[#00BFA5] uppercase tracking-widest">Análise Concluída</p>
@@ -930,7 +930,7 @@ function AnaliseConsumoContent() {
 
 export default function AnaliseConsumoPage() {
   return (
-    <Suspense fallback={<div className="flex h-[80vh] items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-[#00BFA5]" /></div>}>
+    <Suspense fallback={<div className="flex h-[80vh] items-center justify-center"><Loader className="w-8 h-8 animate-spin text-[#00BFA5]" /></div>}>
       <AnaliseConsumoContent />
     </Suspense>
   );

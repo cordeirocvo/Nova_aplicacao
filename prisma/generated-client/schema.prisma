@@ -9,13 +9,17 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String
-  role      String
-  name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                String   @id @default(cuid())
+  email             String   @unique
+  password          String
+  role              String
+  name              String?
+  canAccessBudgets  Boolean  @default(false)
+  canEditBudgets    Boolean  @default(false)
+  canAccessAppLeads Boolean  @default(false)
+  canManageCRM      Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 }
 
 model PlanilhaInstalacao {
@@ -130,19 +134,19 @@ model ProjetoDimensionamento {
   isServiceEntranceOk  Boolean @default(true)
   analysisNotes        String?
 
-  // Novos campos para Transformador e Proteção Avançada
+  // Novos campos para Transformador e ProteÃ§Ã£o AvanÃ§ada
   hasTransformer              Boolean @default(false)
   transformerPrimaryVoltage   Float?  @default(220)
   transformerSecondaryVoltage Float?  @default(380)
-  transformerDistance         Float?  @default(10) // QGBT até Transfo
-  chargerDistance             Float?  @default(10) // Transfo até Carregador
+  transformerDistance         Float?  @default(10) // QGBT atÃ© Transfo
+  chargerDistance             Float?  @default(10) // Transfo atÃ© Carregador
   groundingType               String? @default("TT")
   calculatedPrimaryCable      Float?
   calculatedPrimaryBreaker    Float?
   calculatedDPS               String?
   calculatedIDR               String?
 
-  // Segurança Contra Incêndio e Normas (AVCB/Bombeiros)
+  // SeguranÃ§a Contra IncÃªndio e Normas (AVCB/Bombeiros)
   fireExtinguisherType String? // ex: "CO2 6kg" ou "PQS 6kg B/C"
   hasEmergencyButton5m Boolean @default(true)
   requiresWarningSigns Boolean @default(true)
@@ -150,7 +154,7 @@ model ProjetoDimensionamento {
   abntStandards        String? // ex: "NBR 17019, NBR 5410"
   specificSafetyNotes  String?
 
-  // Novos campos para CEMIG e Gestão
+  // Novos campos para CEMIG e GestÃ£o
   existingLoadKW     Float?  @default(0)
   simultaneityFactor Float?  @default(0.8)
   isCollective       Boolean @default(false)
@@ -449,11 +453,11 @@ model ComissionamentoUsina {
   tipo           String // "Frio", "Quente", "Entrega"
   data           DateTime
   responsavel    String?
-  crea           String? // Registro CREA do responsável
+  crea           String? // Registro CREA do responsÃ¡vel
   profissionalId String?
   profissional   Profissional?     @relation(fields: [profissionalId], references: [id])
-  numero         String? // Nº no relatório
-  status         String            @default("Concluído")
+  numero         String? // NÂº no relatÃ³rio
+  status         String            @default("ConcluÃ­do")
   dadosTecnicos  Json? // Para armazenar os testes de string, megger, etc.
   observacoes    String?
   createdAt      DateTime          @default(now())
@@ -480,7 +484,7 @@ model RelatorioTermografia {
   profissionalId      String?
   profissional        Profissional?     @relation(fields: [profissionalId], references: [id])
   dataInspecao        DateTime          @default(now())
-  equipamentoCamera   String? // Modelo da câmera térmica
+  equipamentoCamera   String? // Modelo da cÃ¢mera tÃ©rmica
   temperaturaAmbiente Float?
   irradiacao          Float?
   velocidadeVento     Float?
@@ -496,17 +500,153 @@ model ItemTermografia {
   id                    String               @id @default(cuid())
   relatorioId           String
   relatorio             RelatorioTermografia @relation(fields: [relatorioId], references: [id], onDelete: Cascade)
-  tipoEquipamento       String // "Módulo", "Painel", "Transformador", "Conexão"
-  tag                   String // Identificação (ex: INV-01, Módulo 04)
+  tipoEquipamento       String // "MÃ³dulo", "Painel", "Transformador", "ConexÃ£o"
+  tag                   String // IdentificaÃ§Ã£o (ex: INV-01, MÃ³dulo 04)
   localizacao           String?
   temperaturaMedida     Float
   temperaturaReferencia Float
   deltaT                Float
-  severidade            String // "Normal", "Observação", "Crítica"
-  causaProvavel         String? // Ex: Hotspot, Diodo de Bypass, Conexão Frouxa
+  severidade            String // "Normal", "ObservaÃ§Ã£o", "CrÃ­tica"
+  causaProvavel         String? // Ex: Hotspot, Diodo de Bypass, ConexÃ£o Frouxa
   recomendacao          String?
   imagemTermicaUrl      String?
   imagemVisualUrl       String?
   createdAt             DateTime             @default(now())
   updatedAt             DateTime             @updatedAt
+}
+
+// ------------------------------------------------------------------------------------------------
+// GESTÃO DE ORÇAMENTOS E CAPEX
+// ------------------------------------------------------------------------------------------------
+
+model OrcamentoProjeto {
+  id              String   @id @default(cuid())
+  nome            String // Ex: UFV Nova Aurora 1MW
+  cliente         String?
+  status          String   @default("Planejamento") // Planejamento, Em Cotação, Fechado
+  idContaAzul     String? // Para futura integração
+  dataCriacao     DateTime @default(now())
+  dataAtualizacao DateTime @updatedAt
+
+  // Relações
+  etapas       OrcamentoEtapa[]
+  fornecedores FornecedorOrcamento[]
+}
+
+model OrcamentoEtapa {
+  id        String           @id @default(cuid())
+  projetoId String
+  projeto   OrcamentoProjeto @relation(fields: [projetoId], references: [id], onDelete: Cascade)
+  nome      String // Ex: "Cabine de Entrada", "Aterramento", "Painel Elétrico 800V"
+  ordem     Int              @default(0)
+
+  itens OrcamentoItem[]
+}
+
+model OrcamentoItem {
+  id         String         @id @default(cuid())
+  etapaId    String
+  etapa      OrcamentoEtapa @relation(fields: [etapaId], references: [id], onDelete: Cascade)
+  codigo     String? // Ex: Código SINAPI ou Interno
+  descricao  String // Memorial descritivo resumido
+  tipo       String // "Material", "Mão de Obra", "Equipamento"
+  unidade    String // un, m, m², kg, h
+  quantidade Float
+
+  // Orçamento Base / Meta
+  precoBaseUnitario Float?
+  bdiPercent        Float? @default(0)
+
+  propostas PropostaItem[]
+}
+
+model Fornecedor {
+  id              String  @id @default(cuid())
+  razaoSocial     String
+  cnpj            String?
+  contatoNome     String?
+  contatoEmail    String?
+  contatoTelefone String?
+  idContaAzul     String? // Integração
+
+  projetos  FornecedorOrcamento[]
+  propostas PropostaItem[]
+}
+
+model FornecedorOrcamento {
+  id            String    @id @default(cuid())
+  projetoId     String
+  fornecedorId  String
+  statusConvite String    @default("Pendente") // Pendente, Enviado, Respondido, Declinado
+  tokenAcesso   String    @unique @default(cuid()) // Para link exclusivo do portal
+  dataEnvio     DateTime?
+
+  projeto    OrcamentoProjeto @relation(fields: [projetoId], references: [id], onDelete: Cascade)
+  fornecedor Fornecedor       @relation(fields: [fornecedorId], references: [id], onDelete: Cascade)
+
+  @@unique([projetoId, fornecedorId])
+}
+
+model PropostaItem {
+  id           String @id @default(cuid())
+  itemId       String
+  fornecedorId String
+
+  precoUnitario    Float
+  freteIncluso     Boolean @default(true)
+  prazoEntregaDias Int?
+  observacao       String?
+
+  dataProposta DateTime @default(now())
+  versao       Int      @default(1)
+
+  item       OrcamentoItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  fornecedor Fornecedor    @relation(fields: [fornecedorId], references: [id], onDelete: Cascade)
+
+  @@unique([itemId, fornecedorId, versao])
+}
+
+model OrcamentoTipoMaterial {
+  id   String @id @default(cuid())
+  nome String @unique
+}
+
+model OrcamentoItemPadrao {
+  id                String  @id @default(cuid())
+  codigo            String?
+  descricao         String
+  tipo              String
+  unidade           String
+  precoBaseUnitario Float?
+}
+
+// ------------------------------------------------------------------------------------------------
+// GESTÃO DE LEADS (CRM)
+// ------------------------------------------------------------------------------------------------
+
+model Lead {
+  id          String  @id @default(cuid())
+  nome        String
+  telefone    String?
+  email       String?
+  tipo        String // "DESCONTO_CONTA", "USINA_SOLAR"
+  status      String  @default("NOVO") // "NOVO", "ANALISE", "PROPOSTA", "NEGOCIACAO", "GANHO", "PERDIDO"
+  latitude    Float?
+  longitude   Float?
+  observacoes String? @db.Text
+  vendedorId  String? // ID do User que criou
+
+  midias LeadMidia[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model LeadMidia {
+  id         String   @id @default(cuid())
+  leadId     String
+  lead       Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  tipo       String // "CONTA", "CNH", "TELHADO", "PADRAO", "MEDIDOR"
+  arquivoUrl String
+  createdAt  DateTime @default(now())
 }

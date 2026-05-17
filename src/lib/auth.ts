@@ -38,6 +38,10 @@ export const authOptions: NextAuthOptions = {
               email: user.email,
               name: user.name,
               role: user.role,
+              canAccessBudgets: user.canAccessBudgets,
+              canEditBudgets: user.canEditBudgets,
+              canAccessAppLeads: user.canAccessAppLeads,
+              canManageCRM: user.canManageCRM,
             };
           }
           
@@ -55,6 +59,11 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.role = (user as any).role;
         token.id = user.id;
+        token.canAccessBudgets = (user as any).canAccessBudgets;
+        token.canEditBudgets = (user as any).canEditBudgets;
+        token.canAccessAppLeads = (user as any).canAccessAppLeads;
+        token.canManageCRM = (user as any).canManageCRM;
+        token.canAccessSIE = (user as any).canAccessSIE;
       }
       return token;
     },
@@ -62,6 +71,11 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         (session.user as any).role = token.role;
         (session.user as any).id = token.id;
+        (session.user as any).canAccessBudgets = token.canAccessBudgets;
+        (session.user as any).canEditBudgets = token.canEditBudgets;
+        (session.user as any).canAccessAppLeads = token.canAccessAppLeads;
+        (session.user as any).canManageCRM = token.canManageCRM;
+        (session.user as any).canAccessSIE = token.canAccessSIE;
       }
       return session;
     }

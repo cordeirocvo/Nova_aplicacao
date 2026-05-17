@@ -12,9 +12,18 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
   try {
     const { id } = await params;
-    const { email, name, password, role } = await req.json();
+    const { email, name, password, role, canAccessBudgets, canEditBudgets, canAccessAppLeads, canManageCRM, canAccessSIE } = await req.json();
 
-    const data: any = { email, name, role };
+    const data: any = { 
+      email, 
+      name, 
+      role,
+      canAccessBudgets: canAccessBudgets !== undefined ? canAccessBudgets : false,
+      canEditBudgets: canEditBudgets !== undefined ? canEditBudgets : false,
+      canAccessAppLeads: canAccessAppLeads !== undefined ? canAccessAppLeads : false,
+      canManageCRM: canManageCRM !== undefined ? canManageCRM : false,
+      canAccessSIE: canAccessSIE !== undefined ? canAccessSIE : false,
+    };
     
     if (password && password.trim() !== "") {
       data.password = await bcrypt.hash(password, 10);

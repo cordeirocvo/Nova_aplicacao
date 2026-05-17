@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Settings, X, Save, CheckCircle2 } from "lucide-react";
+import { Settings, X, Save, CheckCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export default function SettingsModal({ initialSettings }: { initialSettings: any }) {
@@ -92,7 +92,7 @@ export default function SettingsModal({ initialSettings }: { initialSettings: an
                  disabled={saving || saved}
                  className="px-6 py-2 text-sm font-bold text-white bg-[#00BFA5] hover:bg-[#00a690] rounded-lg transition-all flex items-center gap-2"
                >
-                 {saved ? <CheckCircle2 className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+                 {saved ? <CheckCircle className="w-4 h-4" /> : <Save className="w-4 h-4" />}
                  {saved ? "Salvo" : saving ? "Salvando..." : "Salvar Semáforo"}
                </button>
             </div>

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from "next/link";
-import { Edit2, ShieldAlert } from "lucide-react";
+import { Edit, ShieldAlert } from "lucide-react";
 import { TagToggler } from "./TagToggler";
 
 export default function AtividadesClientView({ atividades, settings, isAdmin, isTV }: any) {
@@ -258,7 +258,7 @@ export default function AtividadesClientView({ atividades, settings, isAdmin, is
                           href={`/atividades/editar/${atv.id}`}
                           className={`inline-flex items-center p-1.5 rounded-lg transition-all ${isUrgentParecer ? 'bg-white text-red-700 hover:bg-white/90' : 'text-[#00BFA5] hover:bg-[#00BFA5]/10'}`}
                         >
-                          <Edit2 className="w-4 h-4" />
+                          <Edit className="w-4 h-4" />
                         </Link>
                       ) : (
                         <span className="text-[10px] opacity-50">Admin Only</span>
@@ -318,7 +318,7 @@ export default function AtividadesClientView({ atividades, settings, isAdmin, is
                   href={`/atividades/editar/${atv.id}`}
                   className="mt-4 w-full flex items-center justify-center py-2 bg-[#00BFA5] text-white rounded-lg font-bold text-sm shadow-md"
                 >
-                  <Edit2 className="w-4 h-4 mr-2" /> Editar Atividade
+                  <Edit className="w-4 h-4 mr-2" /> Editar Atividade
                 </Link>
               )}
             </div>

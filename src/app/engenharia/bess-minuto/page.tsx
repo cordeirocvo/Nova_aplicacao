@@ -2,7 +2,7 @@
 import { useState, useEffect, useMemo, Suspense, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { 
-  Battery, Zap, Loader2, Settings2, Info, AlertCircle, ArrowRightLeft, FileText, Database, Keyboard, LayoutGrid, Upload, CheckCircle2
+  Battery, Zap, Loader, Settings, Info, AlertTriangle, ArrowRight, FileText, Database, Keyboard, LayoutGrid, Upload, CheckCircle
 } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, 
@@ -175,7 +175,7 @@ function BESSMinutoContent() {
     return simulacao?.series.filter((_, i) => i % 10 === 0) || [];
   }, [simulacao]);
 
-  if (loading) return <div className="flex h-[80vh] items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-[#00BFA5]" /></div>;
+  if (loading) return <div className="flex h-[80vh] items-center justify-center"><Loader className="w-8 h-8 animate-spin text-[#00BFA5]" /></div>;
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 pb-20">
@@ -281,7 +281,7 @@ function BESSMinutoContent() {
                       </>
                     ) : (
                       <>
-                        <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto mb-3" />
+                        <CheckCircle className="w-10 h-10 text-emerald-400 mx-auto mb-3" />
                         <p className="text-emerald-900 font-bold">{fileToUpload.name}</p>
                       </>
                     )}
@@ -294,7 +294,7 @@ function BESSMinutoContent() {
                     onClick={handleUploadPDF}
                     className="w-full mt-6 bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-bold flex justify-center items-center gap-2 disabled:opacity-50"
                   >
-                    {uploading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Processar e Visualizar'}
+                    {uploading ? <Loader className="w-5 h-5 animate-spin" /> : 'Processar e Visualizar'}
                   </button>
                 </>
               ) : (
@@ -328,7 +328,7 @@ function BESSMinutoContent() {
                       </>
                     ) : (
                       <>
-                        <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto mb-3" />
+                        <CheckCircle className="w-10 h-10 text-emerald-400 mx-auto mb-3" />
                         <p className="text-emerald-900 font-bold">{fileToUpload.name}</p>
                       </>
                     )}
@@ -341,12 +341,12 @@ function BESSMinutoContent() {
                     onClick={handleUploadMassa}
                     className="w-full mt-6 bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-bold flex justify-center items-center gap-2 disabled:opacity-50"
                   >
-                    {uploading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Importar Dados'}
+                    {uploading ? <Loader className="w-5 h-5 animate-spin" /> : 'Importar Dados'}
                   </button>
                 </>
               ) : (
                 <div className="text-center py-8">
-                  <CheckCircle2 className="w-16 h-16 text-emerald-500 mx-auto mb-4" />
+                  <CheckCircle className="w-16 h-16 text-emerald-500 mx-auto mb-4" />
                   <h3 className="text-xl font-black text-slate-800">1440 Pontos Lidos com Sucesso!</h3>
                   <p className="text-slate-500 mt-2 mb-8">A curva diária horária foi processada a partir do histórico de faturamento bruto.</p>
                   <button 
@@ -373,7 +373,7 @@ function BESSMinutoContent() {
         </div>
       ) : !simulacao ? (
         <div className="bg-amber-50 rounded-3xl p-12 text-center text-amber-700 border border-amber-200">
-          <AlertCircle className="w-10 h-10 mx-auto mb-2" />
+          <AlertTriangle className="w-10 h-10 mx-auto mb-2" />
           Este projeto não possui Curva de Carga. Volte ao Passo 1.
           <br/>
           <button onClick={() => setStep('DADOS')} className="mt-4 px-4 py-2 bg-amber-200 rounded-xl font-bold">Voltar</button>
@@ -383,14 +383,14 @@ function BESSMinutoContent() {
           
           <div className="lg:col-span-4 flex justify-end">
              <button onClick={() => setStep('DADOS')} className="flex items-center gap-2 text-slate-500 hover:text-slate-800 font-bold bg-slate-100 px-4 py-2 rounded-xl">
-               <ArrowRightLeft className="w-4 h-4" /> Alterar Dados de Entrada
+               <ArrowRight className="w-4 h-4" /> Alterar Dados de Entrada
              </button>
           </div>
           
           {/* Controls */}
           <div className="lg:col-span-1 space-y-4">
             <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-              <h3 className="font-bold text-slate-800 flex items-center gap-2 mb-4 border-b pb-2"><Settings2 className="w-5 h-5"/> Parâmetros BESS</h3>
+              <h3 className="font-bold text-slate-800 flex items-center gap-2 mb-4 border-b pb-2"><Settings className="w-5 h-5"/> Parâmetros BESS</h3>
               
               <div className="space-y-4">
                 <div>
@@ -443,7 +443,7 @@ function BESSMinutoContent() {
           <div className="lg:col-span-3">
              <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm h-[600px] flex flex-col">
                <h3 className="font-bold text-slate-800 mb-6 flex items-center gap-2">
-                 <ArrowRightLeft className="w-5 h-5 text-indigo-500" /> Fluxo Energético Preciso (Plot: a cada 10 min)
+                 <ArrowRight className="w-5 h-5 text-indigo-500" /> Fluxo Energético Preciso (Plot: a cada 10 min)
                </h3>
                <div className="flex-1 w-full">
                   <ResponsiveContainer width="100%" height="100%">

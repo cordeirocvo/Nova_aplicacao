@@ -95,7 +95,7 @@ export async function POST(req: Request) {
         specificSafetyNotes: "Instalação exige sinalização visual e botão de emergência externo a 5 metros conforme norma de Bombeiros."
     });
 
-    const project = await prisma.projetoDimensionamento.create({
+    const project = await prisma.eVProject.create({
       data: {
         projectName,
         clientName,
@@ -151,7 +151,7 @@ export async function POST(req: Request) {
 }
 
 export async function GET() {
-  const projects = await prisma.projetoDimensionamento.findMany({
+  const projects = await prisma.eVProject.findMany({
     include: { charger: true },
     orderBy: { createdAt: "desc" },
   });

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Settings, AlertTriangle, CheckCircle2, Calendar, MapPin } from "lucide-react";
+import { Plus, Settings, AlertTriangle, CheckCircle, Calendar, MapPin } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
 

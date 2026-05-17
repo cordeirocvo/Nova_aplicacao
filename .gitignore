@@ -30,11 +30,13 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files
 .env*
 
 # vercel
 .vercel
+
+# scratch / dev temporários
 /scratch/
 /public/uploads/
 
@@ -42,6 +44,14 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# prisma generated (não versionar, gerado em build)
 /src/generated/prisma
 
-.vercel
+# arquivos sensíveis e temporários
+.huawei-session.json
+sync_log.txt
+*.csv
+manual_ev.pdf
+lista_ids_usinas.md
+implementation_plan.md
+seed_manufacturers.ts

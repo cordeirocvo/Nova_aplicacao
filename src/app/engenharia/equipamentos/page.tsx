@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Package, Zap, Sun, Battery, Box, Plus, Settings2, Trash2, Edit3, Loader2, BatteryCharging } from "lucide-react";
+import { Package, Zap, Sun, Battery, Box, Plus, Settings, Trash, Edit, Loader, BatteryCharging } from "lucide-react";
 
 type TipoEquipamento = 'inversores' | 'modulos' | 'baterias' | 'estruturas' | 'carregadores';
 
@@ -143,10 +143,10 @@ export default function EquipamentosPage() {
 
       {/* Tabela de Dados */}
       {loading ? (
-        <div className="flex justify-center p-20"><Loader2 className="w-8 h-8 animate-spin text-[#00BFA5]" /></div>
+        <div className="flex justify-center p-20"><Loader className="w-8 h-8 animate-spin text-[#00BFA5]" /></div>
       ) : data.length === 0 ? (
         <div className="bg-white rounded-3xl p-16 text-center border-2 border-dashed border-slate-200">
-          <Settings2 className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+          <Settings className="w-12 h-12 text-slate-300 mx-auto mb-4" />
           <p className="text-slate-500">Nenhum equipamento cadastrado nesta categoria.</p>
         </div>
       ) : (
@@ -197,8 +197,8 @@ export default function EquipamentosPage() {
                   {activeTab === 'estruturas' && <td className="p-4">{item.materialEstrutura || '-'}</td>}
                   
                   <td className="p-4 text-right flex items-center justify-end gap-2">
-                    <button onClick={() => openModal(item)} className="p-2 text-slate-400 hover:text-[#1E3A8A] rounded-lg hover:bg-blue-50 transition-all"><Edit3 className="w-4 h-4" /></button>
-                    <button onClick={() => handleDelete(item.id)} className="p-2 text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50 transition-all"><Trash2 className="w-4 h-4" /></button>
+                    <button onClick={() => openModal(item)} className="p-2 text-slate-400 hover:text-[#1E3A8A] rounded-lg hover:bg-blue-50 transition-all"><Edit className="w-4 h-4" /></button>
+                    <button onClick={() => handleDelete(item.id)} className="p-2 text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50 transition-all"><Trash className="w-4 h-4" /></button>
                   </td>
                 </tr>
               ))}
@@ -279,7 +279,7 @@ export default function EquipamentosPage() {
               </div>
               <div className="flex gap-3 pt-4">
                 <button type="button" onClick={() => setShowModal(false)} className="flex-1 py-3 border border-slate-200 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-50">Cancelar</button>
-                <button type="submit" disabled={saving} className="flex-1 py-3 bg-[#00BFA5] text-white rounded-xl font-bold text-sm disabled:opacity-50 flex justify-center">{saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Salvar"}</button>
+                <button type="submit" disabled={saving} className="flex-1 py-3 bg-[#00BFA5] text-white rounded-xl font-bold text-sm disabled:opacity-50 flex justify-center">{saving ? <Loader className="w-4 h-4 animate-spin" /> : "Salvar"}</button>
               </div>
             </form>
           </div>

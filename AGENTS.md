@@ -5,7 +5,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 <!-- END:nextjs-agent-rules -->
 
 <!-- n8n-as-code-start -->
-<!-- n8nac-version: 2.1.2 -->
+<!-- n8nac-version: 2.2.0 -->
 
 ## n8n-as-code Context Root
 
@@ -52,7 +52,8 @@ npx --yes n8nac workspace migrate --json
 npx --yes n8nac workspace status --json
 ```
 
-Use the returned `workflowDir` exactly as provided. Do not reconstruct paths from raw config files.
+Use the returned `workflowDir` exactly as provided. Treat it as an opaque backend-derived path that may contain generated or hashed segments.
+`syncFolder` is only the user-configured sync root, not the workflow directory. Do not reconstruct `workflowDir` from `syncFolder`, environment name/id, instance identifier, instance user identifier, project id, or project name.
 
 ---
 

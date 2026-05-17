@@ -128,6 +128,56 @@ export type RelatorioTermografia = $Result.DefaultSelection<Prisma.$RelatorioTer
  * 
  */
 export type ItemTermografia = $Result.DefaultSelection<Prisma.$ItemTermografiaPayload>
+/**
+ * Model OrcamentoProjeto
+ * 
+ */
+export type OrcamentoProjeto = $Result.DefaultSelection<Prisma.$OrcamentoProjetoPayload>
+/**
+ * Model OrcamentoEtapa
+ * 
+ */
+export type OrcamentoEtapa = $Result.DefaultSelection<Prisma.$OrcamentoEtapaPayload>
+/**
+ * Model OrcamentoItem
+ * 
+ */
+export type OrcamentoItem = $Result.DefaultSelection<Prisma.$OrcamentoItemPayload>
+/**
+ * Model Fornecedor
+ * 
+ */
+export type Fornecedor = $Result.DefaultSelection<Prisma.$FornecedorPayload>
+/**
+ * Model FornecedorOrcamento
+ * 
+ */
+export type FornecedorOrcamento = $Result.DefaultSelection<Prisma.$FornecedorOrcamentoPayload>
+/**
+ * Model PropostaItem
+ * 
+ */
+export type PropostaItem = $Result.DefaultSelection<Prisma.$PropostaItemPayload>
+/**
+ * Model OrcamentoTipoMaterial
+ * 
+ */
+export type OrcamentoTipoMaterial = $Result.DefaultSelection<Prisma.$OrcamentoTipoMaterialPayload>
+/**
+ * Model OrcamentoItemPadrao
+ * 
+ */
+export type OrcamentoItemPadrao = $Result.DefaultSelection<Prisma.$OrcamentoItemPadraoPayload>
+/**
+ * Model Lead
+ * 
+ */
+export type Lead = $Result.DefaultSelection<Prisma.$LeadPayload>
+/**
+ * Model LeadMidia
+ * 
+ */
+export type LeadMidia = $Result.DefaultSelection<Prisma.$LeadMidiaPayload>
 
 /**
  * ##  Prisma Client ʲˢ
@@ -479,6 +529,106 @@ export class PrismaClient<
     * ```
     */
   get itemTermografia(): Prisma.ItemTermografiaDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.orcamentoProjeto`: Exposes CRUD operations for the **OrcamentoProjeto** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more OrcamentoProjetos
+    * const orcamentoProjetos = await prisma.orcamentoProjeto.findMany()
+    * ```
+    */
+  get orcamentoProjeto(): Prisma.OrcamentoProjetoDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.orcamentoEtapa`: Exposes CRUD operations for the **OrcamentoEtapa** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more OrcamentoEtapas
+    * const orcamentoEtapas = await prisma.orcamentoEtapa.findMany()
+    * ```
+    */
+  get orcamentoEtapa(): Prisma.OrcamentoEtapaDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.orcamentoItem`: Exposes CRUD operations for the **OrcamentoItem** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more OrcamentoItems
+    * const orcamentoItems = await prisma.orcamentoItem.findMany()
+    * ```
+    */
+  get orcamentoItem(): Prisma.OrcamentoItemDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.fornecedor`: Exposes CRUD operations for the **Fornecedor** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more Fornecedors
+    * const fornecedors = await prisma.fornecedor.findMany()
+    * ```
+    */
+  get fornecedor(): Prisma.FornecedorDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.fornecedorOrcamento`: Exposes CRUD operations for the **FornecedorOrcamento** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more FornecedorOrcamentos
+    * const fornecedorOrcamentos = await prisma.fornecedorOrcamento.findMany()
+    * ```
+    */
+  get fornecedorOrcamento(): Prisma.FornecedorOrcamentoDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.propostaItem`: Exposes CRUD operations for the **PropostaItem** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more PropostaItems
+    * const propostaItems = await prisma.propostaItem.findMany()
+    * ```
+    */
+  get propostaItem(): Prisma.PropostaItemDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.orcamentoTipoMaterial`: Exposes CRUD operations for the **OrcamentoTipoMaterial** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more OrcamentoTipoMaterials
+    * const orcamentoTipoMaterials = await prisma.orcamentoTipoMaterial.findMany()
+    * ```
+    */
+  get orcamentoTipoMaterial(): Prisma.OrcamentoTipoMaterialDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.orcamentoItemPadrao`: Exposes CRUD operations for the **OrcamentoItemPadrao** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more OrcamentoItemPadraos
+    * const orcamentoItemPadraos = await prisma.orcamentoItemPadrao.findMany()
+    * ```
+    */
+  get orcamentoItemPadrao(): Prisma.OrcamentoItemPadraoDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.lead`: Exposes CRUD operations for the **Lead** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more Leads
+    * const leads = await prisma.lead.findMany()
+    * ```
+    */
+  get lead(): Prisma.LeadDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.leadMidia`: Exposes CRUD operations for the **LeadMidia** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more LeadMidias
+    * const leadMidias = await prisma.leadMidia.findMany()
+    * ```
+    */
+  get leadMidia(): Prisma.LeadMidiaDelegate<ExtArgs, ClientOptions>;
 }
 
 export namespace Prisma {
@@ -935,7 +1085,17 @@ export namespace Prisma {
     ComissionamentoUsina: 'ComissionamentoUsina',
     Profissional: 'Profissional',
     RelatorioTermografia: 'RelatorioTermografia',
-    ItemTermografia: 'ItemTermografia'
+    ItemTermografia: 'ItemTermografia',
+    OrcamentoProjeto: 'OrcamentoProjeto',
+    OrcamentoEtapa: 'OrcamentoEtapa',
+    OrcamentoItem: 'OrcamentoItem',
+    Fornecedor: 'Fornecedor',
+    FornecedorOrcamento: 'FornecedorOrcamento',
+    PropostaItem: 'PropostaItem',
+    OrcamentoTipoMaterial: 'OrcamentoTipoMaterial',
+    OrcamentoItemPadrao: 'OrcamentoItemPadrao',
+    Lead: 'Lead',
+    LeadMidia: 'LeadMidia'
   };
 
   export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -951,7 +1111,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "user" | "planilhaInstalacao" | "tarifas" | "statusOption" | "systemSettings" | "carregador" | "projetoDimensionamento" | "engeProjeto" | "analiseFatura" | "analiseMassaDados" | "inversorSolar" | "moduloFotovoltaico" | "bateriaSistema" | "estruturaFotovoltaica" | "estudoBESS" | "estudoSolar" | "usinaFotovoltaica" | "equipamentoUsina" | "manutencaoUsina" | "comissionamentoUsina" | "profissional" | "relatorioTermografia" | "itemTermografia"
+      modelProps: "user" | "planilhaInstalacao" | "tarifas" | "statusOption" | "systemSettings" | "carregador" | "projetoDimensionamento" | "engeProjeto" | "analiseFatura" | "analiseMassaDados" | "inversorSolar" | "moduloFotovoltaico" | "bateriaSistema" | "estruturaFotovoltaica" | "estudoBESS" | "estudoSolar" | "usinaFotovoltaica" | "equipamentoUsina" | "manutencaoUsina" | "comissionamentoUsina" | "profissional" | "relatorioTermografia" | "itemTermografia" | "orcamentoProjeto" | "orcamentoEtapa" | "orcamentoItem" | "fornecedor" | "fornecedorOrcamento" | "propostaItem" | "orcamentoTipoMaterial" | "orcamentoItemPadrao" | "lead" | "leadMidia"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -2657,6 +2817,746 @@ export namespace Prisma {
           }
         }
       }
+      OrcamentoProjeto: {
+        payload: Prisma.$OrcamentoProjetoPayload<ExtArgs>
+        fields: Prisma.OrcamentoProjetoFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.OrcamentoProjetoFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrcamentoProjetoPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.OrcamentoProjetoFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrcamentoProjetoPayload>
+          }
+          findFirst: {
+            args: Prisma.OrcamentoProjetoFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrcamentoProjetoPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.OrcamentoProjetoFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrcamentoProjetoPayload>
+          }
+          findMany: {
+            args: Prisma.OrcamentoProjetoFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrcamentoProjetoPayload>[]
+          }
+          create: {
+            args: Prisma.OrcamentoProjetoCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrcamentoProjetoPayload>
+          }
+          createMany: {
+            args: Prisma.OrcamentoProjetoCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.OrcamentoProjetoCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrcamentoProjetoPayload>[]
+          }
+          delete: {
+            args: Prisma.OrcamentoProjetoDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrcamentoProjetoPayload>
+          }
+          update: {
+            args: Prisma.OrcamentoProjetoUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrcamentoProjetoPayload>
+          }
+          deleteMany: {
+            args: Prisma.OrcamentoProjetoDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.OrcamentoProjetoUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.OrcamentoProjetoUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrcamentoProjetoPayload>[]
+          }
+          upsert: {
+            args: Prisma.OrcamentoProjetoUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrcamentoProjetoPayload>
+          }
+          aggregate: {
+            args: Prisma.OrcamentoProjetoAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateOrcamentoProjeto>
+          }
+          groupBy: {
+            args: Prisma.OrcamentoProjetoGroupByArgs<ExtArgs>
+            result: $Utils.Optional<OrcamentoProjetoGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.OrcamentoProjetoCountArgs<ExtArgs>
+            result: $Utils.Optional<OrcamentoProjetoCountAggregateOutputType> | number
+          }
+        }
+      }
+      OrcamentoEtapa: {
+        payload: Prisma.$OrcamentoEtapaPayload<ExtArgs>
+        fields: Prisma.OrcamentoEtapaFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.OrcamentoEtapaFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrcamentoEtapaPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.OrcamentoEtapaFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrcamentoEtapaPayload>
+          }
+          findFirst: {
+            args: Prisma.OrcamentoEtapaFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrcamentoEtapaPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.OrcamentoEtapaFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrcamentoEtapaPayload>
+          }
+          findMany: {
+            args: Prisma.OrcamentoEtapaFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrcamentoEtapaPayload>[]
+          }
+          create: {
+            args: Prisma.OrcamentoEtapaCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrcamentoEtapaPayload>
+          }
+          createMany: {
+            args: Prisma.OrcamentoEtapaCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.OrcamentoEtapaCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrcamentoEtapaPayload>[]
+          }
+          delete: {
+            args: Prisma.OrcamentoEtapaDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrcamentoEtapaPayload>
+          }
+          update: {
+            args: Prisma.OrcamentoEtapaUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrcamentoEtapaPayload>
+          }
+          deleteMany: {
+            args: Prisma.OrcamentoEtapaDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.OrcamentoEtapaUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.OrcamentoEtapaUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrcamentoEtapaPayload>[]
+          }
+          upsert: {
+            args: Prisma.OrcamentoEtapaUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrcamentoEtapaPayload>
+          }
+          aggregate: {
+            args: Prisma.OrcamentoEtapaAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateOrcamentoEtapa>
+          }
+          groupBy: {
+            args: Prisma.OrcamentoEtapaGroupByArgs<ExtArgs>
+            result: $Utils.Optional<OrcamentoEtapaGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.OrcamentoEtapaCountArgs<ExtArgs>
+            result: $Utils.Optional<OrcamentoEtapaCountAggregateOutputType> | number
+          }
+        }
+      }
+      OrcamentoItem: {
+        payload: Prisma.$OrcamentoItemPayload<ExtArgs>
+        fields: Prisma.OrcamentoItemFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.OrcamentoItemFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrcamentoItemPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.OrcamentoItemFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrcamentoItemPayload>
+          }
+          findFirst: {
+            args: Prisma.OrcamentoItemFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrcamentoItemPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.OrcamentoItemFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrcamentoItemPayload>
+          }
+          findMany: {
+            args: Prisma.OrcamentoItemFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrcamentoItemPayload>[]
+          }
+          create: {
+            args: Prisma.OrcamentoItemCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrcamentoItemPayload>
+          }
+          createMany: {
+            args: Prisma.OrcamentoItemCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.OrcamentoItemCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrcamentoItemPayload>[]
+          }
+          delete: {
+            args: Prisma.OrcamentoItemDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrcamentoItemPayload>
+          }
+          update: {
+            args: Prisma.OrcamentoItemUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrcamentoItemPayload>
+          }
+          deleteMany: {
+            args: Prisma.OrcamentoItemDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.OrcamentoItemUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.OrcamentoItemUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrcamentoItemPayload>[]
+          }
+          upsert: {
+            args: Prisma.OrcamentoItemUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrcamentoItemPayload>
+          }
+          aggregate: {
+            args: Prisma.OrcamentoItemAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateOrcamentoItem>
+          }
+          groupBy: {
+            args: Prisma.OrcamentoItemGroupByArgs<ExtArgs>
+            result: $Utils.Optional<OrcamentoItemGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.OrcamentoItemCountArgs<ExtArgs>
+            result: $Utils.Optional<OrcamentoItemCountAggregateOutputType> | number
+          }
+        }
+      }
+      Fornecedor: {
+        payload: Prisma.$FornecedorPayload<ExtArgs>
+        fields: Prisma.FornecedorFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.FornecedorFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FornecedorPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.FornecedorFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FornecedorPayload>
+          }
+          findFirst: {
+            args: Prisma.FornecedorFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FornecedorPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.FornecedorFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FornecedorPayload>
+          }
+          findMany: {
+            args: Prisma.FornecedorFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FornecedorPayload>[]
+          }
+          create: {
+            args: Prisma.FornecedorCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FornecedorPayload>
+          }
+          createMany: {
+            args: Prisma.FornecedorCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.FornecedorCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FornecedorPayload>[]
+          }
+          delete: {
+            args: Prisma.FornecedorDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FornecedorPayload>
+          }
+          update: {
+            args: Prisma.FornecedorUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FornecedorPayload>
+          }
+          deleteMany: {
+            args: Prisma.FornecedorDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.FornecedorUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.FornecedorUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FornecedorPayload>[]
+          }
+          upsert: {
+            args: Prisma.FornecedorUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FornecedorPayload>
+          }
+          aggregate: {
+            args: Prisma.FornecedorAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateFornecedor>
+          }
+          groupBy: {
+            args: Prisma.FornecedorGroupByArgs<ExtArgs>
+            result: $Utils.Optional<FornecedorGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.FornecedorCountArgs<ExtArgs>
+            result: $Utils.Optional<FornecedorCountAggregateOutputType> | number
+          }
+        }
+      }
+      FornecedorOrcamento: {
+        payload: Prisma.$FornecedorOrcamentoPayload<ExtArgs>
+        fields: Prisma.FornecedorOrcamentoFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.FornecedorOrcamentoFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FornecedorOrcamentoPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.FornecedorOrcamentoFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FornecedorOrcamentoPayload>
+          }
+          findFirst: {
+            args: Prisma.FornecedorOrcamentoFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FornecedorOrcamentoPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.FornecedorOrcamentoFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FornecedorOrcamentoPayload>
+          }
+          findMany: {
+            args: Prisma.FornecedorOrcamentoFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FornecedorOrcamentoPayload>[]
+          }
+          create: {
+            args: Prisma.FornecedorOrcamentoCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FornecedorOrcamentoPayload>
+          }
+          createMany: {
+            args: Prisma.FornecedorOrcamentoCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.FornecedorOrcamentoCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FornecedorOrcamentoPayload>[]
+          }
+          delete: {
+            args: Prisma.FornecedorOrcamentoDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FornecedorOrcamentoPayload>
+          }
+          update: {
+            args: Prisma.FornecedorOrcamentoUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FornecedorOrcamentoPayload>
+          }
+          deleteMany: {
+            args: Prisma.FornecedorOrcamentoDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.FornecedorOrcamentoUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.FornecedorOrcamentoUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FornecedorOrcamentoPayload>[]
+          }
+          upsert: {
+            args: Prisma.FornecedorOrcamentoUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FornecedorOrcamentoPayload>
+          }
+          aggregate: {
+            args: Prisma.FornecedorOrcamentoAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateFornecedorOrcamento>
+          }
+          groupBy: {
+            args: Prisma.FornecedorOrcamentoGroupByArgs<ExtArgs>
+            result: $Utils.Optional<FornecedorOrcamentoGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.FornecedorOrcamentoCountArgs<ExtArgs>
+            result: $Utils.Optional<FornecedorOrcamentoCountAggregateOutputType> | number
+          }
+        }
+      }
+      PropostaItem: {
+        payload: Prisma.$PropostaItemPayload<ExtArgs>
+        fields: Prisma.PropostaItemFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.PropostaItemFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PropostaItemPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.PropostaItemFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PropostaItemPayload>
+          }
+          findFirst: {
+            args: Prisma.PropostaItemFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PropostaItemPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.PropostaItemFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PropostaItemPayload>
+          }
+          findMany: {
+            args: Prisma.PropostaItemFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PropostaItemPayload>[]
+          }
+          create: {
+            args: Prisma.PropostaItemCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PropostaItemPayload>
+          }
+          createMany: {
+            args: Prisma.PropostaItemCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.PropostaItemCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PropostaItemPayload>[]
+          }
+          delete: {
+            args: Prisma.PropostaItemDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PropostaItemPayload>
+          }
+          update: {
+            args: Prisma.PropostaItemUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PropostaItemPayload>
+          }
+          deleteMany: {
+            args: Prisma.PropostaItemDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.PropostaItemUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.PropostaItemUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PropostaItemPayload>[]
+          }
+          upsert: {
+            args: Prisma.PropostaItemUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PropostaItemPayload>
+          }
+          aggregate: {
+            args: Prisma.PropostaItemAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregatePropostaItem>
+          }
+          groupBy: {
+            args: Prisma.PropostaItemGroupByArgs<ExtArgs>
+            result: $Utils.Optional<PropostaItemGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.PropostaItemCountArgs<ExtArgs>
+            result: $Utils.Optional<PropostaItemCountAggregateOutputType> | number
+          }
+        }
+      }
+      OrcamentoTipoMaterial: {
+        payload: Prisma.$OrcamentoTipoMaterialPayload<ExtArgs>
+        fields: Prisma.OrcamentoTipoMaterialFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.OrcamentoTipoMaterialFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrcamentoTipoMaterialPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.OrcamentoTipoMaterialFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrcamentoTipoMaterialPayload>
+          }
+          findFirst: {
+            args: Prisma.OrcamentoTipoMaterialFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrcamentoTipoMaterialPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.OrcamentoTipoMaterialFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrcamentoTipoMaterialPayload>
+          }
+          findMany: {
+            args: Prisma.OrcamentoTipoMaterialFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrcamentoTipoMaterialPayload>[]
+          }
+          create: {
+            args: Prisma.OrcamentoTipoMaterialCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrcamentoTipoMaterialPayload>
+          }
+          createMany: {
+            args: Prisma.OrcamentoTipoMaterialCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.OrcamentoTipoMaterialCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrcamentoTipoMaterialPayload>[]
+          }
+          delete: {
+            args: Prisma.OrcamentoTipoMaterialDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrcamentoTipoMaterialPayload>
+          }
+          update: {
+            args: Prisma.OrcamentoTipoMaterialUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrcamentoTipoMaterialPayload>
+          }
+          deleteMany: {
+            args: Prisma.OrcamentoTipoMaterialDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.OrcamentoTipoMaterialUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.OrcamentoTipoMaterialUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrcamentoTipoMaterialPayload>[]
+          }
+          upsert: {
+            args: Prisma.OrcamentoTipoMaterialUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrcamentoTipoMaterialPayload>
+          }
+          aggregate: {
+            args: Prisma.OrcamentoTipoMaterialAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateOrcamentoTipoMaterial>
+          }
+          groupBy: {
+            args: Prisma.OrcamentoTipoMaterialGroupByArgs<ExtArgs>
+            result: $Utils.Optional<OrcamentoTipoMaterialGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.OrcamentoTipoMaterialCountArgs<ExtArgs>
+            result: $Utils.Optional<OrcamentoTipoMaterialCountAggregateOutputType> | number
+          }
+        }
+      }
+      OrcamentoItemPadrao: {
+        payload: Prisma.$OrcamentoItemPadraoPayload<ExtArgs>
+        fields: Prisma.OrcamentoItemPadraoFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.OrcamentoItemPadraoFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrcamentoItemPadraoPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.OrcamentoItemPadraoFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrcamentoItemPadraoPayload>
+          }
+          findFirst: {
+            args: Prisma.OrcamentoItemPadraoFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrcamentoItemPadraoPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.OrcamentoItemPadraoFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrcamentoItemPadraoPayload>
+          }
+          findMany: {
+            args: Prisma.OrcamentoItemPadraoFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrcamentoItemPadraoPayload>[]
+          }
+          create: {
+            args: Prisma.OrcamentoItemPadraoCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrcamentoItemPadraoPayload>
+          }
+          createMany: {
+            args: Prisma.OrcamentoItemPadraoCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.OrcamentoItemPadraoCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrcamentoItemPadraoPayload>[]
+          }
+          delete: {
+            args: Prisma.OrcamentoItemPadraoDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrcamentoItemPadraoPayload>
+          }
+          update: {
+            args: Prisma.OrcamentoItemPadraoUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrcamentoItemPadraoPayload>
+          }
+          deleteMany: {
+            args: Prisma.OrcamentoItemPadraoDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.OrcamentoItemPadraoUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.OrcamentoItemPadraoUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrcamentoItemPadraoPayload>[]
+          }
+          upsert: {
+            args: Prisma.OrcamentoItemPadraoUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrcamentoItemPadraoPayload>
+          }
+          aggregate: {
+            args: Prisma.OrcamentoItemPadraoAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateOrcamentoItemPadrao>
+          }
+          groupBy: {
+            args: Prisma.OrcamentoItemPadraoGroupByArgs<ExtArgs>
+            result: $Utils.Optional<OrcamentoItemPadraoGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.OrcamentoItemPadraoCountArgs<ExtArgs>
+            result: $Utils.Optional<OrcamentoItemPadraoCountAggregateOutputType> | number
+          }
+        }
+      }
+      Lead: {
+        payload: Prisma.$LeadPayload<ExtArgs>
+        fields: Prisma.LeadFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.LeadFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LeadPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.LeadFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LeadPayload>
+          }
+          findFirst: {
+            args: Prisma.LeadFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LeadPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.LeadFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LeadPayload>
+          }
+          findMany: {
+            args: Prisma.LeadFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LeadPayload>[]
+          }
+          create: {
+            args: Prisma.LeadCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LeadPayload>
+          }
+          createMany: {
+            args: Prisma.LeadCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.LeadCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LeadPayload>[]
+          }
+          delete: {
+            args: Prisma.LeadDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LeadPayload>
+          }
+          update: {
+            args: Prisma.LeadUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LeadPayload>
+          }
+          deleteMany: {
+            args: Prisma.LeadDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.LeadUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.LeadUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LeadPayload>[]
+          }
+          upsert: {
+            args: Prisma.LeadUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LeadPayload>
+          }
+          aggregate: {
+            args: Prisma.LeadAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateLead>
+          }
+          groupBy: {
+            args: Prisma.LeadGroupByArgs<ExtArgs>
+            result: $Utils.Optional<LeadGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.LeadCountArgs<ExtArgs>
+            result: $Utils.Optional<LeadCountAggregateOutputType> | number
+          }
+        }
+      }
+      LeadMidia: {
+        payload: Prisma.$LeadMidiaPayload<ExtArgs>
+        fields: Prisma.LeadMidiaFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.LeadMidiaFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LeadMidiaPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.LeadMidiaFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LeadMidiaPayload>
+          }
+          findFirst: {
+            args: Prisma.LeadMidiaFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LeadMidiaPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.LeadMidiaFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LeadMidiaPayload>
+          }
+          findMany: {
+            args: Prisma.LeadMidiaFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LeadMidiaPayload>[]
+          }
+          create: {
+            args: Prisma.LeadMidiaCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LeadMidiaPayload>
+          }
+          createMany: {
+            args: Prisma.LeadMidiaCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.LeadMidiaCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LeadMidiaPayload>[]
+          }
+          delete: {
+            args: Prisma.LeadMidiaDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LeadMidiaPayload>
+          }
+          update: {
+            args: Prisma.LeadMidiaUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LeadMidiaPayload>
+          }
+          deleteMany: {
+            args: Prisma.LeadMidiaDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.LeadMidiaUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.LeadMidiaUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LeadMidiaPayload>[]
+          }
+          upsert: {
+            args: Prisma.LeadMidiaUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LeadMidiaPayload>
+          }
+          aggregate: {
+            args: Prisma.LeadMidiaAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateLeadMidia>
+          }
+          groupBy: {
+            args: Prisma.LeadMidiaGroupByArgs<ExtArgs>
+            result: $Utils.Optional<LeadMidiaGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.LeadMidiaCountArgs<ExtArgs>
+            result: $Utils.Optional<LeadMidiaCountAggregateOutputType> | number
+          }
+        }
+      }
     }
   } & {
     other: {
@@ -2788,6 +3688,16 @@ export namespace Prisma {
     profissional?: ProfissionalOmit
     relatorioTermografia?: RelatorioTermografiaOmit
     itemTermografia?: ItemTermografiaOmit
+    orcamentoProjeto?: OrcamentoProjetoOmit
+    orcamentoEtapa?: OrcamentoEtapaOmit
+    orcamentoItem?: OrcamentoItemOmit
+    fornecedor?: FornecedorOmit
+    fornecedorOrcamento?: FornecedorOrcamentoOmit
+    propostaItem?: PropostaItemOmit
+    orcamentoTipoMaterial?: OrcamentoTipoMaterialOmit
+    orcamentoItemPadrao?: OrcamentoItemPadraoOmit
+    lead?: LeadOmit
+    leadMidia?: LeadMidiaOmit
   }
 
   /* Types for Logging */
@@ -3086,6 +3996,179 @@ export namespace Prisma {
 
 
   /**
+   * Count Type OrcamentoProjetoCountOutputType
+   */
+
+  export type OrcamentoProjetoCountOutputType = {
+    etapas: number
+    fornecedores: number
+  }
+
+  export type OrcamentoProjetoCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    etapas?: boolean | OrcamentoProjetoCountOutputTypeCountEtapasArgs
+    fornecedores?: boolean | OrcamentoProjetoCountOutputTypeCountFornecedoresArgs
+  }
+
+  // Custom InputTypes
+  /**
+   * OrcamentoProjetoCountOutputType without action
+   */
+  export type OrcamentoProjetoCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoProjetoCountOutputType
+     */
+    select?: OrcamentoProjetoCountOutputTypeSelect<ExtArgs> | null
+  }
+
+  /**
+   * OrcamentoProjetoCountOutputType without action
+   */
+  export type OrcamentoProjetoCountOutputTypeCountEtapasArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: OrcamentoEtapaWhereInput
+  }
+
+  /**
+   * OrcamentoProjetoCountOutputType without action
+   */
+  export type OrcamentoProjetoCountOutputTypeCountFornecedoresArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: FornecedorOrcamentoWhereInput
+  }
+
+
+  /**
+   * Count Type OrcamentoEtapaCountOutputType
+   */
+
+  export type OrcamentoEtapaCountOutputType = {
+    itens: number
+  }
+
+  export type OrcamentoEtapaCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    itens?: boolean | OrcamentoEtapaCountOutputTypeCountItensArgs
+  }
+
+  // Custom InputTypes
+  /**
+   * OrcamentoEtapaCountOutputType without action
+   */
+  export type OrcamentoEtapaCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoEtapaCountOutputType
+     */
+    select?: OrcamentoEtapaCountOutputTypeSelect<ExtArgs> | null
+  }
+
+  /**
+   * OrcamentoEtapaCountOutputType without action
+   */
+  export type OrcamentoEtapaCountOutputTypeCountItensArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: OrcamentoItemWhereInput
+  }
+
+
+  /**
+   * Count Type OrcamentoItemCountOutputType
+   */
+
+  export type OrcamentoItemCountOutputType = {
+    propostas: number
+  }
+
+  export type OrcamentoItemCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    propostas?: boolean | OrcamentoItemCountOutputTypeCountPropostasArgs
+  }
+
+  // Custom InputTypes
+  /**
+   * OrcamentoItemCountOutputType without action
+   */
+  export type OrcamentoItemCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoItemCountOutputType
+     */
+    select?: OrcamentoItemCountOutputTypeSelect<ExtArgs> | null
+  }
+
+  /**
+   * OrcamentoItemCountOutputType without action
+   */
+  export type OrcamentoItemCountOutputTypeCountPropostasArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PropostaItemWhereInput
+  }
+
+
+  /**
+   * Count Type FornecedorCountOutputType
+   */
+
+  export type FornecedorCountOutputType = {
+    projetos: number
+    propostas: number
+  }
+
+  export type FornecedorCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    projetos?: boolean | FornecedorCountOutputTypeCountProjetosArgs
+    propostas?: boolean | FornecedorCountOutputTypeCountPropostasArgs
+  }
+
+  // Custom InputTypes
+  /**
+   * FornecedorCountOutputType without action
+   */
+  export type FornecedorCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FornecedorCountOutputType
+     */
+    select?: FornecedorCountOutputTypeSelect<ExtArgs> | null
+  }
+
+  /**
+   * FornecedorCountOutputType without action
+   */
+  export type FornecedorCountOutputTypeCountProjetosArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: FornecedorOrcamentoWhereInput
+  }
+
+  /**
+   * FornecedorCountOutputType without action
+   */
+  export type FornecedorCountOutputTypeCountPropostasArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PropostaItemWhereInput
+  }
+
+
+  /**
+   * Count Type LeadCountOutputType
+   */
+
+  export type LeadCountOutputType = {
+    midias: number
+  }
+
+  export type LeadCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    midias?: boolean | LeadCountOutputTypeCountMidiasArgs
+  }
+
+  // Custom InputTypes
+  /**
+   * LeadCountOutputType without action
+   */
+  export type LeadCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LeadCountOutputType
+     */
+    select?: LeadCountOutputTypeSelect<ExtArgs> | null
+  }
+
+  /**
+   * LeadCountOutputType without action
+   */
+  export type LeadCountOutputTypeCountMidiasArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: LeadMidiaWhereInput
+  }
+
+
+  /**
    * Models
    */
 
@@ -3105,6 +4188,10 @@ export namespace Prisma {
     password: string | null
     role: string | null
     name: string | null
+    canAccessBudgets: boolean | null
+    canEditBudgets: boolean | null
+    canAccessAppLeads: boolean | null
+    canManageCRM: boolean | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -3115,6 +4202,10 @@ export namespace Prisma {
     password: string | null
     role: string | null
     name: string | null
+    canAccessBudgets: boolean | null
+    canEditBudgets: boolean | null
+    canAccessAppLeads: boolean | null
+    canManageCRM: boolean | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -3125,6 +4216,10 @@ export namespace Prisma {
     password: number
     role: number
     name: number
+    canAccessBudgets: number
+    canEditBudgets: number
+    canAccessAppLeads: number
+    canManageCRM: number
     createdAt: number
     updatedAt: number
     _all: number
@@ -3137,6 +4232,10 @@ export namespace Prisma {
     password?: true
     role?: true
     name?: true
+    canAccessBudgets?: true
+    canEditBudgets?: true
+    canAccessAppLeads?: true
+    canManageCRM?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -3147,6 +4246,10 @@ export namespace Prisma {
     password?: true
     role?: true
     name?: true
+    canAccessBudgets?: true
+    canEditBudgets?: true
+    canAccessAppLeads?: true
+    canManageCRM?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -3157,6 +4260,10 @@ export namespace Prisma {
     password?: true
     role?: true
     name?: true
+    canAccessBudgets?: true
+    canEditBudgets?: true
+    canAccessAppLeads?: true
+    canManageCRM?: true
     createdAt?: true
     updatedAt?: true
     _all?: true
@@ -3240,6 +4347,10 @@ export namespace Prisma {
     password: string
     role: string
     name: string | null
+    canAccessBudgets: boolean
+    canEditBudgets: boolean
+    canAccessAppLeads: boolean
+    canManageCRM: boolean
     createdAt: Date
     updatedAt: Date
     _count: UserCountAggregateOutputType | null
@@ -3267,6 +4378,10 @@ export namespace Prisma {
     password?: boolean
     role?: boolean
     name?: boolean
+    canAccessBudgets?: boolean
+    canEditBudgets?: boolean
+    canAccessAppLeads?: boolean
+    canManageCRM?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }, ExtArgs["result"]["user"]>
@@ -3277,6 +4392,10 @@ export namespace Prisma {
     password?: boolean
     role?: boolean
     name?: boolean
+    canAccessBudgets?: boolean
+    canEditBudgets?: boolean
+    canAccessAppLeads?: boolean
+    canManageCRM?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }, ExtArgs["result"]["user"]>
@@ -3287,6 +4406,10 @@ export namespace Prisma {
     password?: boolean
     role?: boolean
     name?: boolean
+    canAccessBudgets?: boolean
+    canEditBudgets?: boolean
+    canAccessAppLeads?: boolean
+    canManageCRM?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }, ExtArgs["result"]["user"]>
@@ -3297,11 +4420,15 @@ export namespace Prisma {
     password?: boolean
     role?: boolean
     name?: boolean
+    canAccessBudgets?: boolean
+    canEditBudgets?: boolean
+    canAccessAppLeads?: boolean
+    canManageCRM?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
 
-  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "email" | "password" | "role" | "name" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
+  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "email" | "password" | "role" | "name" | "canAccessBudgets" | "canEditBudgets" | "canAccessAppLeads" | "canManageCRM" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
 
   export type $UserPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "User"
@@ -3312,6 +4439,10 @@ export namespace Prisma {
       password: string
       role: string
       name: string | null
+      canAccessBudgets: boolean
+      canEditBudgets: boolean
+      canAccessAppLeads: boolean
+      canManageCRM: boolean
       createdAt: Date
       updatedAt: Date
     }, ExtArgs["result"]["user"]>
@@ -3742,6 +4873,10 @@ export namespace Prisma {
     readonly password: FieldRef<"User", 'String'>
     readonly role: FieldRef<"User", 'String'>
     readonly name: FieldRef<"User", 'String'>
+    readonly canAccessBudgets: FieldRef<"User", 'Boolean'>
+    readonly canEditBudgets: FieldRef<"User", 'Boolean'>
+    readonly canAccessAppLeads: FieldRef<"User", 'Boolean'>
+    readonly canManageCRM: FieldRef<"User", 'Boolean'>
     readonly createdAt: FieldRef<"User", 'DateTime'>
     readonly updatedAt: FieldRef<"User", 'DateTime'>
   }
@@ -31958,6 +33093,11089 @@ export namespace Prisma {
 
 
   /**
+   * Model OrcamentoProjeto
+   */
+
+  export type AggregateOrcamentoProjeto = {
+    _count: OrcamentoProjetoCountAggregateOutputType | null
+    _min: OrcamentoProjetoMinAggregateOutputType | null
+    _max: OrcamentoProjetoMaxAggregateOutputType | null
+  }
+
+  export type OrcamentoProjetoMinAggregateOutputType = {
+    id: string | null
+    nome: string | null
+    cliente: string | null
+    status: string | null
+    idContaAzul: string | null
+    dataCriacao: Date | null
+    dataAtualizacao: Date | null
+  }
+
+  export type OrcamentoProjetoMaxAggregateOutputType = {
+    id: string | null
+    nome: string | null
+    cliente: string | null
+    status: string | null
+    idContaAzul: string | null
+    dataCriacao: Date | null
+    dataAtualizacao: Date | null
+  }
+
+  export type OrcamentoProjetoCountAggregateOutputType = {
+    id: number
+    nome: number
+    cliente: number
+    status: number
+    idContaAzul: number
+    dataCriacao: number
+    dataAtualizacao: number
+    _all: number
+  }
+
+
+  export type OrcamentoProjetoMinAggregateInputType = {
+    id?: true
+    nome?: true
+    cliente?: true
+    status?: true
+    idContaAzul?: true
+    dataCriacao?: true
+    dataAtualizacao?: true
+  }
+
+  export type OrcamentoProjetoMaxAggregateInputType = {
+    id?: true
+    nome?: true
+    cliente?: true
+    status?: true
+    idContaAzul?: true
+    dataCriacao?: true
+    dataAtualizacao?: true
+  }
+
+  export type OrcamentoProjetoCountAggregateInputType = {
+    id?: true
+    nome?: true
+    cliente?: true
+    status?: true
+    idContaAzul?: true
+    dataCriacao?: true
+    dataAtualizacao?: true
+    _all?: true
+  }
+
+  export type OrcamentoProjetoAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which OrcamentoProjeto to aggregate.
+     */
+    where?: OrcamentoProjetoWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of OrcamentoProjetos to fetch.
+     */
+    orderBy?: OrcamentoProjetoOrderByWithRelationInput | OrcamentoProjetoOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: OrcamentoProjetoWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` OrcamentoProjetos from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` OrcamentoProjetos.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned OrcamentoProjetos
+    **/
+    _count?: true | OrcamentoProjetoCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: OrcamentoProjetoMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: OrcamentoProjetoMaxAggregateInputType
+  }
+
+  export type GetOrcamentoProjetoAggregateType<T extends OrcamentoProjetoAggregateArgs> = {
+        [P in keyof T & keyof AggregateOrcamentoProjeto]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateOrcamentoProjeto[P]>
+      : GetScalarType<T[P], AggregateOrcamentoProjeto[P]>
+  }
+
+
+
+
+  export type OrcamentoProjetoGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: OrcamentoProjetoWhereInput
+    orderBy?: OrcamentoProjetoOrderByWithAggregationInput | OrcamentoProjetoOrderByWithAggregationInput[]
+    by: OrcamentoProjetoScalarFieldEnum[] | OrcamentoProjetoScalarFieldEnum
+    having?: OrcamentoProjetoScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: OrcamentoProjetoCountAggregateInputType | true
+    _min?: OrcamentoProjetoMinAggregateInputType
+    _max?: OrcamentoProjetoMaxAggregateInputType
+  }
+
+  export type OrcamentoProjetoGroupByOutputType = {
+    id: string
+    nome: string
+    cliente: string | null
+    status: string
+    idContaAzul: string | null
+    dataCriacao: Date
+    dataAtualizacao: Date
+    _count: OrcamentoProjetoCountAggregateOutputType | null
+    _min: OrcamentoProjetoMinAggregateOutputType | null
+    _max: OrcamentoProjetoMaxAggregateOutputType | null
+  }
+
+  type GetOrcamentoProjetoGroupByPayload<T extends OrcamentoProjetoGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<OrcamentoProjetoGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof OrcamentoProjetoGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], OrcamentoProjetoGroupByOutputType[P]>
+            : GetScalarType<T[P], OrcamentoProjetoGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type OrcamentoProjetoSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    nome?: boolean
+    cliente?: boolean
+    status?: boolean
+    idContaAzul?: boolean
+    dataCriacao?: boolean
+    dataAtualizacao?: boolean
+    etapas?: boolean | OrcamentoProjeto$etapasArgs<ExtArgs>
+    fornecedores?: boolean | OrcamentoProjeto$fornecedoresArgs<ExtArgs>
+    _count?: boolean | OrcamentoProjetoCountOutputTypeDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["orcamentoProjeto"]>
+
+  export type OrcamentoProjetoSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    nome?: boolean
+    cliente?: boolean
+    status?: boolean
+    idContaAzul?: boolean
+    dataCriacao?: boolean
+    dataAtualizacao?: boolean
+  }, ExtArgs["result"]["orcamentoProjeto"]>
+
+  export type OrcamentoProjetoSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    nome?: boolean
+    cliente?: boolean
+    status?: boolean
+    idContaAzul?: boolean
+    dataCriacao?: boolean
+    dataAtualizacao?: boolean
+  }, ExtArgs["result"]["orcamentoProjeto"]>
+
+  export type OrcamentoProjetoSelectScalar = {
+    id?: boolean
+    nome?: boolean
+    cliente?: boolean
+    status?: boolean
+    idContaAzul?: boolean
+    dataCriacao?: boolean
+    dataAtualizacao?: boolean
+  }
+
+  export type OrcamentoProjetoOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "nome" | "cliente" | "status" | "idContaAzul" | "dataCriacao" | "dataAtualizacao", ExtArgs["result"]["orcamentoProjeto"]>
+  export type OrcamentoProjetoInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    etapas?: boolean | OrcamentoProjeto$etapasArgs<ExtArgs>
+    fornecedores?: boolean | OrcamentoProjeto$fornecedoresArgs<ExtArgs>
+    _count?: boolean | OrcamentoProjetoCountOutputTypeDefaultArgs<ExtArgs>
+  }
+  export type OrcamentoProjetoIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
+  export type OrcamentoProjetoIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
+
+  export type $OrcamentoProjetoPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "OrcamentoProjeto"
+    objects: {
+      etapas: Prisma.$OrcamentoEtapaPayload<ExtArgs>[]
+      fornecedores: Prisma.$FornecedorOrcamentoPayload<ExtArgs>[]
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      nome: string
+      cliente: string | null
+      status: string
+      idContaAzul: string | null
+      dataCriacao: Date
+      dataAtualizacao: Date
+    }, ExtArgs["result"]["orcamentoProjeto"]>
+    composites: {}
+  }
+
+  type OrcamentoProjetoGetPayload<S extends boolean | null | undefined | OrcamentoProjetoDefaultArgs> = $Result.GetResult<Prisma.$OrcamentoProjetoPayload, S>
+
+  type OrcamentoProjetoCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<OrcamentoProjetoFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: OrcamentoProjetoCountAggregateInputType | true
+    }
+
+  export interface OrcamentoProjetoDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['OrcamentoProjeto'], meta: { name: 'OrcamentoProjeto' } }
+    /**
+     * Find zero or one OrcamentoProjeto that matches the filter.
+     * @param {OrcamentoProjetoFindUniqueArgs} args - Arguments to find a OrcamentoProjeto
+     * @example
+     * // Get one OrcamentoProjeto
+     * const orcamentoProjeto = await prisma.orcamentoProjeto.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends OrcamentoProjetoFindUniqueArgs>(args: SelectSubset<T, OrcamentoProjetoFindUniqueArgs<ExtArgs>>): Prisma__OrcamentoProjetoClient<$Result.GetResult<Prisma.$OrcamentoProjetoPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one OrcamentoProjeto that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {OrcamentoProjetoFindUniqueOrThrowArgs} args - Arguments to find a OrcamentoProjeto
+     * @example
+     * // Get one OrcamentoProjeto
+     * const orcamentoProjeto = await prisma.orcamentoProjeto.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends OrcamentoProjetoFindUniqueOrThrowArgs>(args: SelectSubset<T, OrcamentoProjetoFindUniqueOrThrowArgs<ExtArgs>>): Prisma__OrcamentoProjetoClient<$Result.GetResult<Prisma.$OrcamentoProjetoPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first OrcamentoProjeto that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OrcamentoProjetoFindFirstArgs} args - Arguments to find a OrcamentoProjeto
+     * @example
+     * // Get one OrcamentoProjeto
+     * const orcamentoProjeto = await prisma.orcamentoProjeto.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends OrcamentoProjetoFindFirstArgs>(args?: SelectSubset<T, OrcamentoProjetoFindFirstArgs<ExtArgs>>): Prisma__OrcamentoProjetoClient<$Result.GetResult<Prisma.$OrcamentoProjetoPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first OrcamentoProjeto that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OrcamentoProjetoFindFirstOrThrowArgs} args - Arguments to find a OrcamentoProjeto
+     * @example
+     * // Get one OrcamentoProjeto
+     * const orcamentoProjeto = await prisma.orcamentoProjeto.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends OrcamentoProjetoFindFirstOrThrowArgs>(args?: SelectSubset<T, OrcamentoProjetoFindFirstOrThrowArgs<ExtArgs>>): Prisma__OrcamentoProjetoClient<$Result.GetResult<Prisma.$OrcamentoProjetoPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more OrcamentoProjetos that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OrcamentoProjetoFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all OrcamentoProjetos
+     * const orcamentoProjetos = await prisma.orcamentoProjeto.findMany()
+     * 
+     * // Get first 10 OrcamentoProjetos
+     * const orcamentoProjetos = await prisma.orcamentoProjeto.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const orcamentoProjetoWithIdOnly = await prisma.orcamentoProjeto.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends OrcamentoProjetoFindManyArgs>(args?: SelectSubset<T, OrcamentoProjetoFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$OrcamentoProjetoPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a OrcamentoProjeto.
+     * @param {OrcamentoProjetoCreateArgs} args - Arguments to create a OrcamentoProjeto.
+     * @example
+     * // Create one OrcamentoProjeto
+     * const OrcamentoProjeto = await prisma.orcamentoProjeto.create({
+     *   data: {
+     *     // ... data to create a OrcamentoProjeto
+     *   }
+     * })
+     * 
+     */
+    create<T extends OrcamentoProjetoCreateArgs>(args: SelectSubset<T, OrcamentoProjetoCreateArgs<ExtArgs>>): Prisma__OrcamentoProjetoClient<$Result.GetResult<Prisma.$OrcamentoProjetoPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many OrcamentoProjetos.
+     * @param {OrcamentoProjetoCreateManyArgs} args - Arguments to create many OrcamentoProjetos.
+     * @example
+     * // Create many OrcamentoProjetos
+     * const orcamentoProjeto = await prisma.orcamentoProjeto.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends OrcamentoProjetoCreateManyArgs>(args?: SelectSubset<T, OrcamentoProjetoCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many OrcamentoProjetos and returns the data saved in the database.
+     * @param {OrcamentoProjetoCreateManyAndReturnArgs} args - Arguments to create many OrcamentoProjetos.
+     * @example
+     * // Create many OrcamentoProjetos
+     * const orcamentoProjeto = await prisma.orcamentoProjeto.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many OrcamentoProjetos and only return the `id`
+     * const orcamentoProjetoWithIdOnly = await prisma.orcamentoProjeto.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends OrcamentoProjetoCreateManyAndReturnArgs>(args?: SelectSubset<T, OrcamentoProjetoCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$OrcamentoProjetoPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a OrcamentoProjeto.
+     * @param {OrcamentoProjetoDeleteArgs} args - Arguments to delete one OrcamentoProjeto.
+     * @example
+     * // Delete one OrcamentoProjeto
+     * const OrcamentoProjeto = await prisma.orcamentoProjeto.delete({
+     *   where: {
+     *     // ... filter to delete one OrcamentoProjeto
+     *   }
+     * })
+     * 
+     */
+    delete<T extends OrcamentoProjetoDeleteArgs>(args: SelectSubset<T, OrcamentoProjetoDeleteArgs<ExtArgs>>): Prisma__OrcamentoProjetoClient<$Result.GetResult<Prisma.$OrcamentoProjetoPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one OrcamentoProjeto.
+     * @param {OrcamentoProjetoUpdateArgs} args - Arguments to update one OrcamentoProjeto.
+     * @example
+     * // Update one OrcamentoProjeto
+     * const orcamentoProjeto = await prisma.orcamentoProjeto.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends OrcamentoProjetoUpdateArgs>(args: SelectSubset<T, OrcamentoProjetoUpdateArgs<ExtArgs>>): Prisma__OrcamentoProjetoClient<$Result.GetResult<Prisma.$OrcamentoProjetoPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more OrcamentoProjetos.
+     * @param {OrcamentoProjetoDeleteManyArgs} args - Arguments to filter OrcamentoProjetos to delete.
+     * @example
+     * // Delete a few OrcamentoProjetos
+     * const { count } = await prisma.orcamentoProjeto.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends OrcamentoProjetoDeleteManyArgs>(args?: SelectSubset<T, OrcamentoProjetoDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more OrcamentoProjetos.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OrcamentoProjetoUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many OrcamentoProjetos
+     * const orcamentoProjeto = await prisma.orcamentoProjeto.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends OrcamentoProjetoUpdateManyArgs>(args: SelectSubset<T, OrcamentoProjetoUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more OrcamentoProjetos and returns the data updated in the database.
+     * @param {OrcamentoProjetoUpdateManyAndReturnArgs} args - Arguments to update many OrcamentoProjetos.
+     * @example
+     * // Update many OrcamentoProjetos
+     * const orcamentoProjeto = await prisma.orcamentoProjeto.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more OrcamentoProjetos and only return the `id`
+     * const orcamentoProjetoWithIdOnly = await prisma.orcamentoProjeto.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends OrcamentoProjetoUpdateManyAndReturnArgs>(args: SelectSubset<T, OrcamentoProjetoUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$OrcamentoProjetoPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one OrcamentoProjeto.
+     * @param {OrcamentoProjetoUpsertArgs} args - Arguments to update or create a OrcamentoProjeto.
+     * @example
+     * // Update or create a OrcamentoProjeto
+     * const orcamentoProjeto = await prisma.orcamentoProjeto.upsert({
+     *   create: {
+     *     // ... data to create a OrcamentoProjeto
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the OrcamentoProjeto we want to update
+     *   }
+     * })
+     */
+    upsert<T extends OrcamentoProjetoUpsertArgs>(args: SelectSubset<T, OrcamentoProjetoUpsertArgs<ExtArgs>>): Prisma__OrcamentoProjetoClient<$Result.GetResult<Prisma.$OrcamentoProjetoPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of OrcamentoProjetos.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OrcamentoProjetoCountArgs} args - Arguments to filter OrcamentoProjetos to count.
+     * @example
+     * // Count the number of OrcamentoProjetos
+     * const count = await prisma.orcamentoProjeto.count({
+     *   where: {
+     *     // ... the filter for the OrcamentoProjetos we want to count
+     *   }
+     * })
+    **/
+    count<T extends OrcamentoProjetoCountArgs>(
+      args?: Subset<T, OrcamentoProjetoCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], OrcamentoProjetoCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a OrcamentoProjeto.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OrcamentoProjetoAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends OrcamentoProjetoAggregateArgs>(args: Subset<T, OrcamentoProjetoAggregateArgs>): Prisma.PrismaPromise<GetOrcamentoProjetoAggregateType<T>>
+
+    /**
+     * Group by OrcamentoProjeto.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OrcamentoProjetoGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends OrcamentoProjetoGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: OrcamentoProjetoGroupByArgs['orderBy'] }
+        : { orderBy?: OrcamentoProjetoGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, OrcamentoProjetoGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetOrcamentoProjetoGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the OrcamentoProjeto model
+   */
+  readonly fields: OrcamentoProjetoFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for OrcamentoProjeto.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__OrcamentoProjetoClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    etapas<T extends OrcamentoProjeto$etapasArgs<ExtArgs> = {}>(args?: Subset<T, OrcamentoProjeto$etapasArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$OrcamentoEtapaPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    fornecedores<T extends OrcamentoProjeto$fornecedoresArgs<ExtArgs> = {}>(args?: Subset<T, OrcamentoProjeto$fornecedoresArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$FornecedorOrcamentoPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the OrcamentoProjeto model
+   */
+  interface OrcamentoProjetoFieldRefs {
+    readonly id: FieldRef<"OrcamentoProjeto", 'String'>
+    readonly nome: FieldRef<"OrcamentoProjeto", 'String'>
+    readonly cliente: FieldRef<"OrcamentoProjeto", 'String'>
+    readonly status: FieldRef<"OrcamentoProjeto", 'String'>
+    readonly idContaAzul: FieldRef<"OrcamentoProjeto", 'String'>
+    readonly dataCriacao: FieldRef<"OrcamentoProjeto", 'DateTime'>
+    readonly dataAtualizacao: FieldRef<"OrcamentoProjeto", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * OrcamentoProjeto findUnique
+   */
+  export type OrcamentoProjetoFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoProjeto
+     */
+    select?: OrcamentoProjetoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoProjeto
+     */
+    omit?: OrcamentoProjetoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OrcamentoProjetoInclude<ExtArgs> | null
+    /**
+     * Filter, which OrcamentoProjeto to fetch.
+     */
+    where: OrcamentoProjetoWhereUniqueInput
+  }
+
+  /**
+   * OrcamentoProjeto findUniqueOrThrow
+   */
+  export type OrcamentoProjetoFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoProjeto
+     */
+    select?: OrcamentoProjetoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoProjeto
+     */
+    omit?: OrcamentoProjetoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OrcamentoProjetoInclude<ExtArgs> | null
+    /**
+     * Filter, which OrcamentoProjeto to fetch.
+     */
+    where: OrcamentoProjetoWhereUniqueInput
+  }
+
+  /**
+   * OrcamentoProjeto findFirst
+   */
+  export type OrcamentoProjetoFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoProjeto
+     */
+    select?: OrcamentoProjetoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoProjeto
+     */
+    omit?: OrcamentoProjetoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OrcamentoProjetoInclude<ExtArgs> | null
+    /**
+     * Filter, which OrcamentoProjeto to fetch.
+     */
+    where?: OrcamentoProjetoWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of OrcamentoProjetos to fetch.
+     */
+    orderBy?: OrcamentoProjetoOrderByWithRelationInput | OrcamentoProjetoOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for OrcamentoProjetos.
+     */
+    cursor?: OrcamentoProjetoWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` OrcamentoProjetos from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` OrcamentoProjetos.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of OrcamentoProjetos.
+     */
+    distinct?: OrcamentoProjetoScalarFieldEnum | OrcamentoProjetoScalarFieldEnum[]
+  }
+
+  /**
+   * OrcamentoProjeto findFirstOrThrow
+   */
+  export type OrcamentoProjetoFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoProjeto
+     */
+    select?: OrcamentoProjetoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoProjeto
+     */
+    omit?: OrcamentoProjetoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OrcamentoProjetoInclude<ExtArgs> | null
+    /**
+     * Filter, which OrcamentoProjeto to fetch.
+     */
+    where?: OrcamentoProjetoWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of OrcamentoProjetos to fetch.
+     */
+    orderBy?: OrcamentoProjetoOrderByWithRelationInput | OrcamentoProjetoOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for OrcamentoProjetos.
+     */
+    cursor?: OrcamentoProjetoWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` OrcamentoProjetos from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` OrcamentoProjetos.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of OrcamentoProjetos.
+     */
+    distinct?: OrcamentoProjetoScalarFieldEnum | OrcamentoProjetoScalarFieldEnum[]
+  }
+
+  /**
+   * OrcamentoProjeto findMany
+   */
+  export type OrcamentoProjetoFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoProjeto
+     */
+    select?: OrcamentoProjetoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoProjeto
+     */
+    omit?: OrcamentoProjetoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OrcamentoProjetoInclude<ExtArgs> | null
+    /**
+     * Filter, which OrcamentoProjetos to fetch.
+     */
+    where?: OrcamentoProjetoWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of OrcamentoProjetos to fetch.
+     */
+    orderBy?: OrcamentoProjetoOrderByWithRelationInput | OrcamentoProjetoOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing OrcamentoProjetos.
+     */
+    cursor?: OrcamentoProjetoWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` OrcamentoProjetos from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` OrcamentoProjetos.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of OrcamentoProjetos.
+     */
+    distinct?: OrcamentoProjetoScalarFieldEnum | OrcamentoProjetoScalarFieldEnum[]
+  }
+
+  /**
+   * OrcamentoProjeto create
+   */
+  export type OrcamentoProjetoCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoProjeto
+     */
+    select?: OrcamentoProjetoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoProjeto
+     */
+    omit?: OrcamentoProjetoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OrcamentoProjetoInclude<ExtArgs> | null
+    /**
+     * The data needed to create a OrcamentoProjeto.
+     */
+    data: XOR<OrcamentoProjetoCreateInput, OrcamentoProjetoUncheckedCreateInput>
+  }
+
+  /**
+   * OrcamentoProjeto createMany
+   */
+  export type OrcamentoProjetoCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many OrcamentoProjetos.
+     */
+    data: OrcamentoProjetoCreateManyInput | OrcamentoProjetoCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * OrcamentoProjeto createManyAndReturn
+   */
+  export type OrcamentoProjetoCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoProjeto
+     */
+    select?: OrcamentoProjetoSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoProjeto
+     */
+    omit?: OrcamentoProjetoOmit<ExtArgs> | null
+    /**
+     * The data used to create many OrcamentoProjetos.
+     */
+    data: OrcamentoProjetoCreateManyInput | OrcamentoProjetoCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * OrcamentoProjeto update
+   */
+  export type OrcamentoProjetoUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoProjeto
+     */
+    select?: OrcamentoProjetoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoProjeto
+     */
+    omit?: OrcamentoProjetoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OrcamentoProjetoInclude<ExtArgs> | null
+    /**
+     * The data needed to update a OrcamentoProjeto.
+     */
+    data: XOR<OrcamentoProjetoUpdateInput, OrcamentoProjetoUncheckedUpdateInput>
+    /**
+     * Choose, which OrcamentoProjeto to update.
+     */
+    where: OrcamentoProjetoWhereUniqueInput
+  }
+
+  /**
+   * OrcamentoProjeto updateMany
+   */
+  export type OrcamentoProjetoUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update OrcamentoProjetos.
+     */
+    data: XOR<OrcamentoProjetoUpdateManyMutationInput, OrcamentoProjetoUncheckedUpdateManyInput>
+    /**
+     * Filter which OrcamentoProjetos to update
+     */
+    where?: OrcamentoProjetoWhereInput
+    /**
+     * Limit how many OrcamentoProjetos to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * OrcamentoProjeto updateManyAndReturn
+   */
+  export type OrcamentoProjetoUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoProjeto
+     */
+    select?: OrcamentoProjetoSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoProjeto
+     */
+    omit?: OrcamentoProjetoOmit<ExtArgs> | null
+    /**
+     * The data used to update OrcamentoProjetos.
+     */
+    data: XOR<OrcamentoProjetoUpdateManyMutationInput, OrcamentoProjetoUncheckedUpdateManyInput>
+    /**
+     * Filter which OrcamentoProjetos to update
+     */
+    where?: OrcamentoProjetoWhereInput
+    /**
+     * Limit how many OrcamentoProjetos to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * OrcamentoProjeto upsert
+   */
+  export type OrcamentoProjetoUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoProjeto
+     */
+    select?: OrcamentoProjetoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoProjeto
+     */
+    omit?: OrcamentoProjetoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OrcamentoProjetoInclude<ExtArgs> | null
+    /**
+     * The filter to search for the OrcamentoProjeto to update in case it exists.
+     */
+    where: OrcamentoProjetoWhereUniqueInput
+    /**
+     * In case the OrcamentoProjeto found by the `where` argument doesn't exist, create a new OrcamentoProjeto with this data.
+     */
+    create: XOR<OrcamentoProjetoCreateInput, OrcamentoProjetoUncheckedCreateInput>
+    /**
+     * In case the OrcamentoProjeto was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<OrcamentoProjetoUpdateInput, OrcamentoProjetoUncheckedUpdateInput>
+  }
+
+  /**
+   * OrcamentoProjeto delete
+   */
+  export type OrcamentoProjetoDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoProjeto
+     */
+    select?: OrcamentoProjetoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoProjeto
+     */
+    omit?: OrcamentoProjetoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OrcamentoProjetoInclude<ExtArgs> | null
+    /**
+     * Filter which OrcamentoProjeto to delete.
+     */
+    where: OrcamentoProjetoWhereUniqueInput
+  }
+
+  /**
+   * OrcamentoProjeto deleteMany
+   */
+  export type OrcamentoProjetoDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which OrcamentoProjetos to delete
+     */
+    where?: OrcamentoProjetoWhereInput
+    /**
+     * Limit how many OrcamentoProjetos to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * OrcamentoProjeto.etapas
+   */
+  export type OrcamentoProjeto$etapasArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoEtapa
+     */
+    select?: OrcamentoEtapaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoEtapa
+     */
+    omit?: OrcamentoEtapaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OrcamentoEtapaInclude<ExtArgs> | null
+    where?: OrcamentoEtapaWhereInput
+    orderBy?: OrcamentoEtapaOrderByWithRelationInput | OrcamentoEtapaOrderByWithRelationInput[]
+    cursor?: OrcamentoEtapaWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: OrcamentoEtapaScalarFieldEnum | OrcamentoEtapaScalarFieldEnum[]
+  }
+
+  /**
+   * OrcamentoProjeto.fornecedores
+   */
+  export type OrcamentoProjeto$fornecedoresArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FornecedorOrcamento
+     */
+    select?: FornecedorOrcamentoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FornecedorOrcamento
+     */
+    omit?: FornecedorOrcamentoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FornecedorOrcamentoInclude<ExtArgs> | null
+    where?: FornecedorOrcamentoWhereInput
+    orderBy?: FornecedorOrcamentoOrderByWithRelationInput | FornecedorOrcamentoOrderByWithRelationInput[]
+    cursor?: FornecedorOrcamentoWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: FornecedorOrcamentoScalarFieldEnum | FornecedorOrcamentoScalarFieldEnum[]
+  }
+
+  /**
+   * OrcamentoProjeto without action
+   */
+  export type OrcamentoProjetoDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoProjeto
+     */
+    select?: OrcamentoProjetoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoProjeto
+     */
+    omit?: OrcamentoProjetoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OrcamentoProjetoInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model OrcamentoEtapa
+   */
+
+  export type AggregateOrcamentoEtapa = {
+    _count: OrcamentoEtapaCountAggregateOutputType | null
+    _avg: OrcamentoEtapaAvgAggregateOutputType | null
+    _sum: OrcamentoEtapaSumAggregateOutputType | null
+    _min: OrcamentoEtapaMinAggregateOutputType | null
+    _max: OrcamentoEtapaMaxAggregateOutputType | null
+  }
+
+  export type OrcamentoEtapaAvgAggregateOutputType = {
+    ordem: number | null
+  }
+
+  export type OrcamentoEtapaSumAggregateOutputType = {
+    ordem: number | null
+  }
+
+  export type OrcamentoEtapaMinAggregateOutputType = {
+    id: string | null
+    projetoId: string | null
+    nome: string | null
+    ordem: number | null
+  }
+
+  export type OrcamentoEtapaMaxAggregateOutputType = {
+    id: string | null
+    projetoId: string | null
+    nome: string | null
+    ordem: number | null
+  }
+
+  export type OrcamentoEtapaCountAggregateOutputType = {
+    id: number
+    projetoId: number
+    nome: number
+    ordem: number
+    _all: number
+  }
+
+
+  export type OrcamentoEtapaAvgAggregateInputType = {
+    ordem?: true
+  }
+
+  export type OrcamentoEtapaSumAggregateInputType = {
+    ordem?: true
+  }
+
+  export type OrcamentoEtapaMinAggregateInputType = {
+    id?: true
+    projetoId?: true
+    nome?: true
+    ordem?: true
+  }
+
+  export type OrcamentoEtapaMaxAggregateInputType = {
+    id?: true
+    projetoId?: true
+    nome?: true
+    ordem?: true
+  }
+
+  export type OrcamentoEtapaCountAggregateInputType = {
+    id?: true
+    projetoId?: true
+    nome?: true
+    ordem?: true
+    _all?: true
+  }
+
+  export type OrcamentoEtapaAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which OrcamentoEtapa to aggregate.
+     */
+    where?: OrcamentoEtapaWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of OrcamentoEtapas to fetch.
+     */
+    orderBy?: OrcamentoEtapaOrderByWithRelationInput | OrcamentoEtapaOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: OrcamentoEtapaWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` OrcamentoEtapas from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` OrcamentoEtapas.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned OrcamentoEtapas
+    **/
+    _count?: true | OrcamentoEtapaCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: OrcamentoEtapaAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: OrcamentoEtapaSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: OrcamentoEtapaMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: OrcamentoEtapaMaxAggregateInputType
+  }
+
+  export type GetOrcamentoEtapaAggregateType<T extends OrcamentoEtapaAggregateArgs> = {
+        [P in keyof T & keyof AggregateOrcamentoEtapa]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateOrcamentoEtapa[P]>
+      : GetScalarType<T[P], AggregateOrcamentoEtapa[P]>
+  }
+
+
+
+
+  export type OrcamentoEtapaGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: OrcamentoEtapaWhereInput
+    orderBy?: OrcamentoEtapaOrderByWithAggregationInput | OrcamentoEtapaOrderByWithAggregationInput[]
+    by: OrcamentoEtapaScalarFieldEnum[] | OrcamentoEtapaScalarFieldEnum
+    having?: OrcamentoEtapaScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: OrcamentoEtapaCountAggregateInputType | true
+    _avg?: OrcamentoEtapaAvgAggregateInputType
+    _sum?: OrcamentoEtapaSumAggregateInputType
+    _min?: OrcamentoEtapaMinAggregateInputType
+    _max?: OrcamentoEtapaMaxAggregateInputType
+  }
+
+  export type OrcamentoEtapaGroupByOutputType = {
+    id: string
+    projetoId: string
+    nome: string
+    ordem: number
+    _count: OrcamentoEtapaCountAggregateOutputType | null
+    _avg: OrcamentoEtapaAvgAggregateOutputType | null
+    _sum: OrcamentoEtapaSumAggregateOutputType | null
+    _min: OrcamentoEtapaMinAggregateOutputType | null
+    _max: OrcamentoEtapaMaxAggregateOutputType | null
+  }
+
+  type GetOrcamentoEtapaGroupByPayload<T extends OrcamentoEtapaGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<OrcamentoEtapaGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof OrcamentoEtapaGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], OrcamentoEtapaGroupByOutputType[P]>
+            : GetScalarType<T[P], OrcamentoEtapaGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type OrcamentoEtapaSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    projetoId?: boolean
+    nome?: boolean
+    ordem?: boolean
+    projeto?: boolean | OrcamentoProjetoDefaultArgs<ExtArgs>
+    itens?: boolean | OrcamentoEtapa$itensArgs<ExtArgs>
+    _count?: boolean | OrcamentoEtapaCountOutputTypeDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["orcamentoEtapa"]>
+
+  export type OrcamentoEtapaSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    projetoId?: boolean
+    nome?: boolean
+    ordem?: boolean
+    projeto?: boolean | OrcamentoProjetoDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["orcamentoEtapa"]>
+
+  export type OrcamentoEtapaSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    projetoId?: boolean
+    nome?: boolean
+    ordem?: boolean
+    projeto?: boolean | OrcamentoProjetoDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["orcamentoEtapa"]>
+
+  export type OrcamentoEtapaSelectScalar = {
+    id?: boolean
+    projetoId?: boolean
+    nome?: boolean
+    ordem?: boolean
+  }
+
+  export type OrcamentoEtapaOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "projetoId" | "nome" | "ordem", ExtArgs["result"]["orcamentoEtapa"]>
+  export type OrcamentoEtapaInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    projeto?: boolean | OrcamentoProjetoDefaultArgs<ExtArgs>
+    itens?: boolean | OrcamentoEtapa$itensArgs<ExtArgs>
+    _count?: boolean | OrcamentoEtapaCountOutputTypeDefaultArgs<ExtArgs>
+  }
+  export type OrcamentoEtapaIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    projeto?: boolean | OrcamentoProjetoDefaultArgs<ExtArgs>
+  }
+  export type OrcamentoEtapaIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    projeto?: boolean | OrcamentoProjetoDefaultArgs<ExtArgs>
+  }
+
+  export type $OrcamentoEtapaPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "OrcamentoEtapa"
+    objects: {
+      projeto: Prisma.$OrcamentoProjetoPayload<ExtArgs>
+      itens: Prisma.$OrcamentoItemPayload<ExtArgs>[]
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      projetoId: string
+      nome: string
+      ordem: number
+    }, ExtArgs["result"]["orcamentoEtapa"]>
+    composites: {}
+  }
+
+  type OrcamentoEtapaGetPayload<S extends boolean | null | undefined | OrcamentoEtapaDefaultArgs> = $Result.GetResult<Prisma.$OrcamentoEtapaPayload, S>
+
+  type OrcamentoEtapaCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<OrcamentoEtapaFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: OrcamentoEtapaCountAggregateInputType | true
+    }
+
+  export interface OrcamentoEtapaDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['OrcamentoEtapa'], meta: { name: 'OrcamentoEtapa' } }
+    /**
+     * Find zero or one OrcamentoEtapa that matches the filter.
+     * @param {OrcamentoEtapaFindUniqueArgs} args - Arguments to find a OrcamentoEtapa
+     * @example
+     * // Get one OrcamentoEtapa
+     * const orcamentoEtapa = await prisma.orcamentoEtapa.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends OrcamentoEtapaFindUniqueArgs>(args: SelectSubset<T, OrcamentoEtapaFindUniqueArgs<ExtArgs>>): Prisma__OrcamentoEtapaClient<$Result.GetResult<Prisma.$OrcamentoEtapaPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one OrcamentoEtapa that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {OrcamentoEtapaFindUniqueOrThrowArgs} args - Arguments to find a OrcamentoEtapa
+     * @example
+     * // Get one OrcamentoEtapa
+     * const orcamentoEtapa = await prisma.orcamentoEtapa.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends OrcamentoEtapaFindUniqueOrThrowArgs>(args: SelectSubset<T, OrcamentoEtapaFindUniqueOrThrowArgs<ExtArgs>>): Prisma__OrcamentoEtapaClient<$Result.GetResult<Prisma.$OrcamentoEtapaPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first OrcamentoEtapa that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OrcamentoEtapaFindFirstArgs} args - Arguments to find a OrcamentoEtapa
+     * @example
+     * // Get one OrcamentoEtapa
+     * const orcamentoEtapa = await prisma.orcamentoEtapa.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends OrcamentoEtapaFindFirstArgs>(args?: SelectSubset<T, OrcamentoEtapaFindFirstArgs<ExtArgs>>): Prisma__OrcamentoEtapaClient<$Result.GetResult<Prisma.$OrcamentoEtapaPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first OrcamentoEtapa that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OrcamentoEtapaFindFirstOrThrowArgs} args - Arguments to find a OrcamentoEtapa
+     * @example
+     * // Get one OrcamentoEtapa
+     * const orcamentoEtapa = await prisma.orcamentoEtapa.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends OrcamentoEtapaFindFirstOrThrowArgs>(args?: SelectSubset<T, OrcamentoEtapaFindFirstOrThrowArgs<ExtArgs>>): Prisma__OrcamentoEtapaClient<$Result.GetResult<Prisma.$OrcamentoEtapaPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more OrcamentoEtapas that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OrcamentoEtapaFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all OrcamentoEtapas
+     * const orcamentoEtapas = await prisma.orcamentoEtapa.findMany()
+     * 
+     * // Get first 10 OrcamentoEtapas
+     * const orcamentoEtapas = await prisma.orcamentoEtapa.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const orcamentoEtapaWithIdOnly = await prisma.orcamentoEtapa.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends OrcamentoEtapaFindManyArgs>(args?: SelectSubset<T, OrcamentoEtapaFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$OrcamentoEtapaPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a OrcamentoEtapa.
+     * @param {OrcamentoEtapaCreateArgs} args - Arguments to create a OrcamentoEtapa.
+     * @example
+     * // Create one OrcamentoEtapa
+     * const OrcamentoEtapa = await prisma.orcamentoEtapa.create({
+     *   data: {
+     *     // ... data to create a OrcamentoEtapa
+     *   }
+     * })
+     * 
+     */
+    create<T extends OrcamentoEtapaCreateArgs>(args: SelectSubset<T, OrcamentoEtapaCreateArgs<ExtArgs>>): Prisma__OrcamentoEtapaClient<$Result.GetResult<Prisma.$OrcamentoEtapaPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many OrcamentoEtapas.
+     * @param {OrcamentoEtapaCreateManyArgs} args - Arguments to create many OrcamentoEtapas.
+     * @example
+     * // Create many OrcamentoEtapas
+     * const orcamentoEtapa = await prisma.orcamentoEtapa.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends OrcamentoEtapaCreateManyArgs>(args?: SelectSubset<T, OrcamentoEtapaCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many OrcamentoEtapas and returns the data saved in the database.
+     * @param {OrcamentoEtapaCreateManyAndReturnArgs} args - Arguments to create many OrcamentoEtapas.
+     * @example
+     * // Create many OrcamentoEtapas
+     * const orcamentoEtapa = await prisma.orcamentoEtapa.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many OrcamentoEtapas and only return the `id`
+     * const orcamentoEtapaWithIdOnly = await prisma.orcamentoEtapa.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends OrcamentoEtapaCreateManyAndReturnArgs>(args?: SelectSubset<T, OrcamentoEtapaCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$OrcamentoEtapaPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a OrcamentoEtapa.
+     * @param {OrcamentoEtapaDeleteArgs} args - Arguments to delete one OrcamentoEtapa.
+     * @example
+     * // Delete one OrcamentoEtapa
+     * const OrcamentoEtapa = await prisma.orcamentoEtapa.delete({
+     *   where: {
+     *     // ... filter to delete one OrcamentoEtapa
+     *   }
+     * })
+     * 
+     */
+    delete<T extends OrcamentoEtapaDeleteArgs>(args: SelectSubset<T, OrcamentoEtapaDeleteArgs<ExtArgs>>): Prisma__OrcamentoEtapaClient<$Result.GetResult<Prisma.$OrcamentoEtapaPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one OrcamentoEtapa.
+     * @param {OrcamentoEtapaUpdateArgs} args - Arguments to update one OrcamentoEtapa.
+     * @example
+     * // Update one OrcamentoEtapa
+     * const orcamentoEtapa = await prisma.orcamentoEtapa.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends OrcamentoEtapaUpdateArgs>(args: SelectSubset<T, OrcamentoEtapaUpdateArgs<ExtArgs>>): Prisma__OrcamentoEtapaClient<$Result.GetResult<Prisma.$OrcamentoEtapaPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more OrcamentoEtapas.
+     * @param {OrcamentoEtapaDeleteManyArgs} args - Arguments to filter OrcamentoEtapas to delete.
+     * @example
+     * // Delete a few OrcamentoEtapas
+     * const { count } = await prisma.orcamentoEtapa.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends OrcamentoEtapaDeleteManyArgs>(args?: SelectSubset<T, OrcamentoEtapaDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more OrcamentoEtapas.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OrcamentoEtapaUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many OrcamentoEtapas
+     * const orcamentoEtapa = await prisma.orcamentoEtapa.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends OrcamentoEtapaUpdateManyArgs>(args: SelectSubset<T, OrcamentoEtapaUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more OrcamentoEtapas and returns the data updated in the database.
+     * @param {OrcamentoEtapaUpdateManyAndReturnArgs} args - Arguments to update many OrcamentoEtapas.
+     * @example
+     * // Update many OrcamentoEtapas
+     * const orcamentoEtapa = await prisma.orcamentoEtapa.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more OrcamentoEtapas and only return the `id`
+     * const orcamentoEtapaWithIdOnly = await prisma.orcamentoEtapa.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends OrcamentoEtapaUpdateManyAndReturnArgs>(args: SelectSubset<T, OrcamentoEtapaUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$OrcamentoEtapaPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one OrcamentoEtapa.
+     * @param {OrcamentoEtapaUpsertArgs} args - Arguments to update or create a OrcamentoEtapa.
+     * @example
+     * // Update or create a OrcamentoEtapa
+     * const orcamentoEtapa = await prisma.orcamentoEtapa.upsert({
+     *   create: {
+     *     // ... data to create a OrcamentoEtapa
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the OrcamentoEtapa we want to update
+     *   }
+     * })
+     */
+    upsert<T extends OrcamentoEtapaUpsertArgs>(args: SelectSubset<T, OrcamentoEtapaUpsertArgs<ExtArgs>>): Prisma__OrcamentoEtapaClient<$Result.GetResult<Prisma.$OrcamentoEtapaPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of OrcamentoEtapas.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OrcamentoEtapaCountArgs} args - Arguments to filter OrcamentoEtapas to count.
+     * @example
+     * // Count the number of OrcamentoEtapas
+     * const count = await prisma.orcamentoEtapa.count({
+     *   where: {
+     *     // ... the filter for the OrcamentoEtapas we want to count
+     *   }
+     * })
+    **/
+    count<T extends OrcamentoEtapaCountArgs>(
+      args?: Subset<T, OrcamentoEtapaCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], OrcamentoEtapaCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a OrcamentoEtapa.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OrcamentoEtapaAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends OrcamentoEtapaAggregateArgs>(args: Subset<T, OrcamentoEtapaAggregateArgs>): Prisma.PrismaPromise<GetOrcamentoEtapaAggregateType<T>>
+
+    /**
+     * Group by OrcamentoEtapa.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OrcamentoEtapaGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends OrcamentoEtapaGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: OrcamentoEtapaGroupByArgs['orderBy'] }
+        : { orderBy?: OrcamentoEtapaGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, OrcamentoEtapaGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetOrcamentoEtapaGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the OrcamentoEtapa model
+   */
+  readonly fields: OrcamentoEtapaFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for OrcamentoEtapa.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__OrcamentoEtapaClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    projeto<T extends OrcamentoProjetoDefaultArgs<ExtArgs> = {}>(args?: Subset<T, OrcamentoProjetoDefaultArgs<ExtArgs>>): Prisma__OrcamentoProjetoClient<$Result.GetResult<Prisma.$OrcamentoProjetoPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    itens<T extends OrcamentoEtapa$itensArgs<ExtArgs> = {}>(args?: Subset<T, OrcamentoEtapa$itensArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$OrcamentoItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the OrcamentoEtapa model
+   */
+  interface OrcamentoEtapaFieldRefs {
+    readonly id: FieldRef<"OrcamentoEtapa", 'String'>
+    readonly projetoId: FieldRef<"OrcamentoEtapa", 'String'>
+    readonly nome: FieldRef<"OrcamentoEtapa", 'String'>
+    readonly ordem: FieldRef<"OrcamentoEtapa", 'Int'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * OrcamentoEtapa findUnique
+   */
+  export type OrcamentoEtapaFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoEtapa
+     */
+    select?: OrcamentoEtapaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoEtapa
+     */
+    omit?: OrcamentoEtapaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OrcamentoEtapaInclude<ExtArgs> | null
+    /**
+     * Filter, which OrcamentoEtapa to fetch.
+     */
+    where: OrcamentoEtapaWhereUniqueInput
+  }
+
+  /**
+   * OrcamentoEtapa findUniqueOrThrow
+   */
+  export type OrcamentoEtapaFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoEtapa
+     */
+    select?: OrcamentoEtapaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoEtapa
+     */
+    omit?: OrcamentoEtapaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OrcamentoEtapaInclude<ExtArgs> | null
+    /**
+     * Filter, which OrcamentoEtapa to fetch.
+     */
+    where: OrcamentoEtapaWhereUniqueInput
+  }
+
+  /**
+   * OrcamentoEtapa findFirst
+   */
+  export type OrcamentoEtapaFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoEtapa
+     */
+    select?: OrcamentoEtapaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoEtapa
+     */
+    omit?: OrcamentoEtapaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OrcamentoEtapaInclude<ExtArgs> | null
+    /**
+     * Filter, which OrcamentoEtapa to fetch.
+     */
+    where?: OrcamentoEtapaWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of OrcamentoEtapas to fetch.
+     */
+    orderBy?: OrcamentoEtapaOrderByWithRelationInput | OrcamentoEtapaOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for OrcamentoEtapas.
+     */
+    cursor?: OrcamentoEtapaWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` OrcamentoEtapas from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` OrcamentoEtapas.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of OrcamentoEtapas.
+     */
+    distinct?: OrcamentoEtapaScalarFieldEnum | OrcamentoEtapaScalarFieldEnum[]
+  }
+
+  /**
+   * OrcamentoEtapa findFirstOrThrow
+   */
+  export type OrcamentoEtapaFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoEtapa
+     */
+    select?: OrcamentoEtapaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoEtapa
+     */
+    omit?: OrcamentoEtapaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OrcamentoEtapaInclude<ExtArgs> | null
+    /**
+     * Filter, which OrcamentoEtapa to fetch.
+     */
+    where?: OrcamentoEtapaWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of OrcamentoEtapas to fetch.
+     */
+    orderBy?: OrcamentoEtapaOrderByWithRelationInput | OrcamentoEtapaOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for OrcamentoEtapas.
+     */
+    cursor?: OrcamentoEtapaWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` OrcamentoEtapas from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` OrcamentoEtapas.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of OrcamentoEtapas.
+     */
+    distinct?: OrcamentoEtapaScalarFieldEnum | OrcamentoEtapaScalarFieldEnum[]
+  }
+
+  /**
+   * OrcamentoEtapa findMany
+   */
+  export type OrcamentoEtapaFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoEtapa
+     */
+    select?: OrcamentoEtapaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoEtapa
+     */
+    omit?: OrcamentoEtapaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OrcamentoEtapaInclude<ExtArgs> | null
+    /**
+     * Filter, which OrcamentoEtapas to fetch.
+     */
+    where?: OrcamentoEtapaWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of OrcamentoEtapas to fetch.
+     */
+    orderBy?: OrcamentoEtapaOrderByWithRelationInput | OrcamentoEtapaOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing OrcamentoEtapas.
+     */
+    cursor?: OrcamentoEtapaWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` OrcamentoEtapas from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` OrcamentoEtapas.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of OrcamentoEtapas.
+     */
+    distinct?: OrcamentoEtapaScalarFieldEnum | OrcamentoEtapaScalarFieldEnum[]
+  }
+
+  /**
+   * OrcamentoEtapa create
+   */
+  export type OrcamentoEtapaCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoEtapa
+     */
+    select?: OrcamentoEtapaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoEtapa
+     */
+    omit?: OrcamentoEtapaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OrcamentoEtapaInclude<ExtArgs> | null
+    /**
+     * The data needed to create a OrcamentoEtapa.
+     */
+    data: XOR<OrcamentoEtapaCreateInput, OrcamentoEtapaUncheckedCreateInput>
+  }
+
+  /**
+   * OrcamentoEtapa createMany
+   */
+  export type OrcamentoEtapaCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many OrcamentoEtapas.
+     */
+    data: OrcamentoEtapaCreateManyInput | OrcamentoEtapaCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * OrcamentoEtapa createManyAndReturn
+   */
+  export type OrcamentoEtapaCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoEtapa
+     */
+    select?: OrcamentoEtapaSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoEtapa
+     */
+    omit?: OrcamentoEtapaOmit<ExtArgs> | null
+    /**
+     * The data used to create many OrcamentoEtapas.
+     */
+    data: OrcamentoEtapaCreateManyInput | OrcamentoEtapaCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OrcamentoEtapaIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * OrcamentoEtapa update
+   */
+  export type OrcamentoEtapaUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoEtapa
+     */
+    select?: OrcamentoEtapaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoEtapa
+     */
+    omit?: OrcamentoEtapaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OrcamentoEtapaInclude<ExtArgs> | null
+    /**
+     * The data needed to update a OrcamentoEtapa.
+     */
+    data: XOR<OrcamentoEtapaUpdateInput, OrcamentoEtapaUncheckedUpdateInput>
+    /**
+     * Choose, which OrcamentoEtapa to update.
+     */
+    where: OrcamentoEtapaWhereUniqueInput
+  }
+
+  /**
+   * OrcamentoEtapa updateMany
+   */
+  export type OrcamentoEtapaUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update OrcamentoEtapas.
+     */
+    data: XOR<OrcamentoEtapaUpdateManyMutationInput, OrcamentoEtapaUncheckedUpdateManyInput>
+    /**
+     * Filter which OrcamentoEtapas to update
+     */
+    where?: OrcamentoEtapaWhereInput
+    /**
+     * Limit how many OrcamentoEtapas to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * OrcamentoEtapa updateManyAndReturn
+   */
+  export type OrcamentoEtapaUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoEtapa
+     */
+    select?: OrcamentoEtapaSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoEtapa
+     */
+    omit?: OrcamentoEtapaOmit<ExtArgs> | null
+    /**
+     * The data used to update OrcamentoEtapas.
+     */
+    data: XOR<OrcamentoEtapaUpdateManyMutationInput, OrcamentoEtapaUncheckedUpdateManyInput>
+    /**
+     * Filter which OrcamentoEtapas to update
+     */
+    where?: OrcamentoEtapaWhereInput
+    /**
+     * Limit how many OrcamentoEtapas to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OrcamentoEtapaIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * OrcamentoEtapa upsert
+   */
+  export type OrcamentoEtapaUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoEtapa
+     */
+    select?: OrcamentoEtapaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoEtapa
+     */
+    omit?: OrcamentoEtapaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OrcamentoEtapaInclude<ExtArgs> | null
+    /**
+     * The filter to search for the OrcamentoEtapa to update in case it exists.
+     */
+    where: OrcamentoEtapaWhereUniqueInput
+    /**
+     * In case the OrcamentoEtapa found by the `where` argument doesn't exist, create a new OrcamentoEtapa with this data.
+     */
+    create: XOR<OrcamentoEtapaCreateInput, OrcamentoEtapaUncheckedCreateInput>
+    /**
+     * In case the OrcamentoEtapa was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<OrcamentoEtapaUpdateInput, OrcamentoEtapaUncheckedUpdateInput>
+  }
+
+  /**
+   * OrcamentoEtapa delete
+   */
+  export type OrcamentoEtapaDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoEtapa
+     */
+    select?: OrcamentoEtapaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoEtapa
+     */
+    omit?: OrcamentoEtapaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OrcamentoEtapaInclude<ExtArgs> | null
+    /**
+     * Filter which OrcamentoEtapa to delete.
+     */
+    where: OrcamentoEtapaWhereUniqueInput
+  }
+
+  /**
+   * OrcamentoEtapa deleteMany
+   */
+  export type OrcamentoEtapaDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which OrcamentoEtapas to delete
+     */
+    where?: OrcamentoEtapaWhereInput
+    /**
+     * Limit how many OrcamentoEtapas to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * OrcamentoEtapa.itens
+   */
+  export type OrcamentoEtapa$itensArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoItem
+     */
+    select?: OrcamentoItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoItem
+     */
+    omit?: OrcamentoItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OrcamentoItemInclude<ExtArgs> | null
+    where?: OrcamentoItemWhereInput
+    orderBy?: OrcamentoItemOrderByWithRelationInput | OrcamentoItemOrderByWithRelationInput[]
+    cursor?: OrcamentoItemWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: OrcamentoItemScalarFieldEnum | OrcamentoItemScalarFieldEnum[]
+  }
+
+  /**
+   * OrcamentoEtapa without action
+   */
+  export type OrcamentoEtapaDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoEtapa
+     */
+    select?: OrcamentoEtapaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoEtapa
+     */
+    omit?: OrcamentoEtapaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OrcamentoEtapaInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model OrcamentoItem
+   */
+
+  export type AggregateOrcamentoItem = {
+    _count: OrcamentoItemCountAggregateOutputType | null
+    _avg: OrcamentoItemAvgAggregateOutputType | null
+    _sum: OrcamentoItemSumAggregateOutputType | null
+    _min: OrcamentoItemMinAggregateOutputType | null
+    _max: OrcamentoItemMaxAggregateOutputType | null
+  }
+
+  export type OrcamentoItemAvgAggregateOutputType = {
+    quantidade: number | null
+    precoBaseUnitario: number | null
+    bdiPercent: number | null
+  }
+
+  export type OrcamentoItemSumAggregateOutputType = {
+    quantidade: number | null
+    precoBaseUnitario: number | null
+    bdiPercent: number | null
+  }
+
+  export type OrcamentoItemMinAggregateOutputType = {
+    id: string | null
+    etapaId: string | null
+    codigo: string | null
+    descricao: string | null
+    tipo: string | null
+    unidade: string | null
+    quantidade: number | null
+    precoBaseUnitario: number | null
+    bdiPercent: number | null
+  }
+
+  export type OrcamentoItemMaxAggregateOutputType = {
+    id: string | null
+    etapaId: string | null
+    codigo: string | null
+    descricao: string | null
+    tipo: string | null
+    unidade: string | null
+    quantidade: number | null
+    precoBaseUnitario: number | null
+    bdiPercent: number | null
+  }
+
+  export type OrcamentoItemCountAggregateOutputType = {
+    id: number
+    etapaId: number
+    codigo: number
+    descricao: number
+    tipo: number
+    unidade: number
+    quantidade: number
+    precoBaseUnitario: number
+    bdiPercent: number
+    _all: number
+  }
+
+
+  export type OrcamentoItemAvgAggregateInputType = {
+    quantidade?: true
+    precoBaseUnitario?: true
+    bdiPercent?: true
+  }
+
+  export type OrcamentoItemSumAggregateInputType = {
+    quantidade?: true
+    precoBaseUnitario?: true
+    bdiPercent?: true
+  }
+
+  export type OrcamentoItemMinAggregateInputType = {
+    id?: true
+    etapaId?: true
+    codigo?: true
+    descricao?: true
+    tipo?: true
+    unidade?: true
+    quantidade?: true
+    precoBaseUnitario?: true
+    bdiPercent?: true
+  }
+
+  export type OrcamentoItemMaxAggregateInputType = {
+    id?: true
+    etapaId?: true
+    codigo?: true
+    descricao?: true
+    tipo?: true
+    unidade?: true
+    quantidade?: true
+    precoBaseUnitario?: true
+    bdiPercent?: true
+  }
+
+  export type OrcamentoItemCountAggregateInputType = {
+    id?: true
+    etapaId?: true
+    codigo?: true
+    descricao?: true
+    tipo?: true
+    unidade?: true
+    quantidade?: true
+    precoBaseUnitario?: true
+    bdiPercent?: true
+    _all?: true
+  }
+
+  export type OrcamentoItemAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which OrcamentoItem to aggregate.
+     */
+    where?: OrcamentoItemWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of OrcamentoItems to fetch.
+     */
+    orderBy?: OrcamentoItemOrderByWithRelationInput | OrcamentoItemOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: OrcamentoItemWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` OrcamentoItems from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` OrcamentoItems.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned OrcamentoItems
+    **/
+    _count?: true | OrcamentoItemCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: OrcamentoItemAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: OrcamentoItemSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: OrcamentoItemMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: OrcamentoItemMaxAggregateInputType
+  }
+
+  export type GetOrcamentoItemAggregateType<T extends OrcamentoItemAggregateArgs> = {
+        [P in keyof T & keyof AggregateOrcamentoItem]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateOrcamentoItem[P]>
+      : GetScalarType<T[P], AggregateOrcamentoItem[P]>
+  }
+
+
+
+
+  export type OrcamentoItemGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: OrcamentoItemWhereInput
+    orderBy?: OrcamentoItemOrderByWithAggregationInput | OrcamentoItemOrderByWithAggregationInput[]
+    by: OrcamentoItemScalarFieldEnum[] | OrcamentoItemScalarFieldEnum
+    having?: OrcamentoItemScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: OrcamentoItemCountAggregateInputType | true
+    _avg?: OrcamentoItemAvgAggregateInputType
+    _sum?: OrcamentoItemSumAggregateInputType
+    _min?: OrcamentoItemMinAggregateInputType
+    _max?: OrcamentoItemMaxAggregateInputType
+  }
+
+  export type OrcamentoItemGroupByOutputType = {
+    id: string
+    etapaId: string
+    codigo: string | null
+    descricao: string
+    tipo: string
+    unidade: string
+    quantidade: number
+    precoBaseUnitario: number | null
+    bdiPercent: number | null
+    _count: OrcamentoItemCountAggregateOutputType | null
+    _avg: OrcamentoItemAvgAggregateOutputType | null
+    _sum: OrcamentoItemSumAggregateOutputType | null
+    _min: OrcamentoItemMinAggregateOutputType | null
+    _max: OrcamentoItemMaxAggregateOutputType | null
+  }
+
+  type GetOrcamentoItemGroupByPayload<T extends OrcamentoItemGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<OrcamentoItemGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof OrcamentoItemGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], OrcamentoItemGroupByOutputType[P]>
+            : GetScalarType<T[P], OrcamentoItemGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type OrcamentoItemSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    etapaId?: boolean
+    codigo?: boolean
+    descricao?: boolean
+    tipo?: boolean
+    unidade?: boolean
+    quantidade?: boolean
+    precoBaseUnitario?: boolean
+    bdiPercent?: boolean
+    etapa?: boolean | OrcamentoEtapaDefaultArgs<ExtArgs>
+    propostas?: boolean | OrcamentoItem$propostasArgs<ExtArgs>
+    _count?: boolean | OrcamentoItemCountOutputTypeDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["orcamentoItem"]>
+
+  export type OrcamentoItemSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    etapaId?: boolean
+    codigo?: boolean
+    descricao?: boolean
+    tipo?: boolean
+    unidade?: boolean
+    quantidade?: boolean
+    precoBaseUnitario?: boolean
+    bdiPercent?: boolean
+    etapa?: boolean | OrcamentoEtapaDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["orcamentoItem"]>
+
+  export type OrcamentoItemSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    etapaId?: boolean
+    codigo?: boolean
+    descricao?: boolean
+    tipo?: boolean
+    unidade?: boolean
+    quantidade?: boolean
+    precoBaseUnitario?: boolean
+    bdiPercent?: boolean
+    etapa?: boolean | OrcamentoEtapaDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["orcamentoItem"]>
+
+  export type OrcamentoItemSelectScalar = {
+    id?: boolean
+    etapaId?: boolean
+    codigo?: boolean
+    descricao?: boolean
+    tipo?: boolean
+    unidade?: boolean
+    quantidade?: boolean
+    precoBaseUnitario?: boolean
+    bdiPercent?: boolean
+  }
+
+  export type OrcamentoItemOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "etapaId" | "codigo" | "descricao" | "tipo" | "unidade" | "quantidade" | "precoBaseUnitario" | "bdiPercent", ExtArgs["result"]["orcamentoItem"]>
+  export type OrcamentoItemInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    etapa?: boolean | OrcamentoEtapaDefaultArgs<ExtArgs>
+    propostas?: boolean | OrcamentoItem$propostasArgs<ExtArgs>
+    _count?: boolean | OrcamentoItemCountOutputTypeDefaultArgs<ExtArgs>
+  }
+  export type OrcamentoItemIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    etapa?: boolean | OrcamentoEtapaDefaultArgs<ExtArgs>
+  }
+  export type OrcamentoItemIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    etapa?: boolean | OrcamentoEtapaDefaultArgs<ExtArgs>
+  }
+
+  export type $OrcamentoItemPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "OrcamentoItem"
+    objects: {
+      etapa: Prisma.$OrcamentoEtapaPayload<ExtArgs>
+      propostas: Prisma.$PropostaItemPayload<ExtArgs>[]
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      etapaId: string
+      codigo: string | null
+      descricao: string
+      tipo: string
+      unidade: string
+      quantidade: number
+      precoBaseUnitario: number | null
+      bdiPercent: number | null
+    }, ExtArgs["result"]["orcamentoItem"]>
+    composites: {}
+  }
+
+  type OrcamentoItemGetPayload<S extends boolean | null | undefined | OrcamentoItemDefaultArgs> = $Result.GetResult<Prisma.$OrcamentoItemPayload, S>
+
+  type OrcamentoItemCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<OrcamentoItemFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: OrcamentoItemCountAggregateInputType | true
+    }
+
+  export interface OrcamentoItemDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['OrcamentoItem'], meta: { name: 'OrcamentoItem' } }
+    /**
+     * Find zero or one OrcamentoItem that matches the filter.
+     * @param {OrcamentoItemFindUniqueArgs} args - Arguments to find a OrcamentoItem
+     * @example
+     * // Get one OrcamentoItem
+     * const orcamentoItem = await prisma.orcamentoItem.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends OrcamentoItemFindUniqueArgs>(args: SelectSubset<T, OrcamentoItemFindUniqueArgs<ExtArgs>>): Prisma__OrcamentoItemClient<$Result.GetResult<Prisma.$OrcamentoItemPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one OrcamentoItem that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {OrcamentoItemFindUniqueOrThrowArgs} args - Arguments to find a OrcamentoItem
+     * @example
+     * // Get one OrcamentoItem
+     * const orcamentoItem = await prisma.orcamentoItem.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends OrcamentoItemFindUniqueOrThrowArgs>(args: SelectSubset<T, OrcamentoItemFindUniqueOrThrowArgs<ExtArgs>>): Prisma__OrcamentoItemClient<$Result.GetResult<Prisma.$OrcamentoItemPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first OrcamentoItem that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OrcamentoItemFindFirstArgs} args - Arguments to find a OrcamentoItem
+     * @example
+     * // Get one OrcamentoItem
+     * const orcamentoItem = await prisma.orcamentoItem.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends OrcamentoItemFindFirstArgs>(args?: SelectSubset<T, OrcamentoItemFindFirstArgs<ExtArgs>>): Prisma__OrcamentoItemClient<$Result.GetResult<Prisma.$OrcamentoItemPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first OrcamentoItem that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OrcamentoItemFindFirstOrThrowArgs} args - Arguments to find a OrcamentoItem
+     * @example
+     * // Get one OrcamentoItem
+     * const orcamentoItem = await prisma.orcamentoItem.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends OrcamentoItemFindFirstOrThrowArgs>(args?: SelectSubset<T, OrcamentoItemFindFirstOrThrowArgs<ExtArgs>>): Prisma__OrcamentoItemClient<$Result.GetResult<Prisma.$OrcamentoItemPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more OrcamentoItems that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OrcamentoItemFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all OrcamentoItems
+     * const orcamentoItems = await prisma.orcamentoItem.findMany()
+     * 
+     * // Get first 10 OrcamentoItems
+     * const orcamentoItems = await prisma.orcamentoItem.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const orcamentoItemWithIdOnly = await prisma.orcamentoItem.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends OrcamentoItemFindManyArgs>(args?: SelectSubset<T, OrcamentoItemFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$OrcamentoItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a OrcamentoItem.
+     * @param {OrcamentoItemCreateArgs} args - Arguments to create a OrcamentoItem.
+     * @example
+     * // Create one OrcamentoItem
+     * const OrcamentoItem = await prisma.orcamentoItem.create({
+     *   data: {
+     *     // ... data to create a OrcamentoItem
+     *   }
+     * })
+     * 
+     */
+    create<T extends OrcamentoItemCreateArgs>(args: SelectSubset<T, OrcamentoItemCreateArgs<ExtArgs>>): Prisma__OrcamentoItemClient<$Result.GetResult<Prisma.$OrcamentoItemPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many OrcamentoItems.
+     * @param {OrcamentoItemCreateManyArgs} args - Arguments to create many OrcamentoItems.
+     * @example
+     * // Create many OrcamentoItems
+     * const orcamentoItem = await prisma.orcamentoItem.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends OrcamentoItemCreateManyArgs>(args?: SelectSubset<T, OrcamentoItemCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many OrcamentoItems and returns the data saved in the database.
+     * @param {OrcamentoItemCreateManyAndReturnArgs} args - Arguments to create many OrcamentoItems.
+     * @example
+     * // Create many OrcamentoItems
+     * const orcamentoItem = await prisma.orcamentoItem.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many OrcamentoItems and only return the `id`
+     * const orcamentoItemWithIdOnly = await prisma.orcamentoItem.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends OrcamentoItemCreateManyAndReturnArgs>(args?: SelectSubset<T, OrcamentoItemCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$OrcamentoItemPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a OrcamentoItem.
+     * @param {OrcamentoItemDeleteArgs} args - Arguments to delete one OrcamentoItem.
+     * @example
+     * // Delete one OrcamentoItem
+     * const OrcamentoItem = await prisma.orcamentoItem.delete({
+     *   where: {
+     *     // ... filter to delete one OrcamentoItem
+     *   }
+     * })
+     * 
+     */
+    delete<T extends OrcamentoItemDeleteArgs>(args: SelectSubset<T, OrcamentoItemDeleteArgs<ExtArgs>>): Prisma__OrcamentoItemClient<$Result.GetResult<Prisma.$OrcamentoItemPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one OrcamentoItem.
+     * @param {OrcamentoItemUpdateArgs} args - Arguments to update one OrcamentoItem.
+     * @example
+     * // Update one OrcamentoItem
+     * const orcamentoItem = await prisma.orcamentoItem.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends OrcamentoItemUpdateArgs>(args: SelectSubset<T, OrcamentoItemUpdateArgs<ExtArgs>>): Prisma__OrcamentoItemClient<$Result.GetResult<Prisma.$OrcamentoItemPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more OrcamentoItems.
+     * @param {OrcamentoItemDeleteManyArgs} args - Arguments to filter OrcamentoItems to delete.
+     * @example
+     * // Delete a few OrcamentoItems
+     * const { count } = await prisma.orcamentoItem.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends OrcamentoItemDeleteManyArgs>(args?: SelectSubset<T, OrcamentoItemDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more OrcamentoItems.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OrcamentoItemUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many OrcamentoItems
+     * const orcamentoItem = await prisma.orcamentoItem.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends OrcamentoItemUpdateManyArgs>(args: SelectSubset<T, OrcamentoItemUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more OrcamentoItems and returns the data updated in the database.
+     * @param {OrcamentoItemUpdateManyAndReturnArgs} args - Arguments to update many OrcamentoItems.
+     * @example
+     * // Update many OrcamentoItems
+     * const orcamentoItem = await prisma.orcamentoItem.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more OrcamentoItems and only return the `id`
+     * const orcamentoItemWithIdOnly = await prisma.orcamentoItem.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends OrcamentoItemUpdateManyAndReturnArgs>(args: SelectSubset<T, OrcamentoItemUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$OrcamentoItemPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one OrcamentoItem.
+     * @param {OrcamentoItemUpsertArgs} args - Arguments to update or create a OrcamentoItem.
+     * @example
+     * // Update or create a OrcamentoItem
+     * const orcamentoItem = await prisma.orcamentoItem.upsert({
+     *   create: {
+     *     // ... data to create a OrcamentoItem
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the OrcamentoItem we want to update
+     *   }
+     * })
+     */
+    upsert<T extends OrcamentoItemUpsertArgs>(args: SelectSubset<T, OrcamentoItemUpsertArgs<ExtArgs>>): Prisma__OrcamentoItemClient<$Result.GetResult<Prisma.$OrcamentoItemPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of OrcamentoItems.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OrcamentoItemCountArgs} args - Arguments to filter OrcamentoItems to count.
+     * @example
+     * // Count the number of OrcamentoItems
+     * const count = await prisma.orcamentoItem.count({
+     *   where: {
+     *     // ... the filter for the OrcamentoItems we want to count
+     *   }
+     * })
+    **/
+    count<T extends OrcamentoItemCountArgs>(
+      args?: Subset<T, OrcamentoItemCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], OrcamentoItemCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a OrcamentoItem.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OrcamentoItemAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends OrcamentoItemAggregateArgs>(args: Subset<T, OrcamentoItemAggregateArgs>): Prisma.PrismaPromise<GetOrcamentoItemAggregateType<T>>
+
+    /**
+     * Group by OrcamentoItem.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OrcamentoItemGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends OrcamentoItemGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: OrcamentoItemGroupByArgs['orderBy'] }
+        : { orderBy?: OrcamentoItemGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, OrcamentoItemGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetOrcamentoItemGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the OrcamentoItem model
+   */
+  readonly fields: OrcamentoItemFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for OrcamentoItem.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__OrcamentoItemClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    etapa<T extends OrcamentoEtapaDefaultArgs<ExtArgs> = {}>(args?: Subset<T, OrcamentoEtapaDefaultArgs<ExtArgs>>): Prisma__OrcamentoEtapaClient<$Result.GetResult<Prisma.$OrcamentoEtapaPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    propostas<T extends OrcamentoItem$propostasArgs<ExtArgs> = {}>(args?: Subset<T, OrcamentoItem$propostasArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PropostaItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the OrcamentoItem model
+   */
+  interface OrcamentoItemFieldRefs {
+    readonly id: FieldRef<"OrcamentoItem", 'String'>
+    readonly etapaId: FieldRef<"OrcamentoItem", 'String'>
+    readonly codigo: FieldRef<"OrcamentoItem", 'String'>
+    readonly descricao: FieldRef<"OrcamentoItem", 'String'>
+    readonly tipo: FieldRef<"OrcamentoItem", 'String'>
+    readonly unidade: FieldRef<"OrcamentoItem", 'String'>
+    readonly quantidade: FieldRef<"OrcamentoItem", 'Float'>
+    readonly precoBaseUnitario: FieldRef<"OrcamentoItem", 'Float'>
+    readonly bdiPercent: FieldRef<"OrcamentoItem", 'Float'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * OrcamentoItem findUnique
+   */
+  export type OrcamentoItemFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoItem
+     */
+    select?: OrcamentoItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoItem
+     */
+    omit?: OrcamentoItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OrcamentoItemInclude<ExtArgs> | null
+    /**
+     * Filter, which OrcamentoItem to fetch.
+     */
+    where: OrcamentoItemWhereUniqueInput
+  }
+
+  /**
+   * OrcamentoItem findUniqueOrThrow
+   */
+  export type OrcamentoItemFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoItem
+     */
+    select?: OrcamentoItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoItem
+     */
+    omit?: OrcamentoItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OrcamentoItemInclude<ExtArgs> | null
+    /**
+     * Filter, which OrcamentoItem to fetch.
+     */
+    where: OrcamentoItemWhereUniqueInput
+  }
+
+  /**
+   * OrcamentoItem findFirst
+   */
+  export type OrcamentoItemFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoItem
+     */
+    select?: OrcamentoItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoItem
+     */
+    omit?: OrcamentoItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OrcamentoItemInclude<ExtArgs> | null
+    /**
+     * Filter, which OrcamentoItem to fetch.
+     */
+    where?: OrcamentoItemWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of OrcamentoItems to fetch.
+     */
+    orderBy?: OrcamentoItemOrderByWithRelationInput | OrcamentoItemOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for OrcamentoItems.
+     */
+    cursor?: OrcamentoItemWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` OrcamentoItems from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` OrcamentoItems.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of OrcamentoItems.
+     */
+    distinct?: OrcamentoItemScalarFieldEnum | OrcamentoItemScalarFieldEnum[]
+  }
+
+  /**
+   * OrcamentoItem findFirstOrThrow
+   */
+  export type OrcamentoItemFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoItem
+     */
+    select?: OrcamentoItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoItem
+     */
+    omit?: OrcamentoItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OrcamentoItemInclude<ExtArgs> | null
+    /**
+     * Filter, which OrcamentoItem to fetch.
+     */
+    where?: OrcamentoItemWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of OrcamentoItems to fetch.
+     */
+    orderBy?: OrcamentoItemOrderByWithRelationInput | OrcamentoItemOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for OrcamentoItems.
+     */
+    cursor?: OrcamentoItemWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` OrcamentoItems from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` OrcamentoItems.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of OrcamentoItems.
+     */
+    distinct?: OrcamentoItemScalarFieldEnum | OrcamentoItemScalarFieldEnum[]
+  }
+
+  /**
+   * OrcamentoItem findMany
+   */
+  export type OrcamentoItemFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoItem
+     */
+    select?: OrcamentoItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoItem
+     */
+    omit?: OrcamentoItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OrcamentoItemInclude<ExtArgs> | null
+    /**
+     * Filter, which OrcamentoItems to fetch.
+     */
+    where?: OrcamentoItemWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of OrcamentoItems to fetch.
+     */
+    orderBy?: OrcamentoItemOrderByWithRelationInput | OrcamentoItemOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing OrcamentoItems.
+     */
+    cursor?: OrcamentoItemWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` OrcamentoItems from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` OrcamentoItems.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of OrcamentoItems.
+     */
+    distinct?: OrcamentoItemScalarFieldEnum | OrcamentoItemScalarFieldEnum[]
+  }
+
+  /**
+   * OrcamentoItem create
+   */
+  export type OrcamentoItemCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoItem
+     */
+    select?: OrcamentoItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoItem
+     */
+    omit?: OrcamentoItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OrcamentoItemInclude<ExtArgs> | null
+    /**
+     * The data needed to create a OrcamentoItem.
+     */
+    data: XOR<OrcamentoItemCreateInput, OrcamentoItemUncheckedCreateInput>
+  }
+
+  /**
+   * OrcamentoItem createMany
+   */
+  export type OrcamentoItemCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many OrcamentoItems.
+     */
+    data: OrcamentoItemCreateManyInput | OrcamentoItemCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * OrcamentoItem createManyAndReturn
+   */
+  export type OrcamentoItemCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoItem
+     */
+    select?: OrcamentoItemSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoItem
+     */
+    omit?: OrcamentoItemOmit<ExtArgs> | null
+    /**
+     * The data used to create many OrcamentoItems.
+     */
+    data: OrcamentoItemCreateManyInput | OrcamentoItemCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OrcamentoItemIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * OrcamentoItem update
+   */
+  export type OrcamentoItemUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoItem
+     */
+    select?: OrcamentoItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoItem
+     */
+    omit?: OrcamentoItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OrcamentoItemInclude<ExtArgs> | null
+    /**
+     * The data needed to update a OrcamentoItem.
+     */
+    data: XOR<OrcamentoItemUpdateInput, OrcamentoItemUncheckedUpdateInput>
+    /**
+     * Choose, which OrcamentoItem to update.
+     */
+    where: OrcamentoItemWhereUniqueInput
+  }
+
+  /**
+   * OrcamentoItem updateMany
+   */
+  export type OrcamentoItemUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update OrcamentoItems.
+     */
+    data: XOR<OrcamentoItemUpdateManyMutationInput, OrcamentoItemUncheckedUpdateManyInput>
+    /**
+     * Filter which OrcamentoItems to update
+     */
+    where?: OrcamentoItemWhereInput
+    /**
+     * Limit how many OrcamentoItems to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * OrcamentoItem updateManyAndReturn
+   */
+  export type OrcamentoItemUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoItem
+     */
+    select?: OrcamentoItemSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoItem
+     */
+    omit?: OrcamentoItemOmit<ExtArgs> | null
+    /**
+     * The data used to update OrcamentoItems.
+     */
+    data: XOR<OrcamentoItemUpdateManyMutationInput, OrcamentoItemUncheckedUpdateManyInput>
+    /**
+     * Filter which OrcamentoItems to update
+     */
+    where?: OrcamentoItemWhereInput
+    /**
+     * Limit how many OrcamentoItems to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OrcamentoItemIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * OrcamentoItem upsert
+   */
+  export type OrcamentoItemUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoItem
+     */
+    select?: OrcamentoItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoItem
+     */
+    omit?: OrcamentoItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OrcamentoItemInclude<ExtArgs> | null
+    /**
+     * The filter to search for the OrcamentoItem to update in case it exists.
+     */
+    where: OrcamentoItemWhereUniqueInput
+    /**
+     * In case the OrcamentoItem found by the `where` argument doesn't exist, create a new OrcamentoItem with this data.
+     */
+    create: XOR<OrcamentoItemCreateInput, OrcamentoItemUncheckedCreateInput>
+    /**
+     * In case the OrcamentoItem was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<OrcamentoItemUpdateInput, OrcamentoItemUncheckedUpdateInput>
+  }
+
+  /**
+   * OrcamentoItem delete
+   */
+  export type OrcamentoItemDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoItem
+     */
+    select?: OrcamentoItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoItem
+     */
+    omit?: OrcamentoItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OrcamentoItemInclude<ExtArgs> | null
+    /**
+     * Filter which OrcamentoItem to delete.
+     */
+    where: OrcamentoItemWhereUniqueInput
+  }
+
+  /**
+   * OrcamentoItem deleteMany
+   */
+  export type OrcamentoItemDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which OrcamentoItems to delete
+     */
+    where?: OrcamentoItemWhereInput
+    /**
+     * Limit how many OrcamentoItems to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * OrcamentoItem.propostas
+   */
+  export type OrcamentoItem$propostasArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PropostaItem
+     */
+    select?: PropostaItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PropostaItem
+     */
+    omit?: PropostaItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PropostaItemInclude<ExtArgs> | null
+    where?: PropostaItemWhereInput
+    orderBy?: PropostaItemOrderByWithRelationInput | PropostaItemOrderByWithRelationInput[]
+    cursor?: PropostaItemWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: PropostaItemScalarFieldEnum | PropostaItemScalarFieldEnum[]
+  }
+
+  /**
+   * OrcamentoItem without action
+   */
+  export type OrcamentoItemDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoItem
+     */
+    select?: OrcamentoItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoItem
+     */
+    omit?: OrcamentoItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OrcamentoItemInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model Fornecedor
+   */
+
+  export type AggregateFornecedor = {
+    _count: FornecedorCountAggregateOutputType | null
+    _min: FornecedorMinAggregateOutputType | null
+    _max: FornecedorMaxAggregateOutputType | null
+  }
+
+  export type FornecedorMinAggregateOutputType = {
+    id: string | null
+    razaoSocial: string | null
+    cnpj: string | null
+    contatoNome: string | null
+    contatoEmail: string | null
+    contatoTelefone: string | null
+    idContaAzul: string | null
+  }
+
+  export type FornecedorMaxAggregateOutputType = {
+    id: string | null
+    razaoSocial: string | null
+    cnpj: string | null
+    contatoNome: string | null
+    contatoEmail: string | null
+    contatoTelefone: string | null
+    idContaAzul: string | null
+  }
+
+  export type FornecedorCountAggregateOutputType = {
+    id: number
+    razaoSocial: number
+    cnpj: number
+    contatoNome: number
+    contatoEmail: number
+    contatoTelefone: number
+    idContaAzul: number
+    _all: number
+  }
+
+
+  export type FornecedorMinAggregateInputType = {
+    id?: true
+    razaoSocial?: true
+    cnpj?: true
+    contatoNome?: true
+    contatoEmail?: true
+    contatoTelefone?: true
+    idContaAzul?: true
+  }
+
+  export type FornecedorMaxAggregateInputType = {
+    id?: true
+    razaoSocial?: true
+    cnpj?: true
+    contatoNome?: true
+    contatoEmail?: true
+    contatoTelefone?: true
+    idContaAzul?: true
+  }
+
+  export type FornecedorCountAggregateInputType = {
+    id?: true
+    razaoSocial?: true
+    cnpj?: true
+    contatoNome?: true
+    contatoEmail?: true
+    contatoTelefone?: true
+    idContaAzul?: true
+    _all?: true
+  }
+
+  export type FornecedorAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which Fornecedor to aggregate.
+     */
+    where?: FornecedorWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Fornecedors to fetch.
+     */
+    orderBy?: FornecedorOrderByWithRelationInput | FornecedorOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: FornecedorWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Fornecedors from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Fornecedors.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned Fornecedors
+    **/
+    _count?: true | FornecedorCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: FornecedorMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: FornecedorMaxAggregateInputType
+  }
+
+  export type GetFornecedorAggregateType<T extends FornecedorAggregateArgs> = {
+        [P in keyof T & keyof AggregateFornecedor]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateFornecedor[P]>
+      : GetScalarType<T[P], AggregateFornecedor[P]>
+  }
+
+
+
+
+  export type FornecedorGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: FornecedorWhereInput
+    orderBy?: FornecedorOrderByWithAggregationInput | FornecedorOrderByWithAggregationInput[]
+    by: FornecedorScalarFieldEnum[] | FornecedorScalarFieldEnum
+    having?: FornecedorScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: FornecedorCountAggregateInputType | true
+    _min?: FornecedorMinAggregateInputType
+    _max?: FornecedorMaxAggregateInputType
+  }
+
+  export type FornecedorGroupByOutputType = {
+    id: string
+    razaoSocial: string
+    cnpj: string | null
+    contatoNome: string | null
+    contatoEmail: string | null
+    contatoTelefone: string | null
+    idContaAzul: string | null
+    _count: FornecedorCountAggregateOutputType | null
+    _min: FornecedorMinAggregateOutputType | null
+    _max: FornecedorMaxAggregateOutputType | null
+  }
+
+  type GetFornecedorGroupByPayload<T extends FornecedorGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<FornecedorGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof FornecedorGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], FornecedorGroupByOutputType[P]>
+            : GetScalarType<T[P], FornecedorGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type FornecedorSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    razaoSocial?: boolean
+    cnpj?: boolean
+    contatoNome?: boolean
+    contatoEmail?: boolean
+    contatoTelefone?: boolean
+    idContaAzul?: boolean
+    projetos?: boolean | Fornecedor$projetosArgs<ExtArgs>
+    propostas?: boolean | Fornecedor$propostasArgs<ExtArgs>
+    _count?: boolean | FornecedorCountOutputTypeDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["fornecedor"]>
+
+  export type FornecedorSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    razaoSocial?: boolean
+    cnpj?: boolean
+    contatoNome?: boolean
+    contatoEmail?: boolean
+    contatoTelefone?: boolean
+    idContaAzul?: boolean
+  }, ExtArgs["result"]["fornecedor"]>
+
+  export type FornecedorSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    razaoSocial?: boolean
+    cnpj?: boolean
+    contatoNome?: boolean
+    contatoEmail?: boolean
+    contatoTelefone?: boolean
+    idContaAzul?: boolean
+  }, ExtArgs["result"]["fornecedor"]>
+
+  export type FornecedorSelectScalar = {
+    id?: boolean
+    razaoSocial?: boolean
+    cnpj?: boolean
+    contatoNome?: boolean
+    contatoEmail?: boolean
+    contatoTelefone?: boolean
+    idContaAzul?: boolean
+  }
+
+  export type FornecedorOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "razaoSocial" | "cnpj" | "contatoNome" | "contatoEmail" | "contatoTelefone" | "idContaAzul", ExtArgs["result"]["fornecedor"]>
+  export type FornecedorInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    projetos?: boolean | Fornecedor$projetosArgs<ExtArgs>
+    propostas?: boolean | Fornecedor$propostasArgs<ExtArgs>
+    _count?: boolean | FornecedorCountOutputTypeDefaultArgs<ExtArgs>
+  }
+  export type FornecedorIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
+  export type FornecedorIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
+
+  export type $FornecedorPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "Fornecedor"
+    objects: {
+      projetos: Prisma.$FornecedorOrcamentoPayload<ExtArgs>[]
+      propostas: Prisma.$PropostaItemPayload<ExtArgs>[]
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      razaoSocial: string
+      cnpj: string | null
+      contatoNome: string | null
+      contatoEmail: string | null
+      contatoTelefone: string | null
+      idContaAzul: string | null
+    }, ExtArgs["result"]["fornecedor"]>
+    composites: {}
+  }
+
+  type FornecedorGetPayload<S extends boolean | null | undefined | FornecedorDefaultArgs> = $Result.GetResult<Prisma.$FornecedorPayload, S>
+
+  type FornecedorCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<FornecedorFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: FornecedorCountAggregateInputType | true
+    }
+
+  export interface FornecedorDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['Fornecedor'], meta: { name: 'Fornecedor' } }
+    /**
+     * Find zero or one Fornecedor that matches the filter.
+     * @param {FornecedorFindUniqueArgs} args - Arguments to find a Fornecedor
+     * @example
+     * // Get one Fornecedor
+     * const fornecedor = await prisma.fornecedor.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends FornecedorFindUniqueArgs>(args: SelectSubset<T, FornecedorFindUniqueArgs<ExtArgs>>): Prisma__FornecedorClient<$Result.GetResult<Prisma.$FornecedorPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one Fornecedor that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {FornecedorFindUniqueOrThrowArgs} args - Arguments to find a Fornecedor
+     * @example
+     * // Get one Fornecedor
+     * const fornecedor = await prisma.fornecedor.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends FornecedorFindUniqueOrThrowArgs>(args: SelectSubset<T, FornecedorFindUniqueOrThrowArgs<ExtArgs>>): Prisma__FornecedorClient<$Result.GetResult<Prisma.$FornecedorPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Fornecedor that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FornecedorFindFirstArgs} args - Arguments to find a Fornecedor
+     * @example
+     * // Get one Fornecedor
+     * const fornecedor = await prisma.fornecedor.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends FornecedorFindFirstArgs>(args?: SelectSubset<T, FornecedorFindFirstArgs<ExtArgs>>): Prisma__FornecedorClient<$Result.GetResult<Prisma.$FornecedorPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Fornecedor that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FornecedorFindFirstOrThrowArgs} args - Arguments to find a Fornecedor
+     * @example
+     * // Get one Fornecedor
+     * const fornecedor = await prisma.fornecedor.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends FornecedorFindFirstOrThrowArgs>(args?: SelectSubset<T, FornecedorFindFirstOrThrowArgs<ExtArgs>>): Prisma__FornecedorClient<$Result.GetResult<Prisma.$FornecedorPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more Fornecedors that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FornecedorFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all Fornecedors
+     * const fornecedors = await prisma.fornecedor.findMany()
+     * 
+     * // Get first 10 Fornecedors
+     * const fornecedors = await prisma.fornecedor.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const fornecedorWithIdOnly = await prisma.fornecedor.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends FornecedorFindManyArgs>(args?: SelectSubset<T, FornecedorFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$FornecedorPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a Fornecedor.
+     * @param {FornecedorCreateArgs} args - Arguments to create a Fornecedor.
+     * @example
+     * // Create one Fornecedor
+     * const Fornecedor = await prisma.fornecedor.create({
+     *   data: {
+     *     // ... data to create a Fornecedor
+     *   }
+     * })
+     * 
+     */
+    create<T extends FornecedorCreateArgs>(args: SelectSubset<T, FornecedorCreateArgs<ExtArgs>>): Prisma__FornecedorClient<$Result.GetResult<Prisma.$FornecedorPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many Fornecedors.
+     * @param {FornecedorCreateManyArgs} args - Arguments to create many Fornecedors.
+     * @example
+     * // Create many Fornecedors
+     * const fornecedor = await prisma.fornecedor.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends FornecedorCreateManyArgs>(args?: SelectSubset<T, FornecedorCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many Fornecedors and returns the data saved in the database.
+     * @param {FornecedorCreateManyAndReturnArgs} args - Arguments to create many Fornecedors.
+     * @example
+     * // Create many Fornecedors
+     * const fornecedor = await prisma.fornecedor.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many Fornecedors and only return the `id`
+     * const fornecedorWithIdOnly = await prisma.fornecedor.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends FornecedorCreateManyAndReturnArgs>(args?: SelectSubset<T, FornecedorCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$FornecedorPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a Fornecedor.
+     * @param {FornecedorDeleteArgs} args - Arguments to delete one Fornecedor.
+     * @example
+     * // Delete one Fornecedor
+     * const Fornecedor = await prisma.fornecedor.delete({
+     *   where: {
+     *     // ... filter to delete one Fornecedor
+     *   }
+     * })
+     * 
+     */
+    delete<T extends FornecedorDeleteArgs>(args: SelectSubset<T, FornecedorDeleteArgs<ExtArgs>>): Prisma__FornecedorClient<$Result.GetResult<Prisma.$FornecedorPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one Fornecedor.
+     * @param {FornecedorUpdateArgs} args - Arguments to update one Fornecedor.
+     * @example
+     * // Update one Fornecedor
+     * const fornecedor = await prisma.fornecedor.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends FornecedorUpdateArgs>(args: SelectSubset<T, FornecedorUpdateArgs<ExtArgs>>): Prisma__FornecedorClient<$Result.GetResult<Prisma.$FornecedorPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more Fornecedors.
+     * @param {FornecedorDeleteManyArgs} args - Arguments to filter Fornecedors to delete.
+     * @example
+     * // Delete a few Fornecedors
+     * const { count } = await prisma.fornecedor.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends FornecedorDeleteManyArgs>(args?: SelectSubset<T, FornecedorDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Fornecedors.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FornecedorUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many Fornecedors
+     * const fornecedor = await prisma.fornecedor.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends FornecedorUpdateManyArgs>(args: SelectSubset<T, FornecedorUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Fornecedors and returns the data updated in the database.
+     * @param {FornecedorUpdateManyAndReturnArgs} args - Arguments to update many Fornecedors.
+     * @example
+     * // Update many Fornecedors
+     * const fornecedor = await prisma.fornecedor.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more Fornecedors and only return the `id`
+     * const fornecedorWithIdOnly = await prisma.fornecedor.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends FornecedorUpdateManyAndReturnArgs>(args: SelectSubset<T, FornecedorUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$FornecedorPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one Fornecedor.
+     * @param {FornecedorUpsertArgs} args - Arguments to update or create a Fornecedor.
+     * @example
+     * // Update or create a Fornecedor
+     * const fornecedor = await prisma.fornecedor.upsert({
+     *   create: {
+     *     // ... data to create a Fornecedor
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the Fornecedor we want to update
+     *   }
+     * })
+     */
+    upsert<T extends FornecedorUpsertArgs>(args: SelectSubset<T, FornecedorUpsertArgs<ExtArgs>>): Prisma__FornecedorClient<$Result.GetResult<Prisma.$FornecedorPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of Fornecedors.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FornecedorCountArgs} args - Arguments to filter Fornecedors to count.
+     * @example
+     * // Count the number of Fornecedors
+     * const count = await prisma.fornecedor.count({
+     *   where: {
+     *     // ... the filter for the Fornecedors we want to count
+     *   }
+     * })
+    **/
+    count<T extends FornecedorCountArgs>(
+      args?: Subset<T, FornecedorCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], FornecedorCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a Fornecedor.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FornecedorAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends FornecedorAggregateArgs>(args: Subset<T, FornecedorAggregateArgs>): Prisma.PrismaPromise<GetFornecedorAggregateType<T>>
+
+    /**
+     * Group by Fornecedor.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FornecedorGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends FornecedorGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: FornecedorGroupByArgs['orderBy'] }
+        : { orderBy?: FornecedorGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, FornecedorGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetFornecedorGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the Fornecedor model
+   */
+  readonly fields: FornecedorFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for Fornecedor.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__FornecedorClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    projetos<T extends Fornecedor$projetosArgs<ExtArgs> = {}>(args?: Subset<T, Fornecedor$projetosArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$FornecedorOrcamentoPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    propostas<T extends Fornecedor$propostasArgs<ExtArgs> = {}>(args?: Subset<T, Fornecedor$propostasArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PropostaItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the Fornecedor model
+   */
+  interface FornecedorFieldRefs {
+    readonly id: FieldRef<"Fornecedor", 'String'>
+    readonly razaoSocial: FieldRef<"Fornecedor", 'String'>
+    readonly cnpj: FieldRef<"Fornecedor", 'String'>
+    readonly contatoNome: FieldRef<"Fornecedor", 'String'>
+    readonly contatoEmail: FieldRef<"Fornecedor", 'String'>
+    readonly contatoTelefone: FieldRef<"Fornecedor", 'String'>
+    readonly idContaAzul: FieldRef<"Fornecedor", 'String'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * Fornecedor findUnique
+   */
+  export type FornecedorFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Fornecedor
+     */
+    select?: FornecedorSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Fornecedor
+     */
+    omit?: FornecedorOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FornecedorInclude<ExtArgs> | null
+    /**
+     * Filter, which Fornecedor to fetch.
+     */
+    where: FornecedorWhereUniqueInput
+  }
+
+  /**
+   * Fornecedor findUniqueOrThrow
+   */
+  export type FornecedorFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Fornecedor
+     */
+    select?: FornecedorSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Fornecedor
+     */
+    omit?: FornecedorOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FornecedorInclude<ExtArgs> | null
+    /**
+     * Filter, which Fornecedor to fetch.
+     */
+    where: FornecedorWhereUniqueInput
+  }
+
+  /**
+   * Fornecedor findFirst
+   */
+  export type FornecedorFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Fornecedor
+     */
+    select?: FornecedorSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Fornecedor
+     */
+    omit?: FornecedorOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FornecedorInclude<ExtArgs> | null
+    /**
+     * Filter, which Fornecedor to fetch.
+     */
+    where?: FornecedorWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Fornecedors to fetch.
+     */
+    orderBy?: FornecedorOrderByWithRelationInput | FornecedorOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for Fornecedors.
+     */
+    cursor?: FornecedorWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Fornecedors from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Fornecedors.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of Fornecedors.
+     */
+    distinct?: FornecedorScalarFieldEnum | FornecedorScalarFieldEnum[]
+  }
+
+  /**
+   * Fornecedor findFirstOrThrow
+   */
+  export type FornecedorFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Fornecedor
+     */
+    select?: FornecedorSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Fornecedor
+     */
+    omit?: FornecedorOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FornecedorInclude<ExtArgs> | null
+    /**
+     * Filter, which Fornecedor to fetch.
+     */
+    where?: FornecedorWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Fornecedors to fetch.
+     */
+    orderBy?: FornecedorOrderByWithRelationInput | FornecedorOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for Fornecedors.
+     */
+    cursor?: FornecedorWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Fornecedors from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Fornecedors.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of Fornecedors.
+     */
+    distinct?: FornecedorScalarFieldEnum | FornecedorScalarFieldEnum[]
+  }
+
+  /**
+   * Fornecedor findMany
+   */
+  export type FornecedorFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Fornecedor
+     */
+    select?: FornecedorSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Fornecedor
+     */
+    omit?: FornecedorOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FornecedorInclude<ExtArgs> | null
+    /**
+     * Filter, which Fornecedors to fetch.
+     */
+    where?: FornecedorWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Fornecedors to fetch.
+     */
+    orderBy?: FornecedorOrderByWithRelationInput | FornecedorOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing Fornecedors.
+     */
+    cursor?: FornecedorWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Fornecedors from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Fornecedors.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of Fornecedors.
+     */
+    distinct?: FornecedorScalarFieldEnum | FornecedorScalarFieldEnum[]
+  }
+
+  /**
+   * Fornecedor create
+   */
+  export type FornecedorCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Fornecedor
+     */
+    select?: FornecedorSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Fornecedor
+     */
+    omit?: FornecedorOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FornecedorInclude<ExtArgs> | null
+    /**
+     * The data needed to create a Fornecedor.
+     */
+    data: XOR<FornecedorCreateInput, FornecedorUncheckedCreateInput>
+  }
+
+  /**
+   * Fornecedor createMany
+   */
+  export type FornecedorCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many Fornecedors.
+     */
+    data: FornecedorCreateManyInput | FornecedorCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * Fornecedor createManyAndReturn
+   */
+  export type FornecedorCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Fornecedor
+     */
+    select?: FornecedorSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the Fornecedor
+     */
+    omit?: FornecedorOmit<ExtArgs> | null
+    /**
+     * The data used to create many Fornecedors.
+     */
+    data: FornecedorCreateManyInput | FornecedorCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * Fornecedor update
+   */
+  export type FornecedorUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Fornecedor
+     */
+    select?: FornecedorSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Fornecedor
+     */
+    omit?: FornecedorOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FornecedorInclude<ExtArgs> | null
+    /**
+     * The data needed to update a Fornecedor.
+     */
+    data: XOR<FornecedorUpdateInput, FornecedorUncheckedUpdateInput>
+    /**
+     * Choose, which Fornecedor to update.
+     */
+    where: FornecedorWhereUniqueInput
+  }
+
+  /**
+   * Fornecedor updateMany
+   */
+  export type FornecedorUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update Fornecedors.
+     */
+    data: XOR<FornecedorUpdateManyMutationInput, FornecedorUncheckedUpdateManyInput>
+    /**
+     * Filter which Fornecedors to update
+     */
+    where?: FornecedorWhereInput
+    /**
+     * Limit how many Fornecedors to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * Fornecedor updateManyAndReturn
+   */
+  export type FornecedorUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Fornecedor
+     */
+    select?: FornecedorSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the Fornecedor
+     */
+    omit?: FornecedorOmit<ExtArgs> | null
+    /**
+     * The data used to update Fornecedors.
+     */
+    data: XOR<FornecedorUpdateManyMutationInput, FornecedorUncheckedUpdateManyInput>
+    /**
+     * Filter which Fornecedors to update
+     */
+    where?: FornecedorWhereInput
+    /**
+     * Limit how many Fornecedors to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * Fornecedor upsert
+   */
+  export type FornecedorUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Fornecedor
+     */
+    select?: FornecedorSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Fornecedor
+     */
+    omit?: FornecedorOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FornecedorInclude<ExtArgs> | null
+    /**
+     * The filter to search for the Fornecedor to update in case it exists.
+     */
+    where: FornecedorWhereUniqueInput
+    /**
+     * In case the Fornecedor found by the `where` argument doesn't exist, create a new Fornecedor with this data.
+     */
+    create: XOR<FornecedorCreateInput, FornecedorUncheckedCreateInput>
+    /**
+     * In case the Fornecedor was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<FornecedorUpdateInput, FornecedorUncheckedUpdateInput>
+  }
+
+  /**
+   * Fornecedor delete
+   */
+  export type FornecedorDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Fornecedor
+     */
+    select?: FornecedorSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Fornecedor
+     */
+    omit?: FornecedorOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FornecedorInclude<ExtArgs> | null
+    /**
+     * Filter which Fornecedor to delete.
+     */
+    where: FornecedorWhereUniqueInput
+  }
+
+  /**
+   * Fornecedor deleteMany
+   */
+  export type FornecedorDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which Fornecedors to delete
+     */
+    where?: FornecedorWhereInput
+    /**
+     * Limit how many Fornecedors to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * Fornecedor.projetos
+   */
+  export type Fornecedor$projetosArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FornecedorOrcamento
+     */
+    select?: FornecedorOrcamentoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FornecedorOrcamento
+     */
+    omit?: FornecedorOrcamentoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FornecedorOrcamentoInclude<ExtArgs> | null
+    where?: FornecedorOrcamentoWhereInput
+    orderBy?: FornecedorOrcamentoOrderByWithRelationInput | FornecedorOrcamentoOrderByWithRelationInput[]
+    cursor?: FornecedorOrcamentoWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: FornecedorOrcamentoScalarFieldEnum | FornecedorOrcamentoScalarFieldEnum[]
+  }
+
+  /**
+   * Fornecedor.propostas
+   */
+  export type Fornecedor$propostasArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PropostaItem
+     */
+    select?: PropostaItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PropostaItem
+     */
+    omit?: PropostaItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PropostaItemInclude<ExtArgs> | null
+    where?: PropostaItemWhereInput
+    orderBy?: PropostaItemOrderByWithRelationInput | PropostaItemOrderByWithRelationInput[]
+    cursor?: PropostaItemWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: PropostaItemScalarFieldEnum | PropostaItemScalarFieldEnum[]
+  }
+
+  /**
+   * Fornecedor without action
+   */
+  export type FornecedorDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Fornecedor
+     */
+    select?: FornecedorSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Fornecedor
+     */
+    omit?: FornecedorOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FornecedorInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model FornecedorOrcamento
+   */
+
+  export type AggregateFornecedorOrcamento = {
+    _count: FornecedorOrcamentoCountAggregateOutputType | null
+    _min: FornecedorOrcamentoMinAggregateOutputType | null
+    _max: FornecedorOrcamentoMaxAggregateOutputType | null
+  }
+
+  export type FornecedorOrcamentoMinAggregateOutputType = {
+    id: string | null
+    projetoId: string | null
+    fornecedorId: string | null
+    statusConvite: string | null
+    tokenAcesso: string | null
+    dataEnvio: Date | null
+  }
+
+  export type FornecedorOrcamentoMaxAggregateOutputType = {
+    id: string | null
+    projetoId: string | null
+    fornecedorId: string | null
+    statusConvite: string | null
+    tokenAcesso: string | null
+    dataEnvio: Date | null
+  }
+
+  export type FornecedorOrcamentoCountAggregateOutputType = {
+    id: number
+    projetoId: number
+    fornecedorId: number
+    statusConvite: number
+    tokenAcesso: number
+    dataEnvio: number
+    _all: number
+  }
+
+
+  export type FornecedorOrcamentoMinAggregateInputType = {
+    id?: true
+    projetoId?: true
+    fornecedorId?: true
+    statusConvite?: true
+    tokenAcesso?: true
+    dataEnvio?: true
+  }
+
+  export type FornecedorOrcamentoMaxAggregateInputType = {
+    id?: true
+    projetoId?: true
+    fornecedorId?: true
+    statusConvite?: true
+    tokenAcesso?: true
+    dataEnvio?: true
+  }
+
+  export type FornecedorOrcamentoCountAggregateInputType = {
+    id?: true
+    projetoId?: true
+    fornecedorId?: true
+    statusConvite?: true
+    tokenAcesso?: true
+    dataEnvio?: true
+    _all?: true
+  }
+
+  export type FornecedorOrcamentoAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which FornecedorOrcamento to aggregate.
+     */
+    where?: FornecedorOrcamentoWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of FornecedorOrcamentos to fetch.
+     */
+    orderBy?: FornecedorOrcamentoOrderByWithRelationInput | FornecedorOrcamentoOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: FornecedorOrcamentoWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` FornecedorOrcamentos from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` FornecedorOrcamentos.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned FornecedorOrcamentos
+    **/
+    _count?: true | FornecedorOrcamentoCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: FornecedorOrcamentoMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: FornecedorOrcamentoMaxAggregateInputType
+  }
+
+  export type GetFornecedorOrcamentoAggregateType<T extends FornecedorOrcamentoAggregateArgs> = {
+        [P in keyof T & keyof AggregateFornecedorOrcamento]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateFornecedorOrcamento[P]>
+      : GetScalarType<T[P], AggregateFornecedorOrcamento[P]>
+  }
+
+
+
+
+  export type FornecedorOrcamentoGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: FornecedorOrcamentoWhereInput
+    orderBy?: FornecedorOrcamentoOrderByWithAggregationInput | FornecedorOrcamentoOrderByWithAggregationInput[]
+    by: FornecedorOrcamentoScalarFieldEnum[] | FornecedorOrcamentoScalarFieldEnum
+    having?: FornecedorOrcamentoScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: FornecedorOrcamentoCountAggregateInputType | true
+    _min?: FornecedorOrcamentoMinAggregateInputType
+    _max?: FornecedorOrcamentoMaxAggregateInputType
+  }
+
+  export type FornecedorOrcamentoGroupByOutputType = {
+    id: string
+    projetoId: string
+    fornecedorId: string
+    statusConvite: string
+    tokenAcesso: string
+    dataEnvio: Date | null
+    _count: FornecedorOrcamentoCountAggregateOutputType | null
+    _min: FornecedorOrcamentoMinAggregateOutputType | null
+    _max: FornecedorOrcamentoMaxAggregateOutputType | null
+  }
+
+  type GetFornecedorOrcamentoGroupByPayload<T extends FornecedorOrcamentoGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<FornecedorOrcamentoGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof FornecedorOrcamentoGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], FornecedorOrcamentoGroupByOutputType[P]>
+            : GetScalarType<T[P], FornecedorOrcamentoGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type FornecedorOrcamentoSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    projetoId?: boolean
+    fornecedorId?: boolean
+    statusConvite?: boolean
+    tokenAcesso?: boolean
+    dataEnvio?: boolean
+    projeto?: boolean | OrcamentoProjetoDefaultArgs<ExtArgs>
+    fornecedor?: boolean | FornecedorDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["fornecedorOrcamento"]>
+
+  export type FornecedorOrcamentoSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    projetoId?: boolean
+    fornecedorId?: boolean
+    statusConvite?: boolean
+    tokenAcesso?: boolean
+    dataEnvio?: boolean
+    projeto?: boolean | OrcamentoProjetoDefaultArgs<ExtArgs>
+    fornecedor?: boolean | FornecedorDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["fornecedorOrcamento"]>
+
+  export type FornecedorOrcamentoSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    projetoId?: boolean
+    fornecedorId?: boolean
+    statusConvite?: boolean
+    tokenAcesso?: boolean
+    dataEnvio?: boolean
+    projeto?: boolean | OrcamentoProjetoDefaultArgs<ExtArgs>
+    fornecedor?: boolean | FornecedorDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["fornecedorOrcamento"]>
+
+  export type FornecedorOrcamentoSelectScalar = {
+    id?: boolean
+    projetoId?: boolean
+    fornecedorId?: boolean
+    statusConvite?: boolean
+    tokenAcesso?: boolean
+    dataEnvio?: boolean
+  }
+
+  export type FornecedorOrcamentoOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "projetoId" | "fornecedorId" | "statusConvite" | "tokenAcesso" | "dataEnvio", ExtArgs["result"]["fornecedorOrcamento"]>
+  export type FornecedorOrcamentoInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    projeto?: boolean | OrcamentoProjetoDefaultArgs<ExtArgs>
+    fornecedor?: boolean | FornecedorDefaultArgs<ExtArgs>
+  }
+  export type FornecedorOrcamentoIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    projeto?: boolean | OrcamentoProjetoDefaultArgs<ExtArgs>
+    fornecedor?: boolean | FornecedorDefaultArgs<ExtArgs>
+  }
+  export type FornecedorOrcamentoIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    projeto?: boolean | OrcamentoProjetoDefaultArgs<ExtArgs>
+    fornecedor?: boolean | FornecedorDefaultArgs<ExtArgs>
+  }
+
+  export type $FornecedorOrcamentoPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "FornecedorOrcamento"
+    objects: {
+      projeto: Prisma.$OrcamentoProjetoPayload<ExtArgs>
+      fornecedor: Prisma.$FornecedorPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      projetoId: string
+      fornecedorId: string
+      statusConvite: string
+      tokenAcesso: string
+      dataEnvio: Date | null
+    }, ExtArgs["result"]["fornecedorOrcamento"]>
+    composites: {}
+  }
+
+  type FornecedorOrcamentoGetPayload<S extends boolean | null | undefined | FornecedorOrcamentoDefaultArgs> = $Result.GetResult<Prisma.$FornecedorOrcamentoPayload, S>
+
+  type FornecedorOrcamentoCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<FornecedorOrcamentoFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: FornecedorOrcamentoCountAggregateInputType | true
+    }
+
+  export interface FornecedorOrcamentoDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['FornecedorOrcamento'], meta: { name: 'FornecedorOrcamento' } }
+    /**
+     * Find zero or one FornecedorOrcamento that matches the filter.
+     * @param {FornecedorOrcamentoFindUniqueArgs} args - Arguments to find a FornecedorOrcamento
+     * @example
+     * // Get one FornecedorOrcamento
+     * const fornecedorOrcamento = await prisma.fornecedorOrcamento.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends FornecedorOrcamentoFindUniqueArgs>(args: SelectSubset<T, FornecedorOrcamentoFindUniqueArgs<ExtArgs>>): Prisma__FornecedorOrcamentoClient<$Result.GetResult<Prisma.$FornecedorOrcamentoPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one FornecedorOrcamento that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {FornecedorOrcamentoFindUniqueOrThrowArgs} args - Arguments to find a FornecedorOrcamento
+     * @example
+     * // Get one FornecedorOrcamento
+     * const fornecedorOrcamento = await prisma.fornecedorOrcamento.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends FornecedorOrcamentoFindUniqueOrThrowArgs>(args: SelectSubset<T, FornecedorOrcamentoFindUniqueOrThrowArgs<ExtArgs>>): Prisma__FornecedorOrcamentoClient<$Result.GetResult<Prisma.$FornecedorOrcamentoPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first FornecedorOrcamento that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FornecedorOrcamentoFindFirstArgs} args - Arguments to find a FornecedorOrcamento
+     * @example
+     * // Get one FornecedorOrcamento
+     * const fornecedorOrcamento = await prisma.fornecedorOrcamento.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends FornecedorOrcamentoFindFirstArgs>(args?: SelectSubset<T, FornecedorOrcamentoFindFirstArgs<ExtArgs>>): Prisma__FornecedorOrcamentoClient<$Result.GetResult<Prisma.$FornecedorOrcamentoPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first FornecedorOrcamento that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FornecedorOrcamentoFindFirstOrThrowArgs} args - Arguments to find a FornecedorOrcamento
+     * @example
+     * // Get one FornecedorOrcamento
+     * const fornecedorOrcamento = await prisma.fornecedorOrcamento.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends FornecedorOrcamentoFindFirstOrThrowArgs>(args?: SelectSubset<T, FornecedorOrcamentoFindFirstOrThrowArgs<ExtArgs>>): Prisma__FornecedorOrcamentoClient<$Result.GetResult<Prisma.$FornecedorOrcamentoPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more FornecedorOrcamentos that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FornecedorOrcamentoFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all FornecedorOrcamentos
+     * const fornecedorOrcamentos = await prisma.fornecedorOrcamento.findMany()
+     * 
+     * // Get first 10 FornecedorOrcamentos
+     * const fornecedorOrcamentos = await prisma.fornecedorOrcamento.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const fornecedorOrcamentoWithIdOnly = await prisma.fornecedorOrcamento.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends FornecedorOrcamentoFindManyArgs>(args?: SelectSubset<T, FornecedorOrcamentoFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$FornecedorOrcamentoPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a FornecedorOrcamento.
+     * @param {FornecedorOrcamentoCreateArgs} args - Arguments to create a FornecedorOrcamento.
+     * @example
+     * // Create one FornecedorOrcamento
+     * const FornecedorOrcamento = await prisma.fornecedorOrcamento.create({
+     *   data: {
+     *     // ... data to create a FornecedorOrcamento
+     *   }
+     * })
+     * 
+     */
+    create<T extends FornecedorOrcamentoCreateArgs>(args: SelectSubset<T, FornecedorOrcamentoCreateArgs<ExtArgs>>): Prisma__FornecedorOrcamentoClient<$Result.GetResult<Prisma.$FornecedorOrcamentoPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many FornecedorOrcamentos.
+     * @param {FornecedorOrcamentoCreateManyArgs} args - Arguments to create many FornecedorOrcamentos.
+     * @example
+     * // Create many FornecedorOrcamentos
+     * const fornecedorOrcamento = await prisma.fornecedorOrcamento.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends FornecedorOrcamentoCreateManyArgs>(args?: SelectSubset<T, FornecedorOrcamentoCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many FornecedorOrcamentos and returns the data saved in the database.
+     * @param {FornecedorOrcamentoCreateManyAndReturnArgs} args - Arguments to create many FornecedorOrcamentos.
+     * @example
+     * // Create many FornecedorOrcamentos
+     * const fornecedorOrcamento = await prisma.fornecedorOrcamento.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many FornecedorOrcamentos and only return the `id`
+     * const fornecedorOrcamentoWithIdOnly = await prisma.fornecedorOrcamento.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends FornecedorOrcamentoCreateManyAndReturnArgs>(args?: SelectSubset<T, FornecedorOrcamentoCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$FornecedorOrcamentoPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a FornecedorOrcamento.
+     * @param {FornecedorOrcamentoDeleteArgs} args - Arguments to delete one FornecedorOrcamento.
+     * @example
+     * // Delete one FornecedorOrcamento
+     * const FornecedorOrcamento = await prisma.fornecedorOrcamento.delete({
+     *   where: {
+     *     // ... filter to delete one FornecedorOrcamento
+     *   }
+     * })
+     * 
+     */
+    delete<T extends FornecedorOrcamentoDeleteArgs>(args: SelectSubset<T, FornecedorOrcamentoDeleteArgs<ExtArgs>>): Prisma__FornecedorOrcamentoClient<$Result.GetResult<Prisma.$FornecedorOrcamentoPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one FornecedorOrcamento.
+     * @param {FornecedorOrcamentoUpdateArgs} args - Arguments to update one FornecedorOrcamento.
+     * @example
+     * // Update one FornecedorOrcamento
+     * const fornecedorOrcamento = await prisma.fornecedorOrcamento.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends FornecedorOrcamentoUpdateArgs>(args: SelectSubset<T, FornecedorOrcamentoUpdateArgs<ExtArgs>>): Prisma__FornecedorOrcamentoClient<$Result.GetResult<Prisma.$FornecedorOrcamentoPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more FornecedorOrcamentos.
+     * @param {FornecedorOrcamentoDeleteManyArgs} args - Arguments to filter FornecedorOrcamentos to delete.
+     * @example
+     * // Delete a few FornecedorOrcamentos
+     * const { count } = await prisma.fornecedorOrcamento.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends FornecedorOrcamentoDeleteManyArgs>(args?: SelectSubset<T, FornecedorOrcamentoDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more FornecedorOrcamentos.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FornecedorOrcamentoUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many FornecedorOrcamentos
+     * const fornecedorOrcamento = await prisma.fornecedorOrcamento.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends FornecedorOrcamentoUpdateManyArgs>(args: SelectSubset<T, FornecedorOrcamentoUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more FornecedorOrcamentos and returns the data updated in the database.
+     * @param {FornecedorOrcamentoUpdateManyAndReturnArgs} args - Arguments to update many FornecedorOrcamentos.
+     * @example
+     * // Update many FornecedorOrcamentos
+     * const fornecedorOrcamento = await prisma.fornecedorOrcamento.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more FornecedorOrcamentos and only return the `id`
+     * const fornecedorOrcamentoWithIdOnly = await prisma.fornecedorOrcamento.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends FornecedorOrcamentoUpdateManyAndReturnArgs>(args: SelectSubset<T, FornecedorOrcamentoUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$FornecedorOrcamentoPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one FornecedorOrcamento.
+     * @param {FornecedorOrcamentoUpsertArgs} args - Arguments to update or create a FornecedorOrcamento.
+     * @example
+     * // Update or create a FornecedorOrcamento
+     * const fornecedorOrcamento = await prisma.fornecedorOrcamento.upsert({
+     *   create: {
+     *     // ... data to create a FornecedorOrcamento
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the FornecedorOrcamento we want to update
+     *   }
+     * })
+     */
+    upsert<T extends FornecedorOrcamentoUpsertArgs>(args: SelectSubset<T, FornecedorOrcamentoUpsertArgs<ExtArgs>>): Prisma__FornecedorOrcamentoClient<$Result.GetResult<Prisma.$FornecedorOrcamentoPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of FornecedorOrcamentos.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FornecedorOrcamentoCountArgs} args - Arguments to filter FornecedorOrcamentos to count.
+     * @example
+     * // Count the number of FornecedorOrcamentos
+     * const count = await prisma.fornecedorOrcamento.count({
+     *   where: {
+     *     // ... the filter for the FornecedorOrcamentos we want to count
+     *   }
+     * })
+    **/
+    count<T extends FornecedorOrcamentoCountArgs>(
+      args?: Subset<T, FornecedorOrcamentoCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], FornecedorOrcamentoCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a FornecedorOrcamento.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FornecedorOrcamentoAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends FornecedorOrcamentoAggregateArgs>(args: Subset<T, FornecedorOrcamentoAggregateArgs>): Prisma.PrismaPromise<GetFornecedorOrcamentoAggregateType<T>>
+
+    /**
+     * Group by FornecedorOrcamento.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FornecedorOrcamentoGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends FornecedorOrcamentoGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: FornecedorOrcamentoGroupByArgs['orderBy'] }
+        : { orderBy?: FornecedorOrcamentoGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, FornecedorOrcamentoGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetFornecedorOrcamentoGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the FornecedorOrcamento model
+   */
+  readonly fields: FornecedorOrcamentoFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for FornecedorOrcamento.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__FornecedorOrcamentoClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    projeto<T extends OrcamentoProjetoDefaultArgs<ExtArgs> = {}>(args?: Subset<T, OrcamentoProjetoDefaultArgs<ExtArgs>>): Prisma__OrcamentoProjetoClient<$Result.GetResult<Prisma.$OrcamentoProjetoPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    fornecedor<T extends FornecedorDefaultArgs<ExtArgs> = {}>(args?: Subset<T, FornecedorDefaultArgs<ExtArgs>>): Prisma__FornecedorClient<$Result.GetResult<Prisma.$FornecedorPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the FornecedorOrcamento model
+   */
+  interface FornecedorOrcamentoFieldRefs {
+    readonly id: FieldRef<"FornecedorOrcamento", 'String'>
+    readonly projetoId: FieldRef<"FornecedorOrcamento", 'String'>
+    readonly fornecedorId: FieldRef<"FornecedorOrcamento", 'String'>
+    readonly statusConvite: FieldRef<"FornecedorOrcamento", 'String'>
+    readonly tokenAcesso: FieldRef<"FornecedorOrcamento", 'String'>
+    readonly dataEnvio: FieldRef<"FornecedorOrcamento", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * FornecedorOrcamento findUnique
+   */
+  export type FornecedorOrcamentoFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FornecedorOrcamento
+     */
+    select?: FornecedorOrcamentoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FornecedorOrcamento
+     */
+    omit?: FornecedorOrcamentoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FornecedorOrcamentoInclude<ExtArgs> | null
+    /**
+     * Filter, which FornecedorOrcamento to fetch.
+     */
+    where: FornecedorOrcamentoWhereUniqueInput
+  }
+
+  /**
+   * FornecedorOrcamento findUniqueOrThrow
+   */
+  export type FornecedorOrcamentoFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FornecedorOrcamento
+     */
+    select?: FornecedorOrcamentoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FornecedorOrcamento
+     */
+    omit?: FornecedorOrcamentoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FornecedorOrcamentoInclude<ExtArgs> | null
+    /**
+     * Filter, which FornecedorOrcamento to fetch.
+     */
+    where: FornecedorOrcamentoWhereUniqueInput
+  }
+
+  /**
+   * FornecedorOrcamento findFirst
+   */
+  export type FornecedorOrcamentoFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FornecedorOrcamento
+     */
+    select?: FornecedorOrcamentoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FornecedorOrcamento
+     */
+    omit?: FornecedorOrcamentoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FornecedorOrcamentoInclude<ExtArgs> | null
+    /**
+     * Filter, which FornecedorOrcamento to fetch.
+     */
+    where?: FornecedorOrcamentoWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of FornecedorOrcamentos to fetch.
+     */
+    orderBy?: FornecedorOrcamentoOrderByWithRelationInput | FornecedorOrcamentoOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for FornecedorOrcamentos.
+     */
+    cursor?: FornecedorOrcamentoWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` FornecedorOrcamentos from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` FornecedorOrcamentos.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of FornecedorOrcamentos.
+     */
+    distinct?: FornecedorOrcamentoScalarFieldEnum | FornecedorOrcamentoScalarFieldEnum[]
+  }
+
+  /**
+   * FornecedorOrcamento findFirstOrThrow
+   */
+  export type FornecedorOrcamentoFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FornecedorOrcamento
+     */
+    select?: FornecedorOrcamentoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FornecedorOrcamento
+     */
+    omit?: FornecedorOrcamentoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FornecedorOrcamentoInclude<ExtArgs> | null
+    /**
+     * Filter, which FornecedorOrcamento to fetch.
+     */
+    where?: FornecedorOrcamentoWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of FornecedorOrcamentos to fetch.
+     */
+    orderBy?: FornecedorOrcamentoOrderByWithRelationInput | FornecedorOrcamentoOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for FornecedorOrcamentos.
+     */
+    cursor?: FornecedorOrcamentoWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` FornecedorOrcamentos from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` FornecedorOrcamentos.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of FornecedorOrcamentos.
+     */
+    distinct?: FornecedorOrcamentoScalarFieldEnum | FornecedorOrcamentoScalarFieldEnum[]
+  }
+
+  /**
+   * FornecedorOrcamento findMany
+   */
+  export type FornecedorOrcamentoFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FornecedorOrcamento
+     */
+    select?: FornecedorOrcamentoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FornecedorOrcamento
+     */
+    omit?: FornecedorOrcamentoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FornecedorOrcamentoInclude<ExtArgs> | null
+    /**
+     * Filter, which FornecedorOrcamentos to fetch.
+     */
+    where?: FornecedorOrcamentoWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of FornecedorOrcamentos to fetch.
+     */
+    orderBy?: FornecedorOrcamentoOrderByWithRelationInput | FornecedorOrcamentoOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing FornecedorOrcamentos.
+     */
+    cursor?: FornecedorOrcamentoWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` FornecedorOrcamentos from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` FornecedorOrcamentos.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of FornecedorOrcamentos.
+     */
+    distinct?: FornecedorOrcamentoScalarFieldEnum | FornecedorOrcamentoScalarFieldEnum[]
+  }
+
+  /**
+   * FornecedorOrcamento create
+   */
+  export type FornecedorOrcamentoCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FornecedorOrcamento
+     */
+    select?: FornecedorOrcamentoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FornecedorOrcamento
+     */
+    omit?: FornecedorOrcamentoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FornecedorOrcamentoInclude<ExtArgs> | null
+    /**
+     * The data needed to create a FornecedorOrcamento.
+     */
+    data: XOR<FornecedorOrcamentoCreateInput, FornecedorOrcamentoUncheckedCreateInput>
+  }
+
+  /**
+   * FornecedorOrcamento createMany
+   */
+  export type FornecedorOrcamentoCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many FornecedorOrcamentos.
+     */
+    data: FornecedorOrcamentoCreateManyInput | FornecedorOrcamentoCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * FornecedorOrcamento createManyAndReturn
+   */
+  export type FornecedorOrcamentoCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FornecedorOrcamento
+     */
+    select?: FornecedorOrcamentoSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the FornecedorOrcamento
+     */
+    omit?: FornecedorOrcamentoOmit<ExtArgs> | null
+    /**
+     * The data used to create many FornecedorOrcamentos.
+     */
+    data: FornecedorOrcamentoCreateManyInput | FornecedorOrcamentoCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FornecedorOrcamentoIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * FornecedorOrcamento update
+   */
+  export type FornecedorOrcamentoUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FornecedorOrcamento
+     */
+    select?: FornecedorOrcamentoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FornecedorOrcamento
+     */
+    omit?: FornecedorOrcamentoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FornecedorOrcamentoInclude<ExtArgs> | null
+    /**
+     * The data needed to update a FornecedorOrcamento.
+     */
+    data: XOR<FornecedorOrcamentoUpdateInput, FornecedorOrcamentoUncheckedUpdateInput>
+    /**
+     * Choose, which FornecedorOrcamento to update.
+     */
+    where: FornecedorOrcamentoWhereUniqueInput
+  }
+
+  /**
+   * FornecedorOrcamento updateMany
+   */
+  export type FornecedorOrcamentoUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update FornecedorOrcamentos.
+     */
+    data: XOR<FornecedorOrcamentoUpdateManyMutationInput, FornecedorOrcamentoUncheckedUpdateManyInput>
+    /**
+     * Filter which FornecedorOrcamentos to update
+     */
+    where?: FornecedorOrcamentoWhereInput
+    /**
+     * Limit how many FornecedorOrcamentos to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * FornecedorOrcamento updateManyAndReturn
+   */
+  export type FornecedorOrcamentoUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FornecedorOrcamento
+     */
+    select?: FornecedorOrcamentoSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the FornecedorOrcamento
+     */
+    omit?: FornecedorOrcamentoOmit<ExtArgs> | null
+    /**
+     * The data used to update FornecedorOrcamentos.
+     */
+    data: XOR<FornecedorOrcamentoUpdateManyMutationInput, FornecedorOrcamentoUncheckedUpdateManyInput>
+    /**
+     * Filter which FornecedorOrcamentos to update
+     */
+    where?: FornecedorOrcamentoWhereInput
+    /**
+     * Limit how many FornecedorOrcamentos to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FornecedorOrcamentoIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * FornecedorOrcamento upsert
+   */
+  export type FornecedorOrcamentoUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FornecedorOrcamento
+     */
+    select?: FornecedorOrcamentoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FornecedorOrcamento
+     */
+    omit?: FornecedorOrcamentoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FornecedorOrcamentoInclude<ExtArgs> | null
+    /**
+     * The filter to search for the FornecedorOrcamento to update in case it exists.
+     */
+    where: FornecedorOrcamentoWhereUniqueInput
+    /**
+     * In case the FornecedorOrcamento found by the `where` argument doesn't exist, create a new FornecedorOrcamento with this data.
+     */
+    create: XOR<FornecedorOrcamentoCreateInput, FornecedorOrcamentoUncheckedCreateInput>
+    /**
+     * In case the FornecedorOrcamento was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<FornecedorOrcamentoUpdateInput, FornecedorOrcamentoUncheckedUpdateInput>
+  }
+
+  /**
+   * FornecedorOrcamento delete
+   */
+  export type FornecedorOrcamentoDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FornecedorOrcamento
+     */
+    select?: FornecedorOrcamentoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FornecedorOrcamento
+     */
+    omit?: FornecedorOrcamentoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FornecedorOrcamentoInclude<ExtArgs> | null
+    /**
+     * Filter which FornecedorOrcamento to delete.
+     */
+    where: FornecedorOrcamentoWhereUniqueInput
+  }
+
+  /**
+   * FornecedorOrcamento deleteMany
+   */
+  export type FornecedorOrcamentoDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which FornecedorOrcamentos to delete
+     */
+    where?: FornecedorOrcamentoWhereInput
+    /**
+     * Limit how many FornecedorOrcamentos to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * FornecedorOrcamento without action
+   */
+  export type FornecedorOrcamentoDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FornecedorOrcamento
+     */
+    select?: FornecedorOrcamentoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FornecedorOrcamento
+     */
+    omit?: FornecedorOrcamentoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FornecedorOrcamentoInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model PropostaItem
+   */
+
+  export type AggregatePropostaItem = {
+    _count: PropostaItemCountAggregateOutputType | null
+    _avg: PropostaItemAvgAggregateOutputType | null
+    _sum: PropostaItemSumAggregateOutputType | null
+    _min: PropostaItemMinAggregateOutputType | null
+    _max: PropostaItemMaxAggregateOutputType | null
+  }
+
+  export type PropostaItemAvgAggregateOutputType = {
+    precoUnitario: number | null
+    prazoEntregaDias: number | null
+    versao: number | null
+  }
+
+  export type PropostaItemSumAggregateOutputType = {
+    precoUnitario: number | null
+    prazoEntregaDias: number | null
+    versao: number | null
+  }
+
+  export type PropostaItemMinAggregateOutputType = {
+    id: string | null
+    itemId: string | null
+    fornecedorId: string | null
+    precoUnitario: number | null
+    freteIncluso: boolean | null
+    prazoEntregaDias: number | null
+    observacao: string | null
+    dataProposta: Date | null
+    versao: number | null
+  }
+
+  export type PropostaItemMaxAggregateOutputType = {
+    id: string | null
+    itemId: string | null
+    fornecedorId: string | null
+    precoUnitario: number | null
+    freteIncluso: boolean | null
+    prazoEntregaDias: number | null
+    observacao: string | null
+    dataProposta: Date | null
+    versao: number | null
+  }
+
+  export type PropostaItemCountAggregateOutputType = {
+    id: number
+    itemId: number
+    fornecedorId: number
+    precoUnitario: number
+    freteIncluso: number
+    prazoEntregaDias: number
+    observacao: number
+    dataProposta: number
+    versao: number
+    _all: number
+  }
+
+
+  export type PropostaItemAvgAggregateInputType = {
+    precoUnitario?: true
+    prazoEntregaDias?: true
+    versao?: true
+  }
+
+  export type PropostaItemSumAggregateInputType = {
+    precoUnitario?: true
+    prazoEntregaDias?: true
+    versao?: true
+  }
+
+  export type PropostaItemMinAggregateInputType = {
+    id?: true
+    itemId?: true
+    fornecedorId?: true
+    precoUnitario?: true
+    freteIncluso?: true
+    prazoEntregaDias?: true
+    observacao?: true
+    dataProposta?: true
+    versao?: true
+  }
+
+  export type PropostaItemMaxAggregateInputType = {
+    id?: true
+    itemId?: true
+    fornecedorId?: true
+    precoUnitario?: true
+    freteIncluso?: true
+    prazoEntregaDias?: true
+    observacao?: true
+    dataProposta?: true
+    versao?: true
+  }
+
+  export type PropostaItemCountAggregateInputType = {
+    id?: true
+    itemId?: true
+    fornecedorId?: true
+    precoUnitario?: true
+    freteIncluso?: true
+    prazoEntregaDias?: true
+    observacao?: true
+    dataProposta?: true
+    versao?: true
+    _all?: true
+  }
+
+  export type PropostaItemAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PropostaItem to aggregate.
+     */
+    where?: PropostaItemWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PropostaItems to fetch.
+     */
+    orderBy?: PropostaItemOrderByWithRelationInput | PropostaItemOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: PropostaItemWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PropostaItems from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PropostaItems.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned PropostaItems
+    **/
+    _count?: true | PropostaItemCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: PropostaItemAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: PropostaItemSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: PropostaItemMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: PropostaItemMaxAggregateInputType
+  }
+
+  export type GetPropostaItemAggregateType<T extends PropostaItemAggregateArgs> = {
+        [P in keyof T & keyof AggregatePropostaItem]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregatePropostaItem[P]>
+      : GetScalarType<T[P], AggregatePropostaItem[P]>
+  }
+
+
+
+
+  export type PropostaItemGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PropostaItemWhereInput
+    orderBy?: PropostaItemOrderByWithAggregationInput | PropostaItemOrderByWithAggregationInput[]
+    by: PropostaItemScalarFieldEnum[] | PropostaItemScalarFieldEnum
+    having?: PropostaItemScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: PropostaItemCountAggregateInputType | true
+    _avg?: PropostaItemAvgAggregateInputType
+    _sum?: PropostaItemSumAggregateInputType
+    _min?: PropostaItemMinAggregateInputType
+    _max?: PropostaItemMaxAggregateInputType
+  }
+
+  export type PropostaItemGroupByOutputType = {
+    id: string
+    itemId: string
+    fornecedorId: string
+    precoUnitario: number
+    freteIncluso: boolean
+    prazoEntregaDias: number | null
+    observacao: string | null
+    dataProposta: Date
+    versao: number
+    _count: PropostaItemCountAggregateOutputType | null
+    _avg: PropostaItemAvgAggregateOutputType | null
+    _sum: PropostaItemSumAggregateOutputType | null
+    _min: PropostaItemMinAggregateOutputType | null
+    _max: PropostaItemMaxAggregateOutputType | null
+  }
+
+  type GetPropostaItemGroupByPayload<T extends PropostaItemGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<PropostaItemGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof PropostaItemGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], PropostaItemGroupByOutputType[P]>
+            : GetScalarType<T[P], PropostaItemGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type PropostaItemSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    itemId?: boolean
+    fornecedorId?: boolean
+    precoUnitario?: boolean
+    freteIncluso?: boolean
+    prazoEntregaDias?: boolean
+    observacao?: boolean
+    dataProposta?: boolean
+    versao?: boolean
+    item?: boolean | OrcamentoItemDefaultArgs<ExtArgs>
+    fornecedor?: boolean | FornecedorDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["propostaItem"]>
+
+  export type PropostaItemSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    itemId?: boolean
+    fornecedorId?: boolean
+    precoUnitario?: boolean
+    freteIncluso?: boolean
+    prazoEntregaDias?: boolean
+    observacao?: boolean
+    dataProposta?: boolean
+    versao?: boolean
+    item?: boolean | OrcamentoItemDefaultArgs<ExtArgs>
+    fornecedor?: boolean | FornecedorDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["propostaItem"]>
+
+  export type PropostaItemSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    itemId?: boolean
+    fornecedorId?: boolean
+    precoUnitario?: boolean
+    freteIncluso?: boolean
+    prazoEntregaDias?: boolean
+    observacao?: boolean
+    dataProposta?: boolean
+    versao?: boolean
+    item?: boolean | OrcamentoItemDefaultArgs<ExtArgs>
+    fornecedor?: boolean | FornecedorDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["propostaItem"]>
+
+  export type PropostaItemSelectScalar = {
+    id?: boolean
+    itemId?: boolean
+    fornecedorId?: boolean
+    precoUnitario?: boolean
+    freteIncluso?: boolean
+    prazoEntregaDias?: boolean
+    observacao?: boolean
+    dataProposta?: boolean
+    versao?: boolean
+  }
+
+  export type PropostaItemOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "itemId" | "fornecedorId" | "precoUnitario" | "freteIncluso" | "prazoEntregaDias" | "observacao" | "dataProposta" | "versao", ExtArgs["result"]["propostaItem"]>
+  export type PropostaItemInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    item?: boolean | OrcamentoItemDefaultArgs<ExtArgs>
+    fornecedor?: boolean | FornecedorDefaultArgs<ExtArgs>
+  }
+  export type PropostaItemIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    item?: boolean | OrcamentoItemDefaultArgs<ExtArgs>
+    fornecedor?: boolean | FornecedorDefaultArgs<ExtArgs>
+  }
+  export type PropostaItemIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    item?: boolean | OrcamentoItemDefaultArgs<ExtArgs>
+    fornecedor?: boolean | FornecedorDefaultArgs<ExtArgs>
+  }
+
+  export type $PropostaItemPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "PropostaItem"
+    objects: {
+      item: Prisma.$OrcamentoItemPayload<ExtArgs>
+      fornecedor: Prisma.$FornecedorPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      itemId: string
+      fornecedorId: string
+      precoUnitario: number
+      freteIncluso: boolean
+      prazoEntregaDias: number | null
+      observacao: string | null
+      dataProposta: Date
+      versao: number
+    }, ExtArgs["result"]["propostaItem"]>
+    composites: {}
+  }
+
+  type PropostaItemGetPayload<S extends boolean | null | undefined | PropostaItemDefaultArgs> = $Result.GetResult<Prisma.$PropostaItemPayload, S>
+
+  type PropostaItemCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<PropostaItemFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: PropostaItemCountAggregateInputType | true
+    }
+
+  export interface PropostaItemDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['PropostaItem'], meta: { name: 'PropostaItem' } }
+    /**
+     * Find zero or one PropostaItem that matches the filter.
+     * @param {PropostaItemFindUniqueArgs} args - Arguments to find a PropostaItem
+     * @example
+     * // Get one PropostaItem
+     * const propostaItem = await prisma.propostaItem.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends PropostaItemFindUniqueArgs>(args: SelectSubset<T, PropostaItemFindUniqueArgs<ExtArgs>>): Prisma__PropostaItemClient<$Result.GetResult<Prisma.$PropostaItemPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one PropostaItem that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {PropostaItemFindUniqueOrThrowArgs} args - Arguments to find a PropostaItem
+     * @example
+     * // Get one PropostaItem
+     * const propostaItem = await prisma.propostaItem.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends PropostaItemFindUniqueOrThrowArgs>(args: SelectSubset<T, PropostaItemFindUniqueOrThrowArgs<ExtArgs>>): Prisma__PropostaItemClient<$Result.GetResult<Prisma.$PropostaItemPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first PropostaItem that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PropostaItemFindFirstArgs} args - Arguments to find a PropostaItem
+     * @example
+     * // Get one PropostaItem
+     * const propostaItem = await prisma.propostaItem.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends PropostaItemFindFirstArgs>(args?: SelectSubset<T, PropostaItemFindFirstArgs<ExtArgs>>): Prisma__PropostaItemClient<$Result.GetResult<Prisma.$PropostaItemPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first PropostaItem that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PropostaItemFindFirstOrThrowArgs} args - Arguments to find a PropostaItem
+     * @example
+     * // Get one PropostaItem
+     * const propostaItem = await prisma.propostaItem.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends PropostaItemFindFirstOrThrowArgs>(args?: SelectSubset<T, PropostaItemFindFirstOrThrowArgs<ExtArgs>>): Prisma__PropostaItemClient<$Result.GetResult<Prisma.$PropostaItemPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more PropostaItems that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PropostaItemFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all PropostaItems
+     * const propostaItems = await prisma.propostaItem.findMany()
+     * 
+     * // Get first 10 PropostaItems
+     * const propostaItems = await prisma.propostaItem.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const propostaItemWithIdOnly = await prisma.propostaItem.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends PropostaItemFindManyArgs>(args?: SelectSubset<T, PropostaItemFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PropostaItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a PropostaItem.
+     * @param {PropostaItemCreateArgs} args - Arguments to create a PropostaItem.
+     * @example
+     * // Create one PropostaItem
+     * const PropostaItem = await prisma.propostaItem.create({
+     *   data: {
+     *     // ... data to create a PropostaItem
+     *   }
+     * })
+     * 
+     */
+    create<T extends PropostaItemCreateArgs>(args: SelectSubset<T, PropostaItemCreateArgs<ExtArgs>>): Prisma__PropostaItemClient<$Result.GetResult<Prisma.$PropostaItemPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many PropostaItems.
+     * @param {PropostaItemCreateManyArgs} args - Arguments to create many PropostaItems.
+     * @example
+     * // Create many PropostaItems
+     * const propostaItem = await prisma.propostaItem.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends PropostaItemCreateManyArgs>(args?: SelectSubset<T, PropostaItemCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many PropostaItems and returns the data saved in the database.
+     * @param {PropostaItemCreateManyAndReturnArgs} args - Arguments to create many PropostaItems.
+     * @example
+     * // Create many PropostaItems
+     * const propostaItem = await prisma.propostaItem.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many PropostaItems and only return the `id`
+     * const propostaItemWithIdOnly = await prisma.propostaItem.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends PropostaItemCreateManyAndReturnArgs>(args?: SelectSubset<T, PropostaItemCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PropostaItemPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a PropostaItem.
+     * @param {PropostaItemDeleteArgs} args - Arguments to delete one PropostaItem.
+     * @example
+     * // Delete one PropostaItem
+     * const PropostaItem = await prisma.propostaItem.delete({
+     *   where: {
+     *     // ... filter to delete one PropostaItem
+     *   }
+     * })
+     * 
+     */
+    delete<T extends PropostaItemDeleteArgs>(args: SelectSubset<T, PropostaItemDeleteArgs<ExtArgs>>): Prisma__PropostaItemClient<$Result.GetResult<Prisma.$PropostaItemPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one PropostaItem.
+     * @param {PropostaItemUpdateArgs} args - Arguments to update one PropostaItem.
+     * @example
+     * // Update one PropostaItem
+     * const propostaItem = await prisma.propostaItem.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends PropostaItemUpdateArgs>(args: SelectSubset<T, PropostaItemUpdateArgs<ExtArgs>>): Prisma__PropostaItemClient<$Result.GetResult<Prisma.$PropostaItemPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more PropostaItems.
+     * @param {PropostaItemDeleteManyArgs} args - Arguments to filter PropostaItems to delete.
+     * @example
+     * // Delete a few PropostaItems
+     * const { count } = await prisma.propostaItem.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends PropostaItemDeleteManyArgs>(args?: SelectSubset<T, PropostaItemDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more PropostaItems.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PropostaItemUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many PropostaItems
+     * const propostaItem = await prisma.propostaItem.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends PropostaItemUpdateManyArgs>(args: SelectSubset<T, PropostaItemUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more PropostaItems and returns the data updated in the database.
+     * @param {PropostaItemUpdateManyAndReturnArgs} args - Arguments to update many PropostaItems.
+     * @example
+     * // Update many PropostaItems
+     * const propostaItem = await prisma.propostaItem.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more PropostaItems and only return the `id`
+     * const propostaItemWithIdOnly = await prisma.propostaItem.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends PropostaItemUpdateManyAndReturnArgs>(args: SelectSubset<T, PropostaItemUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PropostaItemPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one PropostaItem.
+     * @param {PropostaItemUpsertArgs} args - Arguments to update or create a PropostaItem.
+     * @example
+     * // Update or create a PropostaItem
+     * const propostaItem = await prisma.propostaItem.upsert({
+     *   create: {
+     *     // ... data to create a PropostaItem
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the PropostaItem we want to update
+     *   }
+     * })
+     */
+    upsert<T extends PropostaItemUpsertArgs>(args: SelectSubset<T, PropostaItemUpsertArgs<ExtArgs>>): Prisma__PropostaItemClient<$Result.GetResult<Prisma.$PropostaItemPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of PropostaItems.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PropostaItemCountArgs} args - Arguments to filter PropostaItems to count.
+     * @example
+     * // Count the number of PropostaItems
+     * const count = await prisma.propostaItem.count({
+     *   where: {
+     *     // ... the filter for the PropostaItems we want to count
+     *   }
+     * })
+    **/
+    count<T extends PropostaItemCountArgs>(
+      args?: Subset<T, PropostaItemCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], PropostaItemCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a PropostaItem.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PropostaItemAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends PropostaItemAggregateArgs>(args: Subset<T, PropostaItemAggregateArgs>): Prisma.PrismaPromise<GetPropostaItemAggregateType<T>>
+
+    /**
+     * Group by PropostaItem.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PropostaItemGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends PropostaItemGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: PropostaItemGroupByArgs['orderBy'] }
+        : { orderBy?: PropostaItemGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, PropostaItemGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetPropostaItemGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the PropostaItem model
+   */
+  readonly fields: PropostaItemFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for PropostaItem.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__PropostaItemClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    item<T extends OrcamentoItemDefaultArgs<ExtArgs> = {}>(args?: Subset<T, OrcamentoItemDefaultArgs<ExtArgs>>): Prisma__OrcamentoItemClient<$Result.GetResult<Prisma.$OrcamentoItemPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    fornecedor<T extends FornecedorDefaultArgs<ExtArgs> = {}>(args?: Subset<T, FornecedorDefaultArgs<ExtArgs>>): Prisma__FornecedorClient<$Result.GetResult<Prisma.$FornecedorPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the PropostaItem model
+   */
+  interface PropostaItemFieldRefs {
+    readonly id: FieldRef<"PropostaItem", 'String'>
+    readonly itemId: FieldRef<"PropostaItem", 'String'>
+    readonly fornecedorId: FieldRef<"PropostaItem", 'String'>
+    readonly precoUnitario: FieldRef<"PropostaItem", 'Float'>
+    readonly freteIncluso: FieldRef<"PropostaItem", 'Boolean'>
+    readonly prazoEntregaDias: FieldRef<"PropostaItem", 'Int'>
+    readonly observacao: FieldRef<"PropostaItem", 'String'>
+    readonly dataProposta: FieldRef<"PropostaItem", 'DateTime'>
+    readonly versao: FieldRef<"PropostaItem", 'Int'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * PropostaItem findUnique
+   */
+  export type PropostaItemFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PropostaItem
+     */
+    select?: PropostaItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PropostaItem
+     */
+    omit?: PropostaItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PropostaItemInclude<ExtArgs> | null
+    /**
+     * Filter, which PropostaItem to fetch.
+     */
+    where: PropostaItemWhereUniqueInput
+  }
+
+  /**
+   * PropostaItem findUniqueOrThrow
+   */
+  export type PropostaItemFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PropostaItem
+     */
+    select?: PropostaItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PropostaItem
+     */
+    omit?: PropostaItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PropostaItemInclude<ExtArgs> | null
+    /**
+     * Filter, which PropostaItem to fetch.
+     */
+    where: PropostaItemWhereUniqueInput
+  }
+
+  /**
+   * PropostaItem findFirst
+   */
+  export type PropostaItemFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PropostaItem
+     */
+    select?: PropostaItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PropostaItem
+     */
+    omit?: PropostaItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PropostaItemInclude<ExtArgs> | null
+    /**
+     * Filter, which PropostaItem to fetch.
+     */
+    where?: PropostaItemWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PropostaItems to fetch.
+     */
+    orderBy?: PropostaItemOrderByWithRelationInput | PropostaItemOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PropostaItems.
+     */
+    cursor?: PropostaItemWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PropostaItems from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PropostaItems.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PropostaItems.
+     */
+    distinct?: PropostaItemScalarFieldEnum | PropostaItemScalarFieldEnum[]
+  }
+
+  /**
+   * PropostaItem findFirstOrThrow
+   */
+  export type PropostaItemFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PropostaItem
+     */
+    select?: PropostaItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PropostaItem
+     */
+    omit?: PropostaItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PropostaItemInclude<ExtArgs> | null
+    /**
+     * Filter, which PropostaItem to fetch.
+     */
+    where?: PropostaItemWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PropostaItems to fetch.
+     */
+    orderBy?: PropostaItemOrderByWithRelationInput | PropostaItemOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PropostaItems.
+     */
+    cursor?: PropostaItemWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PropostaItems from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PropostaItems.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PropostaItems.
+     */
+    distinct?: PropostaItemScalarFieldEnum | PropostaItemScalarFieldEnum[]
+  }
+
+  /**
+   * PropostaItem findMany
+   */
+  export type PropostaItemFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PropostaItem
+     */
+    select?: PropostaItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PropostaItem
+     */
+    omit?: PropostaItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PropostaItemInclude<ExtArgs> | null
+    /**
+     * Filter, which PropostaItems to fetch.
+     */
+    where?: PropostaItemWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PropostaItems to fetch.
+     */
+    orderBy?: PropostaItemOrderByWithRelationInput | PropostaItemOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing PropostaItems.
+     */
+    cursor?: PropostaItemWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PropostaItems from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PropostaItems.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PropostaItems.
+     */
+    distinct?: PropostaItemScalarFieldEnum | PropostaItemScalarFieldEnum[]
+  }
+
+  /**
+   * PropostaItem create
+   */
+  export type PropostaItemCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PropostaItem
+     */
+    select?: PropostaItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PropostaItem
+     */
+    omit?: PropostaItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PropostaItemInclude<ExtArgs> | null
+    /**
+     * The data needed to create a PropostaItem.
+     */
+    data: XOR<PropostaItemCreateInput, PropostaItemUncheckedCreateInput>
+  }
+
+  /**
+   * PropostaItem createMany
+   */
+  export type PropostaItemCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many PropostaItems.
+     */
+    data: PropostaItemCreateManyInput | PropostaItemCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * PropostaItem createManyAndReturn
+   */
+  export type PropostaItemCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PropostaItem
+     */
+    select?: PropostaItemSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the PropostaItem
+     */
+    omit?: PropostaItemOmit<ExtArgs> | null
+    /**
+     * The data used to create many PropostaItems.
+     */
+    data: PropostaItemCreateManyInput | PropostaItemCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PropostaItemIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * PropostaItem update
+   */
+  export type PropostaItemUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PropostaItem
+     */
+    select?: PropostaItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PropostaItem
+     */
+    omit?: PropostaItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PropostaItemInclude<ExtArgs> | null
+    /**
+     * The data needed to update a PropostaItem.
+     */
+    data: XOR<PropostaItemUpdateInput, PropostaItemUncheckedUpdateInput>
+    /**
+     * Choose, which PropostaItem to update.
+     */
+    where: PropostaItemWhereUniqueInput
+  }
+
+  /**
+   * PropostaItem updateMany
+   */
+  export type PropostaItemUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update PropostaItems.
+     */
+    data: XOR<PropostaItemUpdateManyMutationInput, PropostaItemUncheckedUpdateManyInput>
+    /**
+     * Filter which PropostaItems to update
+     */
+    where?: PropostaItemWhereInput
+    /**
+     * Limit how many PropostaItems to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * PropostaItem updateManyAndReturn
+   */
+  export type PropostaItemUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PropostaItem
+     */
+    select?: PropostaItemSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the PropostaItem
+     */
+    omit?: PropostaItemOmit<ExtArgs> | null
+    /**
+     * The data used to update PropostaItems.
+     */
+    data: XOR<PropostaItemUpdateManyMutationInput, PropostaItemUncheckedUpdateManyInput>
+    /**
+     * Filter which PropostaItems to update
+     */
+    where?: PropostaItemWhereInput
+    /**
+     * Limit how many PropostaItems to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PropostaItemIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * PropostaItem upsert
+   */
+  export type PropostaItemUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PropostaItem
+     */
+    select?: PropostaItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PropostaItem
+     */
+    omit?: PropostaItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PropostaItemInclude<ExtArgs> | null
+    /**
+     * The filter to search for the PropostaItem to update in case it exists.
+     */
+    where: PropostaItemWhereUniqueInput
+    /**
+     * In case the PropostaItem found by the `where` argument doesn't exist, create a new PropostaItem with this data.
+     */
+    create: XOR<PropostaItemCreateInput, PropostaItemUncheckedCreateInput>
+    /**
+     * In case the PropostaItem was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<PropostaItemUpdateInput, PropostaItemUncheckedUpdateInput>
+  }
+
+  /**
+   * PropostaItem delete
+   */
+  export type PropostaItemDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PropostaItem
+     */
+    select?: PropostaItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PropostaItem
+     */
+    omit?: PropostaItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PropostaItemInclude<ExtArgs> | null
+    /**
+     * Filter which PropostaItem to delete.
+     */
+    where: PropostaItemWhereUniqueInput
+  }
+
+  /**
+   * PropostaItem deleteMany
+   */
+  export type PropostaItemDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PropostaItems to delete
+     */
+    where?: PropostaItemWhereInput
+    /**
+     * Limit how many PropostaItems to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * PropostaItem without action
+   */
+  export type PropostaItemDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PropostaItem
+     */
+    select?: PropostaItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PropostaItem
+     */
+    omit?: PropostaItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PropostaItemInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model OrcamentoTipoMaterial
+   */
+
+  export type AggregateOrcamentoTipoMaterial = {
+    _count: OrcamentoTipoMaterialCountAggregateOutputType | null
+    _min: OrcamentoTipoMaterialMinAggregateOutputType | null
+    _max: OrcamentoTipoMaterialMaxAggregateOutputType | null
+  }
+
+  export type OrcamentoTipoMaterialMinAggregateOutputType = {
+    id: string | null
+    nome: string | null
+  }
+
+  export type OrcamentoTipoMaterialMaxAggregateOutputType = {
+    id: string | null
+    nome: string | null
+  }
+
+  export type OrcamentoTipoMaterialCountAggregateOutputType = {
+    id: number
+    nome: number
+    _all: number
+  }
+
+
+  export type OrcamentoTipoMaterialMinAggregateInputType = {
+    id?: true
+    nome?: true
+  }
+
+  export type OrcamentoTipoMaterialMaxAggregateInputType = {
+    id?: true
+    nome?: true
+  }
+
+  export type OrcamentoTipoMaterialCountAggregateInputType = {
+    id?: true
+    nome?: true
+    _all?: true
+  }
+
+  export type OrcamentoTipoMaterialAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which OrcamentoTipoMaterial to aggregate.
+     */
+    where?: OrcamentoTipoMaterialWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of OrcamentoTipoMaterials to fetch.
+     */
+    orderBy?: OrcamentoTipoMaterialOrderByWithRelationInput | OrcamentoTipoMaterialOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: OrcamentoTipoMaterialWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` OrcamentoTipoMaterials from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` OrcamentoTipoMaterials.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned OrcamentoTipoMaterials
+    **/
+    _count?: true | OrcamentoTipoMaterialCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: OrcamentoTipoMaterialMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: OrcamentoTipoMaterialMaxAggregateInputType
+  }
+
+  export type GetOrcamentoTipoMaterialAggregateType<T extends OrcamentoTipoMaterialAggregateArgs> = {
+        [P in keyof T & keyof AggregateOrcamentoTipoMaterial]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateOrcamentoTipoMaterial[P]>
+      : GetScalarType<T[P], AggregateOrcamentoTipoMaterial[P]>
+  }
+
+
+
+
+  export type OrcamentoTipoMaterialGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: OrcamentoTipoMaterialWhereInput
+    orderBy?: OrcamentoTipoMaterialOrderByWithAggregationInput | OrcamentoTipoMaterialOrderByWithAggregationInput[]
+    by: OrcamentoTipoMaterialScalarFieldEnum[] | OrcamentoTipoMaterialScalarFieldEnum
+    having?: OrcamentoTipoMaterialScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: OrcamentoTipoMaterialCountAggregateInputType | true
+    _min?: OrcamentoTipoMaterialMinAggregateInputType
+    _max?: OrcamentoTipoMaterialMaxAggregateInputType
+  }
+
+  export type OrcamentoTipoMaterialGroupByOutputType = {
+    id: string
+    nome: string
+    _count: OrcamentoTipoMaterialCountAggregateOutputType | null
+    _min: OrcamentoTipoMaterialMinAggregateOutputType | null
+    _max: OrcamentoTipoMaterialMaxAggregateOutputType | null
+  }
+
+  type GetOrcamentoTipoMaterialGroupByPayload<T extends OrcamentoTipoMaterialGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<OrcamentoTipoMaterialGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof OrcamentoTipoMaterialGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], OrcamentoTipoMaterialGroupByOutputType[P]>
+            : GetScalarType<T[P], OrcamentoTipoMaterialGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type OrcamentoTipoMaterialSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    nome?: boolean
+  }, ExtArgs["result"]["orcamentoTipoMaterial"]>
+
+  export type OrcamentoTipoMaterialSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    nome?: boolean
+  }, ExtArgs["result"]["orcamentoTipoMaterial"]>
+
+  export type OrcamentoTipoMaterialSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    nome?: boolean
+  }, ExtArgs["result"]["orcamentoTipoMaterial"]>
+
+  export type OrcamentoTipoMaterialSelectScalar = {
+    id?: boolean
+    nome?: boolean
+  }
+
+  export type OrcamentoTipoMaterialOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "nome", ExtArgs["result"]["orcamentoTipoMaterial"]>
+
+  export type $OrcamentoTipoMaterialPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "OrcamentoTipoMaterial"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      nome: string
+    }, ExtArgs["result"]["orcamentoTipoMaterial"]>
+    composites: {}
+  }
+
+  type OrcamentoTipoMaterialGetPayload<S extends boolean | null | undefined | OrcamentoTipoMaterialDefaultArgs> = $Result.GetResult<Prisma.$OrcamentoTipoMaterialPayload, S>
+
+  type OrcamentoTipoMaterialCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<OrcamentoTipoMaterialFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: OrcamentoTipoMaterialCountAggregateInputType | true
+    }
+
+  export interface OrcamentoTipoMaterialDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['OrcamentoTipoMaterial'], meta: { name: 'OrcamentoTipoMaterial' } }
+    /**
+     * Find zero or one OrcamentoTipoMaterial that matches the filter.
+     * @param {OrcamentoTipoMaterialFindUniqueArgs} args - Arguments to find a OrcamentoTipoMaterial
+     * @example
+     * // Get one OrcamentoTipoMaterial
+     * const orcamentoTipoMaterial = await prisma.orcamentoTipoMaterial.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends OrcamentoTipoMaterialFindUniqueArgs>(args: SelectSubset<T, OrcamentoTipoMaterialFindUniqueArgs<ExtArgs>>): Prisma__OrcamentoTipoMaterialClient<$Result.GetResult<Prisma.$OrcamentoTipoMaterialPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one OrcamentoTipoMaterial that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {OrcamentoTipoMaterialFindUniqueOrThrowArgs} args - Arguments to find a OrcamentoTipoMaterial
+     * @example
+     * // Get one OrcamentoTipoMaterial
+     * const orcamentoTipoMaterial = await prisma.orcamentoTipoMaterial.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends OrcamentoTipoMaterialFindUniqueOrThrowArgs>(args: SelectSubset<T, OrcamentoTipoMaterialFindUniqueOrThrowArgs<ExtArgs>>): Prisma__OrcamentoTipoMaterialClient<$Result.GetResult<Prisma.$OrcamentoTipoMaterialPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first OrcamentoTipoMaterial that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OrcamentoTipoMaterialFindFirstArgs} args - Arguments to find a OrcamentoTipoMaterial
+     * @example
+     * // Get one OrcamentoTipoMaterial
+     * const orcamentoTipoMaterial = await prisma.orcamentoTipoMaterial.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends OrcamentoTipoMaterialFindFirstArgs>(args?: SelectSubset<T, OrcamentoTipoMaterialFindFirstArgs<ExtArgs>>): Prisma__OrcamentoTipoMaterialClient<$Result.GetResult<Prisma.$OrcamentoTipoMaterialPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first OrcamentoTipoMaterial that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OrcamentoTipoMaterialFindFirstOrThrowArgs} args - Arguments to find a OrcamentoTipoMaterial
+     * @example
+     * // Get one OrcamentoTipoMaterial
+     * const orcamentoTipoMaterial = await prisma.orcamentoTipoMaterial.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends OrcamentoTipoMaterialFindFirstOrThrowArgs>(args?: SelectSubset<T, OrcamentoTipoMaterialFindFirstOrThrowArgs<ExtArgs>>): Prisma__OrcamentoTipoMaterialClient<$Result.GetResult<Prisma.$OrcamentoTipoMaterialPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more OrcamentoTipoMaterials that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OrcamentoTipoMaterialFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all OrcamentoTipoMaterials
+     * const orcamentoTipoMaterials = await prisma.orcamentoTipoMaterial.findMany()
+     * 
+     * // Get first 10 OrcamentoTipoMaterials
+     * const orcamentoTipoMaterials = await prisma.orcamentoTipoMaterial.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const orcamentoTipoMaterialWithIdOnly = await prisma.orcamentoTipoMaterial.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends OrcamentoTipoMaterialFindManyArgs>(args?: SelectSubset<T, OrcamentoTipoMaterialFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$OrcamentoTipoMaterialPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a OrcamentoTipoMaterial.
+     * @param {OrcamentoTipoMaterialCreateArgs} args - Arguments to create a OrcamentoTipoMaterial.
+     * @example
+     * // Create one OrcamentoTipoMaterial
+     * const OrcamentoTipoMaterial = await prisma.orcamentoTipoMaterial.create({
+     *   data: {
+     *     // ... data to create a OrcamentoTipoMaterial
+     *   }
+     * })
+     * 
+     */
+    create<T extends OrcamentoTipoMaterialCreateArgs>(args: SelectSubset<T, OrcamentoTipoMaterialCreateArgs<ExtArgs>>): Prisma__OrcamentoTipoMaterialClient<$Result.GetResult<Prisma.$OrcamentoTipoMaterialPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many OrcamentoTipoMaterials.
+     * @param {OrcamentoTipoMaterialCreateManyArgs} args - Arguments to create many OrcamentoTipoMaterials.
+     * @example
+     * // Create many OrcamentoTipoMaterials
+     * const orcamentoTipoMaterial = await prisma.orcamentoTipoMaterial.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends OrcamentoTipoMaterialCreateManyArgs>(args?: SelectSubset<T, OrcamentoTipoMaterialCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many OrcamentoTipoMaterials and returns the data saved in the database.
+     * @param {OrcamentoTipoMaterialCreateManyAndReturnArgs} args - Arguments to create many OrcamentoTipoMaterials.
+     * @example
+     * // Create many OrcamentoTipoMaterials
+     * const orcamentoTipoMaterial = await prisma.orcamentoTipoMaterial.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many OrcamentoTipoMaterials and only return the `id`
+     * const orcamentoTipoMaterialWithIdOnly = await prisma.orcamentoTipoMaterial.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends OrcamentoTipoMaterialCreateManyAndReturnArgs>(args?: SelectSubset<T, OrcamentoTipoMaterialCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$OrcamentoTipoMaterialPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a OrcamentoTipoMaterial.
+     * @param {OrcamentoTipoMaterialDeleteArgs} args - Arguments to delete one OrcamentoTipoMaterial.
+     * @example
+     * // Delete one OrcamentoTipoMaterial
+     * const OrcamentoTipoMaterial = await prisma.orcamentoTipoMaterial.delete({
+     *   where: {
+     *     // ... filter to delete one OrcamentoTipoMaterial
+     *   }
+     * })
+     * 
+     */
+    delete<T extends OrcamentoTipoMaterialDeleteArgs>(args: SelectSubset<T, OrcamentoTipoMaterialDeleteArgs<ExtArgs>>): Prisma__OrcamentoTipoMaterialClient<$Result.GetResult<Prisma.$OrcamentoTipoMaterialPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one OrcamentoTipoMaterial.
+     * @param {OrcamentoTipoMaterialUpdateArgs} args - Arguments to update one OrcamentoTipoMaterial.
+     * @example
+     * // Update one OrcamentoTipoMaterial
+     * const orcamentoTipoMaterial = await prisma.orcamentoTipoMaterial.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends OrcamentoTipoMaterialUpdateArgs>(args: SelectSubset<T, OrcamentoTipoMaterialUpdateArgs<ExtArgs>>): Prisma__OrcamentoTipoMaterialClient<$Result.GetResult<Prisma.$OrcamentoTipoMaterialPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more OrcamentoTipoMaterials.
+     * @param {OrcamentoTipoMaterialDeleteManyArgs} args - Arguments to filter OrcamentoTipoMaterials to delete.
+     * @example
+     * // Delete a few OrcamentoTipoMaterials
+     * const { count } = await prisma.orcamentoTipoMaterial.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends OrcamentoTipoMaterialDeleteManyArgs>(args?: SelectSubset<T, OrcamentoTipoMaterialDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more OrcamentoTipoMaterials.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OrcamentoTipoMaterialUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many OrcamentoTipoMaterials
+     * const orcamentoTipoMaterial = await prisma.orcamentoTipoMaterial.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends OrcamentoTipoMaterialUpdateManyArgs>(args: SelectSubset<T, OrcamentoTipoMaterialUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more OrcamentoTipoMaterials and returns the data updated in the database.
+     * @param {OrcamentoTipoMaterialUpdateManyAndReturnArgs} args - Arguments to update many OrcamentoTipoMaterials.
+     * @example
+     * // Update many OrcamentoTipoMaterials
+     * const orcamentoTipoMaterial = await prisma.orcamentoTipoMaterial.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more OrcamentoTipoMaterials and only return the `id`
+     * const orcamentoTipoMaterialWithIdOnly = await prisma.orcamentoTipoMaterial.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends OrcamentoTipoMaterialUpdateManyAndReturnArgs>(args: SelectSubset<T, OrcamentoTipoMaterialUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$OrcamentoTipoMaterialPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one OrcamentoTipoMaterial.
+     * @param {OrcamentoTipoMaterialUpsertArgs} args - Arguments to update or create a OrcamentoTipoMaterial.
+     * @example
+     * // Update or create a OrcamentoTipoMaterial
+     * const orcamentoTipoMaterial = await prisma.orcamentoTipoMaterial.upsert({
+     *   create: {
+     *     // ... data to create a OrcamentoTipoMaterial
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the OrcamentoTipoMaterial we want to update
+     *   }
+     * })
+     */
+    upsert<T extends OrcamentoTipoMaterialUpsertArgs>(args: SelectSubset<T, OrcamentoTipoMaterialUpsertArgs<ExtArgs>>): Prisma__OrcamentoTipoMaterialClient<$Result.GetResult<Prisma.$OrcamentoTipoMaterialPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of OrcamentoTipoMaterials.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OrcamentoTipoMaterialCountArgs} args - Arguments to filter OrcamentoTipoMaterials to count.
+     * @example
+     * // Count the number of OrcamentoTipoMaterials
+     * const count = await prisma.orcamentoTipoMaterial.count({
+     *   where: {
+     *     // ... the filter for the OrcamentoTipoMaterials we want to count
+     *   }
+     * })
+    **/
+    count<T extends OrcamentoTipoMaterialCountArgs>(
+      args?: Subset<T, OrcamentoTipoMaterialCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], OrcamentoTipoMaterialCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a OrcamentoTipoMaterial.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OrcamentoTipoMaterialAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends OrcamentoTipoMaterialAggregateArgs>(args: Subset<T, OrcamentoTipoMaterialAggregateArgs>): Prisma.PrismaPromise<GetOrcamentoTipoMaterialAggregateType<T>>
+
+    /**
+     * Group by OrcamentoTipoMaterial.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OrcamentoTipoMaterialGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends OrcamentoTipoMaterialGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: OrcamentoTipoMaterialGroupByArgs['orderBy'] }
+        : { orderBy?: OrcamentoTipoMaterialGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, OrcamentoTipoMaterialGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetOrcamentoTipoMaterialGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the OrcamentoTipoMaterial model
+   */
+  readonly fields: OrcamentoTipoMaterialFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for OrcamentoTipoMaterial.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__OrcamentoTipoMaterialClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the OrcamentoTipoMaterial model
+   */
+  interface OrcamentoTipoMaterialFieldRefs {
+    readonly id: FieldRef<"OrcamentoTipoMaterial", 'String'>
+    readonly nome: FieldRef<"OrcamentoTipoMaterial", 'String'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * OrcamentoTipoMaterial findUnique
+   */
+  export type OrcamentoTipoMaterialFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoTipoMaterial
+     */
+    select?: OrcamentoTipoMaterialSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoTipoMaterial
+     */
+    omit?: OrcamentoTipoMaterialOmit<ExtArgs> | null
+    /**
+     * Filter, which OrcamentoTipoMaterial to fetch.
+     */
+    where: OrcamentoTipoMaterialWhereUniqueInput
+  }
+
+  /**
+   * OrcamentoTipoMaterial findUniqueOrThrow
+   */
+  export type OrcamentoTipoMaterialFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoTipoMaterial
+     */
+    select?: OrcamentoTipoMaterialSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoTipoMaterial
+     */
+    omit?: OrcamentoTipoMaterialOmit<ExtArgs> | null
+    /**
+     * Filter, which OrcamentoTipoMaterial to fetch.
+     */
+    where: OrcamentoTipoMaterialWhereUniqueInput
+  }
+
+  /**
+   * OrcamentoTipoMaterial findFirst
+   */
+  export type OrcamentoTipoMaterialFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoTipoMaterial
+     */
+    select?: OrcamentoTipoMaterialSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoTipoMaterial
+     */
+    omit?: OrcamentoTipoMaterialOmit<ExtArgs> | null
+    /**
+     * Filter, which OrcamentoTipoMaterial to fetch.
+     */
+    where?: OrcamentoTipoMaterialWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of OrcamentoTipoMaterials to fetch.
+     */
+    orderBy?: OrcamentoTipoMaterialOrderByWithRelationInput | OrcamentoTipoMaterialOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for OrcamentoTipoMaterials.
+     */
+    cursor?: OrcamentoTipoMaterialWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` OrcamentoTipoMaterials from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` OrcamentoTipoMaterials.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of OrcamentoTipoMaterials.
+     */
+    distinct?: OrcamentoTipoMaterialScalarFieldEnum | OrcamentoTipoMaterialScalarFieldEnum[]
+  }
+
+  /**
+   * OrcamentoTipoMaterial findFirstOrThrow
+   */
+  export type OrcamentoTipoMaterialFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoTipoMaterial
+     */
+    select?: OrcamentoTipoMaterialSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoTipoMaterial
+     */
+    omit?: OrcamentoTipoMaterialOmit<ExtArgs> | null
+    /**
+     * Filter, which OrcamentoTipoMaterial to fetch.
+     */
+    where?: OrcamentoTipoMaterialWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of OrcamentoTipoMaterials to fetch.
+     */
+    orderBy?: OrcamentoTipoMaterialOrderByWithRelationInput | OrcamentoTipoMaterialOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for OrcamentoTipoMaterials.
+     */
+    cursor?: OrcamentoTipoMaterialWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` OrcamentoTipoMaterials from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` OrcamentoTipoMaterials.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of OrcamentoTipoMaterials.
+     */
+    distinct?: OrcamentoTipoMaterialScalarFieldEnum | OrcamentoTipoMaterialScalarFieldEnum[]
+  }
+
+  /**
+   * OrcamentoTipoMaterial findMany
+   */
+  export type OrcamentoTipoMaterialFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoTipoMaterial
+     */
+    select?: OrcamentoTipoMaterialSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoTipoMaterial
+     */
+    omit?: OrcamentoTipoMaterialOmit<ExtArgs> | null
+    /**
+     * Filter, which OrcamentoTipoMaterials to fetch.
+     */
+    where?: OrcamentoTipoMaterialWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of OrcamentoTipoMaterials to fetch.
+     */
+    orderBy?: OrcamentoTipoMaterialOrderByWithRelationInput | OrcamentoTipoMaterialOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing OrcamentoTipoMaterials.
+     */
+    cursor?: OrcamentoTipoMaterialWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` OrcamentoTipoMaterials from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` OrcamentoTipoMaterials.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of OrcamentoTipoMaterials.
+     */
+    distinct?: OrcamentoTipoMaterialScalarFieldEnum | OrcamentoTipoMaterialScalarFieldEnum[]
+  }
+
+  /**
+   * OrcamentoTipoMaterial create
+   */
+  export type OrcamentoTipoMaterialCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoTipoMaterial
+     */
+    select?: OrcamentoTipoMaterialSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoTipoMaterial
+     */
+    omit?: OrcamentoTipoMaterialOmit<ExtArgs> | null
+    /**
+     * The data needed to create a OrcamentoTipoMaterial.
+     */
+    data: XOR<OrcamentoTipoMaterialCreateInput, OrcamentoTipoMaterialUncheckedCreateInput>
+  }
+
+  /**
+   * OrcamentoTipoMaterial createMany
+   */
+  export type OrcamentoTipoMaterialCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many OrcamentoTipoMaterials.
+     */
+    data: OrcamentoTipoMaterialCreateManyInput | OrcamentoTipoMaterialCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * OrcamentoTipoMaterial createManyAndReturn
+   */
+  export type OrcamentoTipoMaterialCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoTipoMaterial
+     */
+    select?: OrcamentoTipoMaterialSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoTipoMaterial
+     */
+    omit?: OrcamentoTipoMaterialOmit<ExtArgs> | null
+    /**
+     * The data used to create many OrcamentoTipoMaterials.
+     */
+    data: OrcamentoTipoMaterialCreateManyInput | OrcamentoTipoMaterialCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * OrcamentoTipoMaterial update
+   */
+  export type OrcamentoTipoMaterialUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoTipoMaterial
+     */
+    select?: OrcamentoTipoMaterialSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoTipoMaterial
+     */
+    omit?: OrcamentoTipoMaterialOmit<ExtArgs> | null
+    /**
+     * The data needed to update a OrcamentoTipoMaterial.
+     */
+    data: XOR<OrcamentoTipoMaterialUpdateInput, OrcamentoTipoMaterialUncheckedUpdateInput>
+    /**
+     * Choose, which OrcamentoTipoMaterial to update.
+     */
+    where: OrcamentoTipoMaterialWhereUniqueInput
+  }
+
+  /**
+   * OrcamentoTipoMaterial updateMany
+   */
+  export type OrcamentoTipoMaterialUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update OrcamentoTipoMaterials.
+     */
+    data: XOR<OrcamentoTipoMaterialUpdateManyMutationInput, OrcamentoTipoMaterialUncheckedUpdateManyInput>
+    /**
+     * Filter which OrcamentoTipoMaterials to update
+     */
+    where?: OrcamentoTipoMaterialWhereInput
+    /**
+     * Limit how many OrcamentoTipoMaterials to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * OrcamentoTipoMaterial updateManyAndReturn
+   */
+  export type OrcamentoTipoMaterialUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoTipoMaterial
+     */
+    select?: OrcamentoTipoMaterialSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoTipoMaterial
+     */
+    omit?: OrcamentoTipoMaterialOmit<ExtArgs> | null
+    /**
+     * The data used to update OrcamentoTipoMaterials.
+     */
+    data: XOR<OrcamentoTipoMaterialUpdateManyMutationInput, OrcamentoTipoMaterialUncheckedUpdateManyInput>
+    /**
+     * Filter which OrcamentoTipoMaterials to update
+     */
+    where?: OrcamentoTipoMaterialWhereInput
+    /**
+     * Limit how many OrcamentoTipoMaterials to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * OrcamentoTipoMaterial upsert
+   */
+  export type OrcamentoTipoMaterialUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoTipoMaterial
+     */
+    select?: OrcamentoTipoMaterialSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoTipoMaterial
+     */
+    omit?: OrcamentoTipoMaterialOmit<ExtArgs> | null
+    /**
+     * The filter to search for the OrcamentoTipoMaterial to update in case it exists.
+     */
+    where: OrcamentoTipoMaterialWhereUniqueInput
+    /**
+     * In case the OrcamentoTipoMaterial found by the `where` argument doesn't exist, create a new OrcamentoTipoMaterial with this data.
+     */
+    create: XOR<OrcamentoTipoMaterialCreateInput, OrcamentoTipoMaterialUncheckedCreateInput>
+    /**
+     * In case the OrcamentoTipoMaterial was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<OrcamentoTipoMaterialUpdateInput, OrcamentoTipoMaterialUncheckedUpdateInput>
+  }
+
+  /**
+   * OrcamentoTipoMaterial delete
+   */
+  export type OrcamentoTipoMaterialDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoTipoMaterial
+     */
+    select?: OrcamentoTipoMaterialSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoTipoMaterial
+     */
+    omit?: OrcamentoTipoMaterialOmit<ExtArgs> | null
+    /**
+     * Filter which OrcamentoTipoMaterial to delete.
+     */
+    where: OrcamentoTipoMaterialWhereUniqueInput
+  }
+
+  /**
+   * OrcamentoTipoMaterial deleteMany
+   */
+  export type OrcamentoTipoMaterialDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which OrcamentoTipoMaterials to delete
+     */
+    where?: OrcamentoTipoMaterialWhereInput
+    /**
+     * Limit how many OrcamentoTipoMaterials to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * OrcamentoTipoMaterial without action
+   */
+  export type OrcamentoTipoMaterialDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoTipoMaterial
+     */
+    select?: OrcamentoTipoMaterialSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoTipoMaterial
+     */
+    omit?: OrcamentoTipoMaterialOmit<ExtArgs> | null
+  }
+
+
+  /**
+   * Model OrcamentoItemPadrao
+   */
+
+  export type AggregateOrcamentoItemPadrao = {
+    _count: OrcamentoItemPadraoCountAggregateOutputType | null
+    _avg: OrcamentoItemPadraoAvgAggregateOutputType | null
+    _sum: OrcamentoItemPadraoSumAggregateOutputType | null
+    _min: OrcamentoItemPadraoMinAggregateOutputType | null
+    _max: OrcamentoItemPadraoMaxAggregateOutputType | null
+  }
+
+  export type OrcamentoItemPadraoAvgAggregateOutputType = {
+    precoBaseUnitario: number | null
+  }
+
+  export type OrcamentoItemPadraoSumAggregateOutputType = {
+    precoBaseUnitario: number | null
+  }
+
+  export type OrcamentoItemPadraoMinAggregateOutputType = {
+    id: string | null
+    codigo: string | null
+    descricao: string | null
+    tipo: string | null
+    unidade: string | null
+    precoBaseUnitario: number | null
+  }
+
+  export type OrcamentoItemPadraoMaxAggregateOutputType = {
+    id: string | null
+    codigo: string | null
+    descricao: string | null
+    tipo: string | null
+    unidade: string | null
+    precoBaseUnitario: number | null
+  }
+
+  export type OrcamentoItemPadraoCountAggregateOutputType = {
+    id: number
+    codigo: number
+    descricao: number
+    tipo: number
+    unidade: number
+    precoBaseUnitario: number
+    _all: number
+  }
+
+
+  export type OrcamentoItemPadraoAvgAggregateInputType = {
+    precoBaseUnitario?: true
+  }
+
+  export type OrcamentoItemPadraoSumAggregateInputType = {
+    precoBaseUnitario?: true
+  }
+
+  export type OrcamentoItemPadraoMinAggregateInputType = {
+    id?: true
+    codigo?: true
+    descricao?: true
+    tipo?: true
+    unidade?: true
+    precoBaseUnitario?: true
+  }
+
+  export type OrcamentoItemPadraoMaxAggregateInputType = {
+    id?: true
+    codigo?: true
+    descricao?: true
+    tipo?: true
+    unidade?: true
+    precoBaseUnitario?: true
+  }
+
+  export type OrcamentoItemPadraoCountAggregateInputType = {
+    id?: true
+    codigo?: true
+    descricao?: true
+    tipo?: true
+    unidade?: true
+    precoBaseUnitario?: true
+    _all?: true
+  }
+
+  export type OrcamentoItemPadraoAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which OrcamentoItemPadrao to aggregate.
+     */
+    where?: OrcamentoItemPadraoWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of OrcamentoItemPadraos to fetch.
+     */
+    orderBy?: OrcamentoItemPadraoOrderByWithRelationInput | OrcamentoItemPadraoOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: OrcamentoItemPadraoWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` OrcamentoItemPadraos from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` OrcamentoItemPadraos.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned OrcamentoItemPadraos
+    **/
+    _count?: true | OrcamentoItemPadraoCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: OrcamentoItemPadraoAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: OrcamentoItemPadraoSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: OrcamentoItemPadraoMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: OrcamentoItemPadraoMaxAggregateInputType
+  }
+
+  export type GetOrcamentoItemPadraoAggregateType<T extends OrcamentoItemPadraoAggregateArgs> = {
+        [P in keyof T & keyof AggregateOrcamentoItemPadrao]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateOrcamentoItemPadrao[P]>
+      : GetScalarType<T[P], AggregateOrcamentoItemPadrao[P]>
+  }
+
+
+
+
+  export type OrcamentoItemPadraoGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: OrcamentoItemPadraoWhereInput
+    orderBy?: OrcamentoItemPadraoOrderByWithAggregationInput | OrcamentoItemPadraoOrderByWithAggregationInput[]
+    by: OrcamentoItemPadraoScalarFieldEnum[] | OrcamentoItemPadraoScalarFieldEnum
+    having?: OrcamentoItemPadraoScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: OrcamentoItemPadraoCountAggregateInputType | true
+    _avg?: OrcamentoItemPadraoAvgAggregateInputType
+    _sum?: OrcamentoItemPadraoSumAggregateInputType
+    _min?: OrcamentoItemPadraoMinAggregateInputType
+    _max?: OrcamentoItemPadraoMaxAggregateInputType
+  }
+
+  export type OrcamentoItemPadraoGroupByOutputType = {
+    id: string
+    codigo: string | null
+    descricao: string
+    tipo: string
+    unidade: string
+    precoBaseUnitario: number | null
+    _count: OrcamentoItemPadraoCountAggregateOutputType | null
+    _avg: OrcamentoItemPadraoAvgAggregateOutputType | null
+    _sum: OrcamentoItemPadraoSumAggregateOutputType | null
+    _min: OrcamentoItemPadraoMinAggregateOutputType | null
+    _max: OrcamentoItemPadraoMaxAggregateOutputType | null
+  }
+
+  type GetOrcamentoItemPadraoGroupByPayload<T extends OrcamentoItemPadraoGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<OrcamentoItemPadraoGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof OrcamentoItemPadraoGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], OrcamentoItemPadraoGroupByOutputType[P]>
+            : GetScalarType<T[P], OrcamentoItemPadraoGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type OrcamentoItemPadraoSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    codigo?: boolean
+    descricao?: boolean
+    tipo?: boolean
+    unidade?: boolean
+    precoBaseUnitario?: boolean
+  }, ExtArgs["result"]["orcamentoItemPadrao"]>
+
+  export type OrcamentoItemPadraoSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    codigo?: boolean
+    descricao?: boolean
+    tipo?: boolean
+    unidade?: boolean
+    precoBaseUnitario?: boolean
+  }, ExtArgs["result"]["orcamentoItemPadrao"]>
+
+  export type OrcamentoItemPadraoSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    codigo?: boolean
+    descricao?: boolean
+    tipo?: boolean
+    unidade?: boolean
+    precoBaseUnitario?: boolean
+  }, ExtArgs["result"]["orcamentoItemPadrao"]>
+
+  export type OrcamentoItemPadraoSelectScalar = {
+    id?: boolean
+    codigo?: boolean
+    descricao?: boolean
+    tipo?: boolean
+    unidade?: boolean
+    precoBaseUnitario?: boolean
+  }
+
+  export type OrcamentoItemPadraoOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "codigo" | "descricao" | "tipo" | "unidade" | "precoBaseUnitario", ExtArgs["result"]["orcamentoItemPadrao"]>
+
+  export type $OrcamentoItemPadraoPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "OrcamentoItemPadrao"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      codigo: string | null
+      descricao: string
+      tipo: string
+      unidade: string
+      precoBaseUnitario: number | null
+    }, ExtArgs["result"]["orcamentoItemPadrao"]>
+    composites: {}
+  }
+
+  type OrcamentoItemPadraoGetPayload<S extends boolean | null | undefined | OrcamentoItemPadraoDefaultArgs> = $Result.GetResult<Prisma.$OrcamentoItemPadraoPayload, S>
+
+  type OrcamentoItemPadraoCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<OrcamentoItemPadraoFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: OrcamentoItemPadraoCountAggregateInputType | true
+    }
+
+  export interface OrcamentoItemPadraoDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['OrcamentoItemPadrao'], meta: { name: 'OrcamentoItemPadrao' } }
+    /**
+     * Find zero or one OrcamentoItemPadrao that matches the filter.
+     * @param {OrcamentoItemPadraoFindUniqueArgs} args - Arguments to find a OrcamentoItemPadrao
+     * @example
+     * // Get one OrcamentoItemPadrao
+     * const orcamentoItemPadrao = await prisma.orcamentoItemPadrao.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends OrcamentoItemPadraoFindUniqueArgs>(args: SelectSubset<T, OrcamentoItemPadraoFindUniqueArgs<ExtArgs>>): Prisma__OrcamentoItemPadraoClient<$Result.GetResult<Prisma.$OrcamentoItemPadraoPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one OrcamentoItemPadrao that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {OrcamentoItemPadraoFindUniqueOrThrowArgs} args - Arguments to find a OrcamentoItemPadrao
+     * @example
+     * // Get one OrcamentoItemPadrao
+     * const orcamentoItemPadrao = await prisma.orcamentoItemPadrao.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends OrcamentoItemPadraoFindUniqueOrThrowArgs>(args: SelectSubset<T, OrcamentoItemPadraoFindUniqueOrThrowArgs<ExtArgs>>): Prisma__OrcamentoItemPadraoClient<$Result.GetResult<Prisma.$OrcamentoItemPadraoPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first OrcamentoItemPadrao that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OrcamentoItemPadraoFindFirstArgs} args - Arguments to find a OrcamentoItemPadrao
+     * @example
+     * // Get one OrcamentoItemPadrao
+     * const orcamentoItemPadrao = await prisma.orcamentoItemPadrao.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends OrcamentoItemPadraoFindFirstArgs>(args?: SelectSubset<T, OrcamentoItemPadraoFindFirstArgs<ExtArgs>>): Prisma__OrcamentoItemPadraoClient<$Result.GetResult<Prisma.$OrcamentoItemPadraoPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first OrcamentoItemPadrao that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OrcamentoItemPadraoFindFirstOrThrowArgs} args - Arguments to find a OrcamentoItemPadrao
+     * @example
+     * // Get one OrcamentoItemPadrao
+     * const orcamentoItemPadrao = await prisma.orcamentoItemPadrao.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends OrcamentoItemPadraoFindFirstOrThrowArgs>(args?: SelectSubset<T, OrcamentoItemPadraoFindFirstOrThrowArgs<ExtArgs>>): Prisma__OrcamentoItemPadraoClient<$Result.GetResult<Prisma.$OrcamentoItemPadraoPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more OrcamentoItemPadraos that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OrcamentoItemPadraoFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all OrcamentoItemPadraos
+     * const orcamentoItemPadraos = await prisma.orcamentoItemPadrao.findMany()
+     * 
+     * // Get first 10 OrcamentoItemPadraos
+     * const orcamentoItemPadraos = await prisma.orcamentoItemPadrao.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const orcamentoItemPadraoWithIdOnly = await prisma.orcamentoItemPadrao.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends OrcamentoItemPadraoFindManyArgs>(args?: SelectSubset<T, OrcamentoItemPadraoFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$OrcamentoItemPadraoPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a OrcamentoItemPadrao.
+     * @param {OrcamentoItemPadraoCreateArgs} args - Arguments to create a OrcamentoItemPadrao.
+     * @example
+     * // Create one OrcamentoItemPadrao
+     * const OrcamentoItemPadrao = await prisma.orcamentoItemPadrao.create({
+     *   data: {
+     *     // ... data to create a OrcamentoItemPadrao
+     *   }
+     * })
+     * 
+     */
+    create<T extends OrcamentoItemPadraoCreateArgs>(args: SelectSubset<T, OrcamentoItemPadraoCreateArgs<ExtArgs>>): Prisma__OrcamentoItemPadraoClient<$Result.GetResult<Prisma.$OrcamentoItemPadraoPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many OrcamentoItemPadraos.
+     * @param {OrcamentoItemPadraoCreateManyArgs} args - Arguments to create many OrcamentoItemPadraos.
+     * @example
+     * // Create many OrcamentoItemPadraos
+     * const orcamentoItemPadrao = await prisma.orcamentoItemPadrao.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends OrcamentoItemPadraoCreateManyArgs>(args?: SelectSubset<T, OrcamentoItemPadraoCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many OrcamentoItemPadraos and returns the data saved in the database.
+     * @param {OrcamentoItemPadraoCreateManyAndReturnArgs} args - Arguments to create many OrcamentoItemPadraos.
+     * @example
+     * // Create many OrcamentoItemPadraos
+     * const orcamentoItemPadrao = await prisma.orcamentoItemPadrao.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many OrcamentoItemPadraos and only return the `id`
+     * const orcamentoItemPadraoWithIdOnly = await prisma.orcamentoItemPadrao.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends OrcamentoItemPadraoCreateManyAndReturnArgs>(args?: SelectSubset<T, OrcamentoItemPadraoCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$OrcamentoItemPadraoPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a OrcamentoItemPadrao.
+     * @param {OrcamentoItemPadraoDeleteArgs} args - Arguments to delete one OrcamentoItemPadrao.
+     * @example
+     * // Delete one OrcamentoItemPadrao
+     * const OrcamentoItemPadrao = await prisma.orcamentoItemPadrao.delete({
+     *   where: {
+     *     // ... filter to delete one OrcamentoItemPadrao
+     *   }
+     * })
+     * 
+     */
+    delete<T extends OrcamentoItemPadraoDeleteArgs>(args: SelectSubset<T, OrcamentoItemPadraoDeleteArgs<ExtArgs>>): Prisma__OrcamentoItemPadraoClient<$Result.GetResult<Prisma.$OrcamentoItemPadraoPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one OrcamentoItemPadrao.
+     * @param {OrcamentoItemPadraoUpdateArgs} args - Arguments to update one OrcamentoItemPadrao.
+     * @example
+     * // Update one OrcamentoItemPadrao
+     * const orcamentoItemPadrao = await prisma.orcamentoItemPadrao.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends OrcamentoItemPadraoUpdateArgs>(args: SelectSubset<T, OrcamentoItemPadraoUpdateArgs<ExtArgs>>): Prisma__OrcamentoItemPadraoClient<$Result.GetResult<Prisma.$OrcamentoItemPadraoPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more OrcamentoItemPadraos.
+     * @param {OrcamentoItemPadraoDeleteManyArgs} args - Arguments to filter OrcamentoItemPadraos to delete.
+     * @example
+     * // Delete a few OrcamentoItemPadraos
+     * const { count } = await prisma.orcamentoItemPadrao.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends OrcamentoItemPadraoDeleteManyArgs>(args?: SelectSubset<T, OrcamentoItemPadraoDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more OrcamentoItemPadraos.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OrcamentoItemPadraoUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many OrcamentoItemPadraos
+     * const orcamentoItemPadrao = await prisma.orcamentoItemPadrao.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends OrcamentoItemPadraoUpdateManyArgs>(args: SelectSubset<T, OrcamentoItemPadraoUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more OrcamentoItemPadraos and returns the data updated in the database.
+     * @param {OrcamentoItemPadraoUpdateManyAndReturnArgs} args - Arguments to update many OrcamentoItemPadraos.
+     * @example
+     * // Update many OrcamentoItemPadraos
+     * const orcamentoItemPadrao = await prisma.orcamentoItemPadrao.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more OrcamentoItemPadraos and only return the `id`
+     * const orcamentoItemPadraoWithIdOnly = await prisma.orcamentoItemPadrao.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends OrcamentoItemPadraoUpdateManyAndReturnArgs>(args: SelectSubset<T, OrcamentoItemPadraoUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$OrcamentoItemPadraoPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one OrcamentoItemPadrao.
+     * @param {OrcamentoItemPadraoUpsertArgs} args - Arguments to update or create a OrcamentoItemPadrao.
+     * @example
+     * // Update or create a OrcamentoItemPadrao
+     * const orcamentoItemPadrao = await prisma.orcamentoItemPadrao.upsert({
+     *   create: {
+     *     // ... data to create a OrcamentoItemPadrao
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the OrcamentoItemPadrao we want to update
+     *   }
+     * })
+     */
+    upsert<T extends OrcamentoItemPadraoUpsertArgs>(args: SelectSubset<T, OrcamentoItemPadraoUpsertArgs<ExtArgs>>): Prisma__OrcamentoItemPadraoClient<$Result.GetResult<Prisma.$OrcamentoItemPadraoPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of OrcamentoItemPadraos.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OrcamentoItemPadraoCountArgs} args - Arguments to filter OrcamentoItemPadraos to count.
+     * @example
+     * // Count the number of OrcamentoItemPadraos
+     * const count = await prisma.orcamentoItemPadrao.count({
+     *   where: {
+     *     // ... the filter for the OrcamentoItemPadraos we want to count
+     *   }
+     * })
+    **/
+    count<T extends OrcamentoItemPadraoCountArgs>(
+      args?: Subset<T, OrcamentoItemPadraoCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], OrcamentoItemPadraoCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a OrcamentoItemPadrao.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OrcamentoItemPadraoAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends OrcamentoItemPadraoAggregateArgs>(args: Subset<T, OrcamentoItemPadraoAggregateArgs>): Prisma.PrismaPromise<GetOrcamentoItemPadraoAggregateType<T>>
+
+    /**
+     * Group by OrcamentoItemPadrao.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OrcamentoItemPadraoGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends OrcamentoItemPadraoGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: OrcamentoItemPadraoGroupByArgs['orderBy'] }
+        : { orderBy?: OrcamentoItemPadraoGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, OrcamentoItemPadraoGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetOrcamentoItemPadraoGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the OrcamentoItemPadrao model
+   */
+  readonly fields: OrcamentoItemPadraoFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for OrcamentoItemPadrao.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__OrcamentoItemPadraoClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the OrcamentoItemPadrao model
+   */
+  interface OrcamentoItemPadraoFieldRefs {
+    readonly id: FieldRef<"OrcamentoItemPadrao", 'String'>
+    readonly codigo: FieldRef<"OrcamentoItemPadrao", 'String'>
+    readonly descricao: FieldRef<"OrcamentoItemPadrao", 'String'>
+    readonly tipo: FieldRef<"OrcamentoItemPadrao", 'String'>
+    readonly unidade: FieldRef<"OrcamentoItemPadrao", 'String'>
+    readonly precoBaseUnitario: FieldRef<"OrcamentoItemPadrao", 'Float'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * OrcamentoItemPadrao findUnique
+   */
+  export type OrcamentoItemPadraoFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoItemPadrao
+     */
+    select?: OrcamentoItemPadraoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoItemPadrao
+     */
+    omit?: OrcamentoItemPadraoOmit<ExtArgs> | null
+    /**
+     * Filter, which OrcamentoItemPadrao to fetch.
+     */
+    where: OrcamentoItemPadraoWhereUniqueInput
+  }
+
+  /**
+   * OrcamentoItemPadrao findUniqueOrThrow
+   */
+  export type OrcamentoItemPadraoFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoItemPadrao
+     */
+    select?: OrcamentoItemPadraoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoItemPadrao
+     */
+    omit?: OrcamentoItemPadraoOmit<ExtArgs> | null
+    /**
+     * Filter, which OrcamentoItemPadrao to fetch.
+     */
+    where: OrcamentoItemPadraoWhereUniqueInput
+  }
+
+  /**
+   * OrcamentoItemPadrao findFirst
+   */
+  export type OrcamentoItemPadraoFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoItemPadrao
+     */
+    select?: OrcamentoItemPadraoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoItemPadrao
+     */
+    omit?: OrcamentoItemPadraoOmit<ExtArgs> | null
+    /**
+     * Filter, which OrcamentoItemPadrao to fetch.
+     */
+    where?: OrcamentoItemPadraoWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of OrcamentoItemPadraos to fetch.
+     */
+    orderBy?: OrcamentoItemPadraoOrderByWithRelationInput | OrcamentoItemPadraoOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for OrcamentoItemPadraos.
+     */
+    cursor?: OrcamentoItemPadraoWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` OrcamentoItemPadraos from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` OrcamentoItemPadraos.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of OrcamentoItemPadraos.
+     */
+    distinct?: OrcamentoItemPadraoScalarFieldEnum | OrcamentoItemPadraoScalarFieldEnum[]
+  }
+
+  /**
+   * OrcamentoItemPadrao findFirstOrThrow
+   */
+  export type OrcamentoItemPadraoFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoItemPadrao
+     */
+    select?: OrcamentoItemPadraoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoItemPadrao
+     */
+    omit?: OrcamentoItemPadraoOmit<ExtArgs> | null
+    /**
+     * Filter, which OrcamentoItemPadrao to fetch.
+     */
+    where?: OrcamentoItemPadraoWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of OrcamentoItemPadraos to fetch.
+     */
+    orderBy?: OrcamentoItemPadraoOrderByWithRelationInput | OrcamentoItemPadraoOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for OrcamentoItemPadraos.
+     */
+    cursor?: OrcamentoItemPadraoWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` OrcamentoItemPadraos from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` OrcamentoItemPadraos.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of OrcamentoItemPadraos.
+     */
+    distinct?: OrcamentoItemPadraoScalarFieldEnum | OrcamentoItemPadraoScalarFieldEnum[]
+  }
+
+  /**
+   * OrcamentoItemPadrao findMany
+   */
+  export type OrcamentoItemPadraoFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoItemPadrao
+     */
+    select?: OrcamentoItemPadraoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoItemPadrao
+     */
+    omit?: OrcamentoItemPadraoOmit<ExtArgs> | null
+    /**
+     * Filter, which OrcamentoItemPadraos to fetch.
+     */
+    where?: OrcamentoItemPadraoWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of OrcamentoItemPadraos to fetch.
+     */
+    orderBy?: OrcamentoItemPadraoOrderByWithRelationInput | OrcamentoItemPadraoOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing OrcamentoItemPadraos.
+     */
+    cursor?: OrcamentoItemPadraoWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` OrcamentoItemPadraos from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` OrcamentoItemPadraos.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of OrcamentoItemPadraos.
+     */
+    distinct?: OrcamentoItemPadraoScalarFieldEnum | OrcamentoItemPadraoScalarFieldEnum[]
+  }
+
+  /**
+   * OrcamentoItemPadrao create
+   */
+  export type OrcamentoItemPadraoCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoItemPadrao
+     */
+    select?: OrcamentoItemPadraoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoItemPadrao
+     */
+    omit?: OrcamentoItemPadraoOmit<ExtArgs> | null
+    /**
+     * The data needed to create a OrcamentoItemPadrao.
+     */
+    data: XOR<OrcamentoItemPadraoCreateInput, OrcamentoItemPadraoUncheckedCreateInput>
+  }
+
+  /**
+   * OrcamentoItemPadrao createMany
+   */
+  export type OrcamentoItemPadraoCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many OrcamentoItemPadraos.
+     */
+    data: OrcamentoItemPadraoCreateManyInput | OrcamentoItemPadraoCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * OrcamentoItemPadrao createManyAndReturn
+   */
+  export type OrcamentoItemPadraoCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoItemPadrao
+     */
+    select?: OrcamentoItemPadraoSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoItemPadrao
+     */
+    omit?: OrcamentoItemPadraoOmit<ExtArgs> | null
+    /**
+     * The data used to create many OrcamentoItemPadraos.
+     */
+    data: OrcamentoItemPadraoCreateManyInput | OrcamentoItemPadraoCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * OrcamentoItemPadrao update
+   */
+  export type OrcamentoItemPadraoUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoItemPadrao
+     */
+    select?: OrcamentoItemPadraoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoItemPadrao
+     */
+    omit?: OrcamentoItemPadraoOmit<ExtArgs> | null
+    /**
+     * The data needed to update a OrcamentoItemPadrao.
+     */
+    data: XOR<OrcamentoItemPadraoUpdateInput, OrcamentoItemPadraoUncheckedUpdateInput>
+    /**
+     * Choose, which OrcamentoItemPadrao to update.
+     */
+    where: OrcamentoItemPadraoWhereUniqueInput
+  }
+
+  /**
+   * OrcamentoItemPadrao updateMany
+   */
+  export type OrcamentoItemPadraoUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update OrcamentoItemPadraos.
+     */
+    data: XOR<OrcamentoItemPadraoUpdateManyMutationInput, OrcamentoItemPadraoUncheckedUpdateManyInput>
+    /**
+     * Filter which OrcamentoItemPadraos to update
+     */
+    where?: OrcamentoItemPadraoWhereInput
+    /**
+     * Limit how many OrcamentoItemPadraos to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * OrcamentoItemPadrao updateManyAndReturn
+   */
+  export type OrcamentoItemPadraoUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoItemPadrao
+     */
+    select?: OrcamentoItemPadraoSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoItemPadrao
+     */
+    omit?: OrcamentoItemPadraoOmit<ExtArgs> | null
+    /**
+     * The data used to update OrcamentoItemPadraos.
+     */
+    data: XOR<OrcamentoItemPadraoUpdateManyMutationInput, OrcamentoItemPadraoUncheckedUpdateManyInput>
+    /**
+     * Filter which OrcamentoItemPadraos to update
+     */
+    where?: OrcamentoItemPadraoWhereInput
+    /**
+     * Limit how many OrcamentoItemPadraos to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * OrcamentoItemPadrao upsert
+   */
+  export type OrcamentoItemPadraoUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoItemPadrao
+     */
+    select?: OrcamentoItemPadraoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoItemPadrao
+     */
+    omit?: OrcamentoItemPadraoOmit<ExtArgs> | null
+    /**
+     * The filter to search for the OrcamentoItemPadrao to update in case it exists.
+     */
+    where: OrcamentoItemPadraoWhereUniqueInput
+    /**
+     * In case the OrcamentoItemPadrao found by the `where` argument doesn't exist, create a new OrcamentoItemPadrao with this data.
+     */
+    create: XOR<OrcamentoItemPadraoCreateInput, OrcamentoItemPadraoUncheckedCreateInput>
+    /**
+     * In case the OrcamentoItemPadrao was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<OrcamentoItemPadraoUpdateInput, OrcamentoItemPadraoUncheckedUpdateInput>
+  }
+
+  /**
+   * OrcamentoItemPadrao delete
+   */
+  export type OrcamentoItemPadraoDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoItemPadrao
+     */
+    select?: OrcamentoItemPadraoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoItemPadrao
+     */
+    omit?: OrcamentoItemPadraoOmit<ExtArgs> | null
+    /**
+     * Filter which OrcamentoItemPadrao to delete.
+     */
+    where: OrcamentoItemPadraoWhereUniqueInput
+  }
+
+  /**
+   * OrcamentoItemPadrao deleteMany
+   */
+  export type OrcamentoItemPadraoDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which OrcamentoItemPadraos to delete
+     */
+    where?: OrcamentoItemPadraoWhereInput
+    /**
+     * Limit how many OrcamentoItemPadraos to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * OrcamentoItemPadrao without action
+   */
+  export type OrcamentoItemPadraoDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrcamentoItemPadrao
+     */
+    select?: OrcamentoItemPadraoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OrcamentoItemPadrao
+     */
+    omit?: OrcamentoItemPadraoOmit<ExtArgs> | null
+  }
+
+
+  /**
+   * Model Lead
+   */
+
+  export type AggregateLead = {
+    _count: LeadCountAggregateOutputType | null
+    _avg: LeadAvgAggregateOutputType | null
+    _sum: LeadSumAggregateOutputType | null
+    _min: LeadMinAggregateOutputType | null
+    _max: LeadMaxAggregateOutputType | null
+  }
+
+  export type LeadAvgAggregateOutputType = {
+    latitude: number | null
+    longitude: number | null
+  }
+
+  export type LeadSumAggregateOutputType = {
+    latitude: number | null
+    longitude: number | null
+  }
+
+  export type LeadMinAggregateOutputType = {
+    id: string | null
+    nome: string | null
+    telefone: string | null
+    email: string | null
+    tipo: string | null
+    status: string | null
+    latitude: number | null
+    longitude: number | null
+    observacoes: string | null
+    vendedorId: string | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type LeadMaxAggregateOutputType = {
+    id: string | null
+    nome: string | null
+    telefone: string | null
+    email: string | null
+    tipo: string | null
+    status: string | null
+    latitude: number | null
+    longitude: number | null
+    observacoes: string | null
+    vendedorId: string | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type LeadCountAggregateOutputType = {
+    id: number
+    nome: number
+    telefone: number
+    email: number
+    tipo: number
+    status: number
+    latitude: number
+    longitude: number
+    observacoes: number
+    vendedorId: number
+    createdAt: number
+    updatedAt: number
+    _all: number
+  }
+
+
+  export type LeadAvgAggregateInputType = {
+    latitude?: true
+    longitude?: true
+  }
+
+  export type LeadSumAggregateInputType = {
+    latitude?: true
+    longitude?: true
+  }
+
+  export type LeadMinAggregateInputType = {
+    id?: true
+    nome?: true
+    telefone?: true
+    email?: true
+    tipo?: true
+    status?: true
+    latitude?: true
+    longitude?: true
+    observacoes?: true
+    vendedorId?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type LeadMaxAggregateInputType = {
+    id?: true
+    nome?: true
+    telefone?: true
+    email?: true
+    tipo?: true
+    status?: true
+    latitude?: true
+    longitude?: true
+    observacoes?: true
+    vendedorId?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type LeadCountAggregateInputType = {
+    id?: true
+    nome?: true
+    telefone?: true
+    email?: true
+    tipo?: true
+    status?: true
+    latitude?: true
+    longitude?: true
+    observacoes?: true
+    vendedorId?: true
+    createdAt?: true
+    updatedAt?: true
+    _all?: true
+  }
+
+  export type LeadAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which Lead to aggregate.
+     */
+    where?: LeadWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Leads to fetch.
+     */
+    orderBy?: LeadOrderByWithRelationInput | LeadOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: LeadWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Leads from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Leads.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned Leads
+    **/
+    _count?: true | LeadCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: LeadAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: LeadSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: LeadMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: LeadMaxAggregateInputType
+  }
+
+  export type GetLeadAggregateType<T extends LeadAggregateArgs> = {
+        [P in keyof T & keyof AggregateLead]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateLead[P]>
+      : GetScalarType<T[P], AggregateLead[P]>
+  }
+
+
+
+
+  export type LeadGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: LeadWhereInput
+    orderBy?: LeadOrderByWithAggregationInput | LeadOrderByWithAggregationInput[]
+    by: LeadScalarFieldEnum[] | LeadScalarFieldEnum
+    having?: LeadScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: LeadCountAggregateInputType | true
+    _avg?: LeadAvgAggregateInputType
+    _sum?: LeadSumAggregateInputType
+    _min?: LeadMinAggregateInputType
+    _max?: LeadMaxAggregateInputType
+  }
+
+  export type LeadGroupByOutputType = {
+    id: string
+    nome: string
+    telefone: string | null
+    email: string | null
+    tipo: string
+    status: string
+    latitude: number | null
+    longitude: number | null
+    observacoes: string | null
+    vendedorId: string | null
+    createdAt: Date
+    updatedAt: Date
+    _count: LeadCountAggregateOutputType | null
+    _avg: LeadAvgAggregateOutputType | null
+    _sum: LeadSumAggregateOutputType | null
+    _min: LeadMinAggregateOutputType | null
+    _max: LeadMaxAggregateOutputType | null
+  }
+
+  type GetLeadGroupByPayload<T extends LeadGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<LeadGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof LeadGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], LeadGroupByOutputType[P]>
+            : GetScalarType<T[P], LeadGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type LeadSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    nome?: boolean
+    telefone?: boolean
+    email?: boolean
+    tipo?: boolean
+    status?: boolean
+    latitude?: boolean
+    longitude?: boolean
+    observacoes?: boolean
+    vendedorId?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    midias?: boolean | Lead$midiasArgs<ExtArgs>
+    _count?: boolean | LeadCountOutputTypeDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["lead"]>
+
+  export type LeadSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    nome?: boolean
+    telefone?: boolean
+    email?: boolean
+    tipo?: boolean
+    status?: boolean
+    latitude?: boolean
+    longitude?: boolean
+    observacoes?: boolean
+    vendedorId?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }, ExtArgs["result"]["lead"]>
+
+  export type LeadSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    nome?: boolean
+    telefone?: boolean
+    email?: boolean
+    tipo?: boolean
+    status?: boolean
+    latitude?: boolean
+    longitude?: boolean
+    observacoes?: boolean
+    vendedorId?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }, ExtArgs["result"]["lead"]>
+
+  export type LeadSelectScalar = {
+    id?: boolean
+    nome?: boolean
+    telefone?: boolean
+    email?: boolean
+    tipo?: boolean
+    status?: boolean
+    latitude?: boolean
+    longitude?: boolean
+    observacoes?: boolean
+    vendedorId?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }
+
+  export type LeadOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "nome" | "telefone" | "email" | "tipo" | "status" | "latitude" | "longitude" | "observacoes" | "vendedorId" | "createdAt" | "updatedAt", ExtArgs["result"]["lead"]>
+  export type LeadInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    midias?: boolean | Lead$midiasArgs<ExtArgs>
+    _count?: boolean | LeadCountOutputTypeDefaultArgs<ExtArgs>
+  }
+  export type LeadIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
+  export type LeadIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
+
+  export type $LeadPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "Lead"
+    objects: {
+      midias: Prisma.$LeadMidiaPayload<ExtArgs>[]
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      nome: string
+      telefone: string | null
+      email: string | null
+      tipo: string
+      status: string
+      latitude: number | null
+      longitude: number | null
+      observacoes: string | null
+      vendedorId: string | null
+      createdAt: Date
+      updatedAt: Date
+    }, ExtArgs["result"]["lead"]>
+    composites: {}
+  }
+
+  type LeadGetPayload<S extends boolean | null | undefined | LeadDefaultArgs> = $Result.GetResult<Prisma.$LeadPayload, S>
+
+  type LeadCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<LeadFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: LeadCountAggregateInputType | true
+    }
+
+  export interface LeadDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['Lead'], meta: { name: 'Lead' } }
+    /**
+     * Find zero or one Lead that matches the filter.
+     * @param {LeadFindUniqueArgs} args - Arguments to find a Lead
+     * @example
+     * // Get one Lead
+     * const lead = await prisma.lead.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends LeadFindUniqueArgs>(args: SelectSubset<T, LeadFindUniqueArgs<ExtArgs>>): Prisma__LeadClient<$Result.GetResult<Prisma.$LeadPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one Lead that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {LeadFindUniqueOrThrowArgs} args - Arguments to find a Lead
+     * @example
+     * // Get one Lead
+     * const lead = await prisma.lead.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends LeadFindUniqueOrThrowArgs>(args: SelectSubset<T, LeadFindUniqueOrThrowArgs<ExtArgs>>): Prisma__LeadClient<$Result.GetResult<Prisma.$LeadPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Lead that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LeadFindFirstArgs} args - Arguments to find a Lead
+     * @example
+     * // Get one Lead
+     * const lead = await prisma.lead.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends LeadFindFirstArgs>(args?: SelectSubset<T, LeadFindFirstArgs<ExtArgs>>): Prisma__LeadClient<$Result.GetResult<Prisma.$LeadPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Lead that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LeadFindFirstOrThrowArgs} args - Arguments to find a Lead
+     * @example
+     * // Get one Lead
+     * const lead = await prisma.lead.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends LeadFindFirstOrThrowArgs>(args?: SelectSubset<T, LeadFindFirstOrThrowArgs<ExtArgs>>): Prisma__LeadClient<$Result.GetResult<Prisma.$LeadPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more Leads that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LeadFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all Leads
+     * const leads = await prisma.lead.findMany()
+     * 
+     * // Get first 10 Leads
+     * const leads = await prisma.lead.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const leadWithIdOnly = await prisma.lead.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends LeadFindManyArgs>(args?: SelectSubset<T, LeadFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$LeadPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a Lead.
+     * @param {LeadCreateArgs} args - Arguments to create a Lead.
+     * @example
+     * // Create one Lead
+     * const Lead = await prisma.lead.create({
+     *   data: {
+     *     // ... data to create a Lead
+     *   }
+     * })
+     * 
+     */
+    create<T extends LeadCreateArgs>(args: SelectSubset<T, LeadCreateArgs<ExtArgs>>): Prisma__LeadClient<$Result.GetResult<Prisma.$LeadPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many Leads.
+     * @param {LeadCreateManyArgs} args - Arguments to create many Leads.
+     * @example
+     * // Create many Leads
+     * const lead = await prisma.lead.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends LeadCreateManyArgs>(args?: SelectSubset<T, LeadCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many Leads and returns the data saved in the database.
+     * @param {LeadCreateManyAndReturnArgs} args - Arguments to create many Leads.
+     * @example
+     * // Create many Leads
+     * const lead = await prisma.lead.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many Leads and only return the `id`
+     * const leadWithIdOnly = await prisma.lead.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends LeadCreateManyAndReturnArgs>(args?: SelectSubset<T, LeadCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$LeadPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a Lead.
+     * @param {LeadDeleteArgs} args - Arguments to delete one Lead.
+     * @example
+     * // Delete one Lead
+     * const Lead = await prisma.lead.delete({
+     *   where: {
+     *     // ... filter to delete one Lead
+     *   }
+     * })
+     * 
+     */
+    delete<T extends LeadDeleteArgs>(args: SelectSubset<T, LeadDeleteArgs<ExtArgs>>): Prisma__LeadClient<$Result.GetResult<Prisma.$LeadPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one Lead.
+     * @param {LeadUpdateArgs} args - Arguments to update one Lead.
+     * @example
+     * // Update one Lead
+     * const lead = await prisma.lead.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends LeadUpdateArgs>(args: SelectSubset<T, LeadUpdateArgs<ExtArgs>>): Prisma__LeadClient<$Result.GetResult<Prisma.$LeadPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more Leads.
+     * @param {LeadDeleteManyArgs} args - Arguments to filter Leads to delete.
+     * @example
+     * // Delete a few Leads
+     * const { count } = await prisma.lead.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends LeadDeleteManyArgs>(args?: SelectSubset<T, LeadDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Leads.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LeadUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many Leads
+     * const lead = await prisma.lead.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends LeadUpdateManyArgs>(args: SelectSubset<T, LeadUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Leads and returns the data updated in the database.
+     * @param {LeadUpdateManyAndReturnArgs} args - Arguments to update many Leads.
+     * @example
+     * // Update many Leads
+     * const lead = await prisma.lead.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more Leads and only return the `id`
+     * const leadWithIdOnly = await prisma.lead.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends LeadUpdateManyAndReturnArgs>(args: SelectSubset<T, LeadUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$LeadPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one Lead.
+     * @param {LeadUpsertArgs} args - Arguments to update or create a Lead.
+     * @example
+     * // Update or create a Lead
+     * const lead = await prisma.lead.upsert({
+     *   create: {
+     *     // ... data to create a Lead
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the Lead we want to update
+     *   }
+     * })
+     */
+    upsert<T extends LeadUpsertArgs>(args: SelectSubset<T, LeadUpsertArgs<ExtArgs>>): Prisma__LeadClient<$Result.GetResult<Prisma.$LeadPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of Leads.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LeadCountArgs} args - Arguments to filter Leads to count.
+     * @example
+     * // Count the number of Leads
+     * const count = await prisma.lead.count({
+     *   where: {
+     *     // ... the filter for the Leads we want to count
+     *   }
+     * })
+    **/
+    count<T extends LeadCountArgs>(
+      args?: Subset<T, LeadCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], LeadCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a Lead.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LeadAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends LeadAggregateArgs>(args: Subset<T, LeadAggregateArgs>): Prisma.PrismaPromise<GetLeadAggregateType<T>>
+
+    /**
+     * Group by Lead.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LeadGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends LeadGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: LeadGroupByArgs['orderBy'] }
+        : { orderBy?: LeadGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, LeadGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetLeadGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the Lead model
+   */
+  readonly fields: LeadFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for Lead.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__LeadClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    midias<T extends Lead$midiasArgs<ExtArgs> = {}>(args?: Subset<T, Lead$midiasArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$LeadMidiaPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the Lead model
+   */
+  interface LeadFieldRefs {
+    readonly id: FieldRef<"Lead", 'String'>
+    readonly nome: FieldRef<"Lead", 'String'>
+    readonly telefone: FieldRef<"Lead", 'String'>
+    readonly email: FieldRef<"Lead", 'String'>
+    readonly tipo: FieldRef<"Lead", 'String'>
+    readonly status: FieldRef<"Lead", 'String'>
+    readonly latitude: FieldRef<"Lead", 'Float'>
+    readonly longitude: FieldRef<"Lead", 'Float'>
+    readonly observacoes: FieldRef<"Lead", 'String'>
+    readonly vendedorId: FieldRef<"Lead", 'String'>
+    readonly createdAt: FieldRef<"Lead", 'DateTime'>
+    readonly updatedAt: FieldRef<"Lead", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * Lead findUnique
+   */
+  export type LeadFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Lead
+     */
+    select?: LeadSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Lead
+     */
+    omit?: LeadOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LeadInclude<ExtArgs> | null
+    /**
+     * Filter, which Lead to fetch.
+     */
+    where: LeadWhereUniqueInput
+  }
+
+  /**
+   * Lead findUniqueOrThrow
+   */
+  export type LeadFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Lead
+     */
+    select?: LeadSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Lead
+     */
+    omit?: LeadOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LeadInclude<ExtArgs> | null
+    /**
+     * Filter, which Lead to fetch.
+     */
+    where: LeadWhereUniqueInput
+  }
+
+  /**
+   * Lead findFirst
+   */
+  export type LeadFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Lead
+     */
+    select?: LeadSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Lead
+     */
+    omit?: LeadOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LeadInclude<ExtArgs> | null
+    /**
+     * Filter, which Lead to fetch.
+     */
+    where?: LeadWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Leads to fetch.
+     */
+    orderBy?: LeadOrderByWithRelationInput | LeadOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for Leads.
+     */
+    cursor?: LeadWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Leads from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Leads.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of Leads.
+     */
+    distinct?: LeadScalarFieldEnum | LeadScalarFieldEnum[]
+  }
+
+  /**
+   * Lead findFirstOrThrow
+   */
+  export type LeadFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Lead
+     */
+    select?: LeadSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Lead
+     */
+    omit?: LeadOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LeadInclude<ExtArgs> | null
+    /**
+     * Filter, which Lead to fetch.
+     */
+    where?: LeadWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Leads to fetch.
+     */
+    orderBy?: LeadOrderByWithRelationInput | LeadOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for Leads.
+     */
+    cursor?: LeadWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Leads from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Leads.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of Leads.
+     */
+    distinct?: LeadScalarFieldEnum | LeadScalarFieldEnum[]
+  }
+
+  /**
+   * Lead findMany
+   */
+  export type LeadFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Lead
+     */
+    select?: LeadSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Lead
+     */
+    omit?: LeadOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LeadInclude<ExtArgs> | null
+    /**
+     * Filter, which Leads to fetch.
+     */
+    where?: LeadWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Leads to fetch.
+     */
+    orderBy?: LeadOrderByWithRelationInput | LeadOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing Leads.
+     */
+    cursor?: LeadWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Leads from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Leads.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of Leads.
+     */
+    distinct?: LeadScalarFieldEnum | LeadScalarFieldEnum[]
+  }
+
+  /**
+   * Lead create
+   */
+  export type LeadCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Lead
+     */
+    select?: LeadSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Lead
+     */
+    omit?: LeadOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LeadInclude<ExtArgs> | null
+    /**
+     * The data needed to create a Lead.
+     */
+    data: XOR<LeadCreateInput, LeadUncheckedCreateInput>
+  }
+
+  /**
+   * Lead createMany
+   */
+  export type LeadCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many Leads.
+     */
+    data: LeadCreateManyInput | LeadCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * Lead createManyAndReturn
+   */
+  export type LeadCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Lead
+     */
+    select?: LeadSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the Lead
+     */
+    omit?: LeadOmit<ExtArgs> | null
+    /**
+     * The data used to create many Leads.
+     */
+    data: LeadCreateManyInput | LeadCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * Lead update
+   */
+  export type LeadUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Lead
+     */
+    select?: LeadSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Lead
+     */
+    omit?: LeadOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LeadInclude<ExtArgs> | null
+    /**
+     * The data needed to update a Lead.
+     */
+    data: XOR<LeadUpdateInput, LeadUncheckedUpdateInput>
+    /**
+     * Choose, which Lead to update.
+     */
+    where: LeadWhereUniqueInput
+  }
+
+  /**
+   * Lead updateMany
+   */
+  export type LeadUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update Leads.
+     */
+    data: XOR<LeadUpdateManyMutationInput, LeadUncheckedUpdateManyInput>
+    /**
+     * Filter which Leads to update
+     */
+    where?: LeadWhereInput
+    /**
+     * Limit how many Leads to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * Lead updateManyAndReturn
+   */
+  export type LeadUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Lead
+     */
+    select?: LeadSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the Lead
+     */
+    omit?: LeadOmit<ExtArgs> | null
+    /**
+     * The data used to update Leads.
+     */
+    data: XOR<LeadUpdateManyMutationInput, LeadUncheckedUpdateManyInput>
+    /**
+     * Filter which Leads to update
+     */
+    where?: LeadWhereInput
+    /**
+     * Limit how many Leads to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * Lead upsert
+   */
+  export type LeadUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Lead
+     */
+    select?: LeadSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Lead
+     */
+    omit?: LeadOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LeadInclude<ExtArgs> | null
+    /**
+     * The filter to search for the Lead to update in case it exists.
+     */
+    where: LeadWhereUniqueInput
+    /**
+     * In case the Lead found by the `where` argument doesn't exist, create a new Lead with this data.
+     */
+    create: XOR<LeadCreateInput, LeadUncheckedCreateInput>
+    /**
+     * In case the Lead was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<LeadUpdateInput, LeadUncheckedUpdateInput>
+  }
+
+  /**
+   * Lead delete
+   */
+  export type LeadDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Lead
+     */
+    select?: LeadSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Lead
+     */
+    omit?: LeadOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LeadInclude<ExtArgs> | null
+    /**
+     * Filter which Lead to delete.
+     */
+    where: LeadWhereUniqueInput
+  }
+
+  /**
+   * Lead deleteMany
+   */
+  export type LeadDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which Leads to delete
+     */
+    where?: LeadWhereInput
+    /**
+     * Limit how many Leads to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * Lead.midias
+   */
+  export type Lead$midiasArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LeadMidia
+     */
+    select?: LeadMidiaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the LeadMidia
+     */
+    omit?: LeadMidiaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LeadMidiaInclude<ExtArgs> | null
+    where?: LeadMidiaWhereInput
+    orderBy?: LeadMidiaOrderByWithRelationInput | LeadMidiaOrderByWithRelationInput[]
+    cursor?: LeadMidiaWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: LeadMidiaScalarFieldEnum | LeadMidiaScalarFieldEnum[]
+  }
+
+  /**
+   * Lead without action
+   */
+  export type LeadDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Lead
+     */
+    select?: LeadSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Lead
+     */
+    omit?: LeadOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LeadInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model LeadMidia
+   */
+
+  export type AggregateLeadMidia = {
+    _count: LeadMidiaCountAggregateOutputType | null
+    _min: LeadMidiaMinAggregateOutputType | null
+    _max: LeadMidiaMaxAggregateOutputType | null
+  }
+
+  export type LeadMidiaMinAggregateOutputType = {
+    id: string | null
+    leadId: string | null
+    tipo: string | null
+    arquivoUrl: string | null
+    createdAt: Date | null
+  }
+
+  export type LeadMidiaMaxAggregateOutputType = {
+    id: string | null
+    leadId: string | null
+    tipo: string | null
+    arquivoUrl: string | null
+    createdAt: Date | null
+  }
+
+  export type LeadMidiaCountAggregateOutputType = {
+    id: number
+    leadId: number
+    tipo: number
+    arquivoUrl: number
+    createdAt: number
+    _all: number
+  }
+
+
+  export type LeadMidiaMinAggregateInputType = {
+    id?: true
+    leadId?: true
+    tipo?: true
+    arquivoUrl?: true
+    createdAt?: true
+  }
+
+  export type LeadMidiaMaxAggregateInputType = {
+    id?: true
+    leadId?: true
+    tipo?: true
+    arquivoUrl?: true
+    createdAt?: true
+  }
+
+  export type LeadMidiaCountAggregateInputType = {
+    id?: true
+    leadId?: true
+    tipo?: true
+    arquivoUrl?: true
+    createdAt?: true
+    _all?: true
+  }
+
+  export type LeadMidiaAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which LeadMidia to aggregate.
+     */
+    where?: LeadMidiaWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of LeadMidias to fetch.
+     */
+    orderBy?: LeadMidiaOrderByWithRelationInput | LeadMidiaOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: LeadMidiaWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` LeadMidias from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` LeadMidias.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned LeadMidias
+    **/
+    _count?: true | LeadMidiaCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: LeadMidiaMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: LeadMidiaMaxAggregateInputType
+  }
+
+  export type GetLeadMidiaAggregateType<T extends LeadMidiaAggregateArgs> = {
+        [P in keyof T & keyof AggregateLeadMidia]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateLeadMidia[P]>
+      : GetScalarType<T[P], AggregateLeadMidia[P]>
+  }
+
+
+
+
+  export type LeadMidiaGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: LeadMidiaWhereInput
+    orderBy?: LeadMidiaOrderByWithAggregationInput | LeadMidiaOrderByWithAggregationInput[]
+    by: LeadMidiaScalarFieldEnum[] | LeadMidiaScalarFieldEnum
+    having?: LeadMidiaScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: LeadMidiaCountAggregateInputType | true
+    _min?: LeadMidiaMinAggregateInputType
+    _max?: LeadMidiaMaxAggregateInputType
+  }
+
+  export type LeadMidiaGroupByOutputType = {
+    id: string
+    leadId: string
+    tipo: string
+    arquivoUrl: string
+    createdAt: Date
+    _count: LeadMidiaCountAggregateOutputType | null
+    _min: LeadMidiaMinAggregateOutputType | null
+    _max: LeadMidiaMaxAggregateOutputType | null
+  }
+
+  type GetLeadMidiaGroupByPayload<T extends LeadMidiaGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<LeadMidiaGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof LeadMidiaGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], LeadMidiaGroupByOutputType[P]>
+            : GetScalarType<T[P], LeadMidiaGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type LeadMidiaSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    leadId?: boolean
+    tipo?: boolean
+    arquivoUrl?: boolean
+    createdAt?: boolean
+    lead?: boolean | LeadDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["leadMidia"]>
+
+  export type LeadMidiaSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    leadId?: boolean
+    tipo?: boolean
+    arquivoUrl?: boolean
+    createdAt?: boolean
+    lead?: boolean | LeadDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["leadMidia"]>
+
+  export type LeadMidiaSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    leadId?: boolean
+    tipo?: boolean
+    arquivoUrl?: boolean
+    createdAt?: boolean
+    lead?: boolean | LeadDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["leadMidia"]>
+
+  export type LeadMidiaSelectScalar = {
+    id?: boolean
+    leadId?: boolean
+    tipo?: boolean
+    arquivoUrl?: boolean
+    createdAt?: boolean
+  }
+
+  export type LeadMidiaOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "leadId" | "tipo" | "arquivoUrl" | "createdAt", ExtArgs["result"]["leadMidia"]>
+  export type LeadMidiaInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    lead?: boolean | LeadDefaultArgs<ExtArgs>
+  }
+  export type LeadMidiaIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    lead?: boolean | LeadDefaultArgs<ExtArgs>
+  }
+  export type LeadMidiaIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    lead?: boolean | LeadDefaultArgs<ExtArgs>
+  }
+
+  export type $LeadMidiaPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "LeadMidia"
+    objects: {
+      lead: Prisma.$LeadPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      leadId: string
+      tipo: string
+      arquivoUrl: string
+      createdAt: Date
+    }, ExtArgs["result"]["leadMidia"]>
+    composites: {}
+  }
+
+  type LeadMidiaGetPayload<S extends boolean | null | undefined | LeadMidiaDefaultArgs> = $Result.GetResult<Prisma.$LeadMidiaPayload, S>
+
+  type LeadMidiaCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<LeadMidiaFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: LeadMidiaCountAggregateInputType | true
+    }
+
+  export interface LeadMidiaDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['LeadMidia'], meta: { name: 'LeadMidia' } }
+    /**
+     * Find zero or one LeadMidia that matches the filter.
+     * @param {LeadMidiaFindUniqueArgs} args - Arguments to find a LeadMidia
+     * @example
+     * // Get one LeadMidia
+     * const leadMidia = await prisma.leadMidia.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends LeadMidiaFindUniqueArgs>(args: SelectSubset<T, LeadMidiaFindUniqueArgs<ExtArgs>>): Prisma__LeadMidiaClient<$Result.GetResult<Prisma.$LeadMidiaPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one LeadMidia that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {LeadMidiaFindUniqueOrThrowArgs} args - Arguments to find a LeadMidia
+     * @example
+     * // Get one LeadMidia
+     * const leadMidia = await prisma.leadMidia.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends LeadMidiaFindUniqueOrThrowArgs>(args: SelectSubset<T, LeadMidiaFindUniqueOrThrowArgs<ExtArgs>>): Prisma__LeadMidiaClient<$Result.GetResult<Prisma.$LeadMidiaPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first LeadMidia that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LeadMidiaFindFirstArgs} args - Arguments to find a LeadMidia
+     * @example
+     * // Get one LeadMidia
+     * const leadMidia = await prisma.leadMidia.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends LeadMidiaFindFirstArgs>(args?: SelectSubset<T, LeadMidiaFindFirstArgs<ExtArgs>>): Prisma__LeadMidiaClient<$Result.GetResult<Prisma.$LeadMidiaPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first LeadMidia that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LeadMidiaFindFirstOrThrowArgs} args - Arguments to find a LeadMidia
+     * @example
+     * // Get one LeadMidia
+     * const leadMidia = await prisma.leadMidia.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends LeadMidiaFindFirstOrThrowArgs>(args?: SelectSubset<T, LeadMidiaFindFirstOrThrowArgs<ExtArgs>>): Prisma__LeadMidiaClient<$Result.GetResult<Prisma.$LeadMidiaPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more LeadMidias that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LeadMidiaFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all LeadMidias
+     * const leadMidias = await prisma.leadMidia.findMany()
+     * 
+     * // Get first 10 LeadMidias
+     * const leadMidias = await prisma.leadMidia.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const leadMidiaWithIdOnly = await prisma.leadMidia.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends LeadMidiaFindManyArgs>(args?: SelectSubset<T, LeadMidiaFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$LeadMidiaPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a LeadMidia.
+     * @param {LeadMidiaCreateArgs} args - Arguments to create a LeadMidia.
+     * @example
+     * // Create one LeadMidia
+     * const LeadMidia = await prisma.leadMidia.create({
+     *   data: {
+     *     // ... data to create a LeadMidia
+     *   }
+     * })
+     * 
+     */
+    create<T extends LeadMidiaCreateArgs>(args: SelectSubset<T, LeadMidiaCreateArgs<ExtArgs>>): Prisma__LeadMidiaClient<$Result.GetResult<Prisma.$LeadMidiaPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many LeadMidias.
+     * @param {LeadMidiaCreateManyArgs} args - Arguments to create many LeadMidias.
+     * @example
+     * // Create many LeadMidias
+     * const leadMidia = await prisma.leadMidia.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends LeadMidiaCreateManyArgs>(args?: SelectSubset<T, LeadMidiaCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many LeadMidias and returns the data saved in the database.
+     * @param {LeadMidiaCreateManyAndReturnArgs} args - Arguments to create many LeadMidias.
+     * @example
+     * // Create many LeadMidias
+     * const leadMidia = await prisma.leadMidia.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many LeadMidias and only return the `id`
+     * const leadMidiaWithIdOnly = await prisma.leadMidia.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends LeadMidiaCreateManyAndReturnArgs>(args?: SelectSubset<T, LeadMidiaCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$LeadMidiaPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a LeadMidia.
+     * @param {LeadMidiaDeleteArgs} args - Arguments to delete one LeadMidia.
+     * @example
+     * // Delete one LeadMidia
+     * const LeadMidia = await prisma.leadMidia.delete({
+     *   where: {
+     *     // ... filter to delete one LeadMidia
+     *   }
+     * })
+     * 
+     */
+    delete<T extends LeadMidiaDeleteArgs>(args: SelectSubset<T, LeadMidiaDeleteArgs<ExtArgs>>): Prisma__LeadMidiaClient<$Result.GetResult<Prisma.$LeadMidiaPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one LeadMidia.
+     * @param {LeadMidiaUpdateArgs} args - Arguments to update one LeadMidia.
+     * @example
+     * // Update one LeadMidia
+     * const leadMidia = await prisma.leadMidia.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends LeadMidiaUpdateArgs>(args: SelectSubset<T, LeadMidiaUpdateArgs<ExtArgs>>): Prisma__LeadMidiaClient<$Result.GetResult<Prisma.$LeadMidiaPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more LeadMidias.
+     * @param {LeadMidiaDeleteManyArgs} args - Arguments to filter LeadMidias to delete.
+     * @example
+     * // Delete a few LeadMidias
+     * const { count } = await prisma.leadMidia.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends LeadMidiaDeleteManyArgs>(args?: SelectSubset<T, LeadMidiaDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more LeadMidias.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LeadMidiaUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many LeadMidias
+     * const leadMidia = await prisma.leadMidia.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends LeadMidiaUpdateManyArgs>(args: SelectSubset<T, LeadMidiaUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more LeadMidias and returns the data updated in the database.
+     * @param {LeadMidiaUpdateManyAndReturnArgs} args - Arguments to update many LeadMidias.
+     * @example
+     * // Update many LeadMidias
+     * const leadMidia = await prisma.leadMidia.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more LeadMidias and only return the `id`
+     * const leadMidiaWithIdOnly = await prisma.leadMidia.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends LeadMidiaUpdateManyAndReturnArgs>(args: SelectSubset<T, LeadMidiaUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$LeadMidiaPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one LeadMidia.
+     * @param {LeadMidiaUpsertArgs} args - Arguments to update or create a LeadMidia.
+     * @example
+     * // Update or create a LeadMidia
+     * const leadMidia = await prisma.leadMidia.upsert({
+     *   create: {
+     *     // ... data to create a LeadMidia
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the LeadMidia we want to update
+     *   }
+     * })
+     */
+    upsert<T extends LeadMidiaUpsertArgs>(args: SelectSubset<T, LeadMidiaUpsertArgs<ExtArgs>>): Prisma__LeadMidiaClient<$Result.GetResult<Prisma.$LeadMidiaPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of LeadMidias.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LeadMidiaCountArgs} args - Arguments to filter LeadMidias to count.
+     * @example
+     * // Count the number of LeadMidias
+     * const count = await prisma.leadMidia.count({
+     *   where: {
+     *     // ... the filter for the LeadMidias we want to count
+     *   }
+     * })
+    **/
+    count<T extends LeadMidiaCountArgs>(
+      args?: Subset<T, LeadMidiaCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], LeadMidiaCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a LeadMidia.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LeadMidiaAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends LeadMidiaAggregateArgs>(args: Subset<T, LeadMidiaAggregateArgs>): Prisma.PrismaPromise<GetLeadMidiaAggregateType<T>>
+
+    /**
+     * Group by LeadMidia.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LeadMidiaGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends LeadMidiaGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: LeadMidiaGroupByArgs['orderBy'] }
+        : { orderBy?: LeadMidiaGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, LeadMidiaGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetLeadMidiaGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the LeadMidia model
+   */
+  readonly fields: LeadMidiaFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for LeadMidia.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__LeadMidiaClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    lead<T extends LeadDefaultArgs<ExtArgs> = {}>(args?: Subset<T, LeadDefaultArgs<ExtArgs>>): Prisma__LeadClient<$Result.GetResult<Prisma.$LeadPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the LeadMidia model
+   */
+  interface LeadMidiaFieldRefs {
+    readonly id: FieldRef<"LeadMidia", 'String'>
+    readonly leadId: FieldRef<"LeadMidia", 'String'>
+    readonly tipo: FieldRef<"LeadMidia", 'String'>
+    readonly arquivoUrl: FieldRef<"LeadMidia", 'String'>
+    readonly createdAt: FieldRef<"LeadMidia", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * LeadMidia findUnique
+   */
+  export type LeadMidiaFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LeadMidia
+     */
+    select?: LeadMidiaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the LeadMidia
+     */
+    omit?: LeadMidiaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LeadMidiaInclude<ExtArgs> | null
+    /**
+     * Filter, which LeadMidia to fetch.
+     */
+    where: LeadMidiaWhereUniqueInput
+  }
+
+  /**
+   * LeadMidia findUniqueOrThrow
+   */
+  export type LeadMidiaFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LeadMidia
+     */
+    select?: LeadMidiaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the LeadMidia
+     */
+    omit?: LeadMidiaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LeadMidiaInclude<ExtArgs> | null
+    /**
+     * Filter, which LeadMidia to fetch.
+     */
+    where: LeadMidiaWhereUniqueInput
+  }
+
+  /**
+   * LeadMidia findFirst
+   */
+  export type LeadMidiaFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LeadMidia
+     */
+    select?: LeadMidiaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the LeadMidia
+     */
+    omit?: LeadMidiaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LeadMidiaInclude<ExtArgs> | null
+    /**
+     * Filter, which LeadMidia to fetch.
+     */
+    where?: LeadMidiaWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of LeadMidias to fetch.
+     */
+    orderBy?: LeadMidiaOrderByWithRelationInput | LeadMidiaOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for LeadMidias.
+     */
+    cursor?: LeadMidiaWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` LeadMidias from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` LeadMidias.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of LeadMidias.
+     */
+    distinct?: LeadMidiaScalarFieldEnum | LeadMidiaScalarFieldEnum[]
+  }
+
+  /**
+   * LeadMidia findFirstOrThrow
+   */
+  export type LeadMidiaFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LeadMidia
+     */
+    select?: LeadMidiaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the LeadMidia
+     */
+    omit?: LeadMidiaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LeadMidiaInclude<ExtArgs> | null
+    /**
+     * Filter, which LeadMidia to fetch.
+     */
+    where?: LeadMidiaWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of LeadMidias to fetch.
+     */
+    orderBy?: LeadMidiaOrderByWithRelationInput | LeadMidiaOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for LeadMidias.
+     */
+    cursor?: LeadMidiaWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` LeadMidias from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` LeadMidias.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of LeadMidias.
+     */
+    distinct?: LeadMidiaScalarFieldEnum | LeadMidiaScalarFieldEnum[]
+  }
+
+  /**
+   * LeadMidia findMany
+   */
+  export type LeadMidiaFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LeadMidia
+     */
+    select?: LeadMidiaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the LeadMidia
+     */
+    omit?: LeadMidiaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LeadMidiaInclude<ExtArgs> | null
+    /**
+     * Filter, which LeadMidias to fetch.
+     */
+    where?: LeadMidiaWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of LeadMidias to fetch.
+     */
+    orderBy?: LeadMidiaOrderByWithRelationInput | LeadMidiaOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing LeadMidias.
+     */
+    cursor?: LeadMidiaWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` LeadMidias from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` LeadMidias.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of LeadMidias.
+     */
+    distinct?: LeadMidiaScalarFieldEnum | LeadMidiaScalarFieldEnum[]
+  }
+
+  /**
+   * LeadMidia create
+   */
+  export type LeadMidiaCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LeadMidia
+     */
+    select?: LeadMidiaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the LeadMidia
+     */
+    omit?: LeadMidiaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LeadMidiaInclude<ExtArgs> | null
+    /**
+     * The data needed to create a LeadMidia.
+     */
+    data: XOR<LeadMidiaCreateInput, LeadMidiaUncheckedCreateInput>
+  }
+
+  /**
+   * LeadMidia createMany
+   */
+  export type LeadMidiaCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many LeadMidias.
+     */
+    data: LeadMidiaCreateManyInput | LeadMidiaCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * LeadMidia createManyAndReturn
+   */
+  export type LeadMidiaCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LeadMidia
+     */
+    select?: LeadMidiaSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the LeadMidia
+     */
+    omit?: LeadMidiaOmit<ExtArgs> | null
+    /**
+     * The data used to create many LeadMidias.
+     */
+    data: LeadMidiaCreateManyInput | LeadMidiaCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LeadMidiaIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * LeadMidia update
+   */
+  export type LeadMidiaUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LeadMidia
+     */
+    select?: LeadMidiaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the LeadMidia
+     */
+    omit?: LeadMidiaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LeadMidiaInclude<ExtArgs> | null
+    /**
+     * The data needed to update a LeadMidia.
+     */
+    data: XOR<LeadMidiaUpdateInput, LeadMidiaUncheckedUpdateInput>
+    /**
+     * Choose, which LeadMidia to update.
+     */
+    where: LeadMidiaWhereUniqueInput
+  }
+
+  /**
+   * LeadMidia updateMany
+   */
+  export type LeadMidiaUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update LeadMidias.
+     */
+    data: XOR<LeadMidiaUpdateManyMutationInput, LeadMidiaUncheckedUpdateManyInput>
+    /**
+     * Filter which LeadMidias to update
+     */
+    where?: LeadMidiaWhereInput
+    /**
+     * Limit how many LeadMidias to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * LeadMidia updateManyAndReturn
+   */
+  export type LeadMidiaUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LeadMidia
+     */
+    select?: LeadMidiaSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the LeadMidia
+     */
+    omit?: LeadMidiaOmit<ExtArgs> | null
+    /**
+     * The data used to update LeadMidias.
+     */
+    data: XOR<LeadMidiaUpdateManyMutationInput, LeadMidiaUncheckedUpdateManyInput>
+    /**
+     * Filter which LeadMidias to update
+     */
+    where?: LeadMidiaWhereInput
+    /**
+     * Limit how many LeadMidias to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LeadMidiaIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * LeadMidia upsert
+   */
+  export type LeadMidiaUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LeadMidia
+     */
+    select?: LeadMidiaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the LeadMidia
+     */
+    omit?: LeadMidiaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LeadMidiaInclude<ExtArgs> | null
+    /**
+     * The filter to search for the LeadMidia to update in case it exists.
+     */
+    where: LeadMidiaWhereUniqueInput
+    /**
+     * In case the LeadMidia found by the `where` argument doesn't exist, create a new LeadMidia with this data.
+     */
+    create: XOR<LeadMidiaCreateInput, LeadMidiaUncheckedCreateInput>
+    /**
+     * In case the LeadMidia was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<LeadMidiaUpdateInput, LeadMidiaUncheckedUpdateInput>
+  }
+
+  /**
+   * LeadMidia delete
+   */
+  export type LeadMidiaDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LeadMidia
+     */
+    select?: LeadMidiaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the LeadMidia
+     */
+    omit?: LeadMidiaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LeadMidiaInclude<ExtArgs> | null
+    /**
+     * Filter which LeadMidia to delete.
+     */
+    where: LeadMidiaWhereUniqueInput
+  }
+
+  /**
+   * LeadMidia deleteMany
+   */
+  export type LeadMidiaDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which LeadMidias to delete
+     */
+    where?: LeadMidiaWhereInput
+    /**
+     * Limit how many LeadMidias to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * LeadMidia without action
+   */
+  export type LeadMidiaDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LeadMidia
+     */
+    select?: LeadMidiaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the LeadMidia
+     */
+    omit?: LeadMidiaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LeadMidiaInclude<ExtArgs> | null
+  }
+
+
+  /**
    * Enums
    */
 
@@ -31977,6 +44195,10 @@ export namespace Prisma {
     password: 'password',
     role: 'role',
     name: 'name',
+    canAccessBudgets: 'canAccessBudgets',
+    canEditBudgets: 'canEditBudgets',
+    canAccessAppLeads: 'canAccessAppLeads',
+    canManageCRM: 'canManageCRM',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
   };
@@ -32504,6 +44726,133 @@ export namespace Prisma {
   export type ItemTermografiaScalarFieldEnum = (typeof ItemTermografiaScalarFieldEnum)[keyof typeof ItemTermografiaScalarFieldEnum]
 
 
+  export const OrcamentoProjetoScalarFieldEnum: {
+    id: 'id',
+    nome: 'nome',
+    cliente: 'cliente',
+    status: 'status',
+    idContaAzul: 'idContaAzul',
+    dataCriacao: 'dataCriacao',
+    dataAtualizacao: 'dataAtualizacao'
+  };
+
+  export type OrcamentoProjetoScalarFieldEnum = (typeof OrcamentoProjetoScalarFieldEnum)[keyof typeof OrcamentoProjetoScalarFieldEnum]
+
+
+  export const OrcamentoEtapaScalarFieldEnum: {
+    id: 'id',
+    projetoId: 'projetoId',
+    nome: 'nome',
+    ordem: 'ordem'
+  };
+
+  export type OrcamentoEtapaScalarFieldEnum = (typeof OrcamentoEtapaScalarFieldEnum)[keyof typeof OrcamentoEtapaScalarFieldEnum]
+
+
+  export const OrcamentoItemScalarFieldEnum: {
+    id: 'id',
+    etapaId: 'etapaId',
+    codigo: 'codigo',
+    descricao: 'descricao',
+    tipo: 'tipo',
+    unidade: 'unidade',
+    quantidade: 'quantidade',
+    precoBaseUnitario: 'precoBaseUnitario',
+    bdiPercent: 'bdiPercent'
+  };
+
+  export type OrcamentoItemScalarFieldEnum = (typeof OrcamentoItemScalarFieldEnum)[keyof typeof OrcamentoItemScalarFieldEnum]
+
+
+  export const FornecedorScalarFieldEnum: {
+    id: 'id',
+    razaoSocial: 'razaoSocial',
+    cnpj: 'cnpj',
+    contatoNome: 'contatoNome',
+    contatoEmail: 'contatoEmail',
+    contatoTelefone: 'contatoTelefone',
+    idContaAzul: 'idContaAzul'
+  };
+
+  export type FornecedorScalarFieldEnum = (typeof FornecedorScalarFieldEnum)[keyof typeof FornecedorScalarFieldEnum]
+
+
+  export const FornecedorOrcamentoScalarFieldEnum: {
+    id: 'id',
+    projetoId: 'projetoId',
+    fornecedorId: 'fornecedorId',
+    statusConvite: 'statusConvite',
+    tokenAcesso: 'tokenAcesso',
+    dataEnvio: 'dataEnvio'
+  };
+
+  export type FornecedorOrcamentoScalarFieldEnum = (typeof FornecedorOrcamentoScalarFieldEnum)[keyof typeof FornecedorOrcamentoScalarFieldEnum]
+
+
+  export const PropostaItemScalarFieldEnum: {
+    id: 'id',
+    itemId: 'itemId',
+    fornecedorId: 'fornecedorId',
+    precoUnitario: 'precoUnitario',
+    freteIncluso: 'freteIncluso',
+    prazoEntregaDias: 'prazoEntregaDias',
+    observacao: 'observacao',
+    dataProposta: 'dataProposta',
+    versao: 'versao'
+  };
+
+  export type PropostaItemScalarFieldEnum = (typeof PropostaItemScalarFieldEnum)[keyof typeof PropostaItemScalarFieldEnum]
+
+
+  export const OrcamentoTipoMaterialScalarFieldEnum: {
+    id: 'id',
+    nome: 'nome'
+  };
+
+  export type OrcamentoTipoMaterialScalarFieldEnum = (typeof OrcamentoTipoMaterialScalarFieldEnum)[keyof typeof OrcamentoTipoMaterialScalarFieldEnum]
+
+
+  export const OrcamentoItemPadraoScalarFieldEnum: {
+    id: 'id',
+    codigo: 'codigo',
+    descricao: 'descricao',
+    tipo: 'tipo',
+    unidade: 'unidade',
+    precoBaseUnitario: 'precoBaseUnitario'
+  };
+
+  export type OrcamentoItemPadraoScalarFieldEnum = (typeof OrcamentoItemPadraoScalarFieldEnum)[keyof typeof OrcamentoItemPadraoScalarFieldEnum]
+
+
+  export const LeadScalarFieldEnum: {
+    id: 'id',
+    nome: 'nome',
+    telefone: 'telefone',
+    email: 'email',
+    tipo: 'tipo',
+    status: 'status',
+    latitude: 'latitude',
+    longitude: 'longitude',
+    observacoes: 'observacoes',
+    vendedorId: 'vendedorId',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
+  };
+
+  export type LeadScalarFieldEnum = (typeof LeadScalarFieldEnum)[keyof typeof LeadScalarFieldEnum]
+
+
+  export const LeadMidiaScalarFieldEnum: {
+    id: 'id',
+    leadId: 'leadId',
+    tipo: 'tipo',
+    arquivoUrl: 'arquivoUrl',
+    createdAt: 'createdAt'
+  };
+
+  export type LeadMidiaScalarFieldEnum = (typeof LeadMidiaScalarFieldEnum)[keyof typeof LeadMidiaScalarFieldEnum]
+
+
   export const SortOrder: {
     asc: 'asc',
     desc: 'desc'
@@ -32565,6 +44914,13 @@ export namespace Prisma {
 
 
   /**
+   * Reference to a field of type 'Boolean'
+   */
+  export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
+    
+
+
+  /**
    * Reference to a field of type 'DateTime'
    */
   export type DateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime'>
@@ -32575,13 +44931,6 @@ export namespace Prisma {
    * Reference to a field of type 'DateTime[]'
    */
   export type ListDateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime[]'>
-    
-
-
-  /**
-   * Reference to a field of type 'Boolean'
-   */
-  export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
     
 
 
@@ -32639,6 +44988,10 @@ export namespace Prisma {
     password?: StringFilter<"User"> | string
     role?: StringFilter<"User"> | string
     name?: StringNullableFilter<"User"> | string | null
+    canAccessBudgets?: BoolFilter<"User"> | boolean
+    canEditBudgets?: BoolFilter<"User"> | boolean
+    canAccessAppLeads?: BoolFilter<"User"> | boolean
+    canManageCRM?: BoolFilter<"User"> | boolean
     createdAt?: DateTimeFilter<"User"> | Date | string
     updatedAt?: DateTimeFilter<"User"> | Date | string
   }
@@ -32649,6 +45002,10 @@ export namespace Prisma {
     password?: SortOrder
     role?: SortOrder
     name?: SortOrderInput | SortOrder
+    canAccessBudgets?: SortOrder
+    canEditBudgets?: SortOrder
+    canAccessAppLeads?: SortOrder
+    canManageCRM?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -32662,6 +45019,10 @@ export namespace Prisma {
     password?: StringFilter<"User"> | string
     role?: StringFilter<"User"> | string
     name?: StringNullableFilter<"User"> | string | null
+    canAccessBudgets?: BoolFilter<"User"> | boolean
+    canEditBudgets?: BoolFilter<"User"> | boolean
+    canAccessAppLeads?: BoolFilter<"User"> | boolean
+    canManageCRM?: BoolFilter<"User"> | boolean
     createdAt?: DateTimeFilter<"User"> | Date | string
     updatedAt?: DateTimeFilter<"User"> | Date | string
   }, "id" | "email">
@@ -32672,6 +45033,10 @@ export namespace Prisma {
     password?: SortOrder
     role?: SortOrder
     name?: SortOrderInput | SortOrder
+    canAccessBudgets?: SortOrder
+    canEditBudgets?: SortOrder
+    canAccessAppLeads?: SortOrder
+    canManageCRM?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     _count?: UserCountOrderByAggregateInput
@@ -32688,6 +45053,10 @@ export namespace Prisma {
     password?: StringWithAggregatesFilter<"User"> | string
     role?: StringWithAggregatesFilter<"User"> | string
     name?: StringNullableWithAggregatesFilter<"User"> | string | null
+    canAccessBudgets?: BoolWithAggregatesFilter<"User"> | boolean
+    canEditBudgets?: BoolWithAggregatesFilter<"User"> | boolean
+    canAccessAppLeads?: BoolWithAggregatesFilter<"User"> | boolean
+    canManageCRM?: BoolWithAggregatesFilter<"User"> | boolean
     createdAt?: DateTimeWithAggregatesFilter<"User"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"User"> | Date | string
   }
@@ -35343,12 +47712,675 @@ export namespace Prisma {
     updatedAt?: DateTimeWithAggregatesFilter<"ItemTermografia"> | Date | string
   }
 
+  export type OrcamentoProjetoWhereInput = {
+    AND?: OrcamentoProjetoWhereInput | OrcamentoProjetoWhereInput[]
+    OR?: OrcamentoProjetoWhereInput[]
+    NOT?: OrcamentoProjetoWhereInput | OrcamentoProjetoWhereInput[]
+    id?: StringFilter<"OrcamentoProjeto"> | string
+    nome?: StringFilter<"OrcamentoProjeto"> | string
+    cliente?: StringNullableFilter<"OrcamentoProjeto"> | string | null
+    status?: StringFilter<"OrcamentoProjeto"> | string
+    idContaAzul?: StringNullableFilter<"OrcamentoProjeto"> | string | null
+    dataCriacao?: DateTimeFilter<"OrcamentoProjeto"> | Date | string
+    dataAtualizacao?: DateTimeFilter<"OrcamentoProjeto"> | Date | string
+    etapas?: OrcamentoEtapaListRelationFilter
+    fornecedores?: FornecedorOrcamentoListRelationFilter
+  }
+
+  export type OrcamentoProjetoOrderByWithRelationInput = {
+    id?: SortOrder
+    nome?: SortOrder
+    cliente?: SortOrderInput | SortOrder
+    status?: SortOrder
+    idContaAzul?: SortOrderInput | SortOrder
+    dataCriacao?: SortOrder
+    dataAtualizacao?: SortOrder
+    etapas?: OrcamentoEtapaOrderByRelationAggregateInput
+    fornecedores?: FornecedorOrcamentoOrderByRelationAggregateInput
+  }
+
+  export type OrcamentoProjetoWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: OrcamentoProjetoWhereInput | OrcamentoProjetoWhereInput[]
+    OR?: OrcamentoProjetoWhereInput[]
+    NOT?: OrcamentoProjetoWhereInput | OrcamentoProjetoWhereInput[]
+    nome?: StringFilter<"OrcamentoProjeto"> | string
+    cliente?: StringNullableFilter<"OrcamentoProjeto"> | string | null
+    status?: StringFilter<"OrcamentoProjeto"> | string
+    idContaAzul?: StringNullableFilter<"OrcamentoProjeto"> | string | null
+    dataCriacao?: DateTimeFilter<"OrcamentoProjeto"> | Date | string
+    dataAtualizacao?: DateTimeFilter<"OrcamentoProjeto"> | Date | string
+    etapas?: OrcamentoEtapaListRelationFilter
+    fornecedores?: FornecedorOrcamentoListRelationFilter
+  }, "id">
+
+  export type OrcamentoProjetoOrderByWithAggregationInput = {
+    id?: SortOrder
+    nome?: SortOrder
+    cliente?: SortOrderInput | SortOrder
+    status?: SortOrder
+    idContaAzul?: SortOrderInput | SortOrder
+    dataCriacao?: SortOrder
+    dataAtualizacao?: SortOrder
+    _count?: OrcamentoProjetoCountOrderByAggregateInput
+    _max?: OrcamentoProjetoMaxOrderByAggregateInput
+    _min?: OrcamentoProjetoMinOrderByAggregateInput
+  }
+
+  export type OrcamentoProjetoScalarWhereWithAggregatesInput = {
+    AND?: OrcamentoProjetoScalarWhereWithAggregatesInput | OrcamentoProjetoScalarWhereWithAggregatesInput[]
+    OR?: OrcamentoProjetoScalarWhereWithAggregatesInput[]
+    NOT?: OrcamentoProjetoScalarWhereWithAggregatesInput | OrcamentoProjetoScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"OrcamentoProjeto"> | string
+    nome?: StringWithAggregatesFilter<"OrcamentoProjeto"> | string
+    cliente?: StringNullableWithAggregatesFilter<"OrcamentoProjeto"> | string | null
+    status?: StringWithAggregatesFilter<"OrcamentoProjeto"> | string
+    idContaAzul?: StringNullableWithAggregatesFilter<"OrcamentoProjeto"> | string | null
+    dataCriacao?: DateTimeWithAggregatesFilter<"OrcamentoProjeto"> | Date | string
+    dataAtualizacao?: DateTimeWithAggregatesFilter<"OrcamentoProjeto"> | Date | string
+  }
+
+  export type OrcamentoEtapaWhereInput = {
+    AND?: OrcamentoEtapaWhereInput | OrcamentoEtapaWhereInput[]
+    OR?: OrcamentoEtapaWhereInput[]
+    NOT?: OrcamentoEtapaWhereInput | OrcamentoEtapaWhereInput[]
+    id?: StringFilter<"OrcamentoEtapa"> | string
+    projetoId?: StringFilter<"OrcamentoEtapa"> | string
+    nome?: StringFilter<"OrcamentoEtapa"> | string
+    ordem?: IntFilter<"OrcamentoEtapa"> | number
+    projeto?: XOR<OrcamentoProjetoScalarRelationFilter, OrcamentoProjetoWhereInput>
+    itens?: OrcamentoItemListRelationFilter
+  }
+
+  export type OrcamentoEtapaOrderByWithRelationInput = {
+    id?: SortOrder
+    projetoId?: SortOrder
+    nome?: SortOrder
+    ordem?: SortOrder
+    projeto?: OrcamentoProjetoOrderByWithRelationInput
+    itens?: OrcamentoItemOrderByRelationAggregateInput
+  }
+
+  export type OrcamentoEtapaWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: OrcamentoEtapaWhereInput | OrcamentoEtapaWhereInput[]
+    OR?: OrcamentoEtapaWhereInput[]
+    NOT?: OrcamentoEtapaWhereInput | OrcamentoEtapaWhereInput[]
+    projetoId?: StringFilter<"OrcamentoEtapa"> | string
+    nome?: StringFilter<"OrcamentoEtapa"> | string
+    ordem?: IntFilter<"OrcamentoEtapa"> | number
+    projeto?: XOR<OrcamentoProjetoScalarRelationFilter, OrcamentoProjetoWhereInput>
+    itens?: OrcamentoItemListRelationFilter
+  }, "id">
+
+  export type OrcamentoEtapaOrderByWithAggregationInput = {
+    id?: SortOrder
+    projetoId?: SortOrder
+    nome?: SortOrder
+    ordem?: SortOrder
+    _count?: OrcamentoEtapaCountOrderByAggregateInput
+    _avg?: OrcamentoEtapaAvgOrderByAggregateInput
+    _max?: OrcamentoEtapaMaxOrderByAggregateInput
+    _min?: OrcamentoEtapaMinOrderByAggregateInput
+    _sum?: OrcamentoEtapaSumOrderByAggregateInput
+  }
+
+  export type OrcamentoEtapaScalarWhereWithAggregatesInput = {
+    AND?: OrcamentoEtapaScalarWhereWithAggregatesInput | OrcamentoEtapaScalarWhereWithAggregatesInput[]
+    OR?: OrcamentoEtapaScalarWhereWithAggregatesInput[]
+    NOT?: OrcamentoEtapaScalarWhereWithAggregatesInput | OrcamentoEtapaScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"OrcamentoEtapa"> | string
+    projetoId?: StringWithAggregatesFilter<"OrcamentoEtapa"> | string
+    nome?: StringWithAggregatesFilter<"OrcamentoEtapa"> | string
+    ordem?: IntWithAggregatesFilter<"OrcamentoEtapa"> | number
+  }
+
+  export type OrcamentoItemWhereInput = {
+    AND?: OrcamentoItemWhereInput | OrcamentoItemWhereInput[]
+    OR?: OrcamentoItemWhereInput[]
+    NOT?: OrcamentoItemWhereInput | OrcamentoItemWhereInput[]
+    id?: StringFilter<"OrcamentoItem"> | string
+    etapaId?: StringFilter<"OrcamentoItem"> | string
+    codigo?: StringNullableFilter<"OrcamentoItem"> | string | null
+    descricao?: StringFilter<"OrcamentoItem"> | string
+    tipo?: StringFilter<"OrcamentoItem"> | string
+    unidade?: StringFilter<"OrcamentoItem"> | string
+    quantidade?: FloatFilter<"OrcamentoItem"> | number
+    precoBaseUnitario?: FloatNullableFilter<"OrcamentoItem"> | number | null
+    bdiPercent?: FloatNullableFilter<"OrcamentoItem"> | number | null
+    etapa?: XOR<OrcamentoEtapaScalarRelationFilter, OrcamentoEtapaWhereInput>
+    propostas?: PropostaItemListRelationFilter
+  }
+
+  export type OrcamentoItemOrderByWithRelationInput = {
+    id?: SortOrder
+    etapaId?: SortOrder
+    codigo?: SortOrderInput | SortOrder
+    descricao?: SortOrder
+    tipo?: SortOrder
+    unidade?: SortOrder
+    quantidade?: SortOrder
+    precoBaseUnitario?: SortOrderInput | SortOrder
+    bdiPercent?: SortOrderInput | SortOrder
+    etapa?: OrcamentoEtapaOrderByWithRelationInput
+    propostas?: PropostaItemOrderByRelationAggregateInput
+  }
+
+  export type OrcamentoItemWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: OrcamentoItemWhereInput | OrcamentoItemWhereInput[]
+    OR?: OrcamentoItemWhereInput[]
+    NOT?: OrcamentoItemWhereInput | OrcamentoItemWhereInput[]
+    etapaId?: StringFilter<"OrcamentoItem"> | string
+    codigo?: StringNullableFilter<"OrcamentoItem"> | string | null
+    descricao?: StringFilter<"OrcamentoItem"> | string
+    tipo?: StringFilter<"OrcamentoItem"> | string
+    unidade?: StringFilter<"OrcamentoItem"> | string
+    quantidade?: FloatFilter<"OrcamentoItem"> | number
+    precoBaseUnitario?: FloatNullableFilter<"OrcamentoItem"> | number | null
+    bdiPercent?: FloatNullableFilter<"OrcamentoItem"> | number | null
+    etapa?: XOR<OrcamentoEtapaScalarRelationFilter, OrcamentoEtapaWhereInput>
+    propostas?: PropostaItemListRelationFilter
+  }, "id">
+
+  export type OrcamentoItemOrderByWithAggregationInput = {
+    id?: SortOrder
+    etapaId?: SortOrder
+    codigo?: SortOrderInput | SortOrder
+    descricao?: SortOrder
+    tipo?: SortOrder
+    unidade?: SortOrder
+    quantidade?: SortOrder
+    precoBaseUnitario?: SortOrderInput | SortOrder
+    bdiPercent?: SortOrderInput | SortOrder
+    _count?: OrcamentoItemCountOrderByAggregateInput
+    _avg?: OrcamentoItemAvgOrderByAggregateInput
+    _max?: OrcamentoItemMaxOrderByAggregateInput
+    _min?: OrcamentoItemMinOrderByAggregateInput
+    _sum?: OrcamentoItemSumOrderByAggregateInput
+  }
+
+  export type OrcamentoItemScalarWhereWithAggregatesInput = {
+    AND?: OrcamentoItemScalarWhereWithAggregatesInput | OrcamentoItemScalarWhereWithAggregatesInput[]
+    OR?: OrcamentoItemScalarWhereWithAggregatesInput[]
+    NOT?: OrcamentoItemScalarWhereWithAggregatesInput | OrcamentoItemScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"OrcamentoItem"> | string
+    etapaId?: StringWithAggregatesFilter<"OrcamentoItem"> | string
+    codigo?: StringNullableWithAggregatesFilter<"OrcamentoItem"> | string | null
+    descricao?: StringWithAggregatesFilter<"OrcamentoItem"> | string
+    tipo?: StringWithAggregatesFilter<"OrcamentoItem"> | string
+    unidade?: StringWithAggregatesFilter<"OrcamentoItem"> | string
+    quantidade?: FloatWithAggregatesFilter<"OrcamentoItem"> | number
+    precoBaseUnitario?: FloatNullableWithAggregatesFilter<"OrcamentoItem"> | number | null
+    bdiPercent?: FloatNullableWithAggregatesFilter<"OrcamentoItem"> | number | null
+  }
+
+  export type FornecedorWhereInput = {
+    AND?: FornecedorWhereInput | FornecedorWhereInput[]
+    OR?: FornecedorWhereInput[]
+    NOT?: FornecedorWhereInput | FornecedorWhereInput[]
+    id?: StringFilter<"Fornecedor"> | string
+    razaoSocial?: StringFilter<"Fornecedor"> | string
+    cnpj?: StringNullableFilter<"Fornecedor"> | string | null
+    contatoNome?: StringNullableFilter<"Fornecedor"> | string | null
+    contatoEmail?: StringNullableFilter<"Fornecedor"> | string | null
+    contatoTelefone?: StringNullableFilter<"Fornecedor"> | string | null
+    idContaAzul?: StringNullableFilter<"Fornecedor"> | string | null
+    projetos?: FornecedorOrcamentoListRelationFilter
+    propostas?: PropostaItemListRelationFilter
+  }
+
+  export type FornecedorOrderByWithRelationInput = {
+    id?: SortOrder
+    razaoSocial?: SortOrder
+    cnpj?: SortOrderInput | SortOrder
+    contatoNome?: SortOrderInput | SortOrder
+    contatoEmail?: SortOrderInput | SortOrder
+    contatoTelefone?: SortOrderInput | SortOrder
+    idContaAzul?: SortOrderInput | SortOrder
+    projetos?: FornecedorOrcamentoOrderByRelationAggregateInput
+    propostas?: PropostaItemOrderByRelationAggregateInput
+  }
+
+  export type FornecedorWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: FornecedorWhereInput | FornecedorWhereInput[]
+    OR?: FornecedorWhereInput[]
+    NOT?: FornecedorWhereInput | FornecedorWhereInput[]
+    razaoSocial?: StringFilter<"Fornecedor"> | string
+    cnpj?: StringNullableFilter<"Fornecedor"> | string | null
+    contatoNome?: StringNullableFilter<"Fornecedor"> | string | null
+    contatoEmail?: StringNullableFilter<"Fornecedor"> | string | null
+    contatoTelefone?: StringNullableFilter<"Fornecedor"> | string | null
+    idContaAzul?: StringNullableFilter<"Fornecedor"> | string | null
+    projetos?: FornecedorOrcamentoListRelationFilter
+    propostas?: PropostaItemListRelationFilter
+  }, "id">
+
+  export type FornecedorOrderByWithAggregationInput = {
+    id?: SortOrder
+    razaoSocial?: SortOrder
+    cnpj?: SortOrderInput | SortOrder
+    contatoNome?: SortOrderInput | SortOrder
+    contatoEmail?: SortOrderInput | SortOrder
+    contatoTelefone?: SortOrderInput | SortOrder
+    idContaAzul?: SortOrderInput | SortOrder
+    _count?: FornecedorCountOrderByAggregateInput
+    _max?: FornecedorMaxOrderByAggregateInput
+    _min?: FornecedorMinOrderByAggregateInput
+  }
+
+  export type FornecedorScalarWhereWithAggregatesInput = {
+    AND?: FornecedorScalarWhereWithAggregatesInput | FornecedorScalarWhereWithAggregatesInput[]
+    OR?: FornecedorScalarWhereWithAggregatesInput[]
+    NOT?: FornecedorScalarWhereWithAggregatesInput | FornecedorScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"Fornecedor"> | string
+    razaoSocial?: StringWithAggregatesFilter<"Fornecedor"> | string
+    cnpj?: StringNullableWithAggregatesFilter<"Fornecedor"> | string | null
+    contatoNome?: StringNullableWithAggregatesFilter<"Fornecedor"> | string | null
+    contatoEmail?: StringNullableWithAggregatesFilter<"Fornecedor"> | string | null
+    contatoTelefone?: StringNullableWithAggregatesFilter<"Fornecedor"> | string | null
+    idContaAzul?: StringNullableWithAggregatesFilter<"Fornecedor"> | string | null
+  }
+
+  export type FornecedorOrcamentoWhereInput = {
+    AND?: FornecedorOrcamentoWhereInput | FornecedorOrcamentoWhereInput[]
+    OR?: FornecedorOrcamentoWhereInput[]
+    NOT?: FornecedorOrcamentoWhereInput | FornecedorOrcamentoWhereInput[]
+    id?: StringFilter<"FornecedorOrcamento"> | string
+    projetoId?: StringFilter<"FornecedorOrcamento"> | string
+    fornecedorId?: StringFilter<"FornecedorOrcamento"> | string
+    statusConvite?: StringFilter<"FornecedorOrcamento"> | string
+    tokenAcesso?: StringFilter<"FornecedorOrcamento"> | string
+    dataEnvio?: DateTimeNullableFilter<"FornecedorOrcamento"> | Date | string | null
+    projeto?: XOR<OrcamentoProjetoScalarRelationFilter, OrcamentoProjetoWhereInput>
+    fornecedor?: XOR<FornecedorScalarRelationFilter, FornecedorWhereInput>
+  }
+
+  export type FornecedorOrcamentoOrderByWithRelationInput = {
+    id?: SortOrder
+    projetoId?: SortOrder
+    fornecedorId?: SortOrder
+    statusConvite?: SortOrder
+    tokenAcesso?: SortOrder
+    dataEnvio?: SortOrderInput | SortOrder
+    projeto?: OrcamentoProjetoOrderByWithRelationInput
+    fornecedor?: FornecedorOrderByWithRelationInput
+  }
+
+  export type FornecedorOrcamentoWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    tokenAcesso?: string
+    projetoId_fornecedorId?: FornecedorOrcamentoProjetoIdFornecedorIdCompoundUniqueInput
+    AND?: FornecedorOrcamentoWhereInput | FornecedorOrcamentoWhereInput[]
+    OR?: FornecedorOrcamentoWhereInput[]
+    NOT?: FornecedorOrcamentoWhereInput | FornecedorOrcamentoWhereInput[]
+    projetoId?: StringFilter<"FornecedorOrcamento"> | string
+    fornecedorId?: StringFilter<"FornecedorOrcamento"> | string
+    statusConvite?: StringFilter<"FornecedorOrcamento"> | string
+    dataEnvio?: DateTimeNullableFilter<"FornecedorOrcamento"> | Date | string | null
+    projeto?: XOR<OrcamentoProjetoScalarRelationFilter, OrcamentoProjetoWhereInput>
+    fornecedor?: XOR<FornecedorScalarRelationFilter, FornecedorWhereInput>
+  }, "id" | "tokenAcesso" | "projetoId_fornecedorId">
+
+  export type FornecedorOrcamentoOrderByWithAggregationInput = {
+    id?: SortOrder
+    projetoId?: SortOrder
+    fornecedorId?: SortOrder
+    statusConvite?: SortOrder
+    tokenAcesso?: SortOrder
+    dataEnvio?: SortOrderInput | SortOrder
+    _count?: FornecedorOrcamentoCountOrderByAggregateInput
+    _max?: FornecedorOrcamentoMaxOrderByAggregateInput
+    _min?: FornecedorOrcamentoMinOrderByAggregateInput
+  }
+
+  export type FornecedorOrcamentoScalarWhereWithAggregatesInput = {
+    AND?: FornecedorOrcamentoScalarWhereWithAggregatesInput | FornecedorOrcamentoScalarWhereWithAggregatesInput[]
+    OR?: FornecedorOrcamentoScalarWhereWithAggregatesInput[]
+    NOT?: FornecedorOrcamentoScalarWhereWithAggregatesInput | FornecedorOrcamentoScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"FornecedorOrcamento"> | string
+    projetoId?: StringWithAggregatesFilter<"FornecedorOrcamento"> | string
+    fornecedorId?: StringWithAggregatesFilter<"FornecedorOrcamento"> | string
+    statusConvite?: StringWithAggregatesFilter<"FornecedorOrcamento"> | string
+    tokenAcesso?: StringWithAggregatesFilter<"FornecedorOrcamento"> | string
+    dataEnvio?: DateTimeNullableWithAggregatesFilter<"FornecedorOrcamento"> | Date | string | null
+  }
+
+  export type PropostaItemWhereInput = {
+    AND?: PropostaItemWhereInput | PropostaItemWhereInput[]
+    OR?: PropostaItemWhereInput[]
+    NOT?: PropostaItemWhereInput | PropostaItemWhereInput[]
+    id?: StringFilter<"PropostaItem"> | string
+    itemId?: StringFilter<"PropostaItem"> | string
+    fornecedorId?: StringFilter<"PropostaItem"> | string
+    precoUnitario?: FloatFilter<"PropostaItem"> | number
+    freteIncluso?: BoolFilter<"PropostaItem"> | boolean
+    prazoEntregaDias?: IntNullableFilter<"PropostaItem"> | number | null
+    observacao?: StringNullableFilter<"PropostaItem"> | string | null
+    dataProposta?: DateTimeFilter<"PropostaItem"> | Date | string
+    versao?: IntFilter<"PropostaItem"> | number
+    item?: XOR<OrcamentoItemScalarRelationFilter, OrcamentoItemWhereInput>
+    fornecedor?: XOR<FornecedorScalarRelationFilter, FornecedorWhereInput>
+  }
+
+  export type PropostaItemOrderByWithRelationInput = {
+    id?: SortOrder
+    itemId?: SortOrder
+    fornecedorId?: SortOrder
+    precoUnitario?: SortOrder
+    freteIncluso?: SortOrder
+    prazoEntregaDias?: SortOrderInput | SortOrder
+    observacao?: SortOrderInput | SortOrder
+    dataProposta?: SortOrder
+    versao?: SortOrder
+    item?: OrcamentoItemOrderByWithRelationInput
+    fornecedor?: FornecedorOrderByWithRelationInput
+  }
+
+  export type PropostaItemWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    itemId_fornecedorId_versao?: PropostaItemItemIdFornecedorIdVersaoCompoundUniqueInput
+    AND?: PropostaItemWhereInput | PropostaItemWhereInput[]
+    OR?: PropostaItemWhereInput[]
+    NOT?: PropostaItemWhereInput | PropostaItemWhereInput[]
+    itemId?: StringFilter<"PropostaItem"> | string
+    fornecedorId?: StringFilter<"PropostaItem"> | string
+    precoUnitario?: FloatFilter<"PropostaItem"> | number
+    freteIncluso?: BoolFilter<"PropostaItem"> | boolean
+    prazoEntregaDias?: IntNullableFilter<"PropostaItem"> | number | null
+    observacao?: StringNullableFilter<"PropostaItem"> | string | null
+    dataProposta?: DateTimeFilter<"PropostaItem"> | Date | string
+    versao?: IntFilter<"PropostaItem"> | number
+    item?: XOR<OrcamentoItemScalarRelationFilter, OrcamentoItemWhereInput>
+    fornecedor?: XOR<FornecedorScalarRelationFilter, FornecedorWhereInput>
+  }, "id" | "itemId_fornecedorId_versao">
+
+  export type PropostaItemOrderByWithAggregationInput = {
+    id?: SortOrder
+    itemId?: SortOrder
+    fornecedorId?: SortOrder
+    precoUnitario?: SortOrder
+    freteIncluso?: SortOrder
+    prazoEntregaDias?: SortOrderInput | SortOrder
+    observacao?: SortOrderInput | SortOrder
+    dataProposta?: SortOrder
+    versao?: SortOrder
+    _count?: PropostaItemCountOrderByAggregateInput
+    _avg?: PropostaItemAvgOrderByAggregateInput
+    _max?: PropostaItemMaxOrderByAggregateInput
+    _min?: PropostaItemMinOrderByAggregateInput
+    _sum?: PropostaItemSumOrderByAggregateInput
+  }
+
+  export type PropostaItemScalarWhereWithAggregatesInput = {
+    AND?: PropostaItemScalarWhereWithAggregatesInput | PropostaItemScalarWhereWithAggregatesInput[]
+    OR?: PropostaItemScalarWhereWithAggregatesInput[]
+    NOT?: PropostaItemScalarWhereWithAggregatesInput | PropostaItemScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"PropostaItem"> | string
+    itemId?: StringWithAggregatesFilter<"PropostaItem"> | string
+    fornecedorId?: StringWithAggregatesFilter<"PropostaItem"> | string
+    precoUnitario?: FloatWithAggregatesFilter<"PropostaItem"> | number
+    freteIncluso?: BoolWithAggregatesFilter<"PropostaItem"> | boolean
+    prazoEntregaDias?: IntNullableWithAggregatesFilter<"PropostaItem"> | number | null
+    observacao?: StringNullableWithAggregatesFilter<"PropostaItem"> | string | null
+    dataProposta?: DateTimeWithAggregatesFilter<"PropostaItem"> | Date | string
+    versao?: IntWithAggregatesFilter<"PropostaItem"> | number
+  }
+
+  export type OrcamentoTipoMaterialWhereInput = {
+    AND?: OrcamentoTipoMaterialWhereInput | OrcamentoTipoMaterialWhereInput[]
+    OR?: OrcamentoTipoMaterialWhereInput[]
+    NOT?: OrcamentoTipoMaterialWhereInput | OrcamentoTipoMaterialWhereInput[]
+    id?: StringFilter<"OrcamentoTipoMaterial"> | string
+    nome?: StringFilter<"OrcamentoTipoMaterial"> | string
+  }
+
+  export type OrcamentoTipoMaterialOrderByWithRelationInput = {
+    id?: SortOrder
+    nome?: SortOrder
+  }
+
+  export type OrcamentoTipoMaterialWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    nome?: string
+    AND?: OrcamentoTipoMaterialWhereInput | OrcamentoTipoMaterialWhereInput[]
+    OR?: OrcamentoTipoMaterialWhereInput[]
+    NOT?: OrcamentoTipoMaterialWhereInput | OrcamentoTipoMaterialWhereInput[]
+  }, "id" | "nome">
+
+  export type OrcamentoTipoMaterialOrderByWithAggregationInput = {
+    id?: SortOrder
+    nome?: SortOrder
+    _count?: OrcamentoTipoMaterialCountOrderByAggregateInput
+    _max?: OrcamentoTipoMaterialMaxOrderByAggregateInput
+    _min?: OrcamentoTipoMaterialMinOrderByAggregateInput
+  }
+
+  export type OrcamentoTipoMaterialScalarWhereWithAggregatesInput = {
+    AND?: OrcamentoTipoMaterialScalarWhereWithAggregatesInput | OrcamentoTipoMaterialScalarWhereWithAggregatesInput[]
+    OR?: OrcamentoTipoMaterialScalarWhereWithAggregatesInput[]
+    NOT?: OrcamentoTipoMaterialScalarWhereWithAggregatesInput | OrcamentoTipoMaterialScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"OrcamentoTipoMaterial"> | string
+    nome?: StringWithAggregatesFilter<"OrcamentoTipoMaterial"> | string
+  }
+
+  export type OrcamentoItemPadraoWhereInput = {
+    AND?: OrcamentoItemPadraoWhereInput | OrcamentoItemPadraoWhereInput[]
+    OR?: OrcamentoItemPadraoWhereInput[]
+    NOT?: OrcamentoItemPadraoWhereInput | OrcamentoItemPadraoWhereInput[]
+    id?: StringFilter<"OrcamentoItemPadrao"> | string
+    codigo?: StringNullableFilter<"OrcamentoItemPadrao"> | string | null
+    descricao?: StringFilter<"OrcamentoItemPadrao"> | string
+    tipo?: StringFilter<"OrcamentoItemPadrao"> | string
+    unidade?: StringFilter<"OrcamentoItemPadrao"> | string
+    precoBaseUnitario?: FloatNullableFilter<"OrcamentoItemPadrao"> | number | null
+  }
+
+  export type OrcamentoItemPadraoOrderByWithRelationInput = {
+    id?: SortOrder
+    codigo?: SortOrderInput | SortOrder
+    descricao?: SortOrder
+    tipo?: SortOrder
+    unidade?: SortOrder
+    precoBaseUnitario?: SortOrderInput | SortOrder
+  }
+
+  export type OrcamentoItemPadraoWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: OrcamentoItemPadraoWhereInput | OrcamentoItemPadraoWhereInput[]
+    OR?: OrcamentoItemPadraoWhereInput[]
+    NOT?: OrcamentoItemPadraoWhereInput | OrcamentoItemPadraoWhereInput[]
+    codigo?: StringNullableFilter<"OrcamentoItemPadrao"> | string | null
+    descricao?: StringFilter<"OrcamentoItemPadrao"> | string
+    tipo?: StringFilter<"OrcamentoItemPadrao"> | string
+    unidade?: StringFilter<"OrcamentoItemPadrao"> | string
+    precoBaseUnitario?: FloatNullableFilter<"OrcamentoItemPadrao"> | number | null
+  }, "id">
+
+  export type OrcamentoItemPadraoOrderByWithAggregationInput = {
+    id?: SortOrder
+    codigo?: SortOrderInput | SortOrder
+    descricao?: SortOrder
+    tipo?: SortOrder
+    unidade?: SortOrder
+    precoBaseUnitario?: SortOrderInput | SortOrder
+    _count?: OrcamentoItemPadraoCountOrderByAggregateInput
+    _avg?: OrcamentoItemPadraoAvgOrderByAggregateInput
+    _max?: OrcamentoItemPadraoMaxOrderByAggregateInput
+    _min?: OrcamentoItemPadraoMinOrderByAggregateInput
+    _sum?: OrcamentoItemPadraoSumOrderByAggregateInput
+  }
+
+  export type OrcamentoItemPadraoScalarWhereWithAggregatesInput = {
+    AND?: OrcamentoItemPadraoScalarWhereWithAggregatesInput | OrcamentoItemPadraoScalarWhereWithAggregatesInput[]
+    OR?: OrcamentoItemPadraoScalarWhereWithAggregatesInput[]
+    NOT?: OrcamentoItemPadraoScalarWhereWithAggregatesInput | OrcamentoItemPadraoScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"OrcamentoItemPadrao"> | string
+    codigo?: StringNullableWithAggregatesFilter<"OrcamentoItemPadrao"> | string | null
+    descricao?: StringWithAggregatesFilter<"OrcamentoItemPadrao"> | string
+    tipo?: StringWithAggregatesFilter<"OrcamentoItemPadrao"> | string
+    unidade?: StringWithAggregatesFilter<"OrcamentoItemPadrao"> | string
+    precoBaseUnitario?: FloatNullableWithAggregatesFilter<"OrcamentoItemPadrao"> | number | null
+  }
+
+  export type LeadWhereInput = {
+    AND?: LeadWhereInput | LeadWhereInput[]
+    OR?: LeadWhereInput[]
+    NOT?: LeadWhereInput | LeadWhereInput[]
+    id?: StringFilter<"Lead"> | string
+    nome?: StringFilter<"Lead"> | string
+    telefone?: StringNullableFilter<"Lead"> | string | null
+    email?: StringNullableFilter<"Lead"> | string | null
+    tipo?: StringFilter<"Lead"> | string
+    status?: StringFilter<"Lead"> | string
+    latitude?: FloatNullableFilter<"Lead"> | number | null
+    longitude?: FloatNullableFilter<"Lead"> | number | null
+    observacoes?: StringNullableFilter<"Lead"> | string | null
+    vendedorId?: StringNullableFilter<"Lead"> | string | null
+    createdAt?: DateTimeFilter<"Lead"> | Date | string
+    updatedAt?: DateTimeFilter<"Lead"> | Date | string
+    midias?: LeadMidiaListRelationFilter
+  }
+
+  export type LeadOrderByWithRelationInput = {
+    id?: SortOrder
+    nome?: SortOrder
+    telefone?: SortOrderInput | SortOrder
+    email?: SortOrderInput | SortOrder
+    tipo?: SortOrder
+    status?: SortOrder
+    latitude?: SortOrderInput | SortOrder
+    longitude?: SortOrderInput | SortOrder
+    observacoes?: SortOrderInput | SortOrder
+    vendedorId?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    midias?: LeadMidiaOrderByRelationAggregateInput
+  }
+
+  export type LeadWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: LeadWhereInput | LeadWhereInput[]
+    OR?: LeadWhereInput[]
+    NOT?: LeadWhereInput | LeadWhereInput[]
+    nome?: StringFilter<"Lead"> | string
+    telefone?: StringNullableFilter<"Lead"> | string | null
+    email?: StringNullableFilter<"Lead"> | string | null
+    tipo?: StringFilter<"Lead"> | string
+    status?: StringFilter<"Lead"> | string
+    latitude?: FloatNullableFilter<"Lead"> | number | null
+    longitude?: FloatNullableFilter<"Lead"> | number | null
+    observacoes?: StringNullableFilter<"Lead"> | string | null
+    vendedorId?: StringNullableFilter<"Lead"> | string | null
+    createdAt?: DateTimeFilter<"Lead"> | Date | string
+    updatedAt?: DateTimeFilter<"Lead"> | Date | string
+    midias?: LeadMidiaListRelationFilter
+  }, "id">
+
+  export type LeadOrderByWithAggregationInput = {
+    id?: SortOrder
+    nome?: SortOrder
+    telefone?: SortOrderInput | SortOrder
+    email?: SortOrderInput | SortOrder
+    tipo?: SortOrder
+    status?: SortOrder
+    latitude?: SortOrderInput | SortOrder
+    longitude?: SortOrderInput | SortOrder
+    observacoes?: SortOrderInput | SortOrder
+    vendedorId?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    _count?: LeadCountOrderByAggregateInput
+    _avg?: LeadAvgOrderByAggregateInput
+    _max?: LeadMaxOrderByAggregateInput
+    _min?: LeadMinOrderByAggregateInput
+    _sum?: LeadSumOrderByAggregateInput
+  }
+
+  export type LeadScalarWhereWithAggregatesInput = {
+    AND?: LeadScalarWhereWithAggregatesInput | LeadScalarWhereWithAggregatesInput[]
+    OR?: LeadScalarWhereWithAggregatesInput[]
+    NOT?: LeadScalarWhereWithAggregatesInput | LeadScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"Lead"> | string
+    nome?: StringWithAggregatesFilter<"Lead"> | string
+    telefone?: StringNullableWithAggregatesFilter<"Lead"> | string | null
+    email?: StringNullableWithAggregatesFilter<"Lead"> | string | null
+    tipo?: StringWithAggregatesFilter<"Lead"> | string
+    status?: StringWithAggregatesFilter<"Lead"> | string
+    latitude?: FloatNullableWithAggregatesFilter<"Lead"> | number | null
+    longitude?: FloatNullableWithAggregatesFilter<"Lead"> | number | null
+    observacoes?: StringNullableWithAggregatesFilter<"Lead"> | string | null
+    vendedorId?: StringNullableWithAggregatesFilter<"Lead"> | string | null
+    createdAt?: DateTimeWithAggregatesFilter<"Lead"> | Date | string
+    updatedAt?: DateTimeWithAggregatesFilter<"Lead"> | Date | string
+  }
+
+  export type LeadMidiaWhereInput = {
+    AND?: LeadMidiaWhereInput | LeadMidiaWhereInput[]
+    OR?: LeadMidiaWhereInput[]
+    NOT?: LeadMidiaWhereInput | LeadMidiaWhereInput[]
+    id?: StringFilter<"LeadMidia"> | string
+    leadId?: StringFilter<"LeadMidia"> | string
+    tipo?: StringFilter<"LeadMidia"> | string
+    arquivoUrl?: StringFilter<"LeadMidia"> | string
+    createdAt?: DateTimeFilter<"LeadMidia"> | Date | string
+    lead?: XOR<LeadScalarRelationFilter, LeadWhereInput>
+  }
+
+  export type LeadMidiaOrderByWithRelationInput = {
+    id?: SortOrder
+    leadId?: SortOrder
+    tipo?: SortOrder
+    arquivoUrl?: SortOrder
+    createdAt?: SortOrder
+    lead?: LeadOrderByWithRelationInput
+  }
+
+  export type LeadMidiaWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: LeadMidiaWhereInput | LeadMidiaWhereInput[]
+    OR?: LeadMidiaWhereInput[]
+    NOT?: LeadMidiaWhereInput | LeadMidiaWhereInput[]
+    leadId?: StringFilter<"LeadMidia"> | string
+    tipo?: StringFilter<"LeadMidia"> | string
+    arquivoUrl?: StringFilter<"LeadMidia"> | string
+    createdAt?: DateTimeFilter<"LeadMidia"> | Date | string
+    lead?: XOR<LeadScalarRelationFilter, LeadWhereInput>
+  }, "id">
+
+  export type LeadMidiaOrderByWithAggregationInput = {
+    id?: SortOrder
+    leadId?: SortOrder
+    tipo?: SortOrder
+    arquivoUrl?: SortOrder
+    createdAt?: SortOrder
+    _count?: LeadMidiaCountOrderByAggregateInput
+    _max?: LeadMidiaMaxOrderByAggregateInput
+    _min?: LeadMidiaMinOrderByAggregateInput
+  }
+
+  export type LeadMidiaScalarWhereWithAggregatesInput = {
+    AND?: LeadMidiaScalarWhereWithAggregatesInput | LeadMidiaScalarWhereWithAggregatesInput[]
+    OR?: LeadMidiaScalarWhereWithAggregatesInput[]
+    NOT?: LeadMidiaScalarWhereWithAggregatesInput | LeadMidiaScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"LeadMidia"> | string
+    leadId?: StringWithAggregatesFilter<"LeadMidia"> | string
+    tipo?: StringWithAggregatesFilter<"LeadMidia"> | string
+    arquivoUrl?: StringWithAggregatesFilter<"LeadMidia"> | string
+    createdAt?: DateTimeWithAggregatesFilter<"LeadMidia"> | Date | string
+  }
+
   export type UserCreateInput = {
     id?: string
     email: string
     password: string
     role: string
     name?: string | null
+    canAccessBudgets?: boolean
+    canEditBudgets?: boolean
+    canAccessAppLeads?: boolean
+    canManageCRM?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -35359,6 +48391,10 @@ export namespace Prisma {
     password: string
     role: string
     name?: string | null
+    canAccessBudgets?: boolean
+    canEditBudgets?: boolean
+    canAccessAppLeads?: boolean
+    canManageCRM?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -35369,6 +48405,10 @@ export namespace Prisma {
     password?: StringFieldUpdateOperationsInput | string
     role?: StringFieldUpdateOperationsInput | string
     name?: NullableStringFieldUpdateOperationsInput | string | null
+    canAccessBudgets?: BoolFieldUpdateOperationsInput | boolean
+    canEditBudgets?: BoolFieldUpdateOperationsInput | boolean
+    canAccessAppLeads?: BoolFieldUpdateOperationsInput | boolean
+    canManageCRM?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -35379,6 +48419,10 @@ export namespace Prisma {
     password?: StringFieldUpdateOperationsInput | string
     role?: StringFieldUpdateOperationsInput | string
     name?: NullableStringFieldUpdateOperationsInput | string | null
+    canAccessBudgets?: BoolFieldUpdateOperationsInput | boolean
+    canEditBudgets?: BoolFieldUpdateOperationsInput | boolean
+    canAccessAppLeads?: BoolFieldUpdateOperationsInput | boolean
+    canManageCRM?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -35389,6 +48433,10 @@ export namespace Prisma {
     password: string
     role: string
     name?: string | null
+    canAccessBudgets?: boolean
+    canEditBudgets?: boolean
+    canAccessAppLeads?: boolean
+    canManageCRM?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -35399,6 +48447,10 @@ export namespace Prisma {
     password?: StringFieldUpdateOperationsInput | string
     role?: StringFieldUpdateOperationsInput | string
     name?: NullableStringFieldUpdateOperationsInput | string | null
+    canAccessBudgets?: BoolFieldUpdateOperationsInput | boolean
+    canEditBudgets?: BoolFieldUpdateOperationsInput | boolean
+    canAccessAppLeads?: BoolFieldUpdateOperationsInput | boolean
+    canManageCRM?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -35409,6 +48461,10 @@ export namespace Prisma {
     password?: StringFieldUpdateOperationsInput | string
     role?: StringFieldUpdateOperationsInput | string
     name?: NullableStringFieldUpdateOperationsInput | string | null
+    canAccessBudgets?: BoolFieldUpdateOperationsInput | boolean
+    canEditBudgets?: BoolFieldUpdateOperationsInput | boolean
+    canAccessAppLeads?: BoolFieldUpdateOperationsInput | boolean
+    canManageCRM?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -38633,6 +51689,706 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type OrcamentoProjetoCreateInput = {
+    id?: string
+    nome: string
+    cliente?: string | null
+    status?: string
+    idContaAzul?: string | null
+    dataCriacao?: Date | string
+    dataAtualizacao?: Date | string
+    etapas?: OrcamentoEtapaCreateNestedManyWithoutProjetoInput
+    fornecedores?: FornecedorOrcamentoCreateNestedManyWithoutProjetoInput
+  }
+
+  export type OrcamentoProjetoUncheckedCreateInput = {
+    id?: string
+    nome: string
+    cliente?: string | null
+    status?: string
+    idContaAzul?: string | null
+    dataCriacao?: Date | string
+    dataAtualizacao?: Date | string
+    etapas?: OrcamentoEtapaUncheckedCreateNestedManyWithoutProjetoInput
+    fornecedores?: FornecedorOrcamentoUncheckedCreateNestedManyWithoutProjetoInput
+  }
+
+  export type OrcamentoProjetoUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    cliente?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: StringFieldUpdateOperationsInput | string
+    idContaAzul?: NullableStringFieldUpdateOperationsInput | string | null
+    dataCriacao?: DateTimeFieldUpdateOperationsInput | Date | string
+    dataAtualizacao?: DateTimeFieldUpdateOperationsInput | Date | string
+    etapas?: OrcamentoEtapaUpdateManyWithoutProjetoNestedInput
+    fornecedores?: FornecedorOrcamentoUpdateManyWithoutProjetoNestedInput
+  }
+
+  export type OrcamentoProjetoUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    cliente?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: StringFieldUpdateOperationsInput | string
+    idContaAzul?: NullableStringFieldUpdateOperationsInput | string | null
+    dataCriacao?: DateTimeFieldUpdateOperationsInput | Date | string
+    dataAtualizacao?: DateTimeFieldUpdateOperationsInput | Date | string
+    etapas?: OrcamentoEtapaUncheckedUpdateManyWithoutProjetoNestedInput
+    fornecedores?: FornecedorOrcamentoUncheckedUpdateManyWithoutProjetoNestedInput
+  }
+
+  export type OrcamentoProjetoCreateManyInput = {
+    id?: string
+    nome: string
+    cliente?: string | null
+    status?: string
+    idContaAzul?: string | null
+    dataCriacao?: Date | string
+    dataAtualizacao?: Date | string
+  }
+
+  export type OrcamentoProjetoUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    cliente?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: StringFieldUpdateOperationsInput | string
+    idContaAzul?: NullableStringFieldUpdateOperationsInput | string | null
+    dataCriacao?: DateTimeFieldUpdateOperationsInput | Date | string
+    dataAtualizacao?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type OrcamentoProjetoUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    cliente?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: StringFieldUpdateOperationsInput | string
+    idContaAzul?: NullableStringFieldUpdateOperationsInput | string | null
+    dataCriacao?: DateTimeFieldUpdateOperationsInput | Date | string
+    dataAtualizacao?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type OrcamentoEtapaCreateInput = {
+    id?: string
+    nome: string
+    ordem?: number
+    projeto: OrcamentoProjetoCreateNestedOneWithoutEtapasInput
+    itens?: OrcamentoItemCreateNestedManyWithoutEtapaInput
+  }
+
+  export type OrcamentoEtapaUncheckedCreateInput = {
+    id?: string
+    projetoId: string
+    nome: string
+    ordem?: number
+    itens?: OrcamentoItemUncheckedCreateNestedManyWithoutEtapaInput
+  }
+
+  export type OrcamentoEtapaUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    ordem?: IntFieldUpdateOperationsInput | number
+    projeto?: OrcamentoProjetoUpdateOneRequiredWithoutEtapasNestedInput
+    itens?: OrcamentoItemUpdateManyWithoutEtapaNestedInput
+  }
+
+  export type OrcamentoEtapaUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    projetoId?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    ordem?: IntFieldUpdateOperationsInput | number
+    itens?: OrcamentoItemUncheckedUpdateManyWithoutEtapaNestedInput
+  }
+
+  export type OrcamentoEtapaCreateManyInput = {
+    id?: string
+    projetoId: string
+    nome: string
+    ordem?: number
+  }
+
+  export type OrcamentoEtapaUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    ordem?: IntFieldUpdateOperationsInput | number
+  }
+
+  export type OrcamentoEtapaUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    projetoId?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    ordem?: IntFieldUpdateOperationsInput | number
+  }
+
+  export type OrcamentoItemCreateInput = {
+    id?: string
+    codigo?: string | null
+    descricao: string
+    tipo: string
+    unidade: string
+    quantidade: number
+    precoBaseUnitario?: number | null
+    bdiPercent?: number | null
+    etapa: OrcamentoEtapaCreateNestedOneWithoutItensInput
+    propostas?: PropostaItemCreateNestedManyWithoutItemInput
+  }
+
+  export type OrcamentoItemUncheckedCreateInput = {
+    id?: string
+    etapaId: string
+    codigo?: string | null
+    descricao: string
+    tipo: string
+    unidade: string
+    quantidade: number
+    precoBaseUnitario?: number | null
+    bdiPercent?: number | null
+    propostas?: PropostaItemUncheckedCreateNestedManyWithoutItemInput
+  }
+
+  export type OrcamentoItemUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    codigo?: NullableStringFieldUpdateOperationsInput | string | null
+    descricao?: StringFieldUpdateOperationsInput | string
+    tipo?: StringFieldUpdateOperationsInput | string
+    unidade?: StringFieldUpdateOperationsInput | string
+    quantidade?: FloatFieldUpdateOperationsInput | number
+    precoBaseUnitario?: NullableFloatFieldUpdateOperationsInput | number | null
+    bdiPercent?: NullableFloatFieldUpdateOperationsInput | number | null
+    etapa?: OrcamentoEtapaUpdateOneRequiredWithoutItensNestedInput
+    propostas?: PropostaItemUpdateManyWithoutItemNestedInput
+  }
+
+  export type OrcamentoItemUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    etapaId?: StringFieldUpdateOperationsInput | string
+    codigo?: NullableStringFieldUpdateOperationsInput | string | null
+    descricao?: StringFieldUpdateOperationsInput | string
+    tipo?: StringFieldUpdateOperationsInput | string
+    unidade?: StringFieldUpdateOperationsInput | string
+    quantidade?: FloatFieldUpdateOperationsInput | number
+    precoBaseUnitario?: NullableFloatFieldUpdateOperationsInput | number | null
+    bdiPercent?: NullableFloatFieldUpdateOperationsInput | number | null
+    propostas?: PropostaItemUncheckedUpdateManyWithoutItemNestedInput
+  }
+
+  export type OrcamentoItemCreateManyInput = {
+    id?: string
+    etapaId: string
+    codigo?: string | null
+    descricao: string
+    tipo: string
+    unidade: string
+    quantidade: number
+    precoBaseUnitario?: number | null
+    bdiPercent?: number | null
+  }
+
+  export type OrcamentoItemUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    codigo?: NullableStringFieldUpdateOperationsInput | string | null
+    descricao?: StringFieldUpdateOperationsInput | string
+    tipo?: StringFieldUpdateOperationsInput | string
+    unidade?: StringFieldUpdateOperationsInput | string
+    quantidade?: FloatFieldUpdateOperationsInput | number
+    precoBaseUnitario?: NullableFloatFieldUpdateOperationsInput | number | null
+    bdiPercent?: NullableFloatFieldUpdateOperationsInput | number | null
+  }
+
+  export type OrcamentoItemUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    etapaId?: StringFieldUpdateOperationsInput | string
+    codigo?: NullableStringFieldUpdateOperationsInput | string | null
+    descricao?: StringFieldUpdateOperationsInput | string
+    tipo?: StringFieldUpdateOperationsInput | string
+    unidade?: StringFieldUpdateOperationsInput | string
+    quantidade?: FloatFieldUpdateOperationsInput | number
+    precoBaseUnitario?: NullableFloatFieldUpdateOperationsInput | number | null
+    bdiPercent?: NullableFloatFieldUpdateOperationsInput | number | null
+  }
+
+  export type FornecedorCreateInput = {
+    id?: string
+    razaoSocial: string
+    cnpj?: string | null
+    contatoNome?: string | null
+    contatoEmail?: string | null
+    contatoTelefone?: string | null
+    idContaAzul?: string | null
+    projetos?: FornecedorOrcamentoCreateNestedManyWithoutFornecedorInput
+    propostas?: PropostaItemCreateNestedManyWithoutFornecedorInput
+  }
+
+  export type FornecedorUncheckedCreateInput = {
+    id?: string
+    razaoSocial: string
+    cnpj?: string | null
+    contatoNome?: string | null
+    contatoEmail?: string | null
+    contatoTelefone?: string | null
+    idContaAzul?: string | null
+    projetos?: FornecedorOrcamentoUncheckedCreateNestedManyWithoutFornecedorInput
+    propostas?: PropostaItemUncheckedCreateNestedManyWithoutFornecedorInput
+  }
+
+  export type FornecedorUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    razaoSocial?: StringFieldUpdateOperationsInput | string
+    cnpj?: NullableStringFieldUpdateOperationsInput | string | null
+    contatoNome?: NullableStringFieldUpdateOperationsInput | string | null
+    contatoEmail?: NullableStringFieldUpdateOperationsInput | string | null
+    contatoTelefone?: NullableStringFieldUpdateOperationsInput | string | null
+    idContaAzul?: NullableStringFieldUpdateOperationsInput | string | null
+    projetos?: FornecedorOrcamentoUpdateManyWithoutFornecedorNestedInput
+    propostas?: PropostaItemUpdateManyWithoutFornecedorNestedInput
+  }
+
+  export type FornecedorUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    razaoSocial?: StringFieldUpdateOperationsInput | string
+    cnpj?: NullableStringFieldUpdateOperationsInput | string | null
+    contatoNome?: NullableStringFieldUpdateOperationsInput | string | null
+    contatoEmail?: NullableStringFieldUpdateOperationsInput | string | null
+    contatoTelefone?: NullableStringFieldUpdateOperationsInput | string | null
+    idContaAzul?: NullableStringFieldUpdateOperationsInput | string | null
+    projetos?: FornecedorOrcamentoUncheckedUpdateManyWithoutFornecedorNestedInput
+    propostas?: PropostaItemUncheckedUpdateManyWithoutFornecedorNestedInput
+  }
+
+  export type FornecedorCreateManyInput = {
+    id?: string
+    razaoSocial: string
+    cnpj?: string | null
+    contatoNome?: string | null
+    contatoEmail?: string | null
+    contatoTelefone?: string | null
+    idContaAzul?: string | null
+  }
+
+  export type FornecedorUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    razaoSocial?: StringFieldUpdateOperationsInput | string
+    cnpj?: NullableStringFieldUpdateOperationsInput | string | null
+    contatoNome?: NullableStringFieldUpdateOperationsInput | string | null
+    contatoEmail?: NullableStringFieldUpdateOperationsInput | string | null
+    contatoTelefone?: NullableStringFieldUpdateOperationsInput | string | null
+    idContaAzul?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type FornecedorUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    razaoSocial?: StringFieldUpdateOperationsInput | string
+    cnpj?: NullableStringFieldUpdateOperationsInput | string | null
+    contatoNome?: NullableStringFieldUpdateOperationsInput | string | null
+    contatoEmail?: NullableStringFieldUpdateOperationsInput | string | null
+    contatoTelefone?: NullableStringFieldUpdateOperationsInput | string | null
+    idContaAzul?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type FornecedorOrcamentoCreateInput = {
+    id?: string
+    statusConvite?: string
+    tokenAcesso?: string
+    dataEnvio?: Date | string | null
+    projeto: OrcamentoProjetoCreateNestedOneWithoutFornecedoresInput
+    fornecedor: FornecedorCreateNestedOneWithoutProjetosInput
+  }
+
+  export type FornecedorOrcamentoUncheckedCreateInput = {
+    id?: string
+    projetoId: string
+    fornecedorId: string
+    statusConvite?: string
+    tokenAcesso?: string
+    dataEnvio?: Date | string | null
+  }
+
+  export type FornecedorOrcamentoUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    statusConvite?: StringFieldUpdateOperationsInput | string
+    tokenAcesso?: StringFieldUpdateOperationsInput | string
+    dataEnvio?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    projeto?: OrcamentoProjetoUpdateOneRequiredWithoutFornecedoresNestedInput
+    fornecedor?: FornecedorUpdateOneRequiredWithoutProjetosNestedInput
+  }
+
+  export type FornecedorOrcamentoUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    projetoId?: StringFieldUpdateOperationsInput | string
+    fornecedorId?: StringFieldUpdateOperationsInput | string
+    statusConvite?: StringFieldUpdateOperationsInput | string
+    tokenAcesso?: StringFieldUpdateOperationsInput | string
+    dataEnvio?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type FornecedorOrcamentoCreateManyInput = {
+    id?: string
+    projetoId: string
+    fornecedorId: string
+    statusConvite?: string
+    tokenAcesso?: string
+    dataEnvio?: Date | string | null
+  }
+
+  export type FornecedorOrcamentoUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    statusConvite?: StringFieldUpdateOperationsInput | string
+    tokenAcesso?: StringFieldUpdateOperationsInput | string
+    dataEnvio?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type FornecedorOrcamentoUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    projetoId?: StringFieldUpdateOperationsInput | string
+    fornecedorId?: StringFieldUpdateOperationsInput | string
+    statusConvite?: StringFieldUpdateOperationsInput | string
+    tokenAcesso?: StringFieldUpdateOperationsInput | string
+    dataEnvio?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type PropostaItemCreateInput = {
+    id?: string
+    precoUnitario: number
+    freteIncluso?: boolean
+    prazoEntregaDias?: number | null
+    observacao?: string | null
+    dataProposta?: Date | string
+    versao?: number
+    item: OrcamentoItemCreateNestedOneWithoutPropostasInput
+    fornecedor: FornecedorCreateNestedOneWithoutPropostasInput
+  }
+
+  export type PropostaItemUncheckedCreateInput = {
+    id?: string
+    itemId: string
+    fornecedorId: string
+    precoUnitario: number
+    freteIncluso?: boolean
+    prazoEntregaDias?: number | null
+    observacao?: string | null
+    dataProposta?: Date | string
+    versao?: number
+  }
+
+  export type PropostaItemUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    precoUnitario?: FloatFieldUpdateOperationsInput | number
+    freteIncluso?: BoolFieldUpdateOperationsInput | boolean
+    prazoEntregaDias?: NullableIntFieldUpdateOperationsInput | number | null
+    observacao?: NullableStringFieldUpdateOperationsInput | string | null
+    dataProposta?: DateTimeFieldUpdateOperationsInput | Date | string
+    versao?: IntFieldUpdateOperationsInput | number
+    item?: OrcamentoItemUpdateOneRequiredWithoutPropostasNestedInput
+    fornecedor?: FornecedorUpdateOneRequiredWithoutPropostasNestedInput
+  }
+
+  export type PropostaItemUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    itemId?: StringFieldUpdateOperationsInput | string
+    fornecedorId?: StringFieldUpdateOperationsInput | string
+    precoUnitario?: FloatFieldUpdateOperationsInput | number
+    freteIncluso?: BoolFieldUpdateOperationsInput | boolean
+    prazoEntregaDias?: NullableIntFieldUpdateOperationsInput | number | null
+    observacao?: NullableStringFieldUpdateOperationsInput | string | null
+    dataProposta?: DateTimeFieldUpdateOperationsInput | Date | string
+    versao?: IntFieldUpdateOperationsInput | number
+  }
+
+  export type PropostaItemCreateManyInput = {
+    id?: string
+    itemId: string
+    fornecedorId: string
+    precoUnitario: number
+    freteIncluso?: boolean
+    prazoEntregaDias?: number | null
+    observacao?: string | null
+    dataProposta?: Date | string
+    versao?: number
+  }
+
+  export type PropostaItemUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    precoUnitario?: FloatFieldUpdateOperationsInput | number
+    freteIncluso?: BoolFieldUpdateOperationsInput | boolean
+    prazoEntregaDias?: NullableIntFieldUpdateOperationsInput | number | null
+    observacao?: NullableStringFieldUpdateOperationsInput | string | null
+    dataProposta?: DateTimeFieldUpdateOperationsInput | Date | string
+    versao?: IntFieldUpdateOperationsInput | number
+  }
+
+  export type PropostaItemUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    itemId?: StringFieldUpdateOperationsInput | string
+    fornecedorId?: StringFieldUpdateOperationsInput | string
+    precoUnitario?: FloatFieldUpdateOperationsInput | number
+    freteIncluso?: BoolFieldUpdateOperationsInput | boolean
+    prazoEntregaDias?: NullableIntFieldUpdateOperationsInput | number | null
+    observacao?: NullableStringFieldUpdateOperationsInput | string | null
+    dataProposta?: DateTimeFieldUpdateOperationsInput | Date | string
+    versao?: IntFieldUpdateOperationsInput | number
+  }
+
+  export type OrcamentoTipoMaterialCreateInput = {
+    id?: string
+    nome: string
+  }
+
+  export type OrcamentoTipoMaterialUncheckedCreateInput = {
+    id?: string
+    nome: string
+  }
+
+  export type OrcamentoTipoMaterialUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+  }
+
+  export type OrcamentoTipoMaterialUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+  }
+
+  export type OrcamentoTipoMaterialCreateManyInput = {
+    id?: string
+    nome: string
+  }
+
+  export type OrcamentoTipoMaterialUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+  }
+
+  export type OrcamentoTipoMaterialUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+  }
+
+  export type OrcamentoItemPadraoCreateInput = {
+    id?: string
+    codigo?: string | null
+    descricao: string
+    tipo: string
+    unidade: string
+    precoBaseUnitario?: number | null
+  }
+
+  export type OrcamentoItemPadraoUncheckedCreateInput = {
+    id?: string
+    codigo?: string | null
+    descricao: string
+    tipo: string
+    unidade: string
+    precoBaseUnitario?: number | null
+  }
+
+  export type OrcamentoItemPadraoUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    codigo?: NullableStringFieldUpdateOperationsInput | string | null
+    descricao?: StringFieldUpdateOperationsInput | string
+    tipo?: StringFieldUpdateOperationsInput | string
+    unidade?: StringFieldUpdateOperationsInput | string
+    precoBaseUnitario?: NullableFloatFieldUpdateOperationsInput | number | null
+  }
+
+  export type OrcamentoItemPadraoUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    codigo?: NullableStringFieldUpdateOperationsInput | string | null
+    descricao?: StringFieldUpdateOperationsInput | string
+    tipo?: StringFieldUpdateOperationsInput | string
+    unidade?: StringFieldUpdateOperationsInput | string
+    precoBaseUnitario?: NullableFloatFieldUpdateOperationsInput | number | null
+  }
+
+  export type OrcamentoItemPadraoCreateManyInput = {
+    id?: string
+    codigo?: string | null
+    descricao: string
+    tipo: string
+    unidade: string
+    precoBaseUnitario?: number | null
+  }
+
+  export type OrcamentoItemPadraoUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    codigo?: NullableStringFieldUpdateOperationsInput | string | null
+    descricao?: StringFieldUpdateOperationsInput | string
+    tipo?: StringFieldUpdateOperationsInput | string
+    unidade?: StringFieldUpdateOperationsInput | string
+    precoBaseUnitario?: NullableFloatFieldUpdateOperationsInput | number | null
+  }
+
+  export type OrcamentoItemPadraoUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    codigo?: NullableStringFieldUpdateOperationsInput | string | null
+    descricao?: StringFieldUpdateOperationsInput | string
+    tipo?: StringFieldUpdateOperationsInput | string
+    unidade?: StringFieldUpdateOperationsInput | string
+    precoBaseUnitario?: NullableFloatFieldUpdateOperationsInput | number | null
+  }
+
+  export type LeadCreateInput = {
+    id?: string
+    nome: string
+    telefone?: string | null
+    email?: string | null
+    tipo: string
+    status?: string
+    latitude?: number | null
+    longitude?: number | null
+    observacoes?: string | null
+    vendedorId?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    midias?: LeadMidiaCreateNestedManyWithoutLeadInput
+  }
+
+  export type LeadUncheckedCreateInput = {
+    id?: string
+    nome: string
+    telefone?: string | null
+    email?: string | null
+    tipo: string
+    status?: string
+    latitude?: number | null
+    longitude?: number | null
+    observacoes?: string | null
+    vendedorId?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    midias?: LeadMidiaUncheckedCreateNestedManyWithoutLeadInput
+  }
+
+  export type LeadUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    telefone?: NullableStringFieldUpdateOperationsInput | string | null
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    tipo?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    vendedorId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    midias?: LeadMidiaUpdateManyWithoutLeadNestedInput
+  }
+
+  export type LeadUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    telefone?: NullableStringFieldUpdateOperationsInput | string | null
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    tipo?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    vendedorId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    midias?: LeadMidiaUncheckedUpdateManyWithoutLeadNestedInput
+  }
+
+  export type LeadCreateManyInput = {
+    id?: string
+    nome: string
+    telefone?: string | null
+    email?: string | null
+    tipo: string
+    status?: string
+    latitude?: number | null
+    longitude?: number | null
+    observacoes?: string | null
+    vendedorId?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type LeadUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    telefone?: NullableStringFieldUpdateOperationsInput | string | null
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    tipo?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    vendedorId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type LeadUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    telefone?: NullableStringFieldUpdateOperationsInput | string | null
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    tipo?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    vendedorId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type LeadMidiaCreateInput = {
+    id?: string
+    tipo: string
+    arquivoUrl: string
+    createdAt?: Date | string
+    lead: LeadCreateNestedOneWithoutMidiasInput
+  }
+
+  export type LeadMidiaUncheckedCreateInput = {
+    id?: string
+    leadId: string
+    tipo: string
+    arquivoUrl: string
+    createdAt?: Date | string
+  }
+
+  export type LeadMidiaUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    tipo?: StringFieldUpdateOperationsInput | string
+    arquivoUrl?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    lead?: LeadUpdateOneRequiredWithoutMidiasNestedInput
+  }
+
+  export type LeadMidiaUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    leadId?: StringFieldUpdateOperationsInput | string
+    tipo?: StringFieldUpdateOperationsInput | string
+    arquivoUrl?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type LeadMidiaCreateManyInput = {
+    id?: string
+    leadId: string
+    tipo: string
+    arquivoUrl: string
+    createdAt?: Date | string
+  }
+
+  export type LeadMidiaUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    tipo?: StringFieldUpdateOperationsInput | string
+    arquivoUrl?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type LeadMidiaUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    leadId?: StringFieldUpdateOperationsInput | string
+    tipo?: StringFieldUpdateOperationsInput | string
+    arquivoUrl?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type StringFilter<$PrismaModel = never> = {
     equals?: string | StringFieldRefInput<$PrismaModel>
     in?: string[] | ListStringFieldRefInput<$PrismaModel>
@@ -38663,6 +52419,11 @@ export namespace Prisma {
     not?: NestedStringNullableFilter<$PrismaModel> | string | null
   }
 
+  export type BoolFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolFilter<$PrismaModel> | boolean
+  }
+
   export type DateTimeFilter<$PrismaModel = never> = {
     equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
@@ -38685,6 +52446,10 @@ export namespace Prisma {
     password?: SortOrder
     role?: SortOrder
     name?: SortOrder
+    canAccessBudgets?: SortOrder
+    canEditBudgets?: SortOrder
+    canAccessAppLeads?: SortOrder
+    canManageCRM?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -38695,6 +52460,10 @@ export namespace Prisma {
     password?: SortOrder
     role?: SortOrder
     name?: SortOrder
+    canAccessBudgets?: SortOrder
+    canEditBudgets?: SortOrder
+    canAccessAppLeads?: SortOrder
+    canManageCRM?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -38705,6 +52474,10 @@ export namespace Prisma {
     password?: SortOrder
     role?: SortOrder
     name?: SortOrder
+    canAccessBudgets?: SortOrder
+    canEditBudgets?: SortOrder
+    canAccessAppLeads?: SortOrder
+    canManageCRM?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -38745,6 +52518,14 @@ export namespace Prisma {
     _max?: NestedStringNullableFilter<$PrismaModel>
   }
 
+  export type BoolWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedBoolFilter<$PrismaModel>
+    _max?: NestedBoolFilter<$PrismaModel>
+  }
+
   export type DateTimeWithAggregatesFilter<$PrismaModel = never> = {
     equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
@@ -38757,11 +52538,6 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedDateTimeFilter<$PrismaModel>
     _max?: NestedDateTimeFilter<$PrismaModel>
-  }
-
-  export type BoolFilter<$PrismaModel = never> = {
-    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
-    not?: NestedBoolFilter<$PrismaModel> | boolean
   }
 
   export type StringNullableListFilter<$PrismaModel = never> = {
@@ -38889,14 +52665,6 @@ export namespace Prisma {
     prioridade?: SortOrder
     telefoneVendedor?: SortOrder
     notificadoWhatsapp?: SortOrder
-  }
-
-  export type BoolWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
-    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedBoolFilter<$PrismaModel>
-    _max?: NestedBoolFilter<$PrismaModel>
   }
 
   export type FloatFilter<$PrismaModel = never> = {
@@ -40791,12 +54559,443 @@ export namespace Prisma {
     deltaT?: SortOrder
   }
 
+  export type OrcamentoEtapaListRelationFilter = {
+    every?: OrcamentoEtapaWhereInput
+    some?: OrcamentoEtapaWhereInput
+    none?: OrcamentoEtapaWhereInput
+  }
+
+  export type FornecedorOrcamentoListRelationFilter = {
+    every?: FornecedorOrcamentoWhereInput
+    some?: FornecedorOrcamentoWhereInput
+    none?: FornecedorOrcamentoWhereInput
+  }
+
+  export type OrcamentoEtapaOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type FornecedorOrcamentoOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type OrcamentoProjetoCountOrderByAggregateInput = {
+    id?: SortOrder
+    nome?: SortOrder
+    cliente?: SortOrder
+    status?: SortOrder
+    idContaAzul?: SortOrder
+    dataCriacao?: SortOrder
+    dataAtualizacao?: SortOrder
+  }
+
+  export type OrcamentoProjetoMaxOrderByAggregateInput = {
+    id?: SortOrder
+    nome?: SortOrder
+    cliente?: SortOrder
+    status?: SortOrder
+    idContaAzul?: SortOrder
+    dataCriacao?: SortOrder
+    dataAtualizacao?: SortOrder
+  }
+
+  export type OrcamentoProjetoMinOrderByAggregateInput = {
+    id?: SortOrder
+    nome?: SortOrder
+    cliente?: SortOrder
+    status?: SortOrder
+    idContaAzul?: SortOrder
+    dataCriacao?: SortOrder
+    dataAtualizacao?: SortOrder
+  }
+
+  export type OrcamentoProjetoScalarRelationFilter = {
+    is?: OrcamentoProjetoWhereInput
+    isNot?: OrcamentoProjetoWhereInput
+  }
+
+  export type OrcamentoItemListRelationFilter = {
+    every?: OrcamentoItemWhereInput
+    some?: OrcamentoItemWhereInput
+    none?: OrcamentoItemWhereInput
+  }
+
+  export type OrcamentoItemOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type OrcamentoEtapaCountOrderByAggregateInput = {
+    id?: SortOrder
+    projetoId?: SortOrder
+    nome?: SortOrder
+    ordem?: SortOrder
+  }
+
+  export type OrcamentoEtapaAvgOrderByAggregateInput = {
+    ordem?: SortOrder
+  }
+
+  export type OrcamentoEtapaMaxOrderByAggregateInput = {
+    id?: SortOrder
+    projetoId?: SortOrder
+    nome?: SortOrder
+    ordem?: SortOrder
+  }
+
+  export type OrcamentoEtapaMinOrderByAggregateInput = {
+    id?: SortOrder
+    projetoId?: SortOrder
+    nome?: SortOrder
+    ordem?: SortOrder
+  }
+
+  export type OrcamentoEtapaSumOrderByAggregateInput = {
+    ordem?: SortOrder
+  }
+
+  export type OrcamentoEtapaScalarRelationFilter = {
+    is?: OrcamentoEtapaWhereInput
+    isNot?: OrcamentoEtapaWhereInput
+  }
+
+  export type PropostaItemListRelationFilter = {
+    every?: PropostaItemWhereInput
+    some?: PropostaItemWhereInput
+    none?: PropostaItemWhereInput
+  }
+
+  export type PropostaItemOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type OrcamentoItemCountOrderByAggregateInput = {
+    id?: SortOrder
+    etapaId?: SortOrder
+    codigo?: SortOrder
+    descricao?: SortOrder
+    tipo?: SortOrder
+    unidade?: SortOrder
+    quantidade?: SortOrder
+    precoBaseUnitario?: SortOrder
+    bdiPercent?: SortOrder
+  }
+
+  export type OrcamentoItemAvgOrderByAggregateInput = {
+    quantidade?: SortOrder
+    precoBaseUnitario?: SortOrder
+    bdiPercent?: SortOrder
+  }
+
+  export type OrcamentoItemMaxOrderByAggregateInput = {
+    id?: SortOrder
+    etapaId?: SortOrder
+    codigo?: SortOrder
+    descricao?: SortOrder
+    tipo?: SortOrder
+    unidade?: SortOrder
+    quantidade?: SortOrder
+    precoBaseUnitario?: SortOrder
+    bdiPercent?: SortOrder
+  }
+
+  export type OrcamentoItemMinOrderByAggregateInput = {
+    id?: SortOrder
+    etapaId?: SortOrder
+    codigo?: SortOrder
+    descricao?: SortOrder
+    tipo?: SortOrder
+    unidade?: SortOrder
+    quantidade?: SortOrder
+    precoBaseUnitario?: SortOrder
+    bdiPercent?: SortOrder
+  }
+
+  export type OrcamentoItemSumOrderByAggregateInput = {
+    quantidade?: SortOrder
+    precoBaseUnitario?: SortOrder
+    bdiPercent?: SortOrder
+  }
+
+  export type FornecedorCountOrderByAggregateInput = {
+    id?: SortOrder
+    razaoSocial?: SortOrder
+    cnpj?: SortOrder
+    contatoNome?: SortOrder
+    contatoEmail?: SortOrder
+    contatoTelefone?: SortOrder
+    idContaAzul?: SortOrder
+  }
+
+  export type FornecedorMaxOrderByAggregateInput = {
+    id?: SortOrder
+    razaoSocial?: SortOrder
+    cnpj?: SortOrder
+    contatoNome?: SortOrder
+    contatoEmail?: SortOrder
+    contatoTelefone?: SortOrder
+    idContaAzul?: SortOrder
+  }
+
+  export type FornecedorMinOrderByAggregateInput = {
+    id?: SortOrder
+    razaoSocial?: SortOrder
+    cnpj?: SortOrder
+    contatoNome?: SortOrder
+    contatoEmail?: SortOrder
+    contatoTelefone?: SortOrder
+    idContaAzul?: SortOrder
+  }
+
+  export type FornecedorScalarRelationFilter = {
+    is?: FornecedorWhereInput
+    isNot?: FornecedorWhereInput
+  }
+
+  export type FornecedorOrcamentoProjetoIdFornecedorIdCompoundUniqueInput = {
+    projetoId: string
+    fornecedorId: string
+  }
+
+  export type FornecedorOrcamentoCountOrderByAggregateInput = {
+    id?: SortOrder
+    projetoId?: SortOrder
+    fornecedorId?: SortOrder
+    statusConvite?: SortOrder
+    tokenAcesso?: SortOrder
+    dataEnvio?: SortOrder
+  }
+
+  export type FornecedorOrcamentoMaxOrderByAggregateInput = {
+    id?: SortOrder
+    projetoId?: SortOrder
+    fornecedorId?: SortOrder
+    statusConvite?: SortOrder
+    tokenAcesso?: SortOrder
+    dataEnvio?: SortOrder
+  }
+
+  export type FornecedorOrcamentoMinOrderByAggregateInput = {
+    id?: SortOrder
+    projetoId?: SortOrder
+    fornecedorId?: SortOrder
+    statusConvite?: SortOrder
+    tokenAcesso?: SortOrder
+    dataEnvio?: SortOrder
+  }
+
+  export type OrcamentoItemScalarRelationFilter = {
+    is?: OrcamentoItemWhereInput
+    isNot?: OrcamentoItemWhereInput
+  }
+
+  export type PropostaItemItemIdFornecedorIdVersaoCompoundUniqueInput = {
+    itemId: string
+    fornecedorId: string
+    versao: number
+  }
+
+  export type PropostaItemCountOrderByAggregateInput = {
+    id?: SortOrder
+    itemId?: SortOrder
+    fornecedorId?: SortOrder
+    precoUnitario?: SortOrder
+    freteIncluso?: SortOrder
+    prazoEntregaDias?: SortOrder
+    observacao?: SortOrder
+    dataProposta?: SortOrder
+    versao?: SortOrder
+  }
+
+  export type PropostaItemAvgOrderByAggregateInput = {
+    precoUnitario?: SortOrder
+    prazoEntregaDias?: SortOrder
+    versao?: SortOrder
+  }
+
+  export type PropostaItemMaxOrderByAggregateInput = {
+    id?: SortOrder
+    itemId?: SortOrder
+    fornecedorId?: SortOrder
+    precoUnitario?: SortOrder
+    freteIncluso?: SortOrder
+    prazoEntregaDias?: SortOrder
+    observacao?: SortOrder
+    dataProposta?: SortOrder
+    versao?: SortOrder
+  }
+
+  export type PropostaItemMinOrderByAggregateInput = {
+    id?: SortOrder
+    itemId?: SortOrder
+    fornecedorId?: SortOrder
+    precoUnitario?: SortOrder
+    freteIncluso?: SortOrder
+    prazoEntregaDias?: SortOrder
+    observacao?: SortOrder
+    dataProposta?: SortOrder
+    versao?: SortOrder
+  }
+
+  export type PropostaItemSumOrderByAggregateInput = {
+    precoUnitario?: SortOrder
+    prazoEntregaDias?: SortOrder
+    versao?: SortOrder
+  }
+
+  export type OrcamentoTipoMaterialCountOrderByAggregateInput = {
+    id?: SortOrder
+    nome?: SortOrder
+  }
+
+  export type OrcamentoTipoMaterialMaxOrderByAggregateInput = {
+    id?: SortOrder
+    nome?: SortOrder
+  }
+
+  export type OrcamentoTipoMaterialMinOrderByAggregateInput = {
+    id?: SortOrder
+    nome?: SortOrder
+  }
+
+  export type OrcamentoItemPadraoCountOrderByAggregateInput = {
+    id?: SortOrder
+    codigo?: SortOrder
+    descricao?: SortOrder
+    tipo?: SortOrder
+    unidade?: SortOrder
+    precoBaseUnitario?: SortOrder
+  }
+
+  export type OrcamentoItemPadraoAvgOrderByAggregateInput = {
+    precoBaseUnitario?: SortOrder
+  }
+
+  export type OrcamentoItemPadraoMaxOrderByAggregateInput = {
+    id?: SortOrder
+    codigo?: SortOrder
+    descricao?: SortOrder
+    tipo?: SortOrder
+    unidade?: SortOrder
+    precoBaseUnitario?: SortOrder
+  }
+
+  export type OrcamentoItemPadraoMinOrderByAggregateInput = {
+    id?: SortOrder
+    codigo?: SortOrder
+    descricao?: SortOrder
+    tipo?: SortOrder
+    unidade?: SortOrder
+    precoBaseUnitario?: SortOrder
+  }
+
+  export type OrcamentoItemPadraoSumOrderByAggregateInput = {
+    precoBaseUnitario?: SortOrder
+  }
+
+  export type LeadMidiaListRelationFilter = {
+    every?: LeadMidiaWhereInput
+    some?: LeadMidiaWhereInput
+    none?: LeadMidiaWhereInput
+  }
+
+  export type LeadMidiaOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type LeadCountOrderByAggregateInput = {
+    id?: SortOrder
+    nome?: SortOrder
+    telefone?: SortOrder
+    email?: SortOrder
+    tipo?: SortOrder
+    status?: SortOrder
+    latitude?: SortOrder
+    longitude?: SortOrder
+    observacoes?: SortOrder
+    vendedorId?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type LeadAvgOrderByAggregateInput = {
+    latitude?: SortOrder
+    longitude?: SortOrder
+  }
+
+  export type LeadMaxOrderByAggregateInput = {
+    id?: SortOrder
+    nome?: SortOrder
+    telefone?: SortOrder
+    email?: SortOrder
+    tipo?: SortOrder
+    status?: SortOrder
+    latitude?: SortOrder
+    longitude?: SortOrder
+    observacoes?: SortOrder
+    vendedorId?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type LeadMinOrderByAggregateInput = {
+    id?: SortOrder
+    nome?: SortOrder
+    telefone?: SortOrder
+    email?: SortOrder
+    tipo?: SortOrder
+    status?: SortOrder
+    latitude?: SortOrder
+    longitude?: SortOrder
+    observacoes?: SortOrder
+    vendedorId?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type LeadSumOrderByAggregateInput = {
+    latitude?: SortOrder
+    longitude?: SortOrder
+  }
+
+  export type LeadScalarRelationFilter = {
+    is?: LeadWhereInput
+    isNot?: LeadWhereInput
+  }
+
+  export type LeadMidiaCountOrderByAggregateInput = {
+    id?: SortOrder
+    leadId?: SortOrder
+    tipo?: SortOrder
+    arquivoUrl?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type LeadMidiaMaxOrderByAggregateInput = {
+    id?: SortOrder
+    leadId?: SortOrder
+    tipo?: SortOrder
+    arquivoUrl?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type LeadMidiaMinOrderByAggregateInput = {
+    id?: SortOrder
+    leadId?: SortOrder
+    tipo?: SortOrder
+    arquivoUrl?: SortOrder
+    createdAt?: SortOrder
+  }
+
   export type StringFieldUpdateOperationsInput = {
     set?: string
   }
 
   export type NullableStringFieldUpdateOperationsInput = {
     set?: string | null
+  }
+
+  export type BoolFieldUpdateOperationsInput = {
+    set?: boolean
   }
 
   export type DateTimeFieldUpdateOperationsInput = {
@@ -40809,10 +55008,6 @@ export namespace Prisma {
 
   export type PlanilhaInstalacaoCreateanexoArquivosInput = {
     set: string[]
-  }
-
-  export type BoolFieldUpdateOperationsInput = {
-    set?: boolean
   }
 
   export type PlanilhaInstalacaoUpdateanexoFotosInput = {
@@ -41662,6 +55857,398 @@ export namespace Prisma {
     update?: XOR<XOR<RelatorioTermografiaUpdateToOneWithWhereWithoutItensInput, RelatorioTermografiaUpdateWithoutItensInput>, RelatorioTermografiaUncheckedUpdateWithoutItensInput>
   }
 
+  export type OrcamentoEtapaCreateNestedManyWithoutProjetoInput = {
+    create?: XOR<OrcamentoEtapaCreateWithoutProjetoInput, OrcamentoEtapaUncheckedCreateWithoutProjetoInput> | OrcamentoEtapaCreateWithoutProjetoInput[] | OrcamentoEtapaUncheckedCreateWithoutProjetoInput[]
+    connectOrCreate?: OrcamentoEtapaCreateOrConnectWithoutProjetoInput | OrcamentoEtapaCreateOrConnectWithoutProjetoInput[]
+    createMany?: OrcamentoEtapaCreateManyProjetoInputEnvelope
+    connect?: OrcamentoEtapaWhereUniqueInput | OrcamentoEtapaWhereUniqueInput[]
+  }
+
+  export type FornecedorOrcamentoCreateNestedManyWithoutProjetoInput = {
+    create?: XOR<FornecedorOrcamentoCreateWithoutProjetoInput, FornecedorOrcamentoUncheckedCreateWithoutProjetoInput> | FornecedorOrcamentoCreateWithoutProjetoInput[] | FornecedorOrcamentoUncheckedCreateWithoutProjetoInput[]
+    connectOrCreate?: FornecedorOrcamentoCreateOrConnectWithoutProjetoInput | FornecedorOrcamentoCreateOrConnectWithoutProjetoInput[]
+    createMany?: FornecedorOrcamentoCreateManyProjetoInputEnvelope
+    connect?: FornecedorOrcamentoWhereUniqueInput | FornecedorOrcamentoWhereUniqueInput[]
+  }
+
+  export type OrcamentoEtapaUncheckedCreateNestedManyWithoutProjetoInput = {
+    create?: XOR<OrcamentoEtapaCreateWithoutProjetoInput, OrcamentoEtapaUncheckedCreateWithoutProjetoInput> | OrcamentoEtapaCreateWithoutProjetoInput[] | OrcamentoEtapaUncheckedCreateWithoutProjetoInput[]
+    connectOrCreate?: OrcamentoEtapaCreateOrConnectWithoutProjetoInput | OrcamentoEtapaCreateOrConnectWithoutProjetoInput[]
+    createMany?: OrcamentoEtapaCreateManyProjetoInputEnvelope
+    connect?: OrcamentoEtapaWhereUniqueInput | OrcamentoEtapaWhereUniqueInput[]
+  }
+
+  export type FornecedorOrcamentoUncheckedCreateNestedManyWithoutProjetoInput = {
+    create?: XOR<FornecedorOrcamentoCreateWithoutProjetoInput, FornecedorOrcamentoUncheckedCreateWithoutProjetoInput> | FornecedorOrcamentoCreateWithoutProjetoInput[] | FornecedorOrcamentoUncheckedCreateWithoutProjetoInput[]
+    connectOrCreate?: FornecedorOrcamentoCreateOrConnectWithoutProjetoInput | FornecedorOrcamentoCreateOrConnectWithoutProjetoInput[]
+    createMany?: FornecedorOrcamentoCreateManyProjetoInputEnvelope
+    connect?: FornecedorOrcamentoWhereUniqueInput | FornecedorOrcamentoWhereUniqueInput[]
+  }
+
+  export type OrcamentoEtapaUpdateManyWithoutProjetoNestedInput = {
+    create?: XOR<OrcamentoEtapaCreateWithoutProjetoInput, OrcamentoEtapaUncheckedCreateWithoutProjetoInput> | OrcamentoEtapaCreateWithoutProjetoInput[] | OrcamentoEtapaUncheckedCreateWithoutProjetoInput[]
+    connectOrCreate?: OrcamentoEtapaCreateOrConnectWithoutProjetoInput | OrcamentoEtapaCreateOrConnectWithoutProjetoInput[]
+    upsert?: OrcamentoEtapaUpsertWithWhereUniqueWithoutProjetoInput | OrcamentoEtapaUpsertWithWhereUniqueWithoutProjetoInput[]
+    createMany?: OrcamentoEtapaCreateManyProjetoInputEnvelope
+    set?: OrcamentoEtapaWhereUniqueInput | OrcamentoEtapaWhereUniqueInput[]
+    disconnect?: OrcamentoEtapaWhereUniqueInput | OrcamentoEtapaWhereUniqueInput[]
+    delete?: OrcamentoEtapaWhereUniqueInput | OrcamentoEtapaWhereUniqueInput[]
+    connect?: OrcamentoEtapaWhereUniqueInput | OrcamentoEtapaWhereUniqueInput[]
+    update?: OrcamentoEtapaUpdateWithWhereUniqueWithoutProjetoInput | OrcamentoEtapaUpdateWithWhereUniqueWithoutProjetoInput[]
+    updateMany?: OrcamentoEtapaUpdateManyWithWhereWithoutProjetoInput | OrcamentoEtapaUpdateManyWithWhereWithoutProjetoInput[]
+    deleteMany?: OrcamentoEtapaScalarWhereInput | OrcamentoEtapaScalarWhereInput[]
+  }
+
+  export type FornecedorOrcamentoUpdateManyWithoutProjetoNestedInput = {
+    create?: XOR<FornecedorOrcamentoCreateWithoutProjetoInput, FornecedorOrcamentoUncheckedCreateWithoutProjetoInput> | FornecedorOrcamentoCreateWithoutProjetoInput[] | FornecedorOrcamentoUncheckedCreateWithoutProjetoInput[]
+    connectOrCreate?: FornecedorOrcamentoCreateOrConnectWithoutProjetoInput | FornecedorOrcamentoCreateOrConnectWithoutProjetoInput[]
+    upsert?: FornecedorOrcamentoUpsertWithWhereUniqueWithoutProjetoInput | FornecedorOrcamentoUpsertWithWhereUniqueWithoutProjetoInput[]
+    createMany?: FornecedorOrcamentoCreateManyProjetoInputEnvelope
+    set?: FornecedorOrcamentoWhereUniqueInput | FornecedorOrcamentoWhereUniqueInput[]
+    disconnect?: FornecedorOrcamentoWhereUniqueInput | FornecedorOrcamentoWhereUniqueInput[]
+    delete?: FornecedorOrcamentoWhereUniqueInput | FornecedorOrcamentoWhereUniqueInput[]
+    connect?: FornecedorOrcamentoWhereUniqueInput | FornecedorOrcamentoWhereUniqueInput[]
+    update?: FornecedorOrcamentoUpdateWithWhereUniqueWithoutProjetoInput | FornecedorOrcamentoUpdateWithWhereUniqueWithoutProjetoInput[]
+    updateMany?: FornecedorOrcamentoUpdateManyWithWhereWithoutProjetoInput | FornecedorOrcamentoUpdateManyWithWhereWithoutProjetoInput[]
+    deleteMany?: FornecedorOrcamentoScalarWhereInput | FornecedorOrcamentoScalarWhereInput[]
+  }
+
+  export type OrcamentoEtapaUncheckedUpdateManyWithoutProjetoNestedInput = {
+    create?: XOR<OrcamentoEtapaCreateWithoutProjetoInput, OrcamentoEtapaUncheckedCreateWithoutProjetoInput> | OrcamentoEtapaCreateWithoutProjetoInput[] | OrcamentoEtapaUncheckedCreateWithoutProjetoInput[]
+    connectOrCreate?: OrcamentoEtapaCreateOrConnectWithoutProjetoInput | OrcamentoEtapaCreateOrConnectWithoutProjetoInput[]
+    upsert?: OrcamentoEtapaUpsertWithWhereUniqueWithoutProjetoInput | OrcamentoEtapaUpsertWithWhereUniqueWithoutProjetoInput[]
+    createMany?: OrcamentoEtapaCreateManyProjetoInputEnvelope
+    set?: OrcamentoEtapaWhereUniqueInput | OrcamentoEtapaWhereUniqueInput[]
+    disconnect?: OrcamentoEtapaWhereUniqueInput | OrcamentoEtapaWhereUniqueInput[]
+    delete?: OrcamentoEtapaWhereUniqueInput | OrcamentoEtapaWhereUniqueInput[]
+    connect?: OrcamentoEtapaWhereUniqueInput | OrcamentoEtapaWhereUniqueInput[]
+    update?: OrcamentoEtapaUpdateWithWhereUniqueWithoutProjetoInput | OrcamentoEtapaUpdateWithWhereUniqueWithoutProjetoInput[]
+    updateMany?: OrcamentoEtapaUpdateManyWithWhereWithoutProjetoInput | OrcamentoEtapaUpdateManyWithWhereWithoutProjetoInput[]
+    deleteMany?: OrcamentoEtapaScalarWhereInput | OrcamentoEtapaScalarWhereInput[]
+  }
+
+  export type FornecedorOrcamentoUncheckedUpdateManyWithoutProjetoNestedInput = {
+    create?: XOR<FornecedorOrcamentoCreateWithoutProjetoInput, FornecedorOrcamentoUncheckedCreateWithoutProjetoInput> | FornecedorOrcamentoCreateWithoutProjetoInput[] | FornecedorOrcamentoUncheckedCreateWithoutProjetoInput[]
+    connectOrCreate?: FornecedorOrcamentoCreateOrConnectWithoutProjetoInput | FornecedorOrcamentoCreateOrConnectWithoutProjetoInput[]
+    upsert?: FornecedorOrcamentoUpsertWithWhereUniqueWithoutProjetoInput | FornecedorOrcamentoUpsertWithWhereUniqueWithoutProjetoInput[]
+    createMany?: FornecedorOrcamentoCreateManyProjetoInputEnvelope
+    set?: FornecedorOrcamentoWhereUniqueInput | FornecedorOrcamentoWhereUniqueInput[]
+    disconnect?: FornecedorOrcamentoWhereUniqueInput | FornecedorOrcamentoWhereUniqueInput[]
+    delete?: FornecedorOrcamentoWhereUniqueInput | FornecedorOrcamentoWhereUniqueInput[]
+    connect?: FornecedorOrcamentoWhereUniqueInput | FornecedorOrcamentoWhereUniqueInput[]
+    update?: FornecedorOrcamentoUpdateWithWhereUniqueWithoutProjetoInput | FornecedorOrcamentoUpdateWithWhereUniqueWithoutProjetoInput[]
+    updateMany?: FornecedorOrcamentoUpdateManyWithWhereWithoutProjetoInput | FornecedorOrcamentoUpdateManyWithWhereWithoutProjetoInput[]
+    deleteMany?: FornecedorOrcamentoScalarWhereInput | FornecedorOrcamentoScalarWhereInput[]
+  }
+
+  export type OrcamentoProjetoCreateNestedOneWithoutEtapasInput = {
+    create?: XOR<OrcamentoProjetoCreateWithoutEtapasInput, OrcamentoProjetoUncheckedCreateWithoutEtapasInput>
+    connectOrCreate?: OrcamentoProjetoCreateOrConnectWithoutEtapasInput
+    connect?: OrcamentoProjetoWhereUniqueInput
+  }
+
+  export type OrcamentoItemCreateNestedManyWithoutEtapaInput = {
+    create?: XOR<OrcamentoItemCreateWithoutEtapaInput, OrcamentoItemUncheckedCreateWithoutEtapaInput> | OrcamentoItemCreateWithoutEtapaInput[] | OrcamentoItemUncheckedCreateWithoutEtapaInput[]
+    connectOrCreate?: OrcamentoItemCreateOrConnectWithoutEtapaInput | OrcamentoItemCreateOrConnectWithoutEtapaInput[]
+    createMany?: OrcamentoItemCreateManyEtapaInputEnvelope
+    connect?: OrcamentoItemWhereUniqueInput | OrcamentoItemWhereUniqueInput[]
+  }
+
+  export type OrcamentoItemUncheckedCreateNestedManyWithoutEtapaInput = {
+    create?: XOR<OrcamentoItemCreateWithoutEtapaInput, OrcamentoItemUncheckedCreateWithoutEtapaInput> | OrcamentoItemCreateWithoutEtapaInput[] | OrcamentoItemUncheckedCreateWithoutEtapaInput[]
+    connectOrCreate?: OrcamentoItemCreateOrConnectWithoutEtapaInput | OrcamentoItemCreateOrConnectWithoutEtapaInput[]
+    createMany?: OrcamentoItemCreateManyEtapaInputEnvelope
+    connect?: OrcamentoItemWhereUniqueInput | OrcamentoItemWhereUniqueInput[]
+  }
+
+  export type OrcamentoProjetoUpdateOneRequiredWithoutEtapasNestedInput = {
+    create?: XOR<OrcamentoProjetoCreateWithoutEtapasInput, OrcamentoProjetoUncheckedCreateWithoutEtapasInput>
+    connectOrCreate?: OrcamentoProjetoCreateOrConnectWithoutEtapasInput
+    upsert?: OrcamentoProjetoUpsertWithoutEtapasInput
+    connect?: OrcamentoProjetoWhereUniqueInput
+    update?: XOR<XOR<OrcamentoProjetoUpdateToOneWithWhereWithoutEtapasInput, OrcamentoProjetoUpdateWithoutEtapasInput>, OrcamentoProjetoUncheckedUpdateWithoutEtapasInput>
+  }
+
+  export type OrcamentoItemUpdateManyWithoutEtapaNestedInput = {
+    create?: XOR<OrcamentoItemCreateWithoutEtapaInput, OrcamentoItemUncheckedCreateWithoutEtapaInput> | OrcamentoItemCreateWithoutEtapaInput[] | OrcamentoItemUncheckedCreateWithoutEtapaInput[]
+    connectOrCreate?: OrcamentoItemCreateOrConnectWithoutEtapaInput | OrcamentoItemCreateOrConnectWithoutEtapaInput[]
+    upsert?: OrcamentoItemUpsertWithWhereUniqueWithoutEtapaInput | OrcamentoItemUpsertWithWhereUniqueWithoutEtapaInput[]
+    createMany?: OrcamentoItemCreateManyEtapaInputEnvelope
+    set?: OrcamentoItemWhereUniqueInput | OrcamentoItemWhereUniqueInput[]
+    disconnect?: OrcamentoItemWhereUniqueInput | OrcamentoItemWhereUniqueInput[]
+    delete?: OrcamentoItemWhereUniqueInput | OrcamentoItemWhereUniqueInput[]
+    connect?: OrcamentoItemWhereUniqueInput | OrcamentoItemWhereUniqueInput[]
+    update?: OrcamentoItemUpdateWithWhereUniqueWithoutEtapaInput | OrcamentoItemUpdateWithWhereUniqueWithoutEtapaInput[]
+    updateMany?: OrcamentoItemUpdateManyWithWhereWithoutEtapaInput | OrcamentoItemUpdateManyWithWhereWithoutEtapaInput[]
+    deleteMany?: OrcamentoItemScalarWhereInput | OrcamentoItemScalarWhereInput[]
+  }
+
+  export type OrcamentoItemUncheckedUpdateManyWithoutEtapaNestedInput = {
+    create?: XOR<OrcamentoItemCreateWithoutEtapaInput, OrcamentoItemUncheckedCreateWithoutEtapaInput> | OrcamentoItemCreateWithoutEtapaInput[] | OrcamentoItemUncheckedCreateWithoutEtapaInput[]
+    connectOrCreate?: OrcamentoItemCreateOrConnectWithoutEtapaInput | OrcamentoItemCreateOrConnectWithoutEtapaInput[]
+    upsert?: OrcamentoItemUpsertWithWhereUniqueWithoutEtapaInput | OrcamentoItemUpsertWithWhereUniqueWithoutEtapaInput[]
+    createMany?: OrcamentoItemCreateManyEtapaInputEnvelope
+    set?: OrcamentoItemWhereUniqueInput | OrcamentoItemWhereUniqueInput[]
+    disconnect?: OrcamentoItemWhereUniqueInput | OrcamentoItemWhereUniqueInput[]
+    delete?: OrcamentoItemWhereUniqueInput | OrcamentoItemWhereUniqueInput[]
+    connect?: OrcamentoItemWhereUniqueInput | OrcamentoItemWhereUniqueInput[]
+    update?: OrcamentoItemUpdateWithWhereUniqueWithoutEtapaInput | OrcamentoItemUpdateWithWhereUniqueWithoutEtapaInput[]
+    updateMany?: OrcamentoItemUpdateManyWithWhereWithoutEtapaInput | OrcamentoItemUpdateManyWithWhereWithoutEtapaInput[]
+    deleteMany?: OrcamentoItemScalarWhereInput | OrcamentoItemScalarWhereInput[]
+  }
+
+  export type OrcamentoEtapaCreateNestedOneWithoutItensInput = {
+    create?: XOR<OrcamentoEtapaCreateWithoutItensInput, OrcamentoEtapaUncheckedCreateWithoutItensInput>
+    connectOrCreate?: OrcamentoEtapaCreateOrConnectWithoutItensInput
+    connect?: OrcamentoEtapaWhereUniqueInput
+  }
+
+  export type PropostaItemCreateNestedManyWithoutItemInput = {
+    create?: XOR<PropostaItemCreateWithoutItemInput, PropostaItemUncheckedCreateWithoutItemInput> | PropostaItemCreateWithoutItemInput[] | PropostaItemUncheckedCreateWithoutItemInput[]
+    connectOrCreate?: PropostaItemCreateOrConnectWithoutItemInput | PropostaItemCreateOrConnectWithoutItemInput[]
+    createMany?: PropostaItemCreateManyItemInputEnvelope
+    connect?: PropostaItemWhereUniqueInput | PropostaItemWhereUniqueInput[]
+  }
+
+  export type PropostaItemUncheckedCreateNestedManyWithoutItemInput = {
+    create?: XOR<PropostaItemCreateWithoutItemInput, PropostaItemUncheckedCreateWithoutItemInput> | PropostaItemCreateWithoutItemInput[] | PropostaItemUncheckedCreateWithoutItemInput[]
+    connectOrCreate?: PropostaItemCreateOrConnectWithoutItemInput | PropostaItemCreateOrConnectWithoutItemInput[]
+    createMany?: PropostaItemCreateManyItemInputEnvelope
+    connect?: PropostaItemWhereUniqueInput | PropostaItemWhereUniqueInput[]
+  }
+
+  export type OrcamentoEtapaUpdateOneRequiredWithoutItensNestedInput = {
+    create?: XOR<OrcamentoEtapaCreateWithoutItensInput, OrcamentoEtapaUncheckedCreateWithoutItensInput>
+    connectOrCreate?: OrcamentoEtapaCreateOrConnectWithoutItensInput
+    upsert?: OrcamentoEtapaUpsertWithoutItensInput
+    connect?: OrcamentoEtapaWhereUniqueInput
+    update?: XOR<XOR<OrcamentoEtapaUpdateToOneWithWhereWithoutItensInput, OrcamentoEtapaUpdateWithoutItensInput>, OrcamentoEtapaUncheckedUpdateWithoutItensInput>
+  }
+
+  export type PropostaItemUpdateManyWithoutItemNestedInput = {
+    create?: XOR<PropostaItemCreateWithoutItemInput, PropostaItemUncheckedCreateWithoutItemInput> | PropostaItemCreateWithoutItemInput[] | PropostaItemUncheckedCreateWithoutItemInput[]
+    connectOrCreate?: PropostaItemCreateOrConnectWithoutItemInput | PropostaItemCreateOrConnectWithoutItemInput[]
+    upsert?: PropostaItemUpsertWithWhereUniqueWithoutItemInput | PropostaItemUpsertWithWhereUniqueWithoutItemInput[]
+    createMany?: PropostaItemCreateManyItemInputEnvelope
+    set?: PropostaItemWhereUniqueInput | PropostaItemWhereUniqueInput[]
+    disconnect?: PropostaItemWhereUniqueInput | PropostaItemWhereUniqueInput[]
+    delete?: PropostaItemWhereUniqueInput | PropostaItemWhereUniqueInput[]
+    connect?: PropostaItemWhereUniqueInput | PropostaItemWhereUniqueInput[]
+    update?: PropostaItemUpdateWithWhereUniqueWithoutItemInput | PropostaItemUpdateWithWhereUniqueWithoutItemInput[]
+    updateMany?: PropostaItemUpdateManyWithWhereWithoutItemInput | PropostaItemUpdateManyWithWhereWithoutItemInput[]
+    deleteMany?: PropostaItemScalarWhereInput | PropostaItemScalarWhereInput[]
+  }
+
+  export type PropostaItemUncheckedUpdateManyWithoutItemNestedInput = {
+    create?: XOR<PropostaItemCreateWithoutItemInput, PropostaItemUncheckedCreateWithoutItemInput> | PropostaItemCreateWithoutItemInput[] | PropostaItemUncheckedCreateWithoutItemInput[]
+    connectOrCreate?: PropostaItemCreateOrConnectWithoutItemInput | PropostaItemCreateOrConnectWithoutItemInput[]
+    upsert?: PropostaItemUpsertWithWhereUniqueWithoutItemInput | PropostaItemUpsertWithWhereUniqueWithoutItemInput[]
+    createMany?: PropostaItemCreateManyItemInputEnvelope
+    set?: PropostaItemWhereUniqueInput | PropostaItemWhereUniqueInput[]
+    disconnect?: PropostaItemWhereUniqueInput | PropostaItemWhereUniqueInput[]
+    delete?: PropostaItemWhereUniqueInput | PropostaItemWhereUniqueInput[]
+    connect?: PropostaItemWhereUniqueInput | PropostaItemWhereUniqueInput[]
+    update?: PropostaItemUpdateWithWhereUniqueWithoutItemInput | PropostaItemUpdateWithWhereUniqueWithoutItemInput[]
+    updateMany?: PropostaItemUpdateManyWithWhereWithoutItemInput | PropostaItemUpdateManyWithWhereWithoutItemInput[]
+    deleteMany?: PropostaItemScalarWhereInput | PropostaItemScalarWhereInput[]
+  }
+
+  export type FornecedorOrcamentoCreateNestedManyWithoutFornecedorInput = {
+    create?: XOR<FornecedorOrcamentoCreateWithoutFornecedorInput, FornecedorOrcamentoUncheckedCreateWithoutFornecedorInput> | FornecedorOrcamentoCreateWithoutFornecedorInput[] | FornecedorOrcamentoUncheckedCreateWithoutFornecedorInput[]
+    connectOrCreate?: FornecedorOrcamentoCreateOrConnectWithoutFornecedorInput | FornecedorOrcamentoCreateOrConnectWithoutFornecedorInput[]
+    createMany?: FornecedorOrcamentoCreateManyFornecedorInputEnvelope
+    connect?: FornecedorOrcamentoWhereUniqueInput | FornecedorOrcamentoWhereUniqueInput[]
+  }
+
+  export type PropostaItemCreateNestedManyWithoutFornecedorInput = {
+    create?: XOR<PropostaItemCreateWithoutFornecedorInput, PropostaItemUncheckedCreateWithoutFornecedorInput> | PropostaItemCreateWithoutFornecedorInput[] | PropostaItemUncheckedCreateWithoutFornecedorInput[]
+    connectOrCreate?: PropostaItemCreateOrConnectWithoutFornecedorInput | PropostaItemCreateOrConnectWithoutFornecedorInput[]
+    createMany?: PropostaItemCreateManyFornecedorInputEnvelope
+    connect?: PropostaItemWhereUniqueInput | PropostaItemWhereUniqueInput[]
+  }
+
+  export type FornecedorOrcamentoUncheckedCreateNestedManyWithoutFornecedorInput = {
+    create?: XOR<FornecedorOrcamentoCreateWithoutFornecedorInput, FornecedorOrcamentoUncheckedCreateWithoutFornecedorInput> | FornecedorOrcamentoCreateWithoutFornecedorInput[] | FornecedorOrcamentoUncheckedCreateWithoutFornecedorInput[]
+    connectOrCreate?: FornecedorOrcamentoCreateOrConnectWithoutFornecedorInput | FornecedorOrcamentoCreateOrConnectWithoutFornecedorInput[]
+    createMany?: FornecedorOrcamentoCreateManyFornecedorInputEnvelope
+    connect?: FornecedorOrcamentoWhereUniqueInput | FornecedorOrcamentoWhereUniqueInput[]
+  }
+
+  export type PropostaItemUncheckedCreateNestedManyWithoutFornecedorInput = {
+    create?: XOR<PropostaItemCreateWithoutFornecedorInput, PropostaItemUncheckedCreateWithoutFornecedorInput> | PropostaItemCreateWithoutFornecedorInput[] | PropostaItemUncheckedCreateWithoutFornecedorInput[]
+    connectOrCreate?: PropostaItemCreateOrConnectWithoutFornecedorInput | PropostaItemCreateOrConnectWithoutFornecedorInput[]
+    createMany?: PropostaItemCreateManyFornecedorInputEnvelope
+    connect?: PropostaItemWhereUniqueInput | PropostaItemWhereUniqueInput[]
+  }
+
+  export type FornecedorOrcamentoUpdateManyWithoutFornecedorNestedInput = {
+    create?: XOR<FornecedorOrcamentoCreateWithoutFornecedorInput, FornecedorOrcamentoUncheckedCreateWithoutFornecedorInput> | FornecedorOrcamentoCreateWithoutFornecedorInput[] | FornecedorOrcamentoUncheckedCreateWithoutFornecedorInput[]
+    connectOrCreate?: FornecedorOrcamentoCreateOrConnectWithoutFornecedorInput | FornecedorOrcamentoCreateOrConnectWithoutFornecedorInput[]
+    upsert?: FornecedorOrcamentoUpsertWithWhereUniqueWithoutFornecedorInput | FornecedorOrcamentoUpsertWithWhereUniqueWithoutFornecedorInput[]
+    createMany?: FornecedorOrcamentoCreateManyFornecedorInputEnvelope
+    set?: FornecedorOrcamentoWhereUniqueInput | FornecedorOrcamentoWhereUniqueInput[]
+    disconnect?: FornecedorOrcamentoWhereUniqueInput | FornecedorOrcamentoWhereUniqueInput[]
+    delete?: FornecedorOrcamentoWhereUniqueInput | FornecedorOrcamentoWhereUniqueInput[]
+    connect?: FornecedorOrcamentoWhereUniqueInput | FornecedorOrcamentoWhereUniqueInput[]
+    update?: FornecedorOrcamentoUpdateWithWhereUniqueWithoutFornecedorInput | FornecedorOrcamentoUpdateWithWhereUniqueWithoutFornecedorInput[]
+    updateMany?: FornecedorOrcamentoUpdateManyWithWhereWithoutFornecedorInput | FornecedorOrcamentoUpdateManyWithWhereWithoutFornecedorInput[]
+    deleteMany?: FornecedorOrcamentoScalarWhereInput | FornecedorOrcamentoScalarWhereInput[]
+  }
+
+  export type PropostaItemUpdateManyWithoutFornecedorNestedInput = {
+    create?: XOR<PropostaItemCreateWithoutFornecedorInput, PropostaItemUncheckedCreateWithoutFornecedorInput> | PropostaItemCreateWithoutFornecedorInput[] | PropostaItemUncheckedCreateWithoutFornecedorInput[]
+    connectOrCreate?: PropostaItemCreateOrConnectWithoutFornecedorInput | PropostaItemCreateOrConnectWithoutFornecedorInput[]
+    upsert?: PropostaItemUpsertWithWhereUniqueWithoutFornecedorInput | PropostaItemUpsertWithWhereUniqueWithoutFornecedorInput[]
+    createMany?: PropostaItemCreateManyFornecedorInputEnvelope
+    set?: PropostaItemWhereUniqueInput | PropostaItemWhereUniqueInput[]
+    disconnect?: PropostaItemWhereUniqueInput | PropostaItemWhereUniqueInput[]
+    delete?: PropostaItemWhereUniqueInput | PropostaItemWhereUniqueInput[]
+    connect?: PropostaItemWhereUniqueInput | PropostaItemWhereUniqueInput[]
+    update?: PropostaItemUpdateWithWhereUniqueWithoutFornecedorInput | PropostaItemUpdateWithWhereUniqueWithoutFornecedorInput[]
+    updateMany?: PropostaItemUpdateManyWithWhereWithoutFornecedorInput | PropostaItemUpdateManyWithWhereWithoutFornecedorInput[]
+    deleteMany?: PropostaItemScalarWhereInput | PropostaItemScalarWhereInput[]
+  }
+
+  export type FornecedorOrcamentoUncheckedUpdateManyWithoutFornecedorNestedInput = {
+    create?: XOR<FornecedorOrcamentoCreateWithoutFornecedorInput, FornecedorOrcamentoUncheckedCreateWithoutFornecedorInput> | FornecedorOrcamentoCreateWithoutFornecedorInput[] | FornecedorOrcamentoUncheckedCreateWithoutFornecedorInput[]
+    connectOrCreate?: FornecedorOrcamentoCreateOrConnectWithoutFornecedorInput | FornecedorOrcamentoCreateOrConnectWithoutFornecedorInput[]
+    upsert?: FornecedorOrcamentoUpsertWithWhereUniqueWithoutFornecedorInput | FornecedorOrcamentoUpsertWithWhereUniqueWithoutFornecedorInput[]
+    createMany?: FornecedorOrcamentoCreateManyFornecedorInputEnvelope
+    set?: FornecedorOrcamentoWhereUniqueInput | FornecedorOrcamentoWhereUniqueInput[]
+    disconnect?: FornecedorOrcamentoWhereUniqueInput | FornecedorOrcamentoWhereUniqueInput[]
+    delete?: FornecedorOrcamentoWhereUniqueInput | FornecedorOrcamentoWhereUniqueInput[]
+    connect?: FornecedorOrcamentoWhereUniqueInput | FornecedorOrcamentoWhereUniqueInput[]
+    update?: FornecedorOrcamentoUpdateWithWhereUniqueWithoutFornecedorInput | FornecedorOrcamentoUpdateWithWhereUniqueWithoutFornecedorInput[]
+    updateMany?: FornecedorOrcamentoUpdateManyWithWhereWithoutFornecedorInput | FornecedorOrcamentoUpdateManyWithWhereWithoutFornecedorInput[]
+    deleteMany?: FornecedorOrcamentoScalarWhereInput | FornecedorOrcamentoScalarWhereInput[]
+  }
+
+  export type PropostaItemUncheckedUpdateManyWithoutFornecedorNestedInput = {
+    create?: XOR<PropostaItemCreateWithoutFornecedorInput, PropostaItemUncheckedCreateWithoutFornecedorInput> | PropostaItemCreateWithoutFornecedorInput[] | PropostaItemUncheckedCreateWithoutFornecedorInput[]
+    connectOrCreate?: PropostaItemCreateOrConnectWithoutFornecedorInput | PropostaItemCreateOrConnectWithoutFornecedorInput[]
+    upsert?: PropostaItemUpsertWithWhereUniqueWithoutFornecedorInput | PropostaItemUpsertWithWhereUniqueWithoutFornecedorInput[]
+    createMany?: PropostaItemCreateManyFornecedorInputEnvelope
+    set?: PropostaItemWhereUniqueInput | PropostaItemWhereUniqueInput[]
+    disconnect?: PropostaItemWhereUniqueInput | PropostaItemWhereUniqueInput[]
+    delete?: PropostaItemWhereUniqueInput | PropostaItemWhereUniqueInput[]
+    connect?: PropostaItemWhereUniqueInput | PropostaItemWhereUniqueInput[]
+    update?: PropostaItemUpdateWithWhereUniqueWithoutFornecedorInput | PropostaItemUpdateWithWhereUniqueWithoutFornecedorInput[]
+    updateMany?: PropostaItemUpdateManyWithWhereWithoutFornecedorInput | PropostaItemUpdateManyWithWhereWithoutFornecedorInput[]
+    deleteMany?: PropostaItemScalarWhereInput | PropostaItemScalarWhereInput[]
+  }
+
+  export type OrcamentoProjetoCreateNestedOneWithoutFornecedoresInput = {
+    create?: XOR<OrcamentoProjetoCreateWithoutFornecedoresInput, OrcamentoProjetoUncheckedCreateWithoutFornecedoresInput>
+    connectOrCreate?: OrcamentoProjetoCreateOrConnectWithoutFornecedoresInput
+    connect?: OrcamentoProjetoWhereUniqueInput
+  }
+
+  export type FornecedorCreateNestedOneWithoutProjetosInput = {
+    create?: XOR<FornecedorCreateWithoutProjetosInput, FornecedorUncheckedCreateWithoutProjetosInput>
+    connectOrCreate?: FornecedorCreateOrConnectWithoutProjetosInput
+    connect?: FornecedorWhereUniqueInput
+  }
+
+  export type OrcamentoProjetoUpdateOneRequiredWithoutFornecedoresNestedInput = {
+    create?: XOR<OrcamentoProjetoCreateWithoutFornecedoresInput, OrcamentoProjetoUncheckedCreateWithoutFornecedoresInput>
+    connectOrCreate?: OrcamentoProjetoCreateOrConnectWithoutFornecedoresInput
+    upsert?: OrcamentoProjetoUpsertWithoutFornecedoresInput
+    connect?: OrcamentoProjetoWhereUniqueInput
+    update?: XOR<XOR<OrcamentoProjetoUpdateToOneWithWhereWithoutFornecedoresInput, OrcamentoProjetoUpdateWithoutFornecedoresInput>, OrcamentoProjetoUncheckedUpdateWithoutFornecedoresInput>
+  }
+
+  export type FornecedorUpdateOneRequiredWithoutProjetosNestedInput = {
+    create?: XOR<FornecedorCreateWithoutProjetosInput, FornecedorUncheckedCreateWithoutProjetosInput>
+    connectOrCreate?: FornecedorCreateOrConnectWithoutProjetosInput
+    upsert?: FornecedorUpsertWithoutProjetosInput
+    connect?: FornecedorWhereUniqueInput
+    update?: XOR<XOR<FornecedorUpdateToOneWithWhereWithoutProjetosInput, FornecedorUpdateWithoutProjetosInput>, FornecedorUncheckedUpdateWithoutProjetosInput>
+  }
+
+  export type OrcamentoItemCreateNestedOneWithoutPropostasInput = {
+    create?: XOR<OrcamentoItemCreateWithoutPropostasInput, OrcamentoItemUncheckedCreateWithoutPropostasInput>
+    connectOrCreate?: OrcamentoItemCreateOrConnectWithoutPropostasInput
+    connect?: OrcamentoItemWhereUniqueInput
+  }
+
+  export type FornecedorCreateNestedOneWithoutPropostasInput = {
+    create?: XOR<FornecedorCreateWithoutPropostasInput, FornecedorUncheckedCreateWithoutPropostasInput>
+    connectOrCreate?: FornecedorCreateOrConnectWithoutPropostasInput
+    connect?: FornecedorWhereUniqueInput
+  }
+
+  export type OrcamentoItemUpdateOneRequiredWithoutPropostasNestedInput = {
+    create?: XOR<OrcamentoItemCreateWithoutPropostasInput, OrcamentoItemUncheckedCreateWithoutPropostasInput>
+    connectOrCreate?: OrcamentoItemCreateOrConnectWithoutPropostasInput
+    upsert?: OrcamentoItemUpsertWithoutPropostasInput
+    connect?: OrcamentoItemWhereUniqueInput
+    update?: XOR<XOR<OrcamentoItemUpdateToOneWithWhereWithoutPropostasInput, OrcamentoItemUpdateWithoutPropostasInput>, OrcamentoItemUncheckedUpdateWithoutPropostasInput>
+  }
+
+  export type FornecedorUpdateOneRequiredWithoutPropostasNestedInput = {
+    create?: XOR<FornecedorCreateWithoutPropostasInput, FornecedorUncheckedCreateWithoutPropostasInput>
+    connectOrCreate?: FornecedorCreateOrConnectWithoutPropostasInput
+    upsert?: FornecedorUpsertWithoutPropostasInput
+    connect?: FornecedorWhereUniqueInput
+    update?: XOR<XOR<FornecedorUpdateToOneWithWhereWithoutPropostasInput, FornecedorUpdateWithoutPropostasInput>, FornecedorUncheckedUpdateWithoutPropostasInput>
+  }
+
+  export type LeadMidiaCreateNestedManyWithoutLeadInput = {
+    create?: XOR<LeadMidiaCreateWithoutLeadInput, LeadMidiaUncheckedCreateWithoutLeadInput> | LeadMidiaCreateWithoutLeadInput[] | LeadMidiaUncheckedCreateWithoutLeadInput[]
+    connectOrCreate?: LeadMidiaCreateOrConnectWithoutLeadInput | LeadMidiaCreateOrConnectWithoutLeadInput[]
+    createMany?: LeadMidiaCreateManyLeadInputEnvelope
+    connect?: LeadMidiaWhereUniqueInput | LeadMidiaWhereUniqueInput[]
+  }
+
+  export type LeadMidiaUncheckedCreateNestedManyWithoutLeadInput = {
+    create?: XOR<LeadMidiaCreateWithoutLeadInput, LeadMidiaUncheckedCreateWithoutLeadInput> | LeadMidiaCreateWithoutLeadInput[] | LeadMidiaUncheckedCreateWithoutLeadInput[]
+    connectOrCreate?: LeadMidiaCreateOrConnectWithoutLeadInput | LeadMidiaCreateOrConnectWithoutLeadInput[]
+    createMany?: LeadMidiaCreateManyLeadInputEnvelope
+    connect?: LeadMidiaWhereUniqueInput | LeadMidiaWhereUniqueInput[]
+  }
+
+  export type LeadMidiaUpdateManyWithoutLeadNestedInput = {
+    create?: XOR<LeadMidiaCreateWithoutLeadInput, LeadMidiaUncheckedCreateWithoutLeadInput> | LeadMidiaCreateWithoutLeadInput[] | LeadMidiaUncheckedCreateWithoutLeadInput[]
+    connectOrCreate?: LeadMidiaCreateOrConnectWithoutLeadInput | LeadMidiaCreateOrConnectWithoutLeadInput[]
+    upsert?: LeadMidiaUpsertWithWhereUniqueWithoutLeadInput | LeadMidiaUpsertWithWhereUniqueWithoutLeadInput[]
+    createMany?: LeadMidiaCreateManyLeadInputEnvelope
+    set?: LeadMidiaWhereUniqueInput | LeadMidiaWhereUniqueInput[]
+    disconnect?: LeadMidiaWhereUniqueInput | LeadMidiaWhereUniqueInput[]
+    delete?: LeadMidiaWhereUniqueInput | LeadMidiaWhereUniqueInput[]
+    connect?: LeadMidiaWhereUniqueInput | LeadMidiaWhereUniqueInput[]
+    update?: LeadMidiaUpdateWithWhereUniqueWithoutLeadInput | LeadMidiaUpdateWithWhereUniqueWithoutLeadInput[]
+    updateMany?: LeadMidiaUpdateManyWithWhereWithoutLeadInput | LeadMidiaUpdateManyWithWhereWithoutLeadInput[]
+    deleteMany?: LeadMidiaScalarWhereInput | LeadMidiaScalarWhereInput[]
+  }
+
+  export type LeadMidiaUncheckedUpdateManyWithoutLeadNestedInput = {
+    create?: XOR<LeadMidiaCreateWithoutLeadInput, LeadMidiaUncheckedCreateWithoutLeadInput> | LeadMidiaCreateWithoutLeadInput[] | LeadMidiaUncheckedCreateWithoutLeadInput[]
+    connectOrCreate?: LeadMidiaCreateOrConnectWithoutLeadInput | LeadMidiaCreateOrConnectWithoutLeadInput[]
+    upsert?: LeadMidiaUpsertWithWhereUniqueWithoutLeadInput | LeadMidiaUpsertWithWhereUniqueWithoutLeadInput[]
+    createMany?: LeadMidiaCreateManyLeadInputEnvelope
+    set?: LeadMidiaWhereUniqueInput | LeadMidiaWhereUniqueInput[]
+    disconnect?: LeadMidiaWhereUniqueInput | LeadMidiaWhereUniqueInput[]
+    delete?: LeadMidiaWhereUniqueInput | LeadMidiaWhereUniqueInput[]
+    connect?: LeadMidiaWhereUniqueInput | LeadMidiaWhereUniqueInput[]
+    update?: LeadMidiaUpdateWithWhereUniqueWithoutLeadInput | LeadMidiaUpdateWithWhereUniqueWithoutLeadInput[]
+    updateMany?: LeadMidiaUpdateManyWithWhereWithoutLeadInput | LeadMidiaUpdateManyWithWhereWithoutLeadInput[]
+    deleteMany?: LeadMidiaScalarWhereInput | LeadMidiaScalarWhereInput[]
+  }
+
+  export type LeadCreateNestedOneWithoutMidiasInput = {
+    create?: XOR<LeadCreateWithoutMidiasInput, LeadUncheckedCreateWithoutMidiasInput>
+    connectOrCreate?: LeadCreateOrConnectWithoutMidiasInput
+    connect?: LeadWhereUniqueInput
+  }
+
+  export type LeadUpdateOneRequiredWithoutMidiasNestedInput = {
+    create?: XOR<LeadCreateWithoutMidiasInput, LeadUncheckedCreateWithoutMidiasInput>
+    connectOrCreate?: LeadCreateOrConnectWithoutMidiasInput
+    upsert?: LeadUpsertWithoutMidiasInput
+    connect?: LeadWhereUniqueInput
+    update?: XOR<XOR<LeadUpdateToOneWithWhereWithoutMidiasInput, LeadUpdateWithoutMidiasInput>, LeadUncheckedUpdateWithoutMidiasInput>
+  }
+
   export type NestedStringFilter<$PrismaModel = never> = {
     equals?: string | StringFieldRefInput<$PrismaModel>
     in?: string[] | ListStringFieldRefInput<$PrismaModel>
@@ -41688,6 +56275,11 @@ export namespace Prisma {
     startsWith?: string | StringFieldRefInput<$PrismaModel>
     endsWith?: string | StringFieldRefInput<$PrismaModel>
     not?: NestedStringNullableFilter<$PrismaModel> | string | null
+  }
+
+  export type NestedBoolFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolFilter<$PrismaModel> | boolean
   }
 
   export type NestedDateTimeFilter<$PrismaModel = never> = {
@@ -41757,6 +56349,14 @@ export namespace Prisma {
     not?: NestedIntNullableFilter<$PrismaModel> | number | null
   }
 
+  export type NestedBoolWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedBoolFilter<$PrismaModel>
+    _max?: NestedBoolFilter<$PrismaModel>
+  }
+
   export type NestedDateTimeWithAggregatesFilter<$PrismaModel = never> = {
     equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
@@ -41769,19 +56369,6 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedDateTimeFilter<$PrismaModel>
     _max?: NestedDateTimeFilter<$PrismaModel>
-  }
-
-  export type NestedBoolFilter<$PrismaModel = never> = {
-    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
-    not?: NestedBoolFilter<$PrismaModel> | boolean
-  }
-
-  export type NestedBoolWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
-    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedBoolFilter<$PrismaModel>
-    _max?: NestedBoolFilter<$PrismaModel>
   }
 
   export type NestedFloatFilter<$PrismaModel = never> = {
@@ -44211,6 +58798,803 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type OrcamentoEtapaCreateWithoutProjetoInput = {
+    id?: string
+    nome: string
+    ordem?: number
+    itens?: OrcamentoItemCreateNestedManyWithoutEtapaInput
+  }
+
+  export type OrcamentoEtapaUncheckedCreateWithoutProjetoInput = {
+    id?: string
+    nome: string
+    ordem?: number
+    itens?: OrcamentoItemUncheckedCreateNestedManyWithoutEtapaInput
+  }
+
+  export type OrcamentoEtapaCreateOrConnectWithoutProjetoInput = {
+    where: OrcamentoEtapaWhereUniqueInput
+    create: XOR<OrcamentoEtapaCreateWithoutProjetoInput, OrcamentoEtapaUncheckedCreateWithoutProjetoInput>
+  }
+
+  export type OrcamentoEtapaCreateManyProjetoInputEnvelope = {
+    data: OrcamentoEtapaCreateManyProjetoInput | OrcamentoEtapaCreateManyProjetoInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type FornecedorOrcamentoCreateWithoutProjetoInput = {
+    id?: string
+    statusConvite?: string
+    tokenAcesso?: string
+    dataEnvio?: Date | string | null
+    fornecedor: FornecedorCreateNestedOneWithoutProjetosInput
+  }
+
+  export type FornecedorOrcamentoUncheckedCreateWithoutProjetoInput = {
+    id?: string
+    fornecedorId: string
+    statusConvite?: string
+    tokenAcesso?: string
+    dataEnvio?: Date | string | null
+  }
+
+  export type FornecedorOrcamentoCreateOrConnectWithoutProjetoInput = {
+    where: FornecedorOrcamentoWhereUniqueInput
+    create: XOR<FornecedorOrcamentoCreateWithoutProjetoInput, FornecedorOrcamentoUncheckedCreateWithoutProjetoInput>
+  }
+
+  export type FornecedorOrcamentoCreateManyProjetoInputEnvelope = {
+    data: FornecedorOrcamentoCreateManyProjetoInput | FornecedorOrcamentoCreateManyProjetoInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type OrcamentoEtapaUpsertWithWhereUniqueWithoutProjetoInput = {
+    where: OrcamentoEtapaWhereUniqueInput
+    update: XOR<OrcamentoEtapaUpdateWithoutProjetoInput, OrcamentoEtapaUncheckedUpdateWithoutProjetoInput>
+    create: XOR<OrcamentoEtapaCreateWithoutProjetoInput, OrcamentoEtapaUncheckedCreateWithoutProjetoInput>
+  }
+
+  export type OrcamentoEtapaUpdateWithWhereUniqueWithoutProjetoInput = {
+    where: OrcamentoEtapaWhereUniqueInput
+    data: XOR<OrcamentoEtapaUpdateWithoutProjetoInput, OrcamentoEtapaUncheckedUpdateWithoutProjetoInput>
+  }
+
+  export type OrcamentoEtapaUpdateManyWithWhereWithoutProjetoInput = {
+    where: OrcamentoEtapaScalarWhereInput
+    data: XOR<OrcamentoEtapaUpdateManyMutationInput, OrcamentoEtapaUncheckedUpdateManyWithoutProjetoInput>
+  }
+
+  export type OrcamentoEtapaScalarWhereInput = {
+    AND?: OrcamentoEtapaScalarWhereInput | OrcamentoEtapaScalarWhereInput[]
+    OR?: OrcamentoEtapaScalarWhereInput[]
+    NOT?: OrcamentoEtapaScalarWhereInput | OrcamentoEtapaScalarWhereInput[]
+    id?: StringFilter<"OrcamentoEtapa"> | string
+    projetoId?: StringFilter<"OrcamentoEtapa"> | string
+    nome?: StringFilter<"OrcamentoEtapa"> | string
+    ordem?: IntFilter<"OrcamentoEtapa"> | number
+  }
+
+  export type FornecedorOrcamentoUpsertWithWhereUniqueWithoutProjetoInput = {
+    where: FornecedorOrcamentoWhereUniqueInput
+    update: XOR<FornecedorOrcamentoUpdateWithoutProjetoInput, FornecedorOrcamentoUncheckedUpdateWithoutProjetoInput>
+    create: XOR<FornecedorOrcamentoCreateWithoutProjetoInput, FornecedorOrcamentoUncheckedCreateWithoutProjetoInput>
+  }
+
+  export type FornecedorOrcamentoUpdateWithWhereUniqueWithoutProjetoInput = {
+    where: FornecedorOrcamentoWhereUniqueInput
+    data: XOR<FornecedorOrcamentoUpdateWithoutProjetoInput, FornecedorOrcamentoUncheckedUpdateWithoutProjetoInput>
+  }
+
+  export type FornecedorOrcamentoUpdateManyWithWhereWithoutProjetoInput = {
+    where: FornecedorOrcamentoScalarWhereInput
+    data: XOR<FornecedorOrcamentoUpdateManyMutationInput, FornecedorOrcamentoUncheckedUpdateManyWithoutProjetoInput>
+  }
+
+  export type FornecedorOrcamentoScalarWhereInput = {
+    AND?: FornecedorOrcamentoScalarWhereInput | FornecedorOrcamentoScalarWhereInput[]
+    OR?: FornecedorOrcamentoScalarWhereInput[]
+    NOT?: FornecedorOrcamentoScalarWhereInput | FornecedorOrcamentoScalarWhereInput[]
+    id?: StringFilter<"FornecedorOrcamento"> | string
+    projetoId?: StringFilter<"FornecedorOrcamento"> | string
+    fornecedorId?: StringFilter<"FornecedorOrcamento"> | string
+    statusConvite?: StringFilter<"FornecedorOrcamento"> | string
+    tokenAcesso?: StringFilter<"FornecedorOrcamento"> | string
+    dataEnvio?: DateTimeNullableFilter<"FornecedorOrcamento"> | Date | string | null
+  }
+
+  export type OrcamentoProjetoCreateWithoutEtapasInput = {
+    id?: string
+    nome: string
+    cliente?: string | null
+    status?: string
+    idContaAzul?: string | null
+    dataCriacao?: Date | string
+    dataAtualizacao?: Date | string
+    fornecedores?: FornecedorOrcamentoCreateNestedManyWithoutProjetoInput
+  }
+
+  export type OrcamentoProjetoUncheckedCreateWithoutEtapasInput = {
+    id?: string
+    nome: string
+    cliente?: string | null
+    status?: string
+    idContaAzul?: string | null
+    dataCriacao?: Date | string
+    dataAtualizacao?: Date | string
+    fornecedores?: FornecedorOrcamentoUncheckedCreateNestedManyWithoutProjetoInput
+  }
+
+  export type OrcamentoProjetoCreateOrConnectWithoutEtapasInput = {
+    where: OrcamentoProjetoWhereUniqueInput
+    create: XOR<OrcamentoProjetoCreateWithoutEtapasInput, OrcamentoProjetoUncheckedCreateWithoutEtapasInput>
+  }
+
+  export type OrcamentoItemCreateWithoutEtapaInput = {
+    id?: string
+    codigo?: string | null
+    descricao: string
+    tipo: string
+    unidade: string
+    quantidade: number
+    precoBaseUnitario?: number | null
+    bdiPercent?: number | null
+    propostas?: PropostaItemCreateNestedManyWithoutItemInput
+  }
+
+  export type OrcamentoItemUncheckedCreateWithoutEtapaInput = {
+    id?: string
+    codigo?: string | null
+    descricao: string
+    tipo: string
+    unidade: string
+    quantidade: number
+    precoBaseUnitario?: number | null
+    bdiPercent?: number | null
+    propostas?: PropostaItemUncheckedCreateNestedManyWithoutItemInput
+  }
+
+  export type OrcamentoItemCreateOrConnectWithoutEtapaInput = {
+    where: OrcamentoItemWhereUniqueInput
+    create: XOR<OrcamentoItemCreateWithoutEtapaInput, OrcamentoItemUncheckedCreateWithoutEtapaInput>
+  }
+
+  export type OrcamentoItemCreateManyEtapaInputEnvelope = {
+    data: OrcamentoItemCreateManyEtapaInput | OrcamentoItemCreateManyEtapaInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type OrcamentoProjetoUpsertWithoutEtapasInput = {
+    update: XOR<OrcamentoProjetoUpdateWithoutEtapasInput, OrcamentoProjetoUncheckedUpdateWithoutEtapasInput>
+    create: XOR<OrcamentoProjetoCreateWithoutEtapasInput, OrcamentoProjetoUncheckedCreateWithoutEtapasInput>
+    where?: OrcamentoProjetoWhereInput
+  }
+
+  export type OrcamentoProjetoUpdateToOneWithWhereWithoutEtapasInput = {
+    where?: OrcamentoProjetoWhereInput
+    data: XOR<OrcamentoProjetoUpdateWithoutEtapasInput, OrcamentoProjetoUncheckedUpdateWithoutEtapasInput>
+  }
+
+  export type OrcamentoProjetoUpdateWithoutEtapasInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    cliente?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: StringFieldUpdateOperationsInput | string
+    idContaAzul?: NullableStringFieldUpdateOperationsInput | string | null
+    dataCriacao?: DateTimeFieldUpdateOperationsInput | Date | string
+    dataAtualizacao?: DateTimeFieldUpdateOperationsInput | Date | string
+    fornecedores?: FornecedorOrcamentoUpdateManyWithoutProjetoNestedInput
+  }
+
+  export type OrcamentoProjetoUncheckedUpdateWithoutEtapasInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    cliente?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: StringFieldUpdateOperationsInput | string
+    idContaAzul?: NullableStringFieldUpdateOperationsInput | string | null
+    dataCriacao?: DateTimeFieldUpdateOperationsInput | Date | string
+    dataAtualizacao?: DateTimeFieldUpdateOperationsInput | Date | string
+    fornecedores?: FornecedorOrcamentoUncheckedUpdateManyWithoutProjetoNestedInput
+  }
+
+  export type OrcamentoItemUpsertWithWhereUniqueWithoutEtapaInput = {
+    where: OrcamentoItemWhereUniqueInput
+    update: XOR<OrcamentoItemUpdateWithoutEtapaInput, OrcamentoItemUncheckedUpdateWithoutEtapaInput>
+    create: XOR<OrcamentoItemCreateWithoutEtapaInput, OrcamentoItemUncheckedCreateWithoutEtapaInput>
+  }
+
+  export type OrcamentoItemUpdateWithWhereUniqueWithoutEtapaInput = {
+    where: OrcamentoItemWhereUniqueInput
+    data: XOR<OrcamentoItemUpdateWithoutEtapaInput, OrcamentoItemUncheckedUpdateWithoutEtapaInput>
+  }
+
+  export type OrcamentoItemUpdateManyWithWhereWithoutEtapaInput = {
+    where: OrcamentoItemScalarWhereInput
+    data: XOR<OrcamentoItemUpdateManyMutationInput, OrcamentoItemUncheckedUpdateManyWithoutEtapaInput>
+  }
+
+  export type OrcamentoItemScalarWhereInput = {
+    AND?: OrcamentoItemScalarWhereInput | OrcamentoItemScalarWhereInput[]
+    OR?: OrcamentoItemScalarWhereInput[]
+    NOT?: OrcamentoItemScalarWhereInput | OrcamentoItemScalarWhereInput[]
+    id?: StringFilter<"OrcamentoItem"> | string
+    etapaId?: StringFilter<"OrcamentoItem"> | string
+    codigo?: StringNullableFilter<"OrcamentoItem"> | string | null
+    descricao?: StringFilter<"OrcamentoItem"> | string
+    tipo?: StringFilter<"OrcamentoItem"> | string
+    unidade?: StringFilter<"OrcamentoItem"> | string
+    quantidade?: FloatFilter<"OrcamentoItem"> | number
+    precoBaseUnitario?: FloatNullableFilter<"OrcamentoItem"> | number | null
+    bdiPercent?: FloatNullableFilter<"OrcamentoItem"> | number | null
+  }
+
+  export type OrcamentoEtapaCreateWithoutItensInput = {
+    id?: string
+    nome: string
+    ordem?: number
+    projeto: OrcamentoProjetoCreateNestedOneWithoutEtapasInput
+  }
+
+  export type OrcamentoEtapaUncheckedCreateWithoutItensInput = {
+    id?: string
+    projetoId: string
+    nome: string
+    ordem?: number
+  }
+
+  export type OrcamentoEtapaCreateOrConnectWithoutItensInput = {
+    where: OrcamentoEtapaWhereUniqueInput
+    create: XOR<OrcamentoEtapaCreateWithoutItensInput, OrcamentoEtapaUncheckedCreateWithoutItensInput>
+  }
+
+  export type PropostaItemCreateWithoutItemInput = {
+    id?: string
+    precoUnitario: number
+    freteIncluso?: boolean
+    prazoEntregaDias?: number | null
+    observacao?: string | null
+    dataProposta?: Date | string
+    versao?: number
+    fornecedor: FornecedorCreateNestedOneWithoutPropostasInput
+  }
+
+  export type PropostaItemUncheckedCreateWithoutItemInput = {
+    id?: string
+    fornecedorId: string
+    precoUnitario: number
+    freteIncluso?: boolean
+    prazoEntregaDias?: number | null
+    observacao?: string | null
+    dataProposta?: Date | string
+    versao?: number
+  }
+
+  export type PropostaItemCreateOrConnectWithoutItemInput = {
+    where: PropostaItemWhereUniqueInput
+    create: XOR<PropostaItemCreateWithoutItemInput, PropostaItemUncheckedCreateWithoutItemInput>
+  }
+
+  export type PropostaItemCreateManyItemInputEnvelope = {
+    data: PropostaItemCreateManyItemInput | PropostaItemCreateManyItemInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type OrcamentoEtapaUpsertWithoutItensInput = {
+    update: XOR<OrcamentoEtapaUpdateWithoutItensInput, OrcamentoEtapaUncheckedUpdateWithoutItensInput>
+    create: XOR<OrcamentoEtapaCreateWithoutItensInput, OrcamentoEtapaUncheckedCreateWithoutItensInput>
+    where?: OrcamentoEtapaWhereInput
+  }
+
+  export type OrcamentoEtapaUpdateToOneWithWhereWithoutItensInput = {
+    where?: OrcamentoEtapaWhereInput
+    data: XOR<OrcamentoEtapaUpdateWithoutItensInput, OrcamentoEtapaUncheckedUpdateWithoutItensInput>
+  }
+
+  export type OrcamentoEtapaUpdateWithoutItensInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    ordem?: IntFieldUpdateOperationsInput | number
+    projeto?: OrcamentoProjetoUpdateOneRequiredWithoutEtapasNestedInput
+  }
+
+  export type OrcamentoEtapaUncheckedUpdateWithoutItensInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    projetoId?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    ordem?: IntFieldUpdateOperationsInput | number
+  }
+
+  export type PropostaItemUpsertWithWhereUniqueWithoutItemInput = {
+    where: PropostaItemWhereUniqueInput
+    update: XOR<PropostaItemUpdateWithoutItemInput, PropostaItemUncheckedUpdateWithoutItemInput>
+    create: XOR<PropostaItemCreateWithoutItemInput, PropostaItemUncheckedCreateWithoutItemInput>
+  }
+
+  export type PropostaItemUpdateWithWhereUniqueWithoutItemInput = {
+    where: PropostaItemWhereUniqueInput
+    data: XOR<PropostaItemUpdateWithoutItemInput, PropostaItemUncheckedUpdateWithoutItemInput>
+  }
+
+  export type PropostaItemUpdateManyWithWhereWithoutItemInput = {
+    where: PropostaItemScalarWhereInput
+    data: XOR<PropostaItemUpdateManyMutationInput, PropostaItemUncheckedUpdateManyWithoutItemInput>
+  }
+
+  export type PropostaItemScalarWhereInput = {
+    AND?: PropostaItemScalarWhereInput | PropostaItemScalarWhereInput[]
+    OR?: PropostaItemScalarWhereInput[]
+    NOT?: PropostaItemScalarWhereInput | PropostaItemScalarWhereInput[]
+    id?: StringFilter<"PropostaItem"> | string
+    itemId?: StringFilter<"PropostaItem"> | string
+    fornecedorId?: StringFilter<"PropostaItem"> | string
+    precoUnitario?: FloatFilter<"PropostaItem"> | number
+    freteIncluso?: BoolFilter<"PropostaItem"> | boolean
+    prazoEntregaDias?: IntNullableFilter<"PropostaItem"> | number | null
+    observacao?: StringNullableFilter<"PropostaItem"> | string | null
+    dataProposta?: DateTimeFilter<"PropostaItem"> | Date | string
+    versao?: IntFilter<"PropostaItem"> | number
+  }
+
+  export type FornecedorOrcamentoCreateWithoutFornecedorInput = {
+    id?: string
+    statusConvite?: string
+    tokenAcesso?: string
+    dataEnvio?: Date | string | null
+    projeto: OrcamentoProjetoCreateNestedOneWithoutFornecedoresInput
+  }
+
+  export type FornecedorOrcamentoUncheckedCreateWithoutFornecedorInput = {
+    id?: string
+    projetoId: string
+    statusConvite?: string
+    tokenAcesso?: string
+    dataEnvio?: Date | string | null
+  }
+
+  export type FornecedorOrcamentoCreateOrConnectWithoutFornecedorInput = {
+    where: FornecedorOrcamentoWhereUniqueInput
+    create: XOR<FornecedorOrcamentoCreateWithoutFornecedorInput, FornecedorOrcamentoUncheckedCreateWithoutFornecedorInput>
+  }
+
+  export type FornecedorOrcamentoCreateManyFornecedorInputEnvelope = {
+    data: FornecedorOrcamentoCreateManyFornecedorInput | FornecedorOrcamentoCreateManyFornecedorInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type PropostaItemCreateWithoutFornecedorInput = {
+    id?: string
+    precoUnitario: number
+    freteIncluso?: boolean
+    prazoEntregaDias?: number | null
+    observacao?: string | null
+    dataProposta?: Date | string
+    versao?: number
+    item: OrcamentoItemCreateNestedOneWithoutPropostasInput
+  }
+
+  export type PropostaItemUncheckedCreateWithoutFornecedorInput = {
+    id?: string
+    itemId: string
+    precoUnitario: number
+    freteIncluso?: boolean
+    prazoEntregaDias?: number | null
+    observacao?: string | null
+    dataProposta?: Date | string
+    versao?: number
+  }
+
+  export type PropostaItemCreateOrConnectWithoutFornecedorInput = {
+    where: PropostaItemWhereUniqueInput
+    create: XOR<PropostaItemCreateWithoutFornecedorInput, PropostaItemUncheckedCreateWithoutFornecedorInput>
+  }
+
+  export type PropostaItemCreateManyFornecedorInputEnvelope = {
+    data: PropostaItemCreateManyFornecedorInput | PropostaItemCreateManyFornecedorInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type FornecedorOrcamentoUpsertWithWhereUniqueWithoutFornecedorInput = {
+    where: FornecedorOrcamentoWhereUniqueInput
+    update: XOR<FornecedorOrcamentoUpdateWithoutFornecedorInput, FornecedorOrcamentoUncheckedUpdateWithoutFornecedorInput>
+    create: XOR<FornecedorOrcamentoCreateWithoutFornecedorInput, FornecedorOrcamentoUncheckedCreateWithoutFornecedorInput>
+  }
+
+  export type FornecedorOrcamentoUpdateWithWhereUniqueWithoutFornecedorInput = {
+    where: FornecedorOrcamentoWhereUniqueInput
+    data: XOR<FornecedorOrcamentoUpdateWithoutFornecedorInput, FornecedorOrcamentoUncheckedUpdateWithoutFornecedorInput>
+  }
+
+  export type FornecedorOrcamentoUpdateManyWithWhereWithoutFornecedorInput = {
+    where: FornecedorOrcamentoScalarWhereInput
+    data: XOR<FornecedorOrcamentoUpdateManyMutationInput, FornecedorOrcamentoUncheckedUpdateManyWithoutFornecedorInput>
+  }
+
+  export type PropostaItemUpsertWithWhereUniqueWithoutFornecedorInput = {
+    where: PropostaItemWhereUniqueInput
+    update: XOR<PropostaItemUpdateWithoutFornecedorInput, PropostaItemUncheckedUpdateWithoutFornecedorInput>
+    create: XOR<PropostaItemCreateWithoutFornecedorInput, PropostaItemUncheckedCreateWithoutFornecedorInput>
+  }
+
+  export type PropostaItemUpdateWithWhereUniqueWithoutFornecedorInput = {
+    where: PropostaItemWhereUniqueInput
+    data: XOR<PropostaItemUpdateWithoutFornecedorInput, PropostaItemUncheckedUpdateWithoutFornecedorInput>
+  }
+
+  export type PropostaItemUpdateManyWithWhereWithoutFornecedorInput = {
+    where: PropostaItemScalarWhereInput
+    data: XOR<PropostaItemUpdateManyMutationInput, PropostaItemUncheckedUpdateManyWithoutFornecedorInput>
+  }
+
+  export type OrcamentoProjetoCreateWithoutFornecedoresInput = {
+    id?: string
+    nome: string
+    cliente?: string | null
+    status?: string
+    idContaAzul?: string | null
+    dataCriacao?: Date | string
+    dataAtualizacao?: Date | string
+    etapas?: OrcamentoEtapaCreateNestedManyWithoutProjetoInput
+  }
+
+  export type OrcamentoProjetoUncheckedCreateWithoutFornecedoresInput = {
+    id?: string
+    nome: string
+    cliente?: string | null
+    status?: string
+    idContaAzul?: string | null
+    dataCriacao?: Date | string
+    dataAtualizacao?: Date | string
+    etapas?: OrcamentoEtapaUncheckedCreateNestedManyWithoutProjetoInput
+  }
+
+  export type OrcamentoProjetoCreateOrConnectWithoutFornecedoresInput = {
+    where: OrcamentoProjetoWhereUniqueInput
+    create: XOR<OrcamentoProjetoCreateWithoutFornecedoresInput, OrcamentoProjetoUncheckedCreateWithoutFornecedoresInput>
+  }
+
+  export type FornecedorCreateWithoutProjetosInput = {
+    id?: string
+    razaoSocial: string
+    cnpj?: string | null
+    contatoNome?: string | null
+    contatoEmail?: string | null
+    contatoTelefone?: string | null
+    idContaAzul?: string | null
+    propostas?: PropostaItemCreateNestedManyWithoutFornecedorInput
+  }
+
+  export type FornecedorUncheckedCreateWithoutProjetosInput = {
+    id?: string
+    razaoSocial: string
+    cnpj?: string | null
+    contatoNome?: string | null
+    contatoEmail?: string | null
+    contatoTelefone?: string | null
+    idContaAzul?: string | null
+    propostas?: PropostaItemUncheckedCreateNestedManyWithoutFornecedorInput
+  }
+
+  export type FornecedorCreateOrConnectWithoutProjetosInput = {
+    where: FornecedorWhereUniqueInput
+    create: XOR<FornecedorCreateWithoutProjetosInput, FornecedorUncheckedCreateWithoutProjetosInput>
+  }
+
+  export type OrcamentoProjetoUpsertWithoutFornecedoresInput = {
+    update: XOR<OrcamentoProjetoUpdateWithoutFornecedoresInput, OrcamentoProjetoUncheckedUpdateWithoutFornecedoresInput>
+    create: XOR<OrcamentoProjetoCreateWithoutFornecedoresInput, OrcamentoProjetoUncheckedCreateWithoutFornecedoresInput>
+    where?: OrcamentoProjetoWhereInput
+  }
+
+  export type OrcamentoProjetoUpdateToOneWithWhereWithoutFornecedoresInput = {
+    where?: OrcamentoProjetoWhereInput
+    data: XOR<OrcamentoProjetoUpdateWithoutFornecedoresInput, OrcamentoProjetoUncheckedUpdateWithoutFornecedoresInput>
+  }
+
+  export type OrcamentoProjetoUpdateWithoutFornecedoresInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    cliente?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: StringFieldUpdateOperationsInput | string
+    idContaAzul?: NullableStringFieldUpdateOperationsInput | string | null
+    dataCriacao?: DateTimeFieldUpdateOperationsInput | Date | string
+    dataAtualizacao?: DateTimeFieldUpdateOperationsInput | Date | string
+    etapas?: OrcamentoEtapaUpdateManyWithoutProjetoNestedInput
+  }
+
+  export type OrcamentoProjetoUncheckedUpdateWithoutFornecedoresInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    cliente?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: StringFieldUpdateOperationsInput | string
+    idContaAzul?: NullableStringFieldUpdateOperationsInput | string | null
+    dataCriacao?: DateTimeFieldUpdateOperationsInput | Date | string
+    dataAtualizacao?: DateTimeFieldUpdateOperationsInput | Date | string
+    etapas?: OrcamentoEtapaUncheckedUpdateManyWithoutProjetoNestedInput
+  }
+
+  export type FornecedorUpsertWithoutProjetosInput = {
+    update: XOR<FornecedorUpdateWithoutProjetosInput, FornecedorUncheckedUpdateWithoutProjetosInput>
+    create: XOR<FornecedorCreateWithoutProjetosInput, FornecedorUncheckedCreateWithoutProjetosInput>
+    where?: FornecedorWhereInput
+  }
+
+  export type FornecedorUpdateToOneWithWhereWithoutProjetosInput = {
+    where?: FornecedorWhereInput
+    data: XOR<FornecedorUpdateWithoutProjetosInput, FornecedorUncheckedUpdateWithoutProjetosInput>
+  }
+
+  export type FornecedorUpdateWithoutProjetosInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    razaoSocial?: StringFieldUpdateOperationsInput | string
+    cnpj?: NullableStringFieldUpdateOperationsInput | string | null
+    contatoNome?: NullableStringFieldUpdateOperationsInput | string | null
+    contatoEmail?: NullableStringFieldUpdateOperationsInput | string | null
+    contatoTelefone?: NullableStringFieldUpdateOperationsInput | string | null
+    idContaAzul?: NullableStringFieldUpdateOperationsInput | string | null
+    propostas?: PropostaItemUpdateManyWithoutFornecedorNestedInput
+  }
+
+  export type FornecedorUncheckedUpdateWithoutProjetosInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    razaoSocial?: StringFieldUpdateOperationsInput | string
+    cnpj?: NullableStringFieldUpdateOperationsInput | string | null
+    contatoNome?: NullableStringFieldUpdateOperationsInput | string | null
+    contatoEmail?: NullableStringFieldUpdateOperationsInput | string | null
+    contatoTelefone?: NullableStringFieldUpdateOperationsInput | string | null
+    idContaAzul?: NullableStringFieldUpdateOperationsInput | string | null
+    propostas?: PropostaItemUncheckedUpdateManyWithoutFornecedorNestedInput
+  }
+
+  export type OrcamentoItemCreateWithoutPropostasInput = {
+    id?: string
+    codigo?: string | null
+    descricao: string
+    tipo: string
+    unidade: string
+    quantidade: number
+    precoBaseUnitario?: number | null
+    bdiPercent?: number | null
+    etapa: OrcamentoEtapaCreateNestedOneWithoutItensInput
+  }
+
+  export type OrcamentoItemUncheckedCreateWithoutPropostasInput = {
+    id?: string
+    etapaId: string
+    codigo?: string | null
+    descricao: string
+    tipo: string
+    unidade: string
+    quantidade: number
+    precoBaseUnitario?: number | null
+    bdiPercent?: number | null
+  }
+
+  export type OrcamentoItemCreateOrConnectWithoutPropostasInput = {
+    where: OrcamentoItemWhereUniqueInput
+    create: XOR<OrcamentoItemCreateWithoutPropostasInput, OrcamentoItemUncheckedCreateWithoutPropostasInput>
+  }
+
+  export type FornecedorCreateWithoutPropostasInput = {
+    id?: string
+    razaoSocial: string
+    cnpj?: string | null
+    contatoNome?: string | null
+    contatoEmail?: string | null
+    contatoTelefone?: string | null
+    idContaAzul?: string | null
+    projetos?: FornecedorOrcamentoCreateNestedManyWithoutFornecedorInput
+  }
+
+  export type FornecedorUncheckedCreateWithoutPropostasInput = {
+    id?: string
+    razaoSocial: string
+    cnpj?: string | null
+    contatoNome?: string | null
+    contatoEmail?: string | null
+    contatoTelefone?: string | null
+    idContaAzul?: string | null
+    projetos?: FornecedorOrcamentoUncheckedCreateNestedManyWithoutFornecedorInput
+  }
+
+  export type FornecedorCreateOrConnectWithoutPropostasInput = {
+    where: FornecedorWhereUniqueInput
+    create: XOR<FornecedorCreateWithoutPropostasInput, FornecedorUncheckedCreateWithoutPropostasInput>
+  }
+
+  export type OrcamentoItemUpsertWithoutPropostasInput = {
+    update: XOR<OrcamentoItemUpdateWithoutPropostasInput, OrcamentoItemUncheckedUpdateWithoutPropostasInput>
+    create: XOR<OrcamentoItemCreateWithoutPropostasInput, OrcamentoItemUncheckedCreateWithoutPropostasInput>
+    where?: OrcamentoItemWhereInput
+  }
+
+  export type OrcamentoItemUpdateToOneWithWhereWithoutPropostasInput = {
+    where?: OrcamentoItemWhereInput
+    data: XOR<OrcamentoItemUpdateWithoutPropostasInput, OrcamentoItemUncheckedUpdateWithoutPropostasInput>
+  }
+
+  export type OrcamentoItemUpdateWithoutPropostasInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    codigo?: NullableStringFieldUpdateOperationsInput | string | null
+    descricao?: StringFieldUpdateOperationsInput | string
+    tipo?: StringFieldUpdateOperationsInput | string
+    unidade?: StringFieldUpdateOperationsInput | string
+    quantidade?: FloatFieldUpdateOperationsInput | number
+    precoBaseUnitario?: NullableFloatFieldUpdateOperationsInput | number | null
+    bdiPercent?: NullableFloatFieldUpdateOperationsInput | number | null
+    etapa?: OrcamentoEtapaUpdateOneRequiredWithoutItensNestedInput
+  }
+
+  export type OrcamentoItemUncheckedUpdateWithoutPropostasInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    etapaId?: StringFieldUpdateOperationsInput | string
+    codigo?: NullableStringFieldUpdateOperationsInput | string | null
+    descricao?: StringFieldUpdateOperationsInput | string
+    tipo?: StringFieldUpdateOperationsInput | string
+    unidade?: StringFieldUpdateOperationsInput | string
+    quantidade?: FloatFieldUpdateOperationsInput | number
+    precoBaseUnitario?: NullableFloatFieldUpdateOperationsInput | number | null
+    bdiPercent?: NullableFloatFieldUpdateOperationsInput | number | null
+  }
+
+  export type FornecedorUpsertWithoutPropostasInput = {
+    update: XOR<FornecedorUpdateWithoutPropostasInput, FornecedorUncheckedUpdateWithoutPropostasInput>
+    create: XOR<FornecedorCreateWithoutPropostasInput, FornecedorUncheckedCreateWithoutPropostasInput>
+    where?: FornecedorWhereInput
+  }
+
+  export type FornecedorUpdateToOneWithWhereWithoutPropostasInput = {
+    where?: FornecedorWhereInput
+    data: XOR<FornecedorUpdateWithoutPropostasInput, FornecedorUncheckedUpdateWithoutPropostasInput>
+  }
+
+  export type FornecedorUpdateWithoutPropostasInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    razaoSocial?: StringFieldUpdateOperationsInput | string
+    cnpj?: NullableStringFieldUpdateOperationsInput | string | null
+    contatoNome?: NullableStringFieldUpdateOperationsInput | string | null
+    contatoEmail?: NullableStringFieldUpdateOperationsInput | string | null
+    contatoTelefone?: NullableStringFieldUpdateOperationsInput | string | null
+    idContaAzul?: NullableStringFieldUpdateOperationsInput | string | null
+    projetos?: FornecedorOrcamentoUpdateManyWithoutFornecedorNestedInput
+  }
+
+  export type FornecedorUncheckedUpdateWithoutPropostasInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    razaoSocial?: StringFieldUpdateOperationsInput | string
+    cnpj?: NullableStringFieldUpdateOperationsInput | string | null
+    contatoNome?: NullableStringFieldUpdateOperationsInput | string | null
+    contatoEmail?: NullableStringFieldUpdateOperationsInput | string | null
+    contatoTelefone?: NullableStringFieldUpdateOperationsInput | string | null
+    idContaAzul?: NullableStringFieldUpdateOperationsInput | string | null
+    projetos?: FornecedorOrcamentoUncheckedUpdateManyWithoutFornecedorNestedInput
+  }
+
+  export type LeadMidiaCreateWithoutLeadInput = {
+    id?: string
+    tipo: string
+    arquivoUrl: string
+    createdAt?: Date | string
+  }
+
+  export type LeadMidiaUncheckedCreateWithoutLeadInput = {
+    id?: string
+    tipo: string
+    arquivoUrl: string
+    createdAt?: Date | string
+  }
+
+  export type LeadMidiaCreateOrConnectWithoutLeadInput = {
+    where: LeadMidiaWhereUniqueInput
+    create: XOR<LeadMidiaCreateWithoutLeadInput, LeadMidiaUncheckedCreateWithoutLeadInput>
+  }
+
+  export type LeadMidiaCreateManyLeadInputEnvelope = {
+    data: LeadMidiaCreateManyLeadInput | LeadMidiaCreateManyLeadInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type LeadMidiaUpsertWithWhereUniqueWithoutLeadInput = {
+    where: LeadMidiaWhereUniqueInput
+    update: XOR<LeadMidiaUpdateWithoutLeadInput, LeadMidiaUncheckedUpdateWithoutLeadInput>
+    create: XOR<LeadMidiaCreateWithoutLeadInput, LeadMidiaUncheckedCreateWithoutLeadInput>
+  }
+
+  export type LeadMidiaUpdateWithWhereUniqueWithoutLeadInput = {
+    where: LeadMidiaWhereUniqueInput
+    data: XOR<LeadMidiaUpdateWithoutLeadInput, LeadMidiaUncheckedUpdateWithoutLeadInput>
+  }
+
+  export type LeadMidiaUpdateManyWithWhereWithoutLeadInput = {
+    where: LeadMidiaScalarWhereInput
+    data: XOR<LeadMidiaUpdateManyMutationInput, LeadMidiaUncheckedUpdateManyWithoutLeadInput>
+  }
+
+  export type LeadMidiaScalarWhereInput = {
+    AND?: LeadMidiaScalarWhereInput | LeadMidiaScalarWhereInput[]
+    OR?: LeadMidiaScalarWhereInput[]
+    NOT?: LeadMidiaScalarWhereInput | LeadMidiaScalarWhereInput[]
+    id?: StringFilter<"LeadMidia"> | string
+    leadId?: StringFilter<"LeadMidia"> | string
+    tipo?: StringFilter<"LeadMidia"> | string
+    arquivoUrl?: StringFilter<"LeadMidia"> | string
+    createdAt?: DateTimeFilter<"LeadMidia"> | Date | string
+  }
+
+  export type LeadCreateWithoutMidiasInput = {
+    id?: string
+    nome: string
+    telefone?: string | null
+    email?: string | null
+    tipo: string
+    status?: string
+    latitude?: number | null
+    longitude?: number | null
+    observacoes?: string | null
+    vendedorId?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type LeadUncheckedCreateWithoutMidiasInput = {
+    id?: string
+    nome: string
+    telefone?: string | null
+    email?: string | null
+    tipo: string
+    status?: string
+    latitude?: number | null
+    longitude?: number | null
+    observacoes?: string | null
+    vendedorId?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type LeadCreateOrConnectWithoutMidiasInput = {
+    where: LeadWhereUniqueInput
+    create: XOR<LeadCreateWithoutMidiasInput, LeadUncheckedCreateWithoutMidiasInput>
+  }
+
+  export type LeadUpsertWithoutMidiasInput = {
+    update: XOR<LeadUpdateWithoutMidiasInput, LeadUncheckedUpdateWithoutMidiasInput>
+    create: XOR<LeadCreateWithoutMidiasInput, LeadUncheckedCreateWithoutMidiasInput>
+    where?: LeadWhereInput
+  }
+
+  export type LeadUpdateToOneWithWhereWithoutMidiasInput = {
+    where?: LeadWhereInput
+    data: XOR<LeadUpdateWithoutMidiasInput, LeadUncheckedUpdateWithoutMidiasInput>
+  }
+
+  export type LeadUpdateWithoutMidiasInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    telefone?: NullableStringFieldUpdateOperationsInput | string | null
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    tipo?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    vendedorId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type LeadUncheckedUpdateWithoutMidiasInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    telefone?: NullableStringFieldUpdateOperationsInput | string | null
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    tipo?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    vendedorId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type ProjetoDimensionamentoCreateManyChargerInput = {
     id?: string
     projectName: string
@@ -45043,6 +60427,258 @@ export namespace Prisma {
     imagemVisualUrl?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type OrcamentoEtapaCreateManyProjetoInput = {
+    id?: string
+    nome: string
+    ordem?: number
+  }
+
+  export type FornecedorOrcamentoCreateManyProjetoInput = {
+    id?: string
+    fornecedorId: string
+    statusConvite?: string
+    tokenAcesso?: string
+    dataEnvio?: Date | string | null
+  }
+
+  export type OrcamentoEtapaUpdateWithoutProjetoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    ordem?: IntFieldUpdateOperationsInput | number
+    itens?: OrcamentoItemUpdateManyWithoutEtapaNestedInput
+  }
+
+  export type OrcamentoEtapaUncheckedUpdateWithoutProjetoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    ordem?: IntFieldUpdateOperationsInput | number
+    itens?: OrcamentoItemUncheckedUpdateManyWithoutEtapaNestedInput
+  }
+
+  export type OrcamentoEtapaUncheckedUpdateManyWithoutProjetoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    ordem?: IntFieldUpdateOperationsInput | number
+  }
+
+  export type FornecedorOrcamentoUpdateWithoutProjetoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    statusConvite?: StringFieldUpdateOperationsInput | string
+    tokenAcesso?: StringFieldUpdateOperationsInput | string
+    dataEnvio?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    fornecedor?: FornecedorUpdateOneRequiredWithoutProjetosNestedInput
+  }
+
+  export type FornecedorOrcamentoUncheckedUpdateWithoutProjetoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    fornecedorId?: StringFieldUpdateOperationsInput | string
+    statusConvite?: StringFieldUpdateOperationsInput | string
+    tokenAcesso?: StringFieldUpdateOperationsInput | string
+    dataEnvio?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type FornecedorOrcamentoUncheckedUpdateManyWithoutProjetoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    fornecedorId?: StringFieldUpdateOperationsInput | string
+    statusConvite?: StringFieldUpdateOperationsInput | string
+    tokenAcesso?: StringFieldUpdateOperationsInput | string
+    dataEnvio?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type OrcamentoItemCreateManyEtapaInput = {
+    id?: string
+    codigo?: string | null
+    descricao: string
+    tipo: string
+    unidade: string
+    quantidade: number
+    precoBaseUnitario?: number | null
+    bdiPercent?: number | null
+  }
+
+  export type OrcamentoItemUpdateWithoutEtapaInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    codigo?: NullableStringFieldUpdateOperationsInput | string | null
+    descricao?: StringFieldUpdateOperationsInput | string
+    tipo?: StringFieldUpdateOperationsInput | string
+    unidade?: StringFieldUpdateOperationsInput | string
+    quantidade?: FloatFieldUpdateOperationsInput | number
+    precoBaseUnitario?: NullableFloatFieldUpdateOperationsInput | number | null
+    bdiPercent?: NullableFloatFieldUpdateOperationsInput | number | null
+    propostas?: PropostaItemUpdateManyWithoutItemNestedInput
+  }
+
+  export type OrcamentoItemUncheckedUpdateWithoutEtapaInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    codigo?: NullableStringFieldUpdateOperationsInput | string | null
+    descricao?: StringFieldUpdateOperationsInput | string
+    tipo?: StringFieldUpdateOperationsInput | string
+    unidade?: StringFieldUpdateOperationsInput | string
+    quantidade?: FloatFieldUpdateOperationsInput | number
+    precoBaseUnitario?: NullableFloatFieldUpdateOperationsInput | number | null
+    bdiPercent?: NullableFloatFieldUpdateOperationsInput | number | null
+    propostas?: PropostaItemUncheckedUpdateManyWithoutItemNestedInput
+  }
+
+  export type OrcamentoItemUncheckedUpdateManyWithoutEtapaInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    codigo?: NullableStringFieldUpdateOperationsInput | string | null
+    descricao?: StringFieldUpdateOperationsInput | string
+    tipo?: StringFieldUpdateOperationsInput | string
+    unidade?: StringFieldUpdateOperationsInput | string
+    quantidade?: FloatFieldUpdateOperationsInput | number
+    precoBaseUnitario?: NullableFloatFieldUpdateOperationsInput | number | null
+    bdiPercent?: NullableFloatFieldUpdateOperationsInput | number | null
+  }
+
+  export type PropostaItemCreateManyItemInput = {
+    id?: string
+    fornecedorId: string
+    precoUnitario: number
+    freteIncluso?: boolean
+    prazoEntregaDias?: number | null
+    observacao?: string | null
+    dataProposta?: Date | string
+    versao?: number
+  }
+
+  export type PropostaItemUpdateWithoutItemInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    precoUnitario?: FloatFieldUpdateOperationsInput | number
+    freteIncluso?: BoolFieldUpdateOperationsInput | boolean
+    prazoEntregaDias?: NullableIntFieldUpdateOperationsInput | number | null
+    observacao?: NullableStringFieldUpdateOperationsInput | string | null
+    dataProposta?: DateTimeFieldUpdateOperationsInput | Date | string
+    versao?: IntFieldUpdateOperationsInput | number
+    fornecedor?: FornecedorUpdateOneRequiredWithoutPropostasNestedInput
+  }
+
+  export type PropostaItemUncheckedUpdateWithoutItemInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    fornecedorId?: StringFieldUpdateOperationsInput | string
+    precoUnitario?: FloatFieldUpdateOperationsInput | number
+    freteIncluso?: BoolFieldUpdateOperationsInput | boolean
+    prazoEntregaDias?: NullableIntFieldUpdateOperationsInput | number | null
+    observacao?: NullableStringFieldUpdateOperationsInput | string | null
+    dataProposta?: DateTimeFieldUpdateOperationsInput | Date | string
+    versao?: IntFieldUpdateOperationsInput | number
+  }
+
+  export type PropostaItemUncheckedUpdateManyWithoutItemInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    fornecedorId?: StringFieldUpdateOperationsInput | string
+    precoUnitario?: FloatFieldUpdateOperationsInput | number
+    freteIncluso?: BoolFieldUpdateOperationsInput | boolean
+    prazoEntregaDias?: NullableIntFieldUpdateOperationsInput | number | null
+    observacao?: NullableStringFieldUpdateOperationsInput | string | null
+    dataProposta?: DateTimeFieldUpdateOperationsInput | Date | string
+    versao?: IntFieldUpdateOperationsInput | number
+  }
+
+  export type FornecedorOrcamentoCreateManyFornecedorInput = {
+    id?: string
+    projetoId: string
+    statusConvite?: string
+    tokenAcesso?: string
+    dataEnvio?: Date | string | null
+  }
+
+  export type PropostaItemCreateManyFornecedorInput = {
+    id?: string
+    itemId: string
+    precoUnitario: number
+    freteIncluso?: boolean
+    prazoEntregaDias?: number | null
+    observacao?: string | null
+    dataProposta?: Date | string
+    versao?: number
+  }
+
+  export type FornecedorOrcamentoUpdateWithoutFornecedorInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    statusConvite?: StringFieldUpdateOperationsInput | string
+    tokenAcesso?: StringFieldUpdateOperationsInput | string
+    dataEnvio?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    projeto?: OrcamentoProjetoUpdateOneRequiredWithoutFornecedoresNestedInput
+  }
+
+  export type FornecedorOrcamentoUncheckedUpdateWithoutFornecedorInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    projetoId?: StringFieldUpdateOperationsInput | string
+    statusConvite?: StringFieldUpdateOperationsInput | string
+    tokenAcesso?: StringFieldUpdateOperationsInput | string
+    dataEnvio?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type FornecedorOrcamentoUncheckedUpdateManyWithoutFornecedorInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    projetoId?: StringFieldUpdateOperationsInput | string
+    statusConvite?: StringFieldUpdateOperationsInput | string
+    tokenAcesso?: StringFieldUpdateOperationsInput | string
+    dataEnvio?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type PropostaItemUpdateWithoutFornecedorInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    precoUnitario?: FloatFieldUpdateOperationsInput | number
+    freteIncluso?: BoolFieldUpdateOperationsInput | boolean
+    prazoEntregaDias?: NullableIntFieldUpdateOperationsInput | number | null
+    observacao?: NullableStringFieldUpdateOperationsInput | string | null
+    dataProposta?: DateTimeFieldUpdateOperationsInput | Date | string
+    versao?: IntFieldUpdateOperationsInput | number
+    item?: OrcamentoItemUpdateOneRequiredWithoutPropostasNestedInput
+  }
+
+  export type PropostaItemUncheckedUpdateWithoutFornecedorInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    itemId?: StringFieldUpdateOperationsInput | string
+    precoUnitario?: FloatFieldUpdateOperationsInput | number
+    freteIncluso?: BoolFieldUpdateOperationsInput | boolean
+    prazoEntregaDias?: NullableIntFieldUpdateOperationsInput | number | null
+    observacao?: NullableStringFieldUpdateOperationsInput | string | null
+    dataProposta?: DateTimeFieldUpdateOperationsInput | Date | string
+    versao?: IntFieldUpdateOperationsInput | number
+  }
+
+  export type PropostaItemUncheckedUpdateManyWithoutFornecedorInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    itemId?: StringFieldUpdateOperationsInput | string
+    precoUnitario?: FloatFieldUpdateOperationsInput | number
+    freteIncluso?: BoolFieldUpdateOperationsInput | boolean
+    prazoEntregaDias?: NullableIntFieldUpdateOperationsInput | number | null
+    observacao?: NullableStringFieldUpdateOperationsInput | string | null
+    dataProposta?: DateTimeFieldUpdateOperationsInput | Date | string
+    versao?: IntFieldUpdateOperationsInput | number
+  }
+
+  export type LeadMidiaCreateManyLeadInput = {
+    id?: string
+    tipo: string
+    arquivoUrl: string
+    createdAt?: Date | string
+  }
+
+  export type LeadMidiaUpdateWithoutLeadInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    tipo?: StringFieldUpdateOperationsInput | string
+    arquivoUrl?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type LeadMidiaUncheckedUpdateWithoutLeadInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    tipo?: StringFieldUpdateOperationsInput | string
+    arquivoUrl?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type LeadMidiaUncheckedUpdateManyWithoutLeadInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    tipo?: StringFieldUpdateOperationsInput | string
+    arquivoUrl?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
 

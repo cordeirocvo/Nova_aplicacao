@@ -19,6 +19,7 @@ model User {
   canAccessAppLeads Boolean  @default(false)
   canManageCRM      Boolean  @default(false)
   canAccessSIE      Boolean  @default(false)
+  allowedRoutes     String[] @default([])
   leads             Lead[]   @relation("VendedorLeads")
 }
 

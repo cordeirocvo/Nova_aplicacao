@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabaseClient";
-import { Loader, UploadCloud, Camera, CheckCircle, ArrowLeft } from "lucide-react";
+import { Loader, UploadCloud, Camera, CheckCircle, ArrowLeft, Trash, FileText, Download } from "lucide-react";
 
 export default function EditForm({ initialData, statuses }: { initialData: any, statuses: any[] }) {
   const router = useRouter();
@@ -11,6 +10,10 @@ export default function EditForm({ initialData, statuses }: { initialData: any, 
   const [success, setSuccess] = useState(false);
   const [fotos, setFotos] = useState<File[]>([]);
   const [arquivos, setArquivos] = useState<File[]>([]);
+
+  // Mantém controle dos anexos salvos anteriormente no banco de dados
+  const [fotosSalvas, setFotosSalvas] = useState<string[]>(initialData.anexoFotos || []);
+  const [arquivosSalvos, setArquivosSalvos] = useState<string[]>(initialData.anexoArquivos || []);
 
   // Maps DB fields to form state
   const [form, setForm] = useState({
@@ -26,24 +29,29 @@ export default function EditForm({ initialData, statuses }: { initialData: any, 
     automaticoPrevInstala: initialData.automaticoPrevInstala || "",
   });
 
-  const handleUpload = async (files: File[], bucket: string) => {
+  // Função robusta de upload usando a API local (/api/upload)
+  const handleUpload = async (files: File[]) => {
     const urls: string[] = [];
     for (const file of files) {
       try {
-        const fileName = `${Date.now()}-${file.name}`;
-        const { data, error } = await supabase.storage
-          .from(bucket)
-          .upload(fileName, file);
+        const formData = new FormData();
+        formData.append("file", file);
 
-        if (data) {
-          const { data: publicData } = supabase.storage.from(bucket).getPublicUrl(fileName);
-          urls.push(publicData.publicUrl);
-        }
-        if (error) {
-           console.warn("Supabase Storage error (bucket might not exist):", error.message);
+        const res = await fetch("/api/upload", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data.url) {
+            urls.push(data.url);
+          }
+        } else {
+          console.warn("Upload falhou na API:", res.statusText);
         }
       } catch (err) {
-        console.warn(`Storage falhou ao enviar para o bucket '${bucket}'. Verifique se ele existe no Supabase.`, err);
+        console.warn("Falha no upload do arquivo:", err);
       }
     }
     return urls;
@@ -54,23 +62,23 @@ export default function EditForm({ initialData, statuses }: { initialData: any, 
     setLoading(true);
 
     try {
-      let fotosUrls: string[] = initialData.anexoFotos || [];
-      let arquivosUrls: string[] = initialData.anexoArquivos || [];
+      let finalFotos = [...fotosSalvas];
+      let finalArquivos = [...arquivosSalvos];
       
-      try {
-         if (fotos.length) {
-            const uploadedFotos = await handleUpload(fotos, "fotos");
-            fotosUrls = [...fotosUrls, ...uploadedFotos];
-         }
-         if (arquivos.length) {
-            const uploadedArquivos = await handleUpload(arquivos, "arquivos");
-            arquivosUrls = [...arquivosUrls, ...uploadedArquivos];
-         }
-      } catch(ex) {
-         console.warn("Storage não configurado, pulando uploads adicionais.");
+      if (fotos.length) {
+         const uploadedFotos = await handleUpload(fotos);
+         finalFotos = [...finalFotos, ...uploadedFotos];
+      }
+      if (arquivos.length) {
+         const uploadedArquivos = await handleUpload(arquivos);
+         finalArquivos = [...finalArquivos, ...uploadedArquivos];
       }
 
-      const payload = { ...form, anexoFotos: fotosUrls, anexoArquivos: arquivosUrls };
+      const payload = { 
+        ...form, 
+        anexoFotos: finalFotos, 
+        anexoArquivos: finalArquivos 
+      };
 
       const res = await fetch(`/api/activities/${initialData.id}`, {
         method: "PUT",
@@ -183,8 +191,42 @@ export default function EditForm({ initialData, statuses }: { initialData: any, 
                  <span>Escolher Fotos</span>
                  <input type="file" multiple accept="image/*" className="hidden" onChange={(e) => setFotos(Array.from(e.target.files || []))} />
                </label>
-               <span className="text-sm text-slate-500">{fotos.length} novas / {initialData.anexoFotos?.length || 0} já salvas</span>
+               <span className="text-sm text-slate-500">{fotos.length} novas / {fotosSalvas.length} salvas</span>
             </div>
+            
+            {/* Fotos Salvas no Banco */}
+            {fotosSalvas.length > 0 && (
+              <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {fotosSalvas.map((url, idx) => (
+                  <div key={idx} className="group relative rounded-xl overflow-hidden border border-slate-200 aspect-square bg-slate-50 flex items-center justify-center shadow-sm">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={url} alt={`Foto ${idx + 1}`} className="object-cover w-full h-full" />
+                    
+                    {/* Hover actions */}
+                    <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center gap-2">
+                      <a
+                        href={url}
+                        download={`foto-${idx + 1}.jpg`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-2 bg-white hover:bg-slate-100 rounded-full shadow-lg text-slate-800 transition-all hover:scale-110"
+                        title="Baixar Foto"
+                      >
+                        <Download className="w-4 h-4" />
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => setFotosSalvas(fotosSalvas.filter((_, i) => i !== idx))}
+                        className="p-2 bg-red-600 hover:bg-red-700 rounded-full shadow-lg text-white transition-all hover:scale-110"
+                        title="Remover Foto"
+                      >
+                        <Trash className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div>
@@ -195,8 +237,49 @@ export default function EditForm({ initialData, statuses }: { initialData: any, 
                  <span>Escolher Arquivos</span>
                  <input type="file" multiple accept=".pdf,.doc,.docx" className="hidden" onChange={(e) => setArquivos(Array.from(e.target.files || []))} />
                </label>
-               <span className="text-sm text-slate-500">{arquivos.length} novos / {initialData.anexoArquivos?.length || 0} já salvos</span>
+               <span className="text-sm text-slate-500">{arquivos.length} novos / {arquivosSalvos.length} salvos</span>
             </div>
+
+            {/* Arquivos Salvos no Banco */}
+            {arquivosSalvos.length > 0 && (
+              <div className="mt-4 space-y-2">
+                {arquivosSalvos.map((url, idx) => {
+                  const filename = url.split("/").pop()?.replace(/^[0-9]+-/, "") || `Documento-${idx + 1}`;
+                  return (
+                    <div key={idx} className="flex items-center justify-between p-3 bg-slate-50 hover:bg-slate-100/80 rounded-xl border border-slate-200/60 transition-colors">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="p-2 bg-[#E45318]/10 text-[#E45318] rounded-lg">
+                          <FileText className="w-5 h-5" />
+                        </div>
+                        <span className="text-sm font-medium text-slate-700 truncate max-w-[150px] sm:max-w-[200px]" title={filename}>
+                          {filename}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 ml-4">
+                        <a
+                          href={url}
+                          download={filename}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-2 text-slate-500 hover:text-[#00BFA5] hover:bg-[#00BFA5]/10 rounded-lg transition-all"
+                          title="Baixar Arquivo"
+                        >
+                          <Download className="w-4 h-4" />
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() => setArquivosSalvos(arquivosSalvos.filter((_, i) => i !== idx))}
+                          className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                          title="Remover Arquivo"
+                        >
+                          <Trash className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
 

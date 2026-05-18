@@ -475,11 +475,34 @@ function PhaseMetric({ phase, v, i, p }: any) {
 }
 
 function StringMetric({ name, v, i }: any) {
+  // Helper para limpar número de série longo da visualização
+  const formatStringName = (rawName: string): string => {
+    if (rawName.includes("_")) {
+      const parts = rawName.split("_");
+      if (parts.length === 3) {
+        // Formato: Usina_SN_S1 -> Manga - STR 1
+        const usina = parts[0];
+        const strIdx = parts[2].replace("S", "STR ");
+        return `${usina} - ${strIdx}`;
+      } else if (parts.length === 2) {
+        // Formato: SN_S1 -> STR 1, ou Usina_S1 -> Usina - STR 1
+        const first = parts[0];
+        const second = parts[1];
+        if (first.length > 8 && /^[A-Za-z0-9]+$/.test(first)) {
+          return second.replace("S", "STR ");
+        } else {
+          return `${first} - ${second.replace("S", "STR ")}`;
+        }
+      }
+    }
+    return rawName.replace("S", "STR ");
+  };
+
   return (
     <div className="p-2 bg-white border border-slate-100 rounded-xl flex items-center justify-between hover:border-cordeiro-orange/50 transition-all">
        <div className="flex items-center gap-2">
           <div className="w-1.5 h-1.5 rounded-full bg-cordeiro-orange"></div>
-          <span className="text-[8px] font-black text-black uppercase">{name}</span>
+          <span className="text-[8px] font-black text-black uppercase">{formatStringName(name)}</span>
        </div>
        <div className="flex gap-2">
           <div className="text-right"><p className="text-[8px] font-black text-blue-600">{(v ?? 0).toFixed(0)}V</p></div>
@@ -488,6 +511,7 @@ function StringMetric({ name, v, i }: any) {
     </div>
   );
 }
+
 
 function KPICard({ title, value, sub, icon: Icon, trend, trendUp, color }: any) {
   const colors: any = {

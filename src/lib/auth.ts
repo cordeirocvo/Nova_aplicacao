@@ -42,6 +42,8 @@ export const authOptions: NextAuthOptions = {
               canEditBudgets: user.canEditBudgets,
               canAccessAppLeads: user.canAccessAppLeads,
               canManageCRM: user.canManageCRM,
+              canAccessSIE: user.canAccessSIE,
+              allowedRoutes: user.allowedRoutes || [],
             };
           }
           
@@ -64,6 +66,7 @@ export const authOptions: NextAuthOptions = {
         token.canAccessAppLeads = (user as any).canAccessAppLeads;
         token.canManageCRM = (user as any).canManageCRM;
         token.canAccessSIE = (user as any).canAccessSIE;
+        token.allowedRoutes = (user as any).allowedRoutes || [];
       }
       return token;
     },
@@ -76,6 +79,7 @@ export const authOptions: NextAuthOptions = {
         (session.user as any).canAccessAppLeads = token.canAccessAppLeads;
         (session.user as any).canManageCRM = token.canManageCRM;
         (session.user as any).canAccessSIE = token.canAccessSIE;
+        (session.user as any).allowedRoutes = token.allowedRoutes || [];
       }
       return session;
     }

@@ -24,6 +24,7 @@ export async function GET() {
         canAccessAppLeads: true,
         canManageCRM: true,
         canAccessSIE: true,
+        allowedRoutes: true,
         createdAt: true,
       },
       orderBy: { createdAt: "desc" },
@@ -47,11 +48,20 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { email, name, password, role, canAccessBudgets, canEditBudgets, canAccessAppLeads, canManageCRM, canAccessSIE } = body;
+    const { email, name, password, role, allowedRoutes } = body;
 
     if (!email || !password || !role) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     }
+
+    const routesArray = Array.isArray(allowedRoutes) ? allowedRoutes : [];
+
+    // Sync legacy permission flags:
+    const canAccessBudgets = routesArray.includes('/orcamentos');
+    const canEditBudgets = routesArray.includes('canEditBudgets');
+    const canAccessAppLeads = routesArray.includes('/app-vendedor');
+    const canManageCRM = routesArray.includes('/crm');
+    const canAccessSIE = routesArray.includes('/engenharia/solar/monitoramento');
 
     const user = await prisma.user.create({
       data: {
@@ -59,11 +69,12 @@ export async function POST(req: Request) {
         name,
         password, // Em produção, usar hash! Mas aqui segue o padrão da app.
         role,
-        canAccessBudgets: !!canAccessBudgets,
-        canEditBudgets: !!canEditBudgets,
-        canAccessAppLeads: !!canAccessAppLeads,
-        canManageCRM: !!canManageCRM,
-        canAccessSIE: !!canAccessSIE,
+        canAccessBudgets,
+        canEditBudgets,
+        canAccessAppLeads,
+        canManageCRM,
+        canAccessSIE,
+        allowedRoutes: routesArray,
       },
     });
 

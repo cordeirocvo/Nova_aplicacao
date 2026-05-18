@@ -12,17 +12,27 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
   try {
     const { id } = await params;
-    const { email, name, password, role, canAccessBudgets, canEditBudgets, canAccessAppLeads, canManageCRM, canAccessSIE } = await req.json();
+    const { email, name, password, role, allowedRoutes } = await req.json();
+
+    const routesArray = Array.isArray(allowedRoutes) ? allowedRoutes : [];
+
+    // Sync legacy permission flags:
+    const canAccessBudgets = routesArray.includes('/orcamentos');
+    const canEditBudgets = routesArray.includes('canEditBudgets');
+    const canAccessAppLeads = routesArray.includes('/app-vendedor');
+    const canManageCRM = routesArray.includes('/crm');
+    const canAccessSIE = routesArray.includes('/engenharia/solar/monitoramento');
 
     const data: any = { 
       email, 
       name, 
       role,
-      canAccessBudgets: canAccessBudgets !== undefined ? canAccessBudgets : false,
-      canEditBudgets: canEditBudgets !== undefined ? canEditBudgets : false,
-      canAccessAppLeads: canAccessAppLeads !== undefined ? canAccessAppLeads : false,
-      canManageCRM: canManageCRM !== undefined ? canManageCRM : false,
-      canAccessSIE: canAccessSIE !== undefined ? canAccessSIE : false,
+      canAccessBudgets,
+      canEditBudgets,
+      canAccessAppLeads,
+      canManageCRM,
+      canAccessSIE,
+      allowedRoutes: routesArray,
     };
     
     if (password && password.trim() !== "") {
@@ -55,13 +65,22 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
        return NextResponse.json({ error: "Cannot delete yourself" }, { status: 400 });
     }
 
+    // 1. Delete associated leads first to satisfy foreign key constraints (cascade)
+    await prisma.lead.deleteMany({
+      where: { vendedorId: id },
+    });
+
+    // 2. Delete the user
     await prisma.user.delete({
       where: { id },
     });
 
     return NextResponse.json({ success: true });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error deleting user:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json({ 
+      error: "Internal Server Error", 
+      message: error?.message || "Failed to delete user" 
+    }, { status: 500 });
   }
 }

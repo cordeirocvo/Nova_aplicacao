@@ -65,8 +65,16 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       
       if (role === 'TV' && path !== '/atividades') {
         window.location.href = '/atividades';
-      } else if (role === 'USER' && path !== '/atividades/nova') {
-        window.location.href = '/atividades/nova';
+      } else if (role === 'USER') {
+        const allowed = user.allowedRoutes || [];
+        if (allowed.length > 0) {
+          const isAllowedPath = allowed.some((r: string) => path === r || path.startsWith(r + '/'));
+          if (!isAllowedPath && path !== '/login' && path !== '/') {
+            window.location.href = allowed[0];
+          }
+        } else if (path !== '/atividades/nova') {
+          window.location.href = '/atividades/nova';
+        }
       }
     }
   }, [session, pathname]);
@@ -104,6 +112,12 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         // ADMIN sempre vê tudo
         if (role === 'ADMIN') return true;
 
+        // Se o usuário possuir allowedRoutes configuradas, usamos estritamente essa lista:
+        if (userObj.allowedRoutes && userObj.allowedRoutes.length > 0) {
+          return userObj.allowedRoutes.includes(item.href);
+        }
+
+        // Caso contrário, fallback para as flags legadas:
         if (item.requiresBudgets && !userObj.canAccessBudgets) return false;
         if (item.requiresAppLeads && !userObj.canAccessAppLeads) return false;
         if (item.requiresCRM && !userObj.canManageCRM) return false;

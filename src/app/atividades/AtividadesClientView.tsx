@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from "next/link";
-import { Edit, ShieldAlert } from "lucide-react";
+import { Edit, ShieldAlert, Paperclip } from "lucide-react";
 import { TagToggler } from "./TagToggler";
 
 export default function AtividadesClientView({ atividades, settings, isAdmin, isTV }: any) {
@@ -124,11 +124,30 @@ export default function AtividadesClientView({ atividades, settings, isAdmin, is
                  fontColorHex = "#ffffff";
               }
 
+              const hasAttachments = (atv.anexoFotos && atv.anexoFotos.length > 0) || (atv.anexoArquivos && atv.anexoArquivos.length > 0);
               return (
                 <tr key={atv.id} style={inlineStyle}>
                   <td style={{ padding: '12px', fontWeight: 'bold', wordWrap: 'break-word' }}>
                     {isUrgentParecer && <ShieldAlert className="inline-block w-4 h-4 mr-1 mb-0.5" style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '4px', color: '#fecaca' }} />}
                     <span style={{ fontSize: '14px' }}>{atv.instalacao || "N/A"}</span>
+                    {hasAttachments && (
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '2px',
+                        fontSize: '9px',
+                        fontWeight: 'bold',
+                        padding: '1px 5px',
+                        borderRadius: '4px',
+                        marginLeft: '6px',
+                        textTransform: 'uppercase',
+                        backgroundColor: (atv.prioridade || atv.atividadeExtra || isUrgentParecer) ? 'rgba(255,255,255,0.2)' : 'rgba(79,70,229,0.1)',
+                        color: (atv.prioridade || atv.atividadeExtra || isUrgentParecer) ? '#ffffff' : '#4f46e5',
+                        verticalAlign: 'middle'
+                      }}>
+                        <Paperclip style={{ width: '10px', height: '10px' }} /> Anexos
+                      </span>
+                    )}
                     <TagToggler id={atv.id} prioridade={atv.prioridade} atividadeExtra={atv.atividadeExtra} isAdmin={!!isAdmin} />
                   </td>
                   <td style={{ padding: '12px', fontWeight: '900', fontSize: '12px' }}>
@@ -232,6 +251,15 @@ export default function AtividadesClientView({ atividades, settings, isAdmin, is
                   <td className="px-3 py-3 font-bold leading-tight break-words">
                     {isUrgentParecer && <ShieldAlert className="inline-block w-4 h-4 mr-1 mb-0.5 text-red-200" />}
                     <span className="text-sm">{atv.instalacao || "N/A"}</span>
+                    {((atv.anexoFotos && atv.anexoFotos.length > 0) || (atv.anexoArquivos && atv.anexoArquivos.length > 0)) && (
+                      <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded ml-2 uppercase vertical-middle ${
+                        (atv.prioridade || atv.atividadeExtra || isUrgentParecer)
+                          ? 'bg-white/20 text-white'
+                          : 'bg-indigo-500/10 text-indigo-600'
+                      }`}>
+                        <Paperclip className="w-3.5 h-3.5" /> Anexos
+                      </span>
+                    )}
                     <TagToggler id={atv.id} prioridade={atv.prioridade} atividadeExtra={atv.atividadeExtra} isAdmin={!!isAdmin} />
                   </td>
                   <td className="px-3 py-3 font-black text-xs">
@@ -292,7 +320,18 @@ export default function AtividadesClientView({ atividades, settings, isAdmin, is
               {isUrgentParecer && <ShieldAlert className="absolute top-2 right-2 w-5 h-5 text-white animate-bounce" />}
               <div className="flex justify-between items-start mb-2">
                 <div className="w-2/3">
-                  <h3 className="font-bold text-lg leading-tight">{atv.instalacao}</h3>
+                  <h3 className="font-bold text-lg leading-tight">
+                    {atv.instalacao}
+                    {((atv.anexoFotos && atv.anexoFotos.length > 0) || (atv.anexoArquivos && atv.anexoArquivos.length > 0)) && (
+                      <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded ml-2 uppercase vertical-middle ${
+                        (atv.prioridade || atv.atividadeExtra || isUrgentParecer)
+                          ? 'bg-white/20 text-white'
+                          : 'bg-indigo-500/10 text-indigo-600'
+                      }`}>
+                        <Paperclip className="w-3 h-3" /> Anexos
+                      </span>
+                    )}
+                  </h3>
                   <TagToggler id={atv.id} prioridade={atv.prioridade} atividadeExtra={atv.atividadeExtra} isAdmin={!!isAdmin} />
                 </div>
                 <span className="text-xs font-black px-2 py-1 bg-black/5 rounded uppercase tracking-widest">{atv.status || "Pendente"}</span>

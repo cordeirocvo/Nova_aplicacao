@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabaseClient";
 import { Loader, UploadCloud, Camera, CheckCircle } from "lucide-react";
 
 export default function NovaAtividadePage() {
@@ -25,24 +24,29 @@ export default function NovaAtividadePage() {
     dataPrevista: "",
   });
 
-  const handleUpload = async (files: File[], bucket: string) => {
+  // Função robusta de upload usando a API local (/api/upload)
+  const handleUpload = async (files: File[]) => {
     const urls: string[] = [];
     for (const file of files) {
       try {
-        const fileName = `${Date.now()}-${file.name}`;
-        const { data, error } = await supabase.storage
-          .from(bucket)
-          .upload(fileName, file);
+        const formData = new FormData();
+        formData.append("file", file);
 
-        if (data) {
-          const { data: publicData } = supabase.storage.from(bucket).getPublicUrl(fileName);
-          urls.push(publicData.publicUrl);
-        }
-        if (error) {
-          console.warn("Supabase Storage error (bucket might not exist):", error.message);
+        const res = await fetch("/api/upload", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data.url) {
+            urls.push(data.url);
+          }
+        } else {
+          console.warn("Upload falhou na API:", res.statusText);
         }
       } catch (err) {
-        console.warn(`Storage falhou ao enviar para o bucket '${bucket}'. Verifique se ele existe no Supabase.`, err);
+        console.warn("Falha no upload do arquivo:", err);
       }
     }
     return urls;
@@ -53,16 +57,14 @@ export default function NovaAtividadePage() {
     setLoading(true);
 
     try {
-      // 1. Upload files to Supabase (assuming buckets exist, or mock if they don't)
-      // We wrap in try to not break saving if bucket isn't setup.
       let fotosUrls: string[] = [];
       let arquivosUrls: string[] = [];
       
-      try {
-         if (fotos.length) fotosUrls = await handleUpload(fotos, "fotos");
-         if (arquivos.length) arquivosUrls = await handleUpload(arquivos, "arquivos");
-      } catch(ex) {
-         console.warn("Storage não configurado, pulando uploads.");
+      if (fotos.length) {
+         fotosUrls = await handleUpload(fotos);
+      }
+      if (arquivos.length) {
+         arquivosUrls = await handleUpload(arquivos);
       }
 
       // 2. Setup payload

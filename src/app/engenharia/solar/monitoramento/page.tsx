@@ -79,7 +79,11 @@ export default function SolarMonitoringPage() {
       const res = await fetch(url);
       const data = await res.json();
       setMetrics(data);
-      if (data.telemetrias) setTelemetrias(data.telemetrias);
+      if (data.telemetrias) {
+        setTelemetrias(data.telemetrias);
+      } else {
+        setTelemetrias([]);
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -203,21 +207,21 @@ export default function SolarMonitoringPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
         <KPICard 
           title="Geração Hoje" 
-          value={loading ? "---" : `${parseFloat(metrics?.geracaoHoje || '0').toFixed(1)} kWh`} 
+          value={loading ? "---" : `${(parseFloat(metrics?.geracaoHoje) || 0).toFixed(1)} kWh`} 
           sub={metrics?.percentualEsperado ? `${metrics.percentualEsperado}% da meta` : "Aguardando telemetria"} 
           icon={Zap} trend={metrics?.tendenciaGeracao || "+5.2%"} 
           trendUp={true} color="orange" 
         />
         <KPICard 
           title="Potência Instantânea" 
-          value={loading ? "---" : `${parseFloat(metrics?.potenciaAtual || '0').toFixed(1)} kW`} 
+          value={loading ? "---" : `${(parseFloat(metrics?.potenciaAtual) || 0).toFixed(1)} kW`} 
           sub={`Capacidade: ${selectedUsina?.capacidadeKWp || '---'} kWp`} 
           icon={Activity} trend="Tempo Real" 
           trendUp={true} color="green" 
         />
         <KPICard 
           title="Performance Ratio (PR)" 
-          value={loading ? "---" : `${metrics?.pr || '84.2'}%`} 
+          value={loading ? "---" : `${(parseFloat(metrics?.pr) || 84.2).toFixed(1)}%`} 
           sub={`Meta: 80%`} 
           icon={TrendingUp} trend="+2.1%" 
           trendUp={true} color="orange" 
@@ -357,16 +361,16 @@ export default function SolarMonitoringPage() {
               <div className="space-y-6">
                  <h5 className="text-[10px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-50 pb-2">Lado CA (Rede Elétrica)</h5>
                  <div className="space-y-4">
-                    <PhaseMetric phase="Fase A" v={metrics?.detalhesCA?.faseA?.V || 0} i={metrics?.detalhesCA?.faseA?.I || 0} p={metrics?.detalhesCA?.faseA?.P || 0} />
-                    <PhaseMetric phase="Fase B" v={metrics?.detalhesCA?.faseB?.V || 0} i={metrics?.detalhesCA?.faseB?.I || 0} p={metrics?.detalhesCA?.faseB?.P || 0} />
-                    <PhaseMetric phase="Fase C" v={metrics?.detalhesCA?.faseC?.V || 0} i={metrics?.detalhesCA?.faseC?.I || 0} p={metrics?.detalhesCA?.faseC?.P || 0} />
+                    <PhaseMetric phase="Fase A" v={metrics?.detalhesCA?.faseA?.V ?? 0} i={metrics?.detalhesCA?.faseA?.I ?? 0} p={metrics?.detalhesCA?.faseA?.P ?? 0} />
+                    <PhaseMetric phase="Fase B" v={metrics?.detalhesCA?.faseB?.V ?? 0} i={metrics?.detalhesCA?.faseB?.I ?? 0} p={metrics?.detalhesCA?.faseB?.P ?? 0} />
+                    <PhaseMetric phase="Fase C" v={metrics?.detalhesCA?.faseC?.V ?? 0} i={metrics?.detalhesCA?.faseC?.I ?? 0} p={metrics?.detalhesCA?.faseC?.P ?? 0} />
                  </div>
                  <div className="p-5 bg-slate-50 rounded-[2rem] flex items-center justify-between">
                     <div className="flex items-center gap-3">
                        <Thermometer className="w-4 h-4 text-orange-500" />
                        <span className="text-[10px] font-black uppercase text-slate-500">Temp. IGBT Interna</span>
                     </div>
-                    <span className="text-sm font-black text-black">{(metrics?.tempIGBT || 0).toFixed(1)} °C</span>
+                    <span className="text-sm font-black text-black">{(metrics?.tempIGBT ?? 0).toFixed(1)} °C</span>
                  </div>
               </div>
 
@@ -416,28 +420,31 @@ export default function SolarMonitoringPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {telemetrias.slice(0, 15).map((t: any) => (
-                <tr key={t.id} className="hover:bg-slate-50/50 transition-colors group">
-                  <td className="px-8 py-5 text-sm font-black text-slate-800 tracking-tighter">
-                    {new Date(t.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                  </td>
-                  <td className="px-8 py-5 text-sm font-black text-cordeiro-orange">
-                    {t.potenciaAtivaKW.toFixed(2)} kW
-                  </td>
-                  <td className="px-8 py-5 text-sm font-bold text-slate-600">
-                    {t.energiaAcumuladaKWh.toFixed(2)}
-                  </td>
-                  <td className="px-8 py-5 text-sm font-bold text-blue-600">
-                    {(t.dadosStrings?.S1?.V || t.tensaoCA_A || 0).toFixed(1)} V
-                  </td>
-                  <td className="px-8 py-5 text-sm font-bold text-amber-500">
-                    {t.irradiancia} W/m²
-                  </td>
-                  <td className="px-8 py-5 text-sm font-bold text-slate-500">
-                    {t.tempAmbiente}°C
-                  </td>
-                </tr>
-              ))}
+              {telemetrias.slice(0, 15).map((t: any) => {
+                if (!t) return null;
+                return (
+                  <tr key={t.id} className="hover:bg-slate-50/50 transition-colors group">
+                    <td className="px-8 py-5 text-sm font-black text-slate-800 tracking-tighter">
+                      {t.timestamp ? new Date(t.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : "---"}
+                    </td>
+                    <td className="px-8 py-5 text-sm font-black text-cordeiro-orange">
+                      {(t.potenciaAtivaKW ?? 0).toFixed(2)} kW
+                    </td>
+                    <td className="px-8 py-5 text-sm font-bold text-slate-600">
+                      {(t.energiaAcumuladaKWh ?? 0).toFixed(2)}
+                    </td>
+                    <td className="px-8 py-5 text-sm font-bold text-blue-600">
+                      {(t.dadosStrings?.S1?.V ?? t.tensaoCA_A ?? 0).toFixed(1)} V
+                    </td>
+                    <td className="px-8 py-5 text-sm font-bold text-amber-500">
+                      {t.irradiancia ?? 0} W/m²
+                    </td>
+                    <td className="px-8 py-5 text-sm font-bold text-slate-500">
+                      {t.tempAmbiente ?? 0}°C
+                    </td>
+                  </tr>
+                );
+              })}
               {telemetrias.length === 0 && (
                 <tr>
                   <td colSpan={6} className="px-8 py-24 text-center">
@@ -460,9 +467,9 @@ function PhaseMetric({ phase, v, i, p }: any) {
   return (
     <div className="p-4 bg-slate-50 rounded-3xl border border-slate-100 grid grid-cols-4 items-center gap-2">
        <span className="text-[10px] font-black text-black uppercase">{phase}</span>
-       <div className="text-center"><p className="text-[8px] font-bold text-slate-400 uppercase">Tensão</p><p className="text-xs font-black">{v.toFixed(1)}V</p></div>
-       <div className="text-center"><p className="text-[8px] font-bold text-slate-400 uppercase">Corrente</p><p className="text-xs font-black">{i.toFixed(1)}A</p></div>
-       <div className="text-center"><p className="text-[8px] font-bold text-slate-400 uppercase">Potência</p><p className="text-xs font-black">{p.toFixed(1)}kW</p></div>
+       <div className="text-center"><p className="text-[8px] font-bold text-slate-400 uppercase">Tensão</p><p className="text-xs font-black">{(v ?? 0).toFixed(1)}V</p></div>
+       <div className="text-center"><p className="text-[8px] font-bold text-slate-400 uppercase">Corrente</p><p className="text-xs font-black">{(i ?? 0).toFixed(1)}A</p></div>
+       <div className="text-center"><p className="text-[8px] font-bold text-slate-400 uppercase">Potência</p><p className="text-xs font-black">{(p ?? 0).toFixed(1)}kW</p></div>
     </div>
   );
 }
@@ -475,8 +482,8 @@ function StringMetric({ name, v, i }: any) {
           <span className="text-[8px] font-black text-black uppercase">{name}</span>
        </div>
        <div className="flex gap-2">
-          <div className="text-right"><p className="text-[8px] font-black text-blue-600">{v.toFixed(0)}V</p></div>
-          <div className="text-right"><p className="text-[8px] font-black text-slate-400">{i.toFixed(1)}A</p></div>
+          <div className="text-right"><p className="text-[8px] font-black text-blue-600">{(v ?? 0).toFixed(0)}V</p></div>
+          <div className="text-right"><p className="text-[8px] font-black text-slate-400">{(i ?? 0).toFixed(1)}A</p></div>
        </div>
     </div>
   );

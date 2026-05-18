@@ -316,15 +316,21 @@ export default function GestaoUsinasPage() {
 function UsinaCard({ usina, onUpdate, onEdit, estacaoNome }: { usina: any, onUpdate: () => void, onEdit: () => void, estacaoNome?: string }) {
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const handleDelete = async () => {
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     if (!confirm("⚠️ Excluir permanentemente?")) return;
     setIsDeleting(true);
     try {
       const res = await fetch(`/api/solar/usinas?id=${usina.id}`, { method: "DELETE" });
-      if (res.ok) onUpdate();
-      else alert("Erro ao excluir");
+      if (res.ok) {
+        onUpdate();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        alert(`Erro ao excluir: ${err.error || res.statusText}`);
+      }
     } catch (err) {
-      alert("Erro de conexão");
+      alert("Erro de conexão com o servidor.");
     } finally {
       setIsDeleting(false);
     }
@@ -335,8 +341,8 @@ function UsinaCard({ usina, onUpdate, onEdit, estacaoNome }: { usina: any, onUpd
       <div className="flex items-center justify-between mb-8">
         <span className="px-4 py-2 bg-slate-50 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-400">{usina.apiFornecedor}</span>
         <div className="flex items-center gap-2">
-          <button onClick={onEdit} className="p-2 text-slate-300 hover:text-cordeiro-orange"><Settings className="w-5 h-5" /></button>
-          <button onClick={handleDelete} className="p-2 text-slate-300 hover:text-red-500">{isDeleting ? <Loader className="w-5 h-5 animate-spin" /> : <Trash className="w-5 h-5" />}</button>
+          <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit(); }} className="p-2 text-slate-300 hover:text-cordeiro-orange"><Settings className="w-5 h-5" /></button>
+          <button type="button" onClick={handleDelete} className="p-2 text-slate-300 hover:text-red-500">{isDeleting ? <Loader className="w-5 h-5 animate-spin" /> : <Trash className="w-5 h-5" />}</button>
         </div>
       </div>
       <h3 className="text-2xl font-black text-slate-800 leading-tight mb-2">{usina.nome}</h3>

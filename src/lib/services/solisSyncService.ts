@@ -83,22 +83,51 @@ export class SolisSyncService {
 
           fs.appendFileSync(logFile, `[SOLIS-SYNC] ${usina.nome}: Final Power=${powerFinal.toFixed(2)}kW, Energy=${energyKWh}kWh\n`);
 
-          await prisma.telemetria.create({
-            data: {
+          const alignedTime = new Date(Math.floor(Date.now() / (5 * 60 * 1000)) * (5 * 60 * 1000));
+          
+          const existing = await prisma.telemetria.findFirst({
+            where: {
               usinaId: usina.id,
-              potenciaAtivaKW: powerFinal,
-              energiaAcumuladaKWh: energyKWh,
-              timestamp: new Date(),
-              tensaoCA_A: vAc.a,
-              tensaoCA_B: vAc.b,
-              tensaoCA_C: vAc.c,
-              correnteCA_A: iAc.a,
-              correnteCA_B: iAc.b,
-              correnteCA_C: iAc.c,
-              tempIGBT: temp,
-              dadosStrings: stringsAcc
+              timestamp: alignedTime
             }
           });
+
+          if (existing) {
+            await prisma.telemetria.update({
+              where: { id: existing.id },
+              data: {
+                potenciaAtivaKW: powerFinal,
+                energiaAcumuladaKWh: energyKWh,
+                tensaoCA_A: vAc.a,
+                tensaoCA_B: vAc.b,
+                tensaoCA_C: vAc.c,
+                correnteCA_A: iAc.a,
+                correnteCA_B: iAc.b,
+                correnteCA_C: iAc.c,
+                tempIGBT: temp,
+                dadosStrings: stringsAcc
+              }
+            });
+            fs.appendFileSync(logFile, `[SOLIS-SYNC] Telemetria atualizada para o balde de 5min (${alignedTime.toISOString()})\n`);
+          } else {
+            await prisma.telemetria.create({
+              data: {
+                usinaId: usina.id,
+                potenciaAtivaKW: powerFinal,
+                energiaAcumuladaKWh: energyKWh,
+                timestamp: alignedTime,
+                tensaoCA_A: vAc.a,
+                tensaoCA_B: vAc.b,
+                tensaoCA_C: vAc.c,
+                correnteCA_A: iAc.a,
+                correnteCA_B: iAc.b,
+                correnteCA_C: iAc.c,
+                tempIGBT: temp,
+                dadosStrings: stringsAcc
+              }
+            });
+            fs.appendFileSync(logFile, `[SOLIS-SYNC] Nova telemetria criada para o balde de 5min (${alignedTime.toISOString()})\n`);
+          }
 
         } catch (err) {
           fs.appendFileSync(logFile, `[SOLIS-SYNC] Erro fatal em ${usina.nome}: ${err}\n`);

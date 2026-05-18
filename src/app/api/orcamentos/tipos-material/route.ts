@@ -26,10 +26,15 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { nome } = await req.json();
+    const { nome, bdiDefault } = await req.json();
     if (!nome) return NextResponse.json({ error: "Nome obrigatório" }, { status: 400 });
 
-    const tipo = await prisma.orcamentoTipoMaterial.create({ data: { nome } });
+    const tipo = await prisma.orcamentoTipoMaterial.create({ 
+      data: { 
+        nome,
+        bdiDefault: bdiDefault ? Number(bdiDefault) : 0
+      } 
+    });
     return NextResponse.json({ success: true, tipo });
   } catch (error: any) {
     if (error.code === 'P2002') {

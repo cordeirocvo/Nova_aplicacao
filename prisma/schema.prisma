@@ -594,10 +594,11 @@ model OrcamentoItemPadrao {
 }
 
 model OrcamentoTipoMaterial {
-  id        String   @id @default(cuid())
-  nome      String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String   @id @default(cuid())
+  nome       String   @unique
+  bdiDefault Float    @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 model Fornecedor {

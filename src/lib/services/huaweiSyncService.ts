@@ -125,22 +125,51 @@ export class HuaweiSyncService {
 
               fs.appendFileSync(logFile, `[HUAWEI-SYNC] Gravando ${usina.nome}: Potência=${powerFinal.toFixed(2)}kW, Energia Dia=${energyKWh}kWh, Tensão=[${v.a}V, ${v.b}V, ${v.c}V]\n`);
 
-              await prisma.telemetria.create({
-                data: {
+              const alignedTime = new Date(Math.floor(Date.now() / (5 * 60 * 1000)) * (5 * 60 * 1000));
+
+              const existing = await prisma.telemetria.findFirst({
+                where: {
                   usinaId: usina.id,
-                  potenciaAtivaKW: powerFinal,
-                  energiaAcumuladaKWh: energyKWh,
-                  timestamp: new Date(),
-                  tensaoCA_A: v.a,
-                  tensaoCA_B: v.b,
-                  tensaoCA_C: v.c,
-                  correnteCA_A: cur.a,
-                  correnteCA_B: cur.b,
-                  correnteCA_C: cur.c,
-                  tempIGBT: t,
-                  dadosStrings: stringsAcc
+                  timestamp: alignedTime
                 }
               });
+
+              if (existing) {
+                await prisma.telemetria.update({
+                  where: { id: existing.id },
+                  data: {
+                    potenciaAtivaKW: powerFinal,
+                    energiaAcumuladaKWh: energyKWh,
+                    tensaoCA_A: v.a,
+                    tensaoCA_B: v.b,
+                    tensaoCA_C: v.c,
+                    correnteCA_A: cur.a,
+                    correnteCA_B: cur.b,
+                    correnteCA_C: cur.c,
+                    tempIGBT: t,
+                    dadosStrings: stringsAcc
+                  }
+                });
+                fs.appendFileSync(logFile, `[HUAWEI-SYNC] Telemetria atualizada para o balde de 5min (${alignedTime.toISOString()})\n`);
+              } else {
+                await prisma.telemetria.create({
+                  data: {
+                    usinaId: usina.id,
+                    potenciaAtivaKW: powerFinal,
+                    energiaAcumuladaKWh: energyKWh,
+                    timestamp: alignedTime,
+                    tensaoCA_A: v.a,
+                    tensaoCA_B: v.b,
+                    tensaoCA_C: v.c,
+                    correnteCA_A: cur.a,
+                    correnteCA_B: cur.b,
+                    correnteCA_C: cur.c,
+                    tempIGBT: t,
+                    dadosStrings: stringsAcc
+                  }
+                });
+                fs.appendFileSync(logFile, `[HUAWEI-SYNC] Nova telemetria criada para o balde de 5min (${alignedTime.toISOString()})\n`);
+              }
               
               // Executa cálculo de perdas da IA
               await HuaweiIntegration.calculateLosses(usina.id).catch(() => {});

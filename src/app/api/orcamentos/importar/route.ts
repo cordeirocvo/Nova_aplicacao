@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+// @ts-ignore
+import pdf from "pdf-parse";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
@@ -44,7 +46,7 @@ export async function POST(req: Request) {
     }
   }
 
-  // ──── CASE 2: FILE UPLOAD (PDF EXTRACTION VIA GEMINI) ───────────────────
+  // ──── CASE 2: FILE UPLOAD (HYBRID PDF EXTRACTION VIA GEMINI) ─────────────
   if (contentType.includes("multipart/form-data")) {
     try {
       const formData = await req.formData();
@@ -56,13 +58,25 @@ export async function POST(req: Request) {
 
       const bytes = await file.arrayBuffer();
       const buffer = Buffer.from(bytes);
-      const base64 = buffer.toString("base64");
 
-      // Inicializar o modelo Gemini para estruturar o PDF
+      // 1. Tentar extração de texto nativo com pdf-parse para economizar 99% de tokens e evitar 429
+      let pdfText = "";
+      let parsedSuccessfully = false;
+      try {
+        const parsedPdf = await pdf(buffer);
+        pdfText = parsedPdf.text || "";
+        if (pdfText.trim().length > 10) {
+          parsedSuccessfully = true;
+        }
+      } catch (err) {
+        console.warn("pdf-parse falhou ou retornou texto insuficiente. Usando fallback multimodal...", err);
+      }
+
+      // Inicializar o modelo Gemini
       const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
       const prompt = `Você é um engenheiro orçamentista sênior especialista em CAPEX e orçamentos para obras e projetos elétricos/solares.
-Analise a proposta técnica, planilha de custos, tabela de insumos ou lista de materiais contida no PDF enviado.
+Analise os dados técnicos, propostas técnicas, planilhas de custos ou listas de materiais fornecidos abaixo.
 Extraia TODOS os itens de custos, insumos, materiais, mão de obra e equipamentos listados que contenham preços ou quantidades de referência.
 
 Gere exatamente um array JSON contendo objetos com o formato do exemplo abaixo.
@@ -80,10 +94,20 @@ Formato JSON esperado:
 ]
 `;
 
-      const result = await model.generateContent([
-        { inlineData: { mimeType: file.type || "application/pdf", data: base64 } },
-        prompt,
-      ]);
+      let result;
+      if (parsedSuccessfully) {
+        // Enviar apenas o texto extraído (extremamente leve, rápido e livre de 429)
+        const textPrompt = `${prompt}\n\nTexto extraído do PDF:\n${pdfText.slice(0, 45000)}`;
+        result = await model.generateContent(textPrompt);
+      } else {
+        // Fallback Multimodal (para PDFs escaneados ou imagens)
+        const base64 = buffer.toString("base64");
+        result = await model.generateContent([
+          { inlineData: { mimeType: file.type || "application/pdf", data: base64 } },
+          prompt,
+        ]);
+      }
+
       const textResponse = result.response.text().trim();
 
       // Extrair o JSON caso haja qualquer wrapper markdown remanescente

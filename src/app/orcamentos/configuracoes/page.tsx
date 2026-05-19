@@ -595,12 +595,38 @@ export default function OrcamentosConfigPage() {
                 </select>
               </div>
 
-              <button 
-                type="submit" 
-                className="w-full py-4 bg-[#00BFA5] text-white hover:bg-[#00a892] rounded-2xl font-black text-xs uppercase tracking-widest transition-all hover:scale-[1.02] shadow-lg shadow-[#00BFA5]/20 flex items-center justify-center gap-3"
-              >
-                <Plus className="w-4 h-4" /> Salvar Composição
-              </button>
+              <div className="flex flex-col gap-3 pt-2">
+                <button 
+                  type="submit" 
+                  className="w-full py-4 bg-[#00BFA5] text-white hover:bg-[#00a892] rounded-2xl font-black text-xs uppercase tracking-widest transition-all hover:scale-[1.02] shadow-lg shadow-[#00BFA5]/20 flex items-center justify-center gap-3 cursor-pointer"
+                >
+                  <Plus className="w-4 h-4" /> Salvar Composição
+                </button>
+                
+                <div className="flex items-center py-1">
+                  <div className="flex-1 h-px bg-slate-100"></div>
+                  <span className="px-3 text-[9px] font-black text-slate-400 uppercase tracking-widest">ou importar em lote</span>
+                  <div className="flex-1 h-px bg-slate-100"></div>
+                </div>
+
+                <button 
+                  type="button" 
+                  onClick={() => {
+                    const input = document.createElement("input");
+                    input.type = "file";
+                    input.accept = ".xlsx,.xls,.csv";
+                    input.onchange = (e: any) => {
+                      if (e.target.files && e.target.files[0]) {
+                        processUploadFile(e.target.files[0]);
+                      }
+                    };
+                    input.click();
+                  }}
+                  className="w-full py-4 bg-slate-950 hover:bg-slate-800 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all hover:scale-[1.02] shadow-lg flex items-center justify-center gap-3 cursor-pointer"
+                >
+                  <FileSpreadsheet className="w-4 h-4 text-[#00BFA5]" /> Carregar Planilha Excel
+                </button>
+              </div>
             </form>
           </div>
 

@@ -3,8 +3,6 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-// @ts-ignore
-import pdf from "pdf-parse";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
@@ -58,26 +56,13 @@ export async function POST(req: Request) {
 
       const bytes = await file.arrayBuffer();
       const buffer = Buffer.from(bytes);
+      const base64 = buffer.toString("base64");
 
-      // Ler o texto bruto do PDF usando pdf-parse
-      let pdfText = "";
-      try {
-        const parsedPdf = await pdf(buffer);
-        pdfText = parsedPdf.text || "";
-      } catch (err: any) {
-        console.error("pdf-parse falhou, tentando ler buffer bruto...", err);
-        pdfText = buffer.toString("utf8");
-      }
-
-      if (!pdfText.trim()) {
-        return NextResponse.json({ error: "Não foi possível extrair nenhum texto legível do PDF" }, { status: 400 });
-      }
-
-      // Inicializar o modelo Gemini para estruturar o texto legível
+      // Inicializar o modelo Gemini para estruturar o PDF
       const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
       const prompt = `Você é um engenheiro orçamentista sênior especialista em CAPEX e orçamentos para obras e projetos elétricos/solares.
-Analise o texto abaixo, que foi extraído de uma proposta técnica, planilha de custos, tabela de insumos ou lista de materiais em PDF.
+Analise a proposta técnica, planilha de custos, tabela de insumos ou lista de materiais contida no PDF enviado.
 Extraia TODOS os itens de custos, insumos, materiais, mão de obra e equipamentos listados que contenham preços ou quantidades de referência.
 
 Gere exatamente um array JSON contendo objetos com o formato do exemplo abaixo.
@@ -93,12 +78,12 @@ Formato JSON esperado:
     "precoBaseUnitario": número (preço unitário, ex: 154.32, ou null se não houver no PDF)"
   }
 ]
-
-Texto extraído do PDF:
-${pdfText.slice(0, 40000)} // Limita tamanho do texto para segurança de context window
 `;
 
-      const result = await model.generateContent(prompt);
+      const result = await model.generateContent([
+        { inlineData: { mimeType: file.type || "application/pdf", data: base64 } },
+        prompt,
+      ]);
       const textResponse = result.response.text().trim();
 
       // Extrair o JSON caso haja qualquer wrapper markdown remanescente

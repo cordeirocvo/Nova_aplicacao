@@ -40,6 +40,7 @@ export default function SolarMonitoringPage() {
   const [selectedAlarm, setSelectedAlarm] = useState<any>(null);
   const [syncing, setSyncing] = useState(false);
   const [telemetrias, setTelemetrias] = useState<any[]>([]);
+  const [range, setRange] = useState<string>("24h");
   
   const selectedUsina = usinas.find(u => u.id === selectedUsinaId);
 
@@ -51,7 +52,7 @@ export default function SolarMonitoringPage() {
     if (usinas.length > 0) {
       fetchMetrics();
     }
-  }, [selectedUsinaId, usinas]);
+  }, [selectedUsinaId, usinas, range]);
 
   useEffect(() => {
     if (metrics?.alarmes?.length > 0) {
@@ -73,9 +74,10 @@ export default function SolarMonitoringPage() {
   const fetchMetrics = async () => {
     setLoading(true);
     try {
+      const rangeParam = `&range=${range}`;
       const url = selectedUsinaId === "consolidado" 
-        ? `/api/solar/analise?t=${Date.now()}` 
-        : `/api/solar/analise?usinaId=${selectedUsinaId}&t=${Date.now()}`;
+        ? `/api/solar/analise?t=${Date.now()}${rangeParam}` 
+        : `/api/solar/analise?usinaId=${selectedUsinaId}&t=${Date.now()}${rangeParam}`;
       const res = await fetch(url);
       const data = await res.json();
       setMetrics(data);
@@ -102,6 +104,196 @@ export default function SolarMonitoringPage() {
       setSyncing(false);
     }
   };
+
+  const handleExportReport = () => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const usinaName = metrics?.nome || "CONSOLIDADO";
+    const dateStr = new Date().toLocaleDateString('pt-BR');
+    
+    const stringsHtml = Object.entries(metrics?.dadosStrings || {}).map(([key, val]: any) => `
+      <div style="border: 1px solid #e2e8f0; padding: 10px; border-radius: 12px; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+        <span style="font-weight: 900; font-size: 10px; color: #E45318; text-transform: uppercase;">${key.replace("S", "STR ")}</span>
+        <div style="display: flex; gap: 12px; margin-top: 4px; font-size: 12px;">
+          <span style="color: #2563eb; font-weight: 800;">${(val.V || 0).toFixed(0)}V</span>
+          <span style="color: #64748b; font-weight: 800;">${(val.I || 0).toFixed(1)}A</span>
+        </div>
+      </div>
+    `).join('');
+
+    const phaseHtml = `
+      <tr style="border-bottom: 1px solid #f1f5f9;">
+        <td style="padding: 12px; font-weight: 900; color: #E45318;">Fase A</td>
+        <td style="padding: 12px; font-weight: 800;">${(metrics?.detalhesCA?.faseA?.V || 0).toFixed(1)} V</td>
+        <td style="padding: 12px; font-weight: 800;">${(metrics?.detalhesCA?.faseA?.I || 0).toFixed(1)} A</td>
+        <td style="padding: 12px; font-weight: 800;">${(metrics?.detalhesCA?.faseA?.P || 0).toFixed(1)} kW</td>
+      </tr>
+      <tr style="border-bottom: 1px solid #f1f5f9;">
+        <td style="padding: 12px; font-weight: 900; color: #E45318;">Fase B</td>
+        <td style="padding: 12px; font-weight: 800;">${(metrics?.detalhesCA?.faseB?.V || 0).toFixed(1)} V</td>
+        <td style="padding: 12px; font-weight: 800;">${(metrics?.detalhesCA?.faseB?.I || 0).toFixed(1)} A</td>
+        <td style="padding: 12px; font-weight: 800;">${(metrics?.detalhesCA?.faseB?.P || 0).toFixed(1)} kW</td>
+      </tr>
+      <tr style="border-bottom: 1px solid #f1f5f9;">
+        <td style="padding: 12px; font-weight: 900; color: #E45318;">Fase C</td>
+        <td style="padding: 12px; font-weight: 800;">${(metrics?.detalhesCA?.faseC?.V || 0).toFixed(1)} V</td>
+        <td style="padding: 12px; font-weight: 800;">${(metrics?.detalhesCA?.faseC?.I || 0).toFixed(1)} A</td>
+        <td style="padding: 12px; font-weight: 800;">${(metrics?.detalhesCA?.faseC?.P || 0).toFixed(1)} kW</td>
+      </tr>
+    `;
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Relatório O&M - ${usinaName} - Cordeiro Energia</title>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700;900&display=swap');
+            body {
+              font-family: 'Outfit', sans-serif;
+              color: #0f172a;
+              background: #f8fafc;
+              padding: 40px;
+              margin: 0;
+            }
+            .header {
+              background: #000;
+              color: #fff;
+              padding: 35px;
+              border-radius: 24px;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 35px;
+            }
+            .title {
+              font-size: 26px;
+              font-weight: 900;
+              letter-spacing: -1px;
+            }
+            .kpi-container {
+              display: grid;
+              grid-template-cols: repeat(4, 1fr);
+              gap: 20px;
+              margin-bottom: 35px;
+            }
+            .kpi-card {
+              background: #fff;
+              border: 1px solid #e2e8f0;
+              padding: 24px;
+              border-radius: 24px;
+              text-align: center;
+              box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            }
+            .kpi-val {
+              font-size: 22px;
+              font-weight: 900;
+              color: #E45318;
+              margin-top: 5px;
+            }
+            .section {
+              background: #fff;
+              border: 1px solid #e2e8f0;
+              padding: 35px;
+              border-radius: 24px;
+              margin-bottom: 35px;
+              box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            }
+            .section-title {
+              font-size: 14px;
+              font-weight: 900;
+              text-transform: uppercase;
+              letter-spacing: 2px;
+              color: #64748b;
+              margin-bottom: 24px;
+              border-bottom: 2px solid #f1f5f9;
+              padding-bottom: 12px;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+            }
+            th {
+              text-align: left;
+              padding: 12px;
+              font-weight: 900;
+              font-size: 11px;
+              text-transform: uppercase;
+              color: #64748b;
+              background: #f8fafc;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div>
+              <div class="title">CORDEIRO ENERGIA</div>
+              <div style="font-size: 11px; font-weight: 700; color: #E45318; margin-top: 5px; letter-spacing: 2px; text-transform: uppercase;">RELATÓRIO EXECUTIVO DE OPERAÇÃO & MANUTENÇÃO</div>
+            </div>
+            <div style="text-align: right; font-size: 12px; font-weight: 700; opacity: 0.8;">
+              <div>Data: ${dateStr}</div>
+              <div>Plataforma SIE v3.0</div>
+            </div>
+          </div>
+
+          <div class="kpi-container">
+            <div class="kpi-card">
+              <div style="font-size: 10px; font-weight: 900; color: #64748b; text-transform: uppercase;">Geração Hoje</div>
+              <div class="kpi-val">${(metrics?.geracaoHoje || 0).toFixed(1)} kWh</div>
+            </div>
+            <div class="kpi-card">
+              <div style="font-size: 10px; font-weight: 900; color: #64748b; text-transform: uppercase;">Potência Atual</div>
+              <div class="kpi-val">${(metrics?.potenciaAtual || 0).toFixed(1)} kW</div>
+            </div>
+            <div class="kpi-card">
+              <div style="font-size: 10px; font-weight: 900; color: #64748b; text-transform: uppercase;">Performance Ratio</div>
+              <div class="kpi-val">${(metrics?.pr || 85).toFixed(1)}%</div>
+            </div>
+            <div class="kpi-card">
+              <div style="font-size: 10px; font-weight: 900; color: #64748b; text-transform: uppercase;">Temperatura Inversor</div>
+              <div class="kpi-val">${(metrics?.tempIGBT || 0).toFixed(1)} °C</div>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">Lado CA (Rede Trifásica)</div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Fase</th>
+                  <th>Tensão (V)</th>
+                  <th>Corrente (A)</th>
+                  <th>Potência (kW)</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${phaseHtml}
+              </tbody>
+            </table>
+          </div>
+
+          <div class="section">
+            <div class="section-title">Lado CC (Mapeamento de Strings)</div>
+            <div style="display: grid; grid-template-cols: repeat(4, 1fr); gap: 12px;">
+              ${stringsHtml || '<div style="grid-column: 1/-1; padding: 24px; text-align: center; color: #64748b; font-weight: 800;">Nenhuma string ativa registrada</div>'}
+            </div>
+          </div>
+
+          <div style="text-align: center; margin-top: 50px; font-size: 11px; font-weight: 900; color: #94a3b8; letter-spacing: 2px;">
+            PLATAFORMA SIE - SISTEMA DE INTELIGÊNCIA SOLAR - CORDEIRO ENERGIA O&M
+          </div>
+
+          <script>
+            window.onload = function() {
+              window.print();
+            }
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
 
   return (
     <div className="p-4 md:p-8 max-w-[1600px] mx-auto space-y-8 animate-in fade-in duration-700 font-montserrat">
@@ -182,7 +374,7 @@ export default function SolarMonitoringPage() {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-row lg:flex-col gap-4">
+        <div className="flex flex-col sm:flex-row lg:flex-col gap-4">
           <button 
             onClick={handleSync}
             disabled={syncing}
@@ -195,8 +387,18 @@ export default function SolarMonitoringPage() {
             </div>
           </button>
           <button 
+            onClick={handleExportReport}
+            className="flex-1 flex items-center justify-center gap-6 bg-slate-50 text-slate-700 hover:bg-slate-100 rounded-[2.5rem] px-10 py-6 md:py-8 border border-slate-100 transition-all hover:scale-[1.02] active:scale-95 group"
+          >
+            <Database className="w-6 h-6 text-cordeiro-orange group-hover:scale-110 transition-transform" />
+            <div className="text-left">
+              <p className="text-[10px] font-black uppercase tracking-widest opacity-40 leading-none mb-1">Relatórios</p>
+              <p className="text-base font-black uppercase tracking-tighter leading-none">Exportar O&M</p>
+            </div>
+          </button>
+          <button 
             onClick={() => router.push('/engenharia/solar/monitoramento/usinas')}
-            className="p-6 md:p-8 bg-white text-slate-400 hover:text-cordeiro-orange rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/50 transition-all hover:scale-105 group"
+            className="p-6 md:p-8 bg-white text-slate-400 hover:text-cordeiro-orange rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/50 transition-all hover:scale-105 group flex items-center justify-center"
           >
             <Settings className="w-8 h-8 group-hover:rotate-90 transition-transform duration-500" />
           </button>
@@ -238,20 +440,47 @@ export default function SolarMonitoringPage() {
       {/* Main Analysis Sections */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 card-cordeiro">
-          <div className="flex items-center justify-between mb-10">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-10">
             <div>
               <h3 className="font-black text-black uppercase tracking-tighter text-xl">Curva de Geração Dinâmica</h3>
-              <p className="text-xs text-slate-400 font-bold uppercase mt-1 tracking-widest">Real vs. Estimado (IA Model)</p>
+              <p className="text-[10px] text-slate-400 font-bold uppercase mt-1 tracking-widest">
+                {range === "24h" ? "Potência Instantânea (kW) - Real vs. Estimado" : "Geração de Energia Diária (kWh) - Real vs. Estimado"}
+              </p>
             </div>
-            <div className="flex gap-4">
-               <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-cordeiro-orange"></div>
-                  <span className="text-[10px] font-bold uppercase">Real</span>
-               </div>
-               <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-slate-200"></div>
-                  <span className="text-[10px] font-bold uppercase">Estimado</span>
-               </div>
+            
+            <div className="flex flex-wrap items-center gap-4">
+              {/* Range Toggle TABS */}
+              <div className="flex items-center gap-1 bg-slate-50 border border-slate-100 p-1 rounded-2xl">
+                {[
+                  { label: "24H", value: "24h" },
+                  { label: "7 DIAS", value: "7d" },
+                  { label: "30 DIAS", value: "30d" }
+                ].map(opt => (
+                  <button
+                    key={opt.value}
+                    onClick={() => setRange(opt.value)}
+                    className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all ${
+                      range === opt.value
+                        ? "bg-black text-white shadow-md shadow-black/10 scale-105"
+                        : "text-slate-400 hover:text-slate-900 hover:bg-slate-100"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Legends */}
+              <div className="flex gap-4">
+                 <div className="flex items-center gap-2">
+                    <div className="w-2.5 h-2.5 rounded-full bg-cordeiro-orange"></div>
+                    <span className="text-[9px] font-bold uppercase text-slate-600">Real</span>
+                 </div>
+                 <div className="flex items-center gap-2">
+                    <div className="w-2.5 h-2.5 rounded-full bg-slate-200"></div>
+                    <span className="text-[9px] font-bold uppercase text-slate-600">Estimado</span>
+                 </div>
+              </div>
             </div>
           </div>
           <div className="h-[400px]">

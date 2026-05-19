@@ -11,6 +11,8 @@ export default function EapTab({ orcamento, onUpdate }: { orcamento: any, onUpda
   const [itensPadrao, setItensPadrao] = useState<any[]>([]);
   const [editingEtapa, setEditingEtapa] = useState<string | null>(null);
   const [editEtapaName, setEditEtapaName] = useState("");
+  const [editingItem, setEditingItem] = useState<string | null>(null);
+  const [editItemForm, setEditItemForm] = useState<any>({});
 
   useEffect(() => {
     fetch("/api/orcamentos/tipos-material").then(res => res.json()).then(data => setTipos(Array.isArray(data) ? data : []));
@@ -51,11 +53,18 @@ export default function EapTab({ orcamento, onUpdate }: { orcamento: any, onUpda
   };
 
   const handleDeleteEtapa = async (etapaId: string) => {
-    if (!confirm("Tem certeza que deseja excluir esta etapa e todos os seus itens?")) return;
+    if (typeof window !== "undefined" && !window.confirm("Tem certeza que deseja excluir esta etapa e todos os seus itens?")) return;
     try {
       const res = await fetch(`/api/orcamentos/etapas/${etapaId}`, { method: "DELETE" });
-      if (res.ok) onUpdate();
-    } catch (e) {}
+      if (res.ok) {
+        onUpdate();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || "Erro ao excluir a etapa");
+      }
+    } catch (e) {
+      alert("Erro de conexão");
+    }
   };
 
   const handleCreateItem = async (etapaId: string) => {
@@ -120,12 +129,48 @@ export default function EapTab({ orcamento, onUpdate }: { orcamento: any, onUpda
   };
 
   const handleDeleteItem = async (itemId: string) => {
-    if (!confirm("Excluir este item?")) return;
+    if (typeof window !== "undefined" && !window.confirm("Excluir este item?")) return;
     try {
-      // Endpoint to delete item (assuming it exists or we can just ignore for now if not requested)
       const res = await fetch(`/api/orcamentos/itens/${itemId}`, { method: "DELETE" });
-      if (res.ok) onUpdate();
-    } catch (e) {}
+      if (res.ok) {
+        onUpdate();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || "Erro ao excluir o item");
+      }
+    } catch (e) {
+      alert("Erro de conexão");
+    }
+  };
+
+  const handleSaveItemEdit = async (itemId: string) => {
+    if (!editItemForm.descricao || !editItemForm.tipo || !editItemForm.unidade || editItemForm.quantidade === undefined) {
+      alert("Preencha todos os campos obrigatórios");
+      return;
+    }
+    try {
+      const res = await fetch(`/api/orcamentos/itens/${itemId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          codigo: editItemForm.codigo || null,
+          descricao: editItemForm.descricao,
+          tipo: editItemForm.tipo,
+          unidade: editItemForm.unidade,
+          quantidade: Number(editItemForm.quantidade),
+          precoBaseUnitario: editItemForm.precoBaseUnitario !== "" ? Number(editItemForm.precoBaseUnitario) : null
+        })
+      });
+      if (res.ok) {
+        setEditingItem(null);
+        onUpdate();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || "Erro ao salvar as alterações do item");
+      }
+    } catch (e) {
+      alert("Erro de conexão");
+    }
   };
 
   // Cálculos Consolidados
@@ -219,7 +264,88 @@ export default function EapTab({ orcamento, onUpdate }: { orcamento: any, onUpda
                   </thead>
                   <tbody className="divide-y divide-slate-50">
                     {etapa.itens?.map((item: any, i: number) => {
+                      const isEditing = editingItem === item.id;
                       const total = (item.quantidade || 0) * (item.precoBaseUnitario || 0);
+
+                      if (isEditing) {
+                        return (
+                          <tr key={item.id} className="bg-[#f8fafc]">
+                            <td className="px-4 py-2 font-medium text-slate-400">{index + 1}.{i + 1}</td>
+                            <td className="px-4 py-2">
+                              <input 
+                                type="text" 
+                                className="w-full text-xs p-2 border border-slate-200 rounded-lg outline-none focus:border-[#00BFA5]" 
+                                value={editItemForm.codigo || ""} 
+                                onChange={e => setEditItemForm({ ...editItemForm, codigo: e.target.value })} 
+                              />
+                            </td>
+                            <td className="px-4 py-2">
+                              <input 
+                                type="text" 
+                                className="w-full text-xs p-2 border border-slate-200 rounded-lg outline-none focus:border-[#00BFA5]" 
+                                value={editItemForm.descricao || ""} 
+                                onChange={e => setEditItemForm({ ...editItemForm, descricao: e.target.value })} 
+                              />
+                            </td>
+                            <td className="px-4 py-2">
+                              <select 
+                                className="w-full text-xs p-2 border border-slate-200 rounded-lg outline-none focus:border-[#00BFA5]" 
+                                value={editItemForm.tipo || "Material"} 
+                                onChange={e => setEditItemForm({ ...editItemForm, tipo: e.target.value })}
+                              >
+                                <option value="Material">Material</option>
+                                <option value="Equipamento">Equipamento</option>
+                                <option value="Mão de Obra">Mão de Obra</option>
+                                {tipos.map(t => <option key={t.id} value={t.nome}>{t.nome}</option>)}
+                              </select>
+                            </td>
+                            <td className="px-4 py-2">
+                              <input 
+                                type="text" 
+                                className="w-full text-xs p-2 border border-slate-200 rounded-lg outline-none focus:border-[#00BFA5]" 
+                                value={editItemForm.unidade || ""} 
+                                onChange={e => setEditItemForm({ ...editItemForm, unidade: e.target.value })} 
+                              />
+                            </td>
+                            <td className="px-4 py-2">
+                              <input 
+                                type="number" 
+                                className="w-full text-xs p-2 border border-slate-200 rounded-lg outline-none focus:border-[#00BFA5] text-right" 
+                                value={editItemForm.quantidade || ""} 
+                                onChange={e => setEditItemForm({ ...editItemForm, quantidade: e.target.value })} 
+                              />
+                            </td>
+                            <td className="px-4 py-2">
+                              <input 
+                                type="number" 
+                                className="w-full text-xs p-2 border border-slate-200 rounded-lg outline-none focus:border-[#00BFA5] text-right" 
+                                value={editItemForm.precoBaseUnitario || ""} 
+                                onChange={e => setEditItemForm({ ...editItemForm, precoBaseUnitario: e.target.value })} 
+                              />
+                            </td>
+                            <td className="px-4 py-2 text-right font-black text-slate-300 text-xs">-</td>
+                            <td className="px-4 py-2 text-right">
+                              <div className="flex items-center justify-end gap-1">
+                                <button 
+                                  onClick={() => handleSaveItemEdit(item.id)} 
+                                  className="p-1 bg-[#00BFA5] text-white rounded-md hover:bg-[#009b86] transition-colors"
+                                  title="Salvar"
+                                >
+                                  <Check className="w-4 h-4" />
+                                </button>
+                                <button 
+                                  onClick={() => setEditingItem(null)} 
+                                  className="p-1 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-300 transition-colors"
+                                  title="Cancelar"
+                                >
+                                  <X className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      }
+
                       return (
                         <tr key={item.id} className="hover:bg-slate-50/50">
                           <td className="px-4 py-3 font-medium text-slate-400">{index + 1}.{i + 1}</td>
@@ -239,7 +365,32 @@ export default function EapTab({ orcamento, onUpdate }: { orcamento: any, onUpda
                             {total > 0 ? total.toFixed(2) : "-"}
                           </td>
                           <td className="px-4 py-3 text-right">
-                            <button onClick={() => handleDeleteItem(item.id)} className="text-slate-400 hover:text-red-500"><Trash className="w-4 h-4" /></button>
+                            <div className="flex items-center justify-end gap-1">
+                              <button 
+                                onClick={() => {
+                                  setEditingItem(item.id);
+                                  setEditItemForm({
+                                    codigo: item.codigo || "",
+                                    descricao: item.descricao,
+                                    tipo: item.tipo,
+                                    unidade: item.unidade,
+                                    quantidade: item.quantidade,
+                                    precoBaseUnitario: item.precoBaseUnitario || ""
+                                  });
+                                }} 
+                                className="text-slate-400 hover:text-[#00BFA5]"
+                                title="Editar item"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </button>
+                              <button 
+                                onClick={() => handleDeleteItem(item.id)} 
+                                className="text-slate-400 hover:text-red-500"
+                                title="Excluir item"
+                              >
+                                <Trash className="w-4 h-4" />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );

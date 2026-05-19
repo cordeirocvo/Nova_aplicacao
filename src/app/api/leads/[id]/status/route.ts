@@ -3,18 +3,19 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session: any = await getServerSession(authOptions as any);
     if (!session || (!session.user.canManageCRM && session.user.role !== "ADMIN")) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 
+    const { id } = await params;
     const body = await req.json();
     const { status } = body;
 
     const lead = await prisma.lead.update({
-      where: { id: params.id },
+      where: { id },
       data: { status },
     });
 

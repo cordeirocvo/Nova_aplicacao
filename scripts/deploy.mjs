@@ -19,5 +19,7 @@ run("git add .");
 run(`git commit -m "${commitMessage}"`);
 run("git push origin main");
 
-console.log("\n✅ Tudo certo! O código foi enviado para o GitHub.");
-console.log("✨ A Vercel já deve estar recebendo esta atualização automaticamente.");
+console.log("\n📦 Iniciando deploy na Vercel...");
+run("npx vercel --prod --yes");
+
+console.log("\n✅ Tudo certo! O código foi enviado para o GitHub e implantado na Vercel com sucesso! 🚀");

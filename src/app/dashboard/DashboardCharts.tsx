@@ -3,7 +3,16 @@
 import { useState, useEffect } from "react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell } from "recharts";
 
-const COLORS = ['#ef4444', '#f59e0b', '#10b981'];
+const getColor = (name: string) => {
+  switch (name) {
+    case "Pendentes": return "#ef4444"; // Red
+    case "Em Andamento": return "#f59e0b"; // Yellow
+    case "Concluídas": return "#10b981"; // Green
+    case "Programadas": return "#1e3a8a"; // Deep Blue
+    case "Finalizadas": return "#00bfa5"; // Teal/Green
+    default: return "#3b82f6"; // Blue
+  }
+};
 
 export default function DashboardCharts({ data }: { data: any[] }) {
   const [isClient, setIsClient] = useState(false);
@@ -36,7 +45,7 @@ export default function DashboardCharts({ data }: { data: any[] }) {
         />
         <Bar dataKey="value" radius={[6, 6, 0, 0]} maxBarSize={60}>
           {data.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+            <Cell key={`cell-${index}`} fill={getColor(entry.name)} />
           ))}
         </Bar>
       </BarChart>

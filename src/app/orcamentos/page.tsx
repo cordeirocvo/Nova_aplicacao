@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Search, Building, Calendar, LayoutDashboard, ChevronRight, Settings } from "lucide-react";
+import { Plus, Search, Building, Calendar, LayoutDashboard, ChevronRight, Settings, Edit, Trash } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -11,7 +11,63 @@ export default function OrcamentosDashboard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [novoNome, setNovoNome] = useState("");
   const [criando, setCriando] = useState(false);
+
+  // States for Edit Project
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingProject, setEditingProject] = useState<any>(null);
+  const [salvandoEdicao, setSalvandoEdicao] = useState(false);
+
   const router = useRouter();
+
+  const handleSaveProjectEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingProject || !editingProject.nome.trim()) return;
+    setSalvandoEdicao(true);
+
+    try {
+      const res = await fetch(`/api/orcamentos/${editingProject.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nome: editingProject.nome.trim(),
+          cliente: editingProject.cliente?.trim() || null,
+          status: editingProject.status,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setProjetos(projetos.map(p => p.id === editingProject.id ? { ...p, ...data.orcamento } : p));
+        setIsEditModalOpen(false);
+        setEditingProject(null);
+      } else {
+        alert(data.error || "Erro ao salvar alterações do projeto");
+      }
+    } catch (error) {
+      alert("Erro de conexão");
+    } finally {
+      setSalvandoEdicao(false);
+    }
+  };
+
+  const handleDeleteProject = async (projectId: string) => {
+    if (typeof window !== "undefined" && !window.confirm("ATENÇÃO: Isso excluirá o projeto permanentemente junto com todas as etapas, itens e propostas. Deseja continuar?")) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/orcamentos/${projectId}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (data.success) {
+        setProjetos(projetos.filter(p => p.id !== projectId));
+      } else {
+        alert(data.error || "Erro ao excluir o projeto");
+      }
+    } catch (error) {
+      alert("Erro de conexão");
+    }
+  };
 
   useEffect(() => {
     fetch("/api/orcamentos")
@@ -128,10 +184,17 @@ export default function OrcamentosDashboard() {
                     <Building className="w-6 h-6" />
                   </div>
                   <div>
-                    <h4 className="text-lg font-black text-slate-800">{p.nome}</h4>
+                    <h4 className="text-lg font-black text-slate-800 flex items-center gap-2 flex-wrap">
+                      {p.nome}
+                      {p.cliente && (
+                        <span className="text-xs font-bold px-2 py-0.5 bg-slate-100 text-slate-500 rounded-full normal-case">
+                          {p.cliente}
+                        </span>
+                      )}
+                    </h4>
                     <div className="flex items-center gap-3 mt-1">
                       <span className="flex items-center gap-1 text-xs font-bold text-slate-500 uppercase">
-                        <Calendar className="w-3 h-3" /> {new Date(p.dataCriacao).toLocaleDateString("pt-BR")}
+                        <Calendar className="w-3 h-3" /> {new Date(p.createdAt || p.dataCriacao || new Date()).toLocaleDateString("pt-BR")}
                       </span>
                       <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
                       <span className="text-xs font-bold text-[#00BFA5] uppercase">{p.status}</span>
@@ -147,6 +210,39 @@ export default function OrcamentosDashboard() {
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Fornecedores</p>
                     <p className="text-lg font-black text-slate-700">{p._count?.fornecedores || 0}</p>
                   </div>
+                  
+                  {/* Botões de Ação de Edição e Exclusão */}
+                  <div className="flex items-center gap-1 relative z-20">
+                    <button 
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setEditingProject({
+                          id: p.id,
+                          nome: p.nome,
+                          cliente: p.cliente || "",
+                          status: p.status
+                        });
+                        setIsEditModalOpen(true);
+                      }}
+                      className="p-2 bg-slate-50 hover:bg-[#00BFA5]/10 hover:text-[#00BFA5] text-slate-400 rounded-xl transition-all"
+                      title="Editar projeto"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <button 
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleDeleteProject(p.id);
+                      }}
+                      className="p-2 bg-slate-50 hover:bg-red-50 hover:text-red-500 text-slate-400 rounded-xl transition-all"
+                      title="Excluir projeto"
+                    >
+                      <Trash className="w-4 h-4" />
+                    </button>
+                  </div>
+
                   <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-[#00BFA5] group-hover:text-white transition-colors">
                     <ChevronRight className="w-4 h-4" />
                   </div>
@@ -190,6 +286,73 @@ export default function OrcamentosDashboard() {
                     className="flex-1 px-4 py-3 rounded-xl bg-[#00BFA5] text-white font-bold hover:shadow-lg hover:bg-[#00a892] transition-all disabled:opacity-50"
                   >
                     {criando ? "Criando..." : "Criar Projeto"}
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Editar Projeto */}
+      {isEditModalOpen && editingProject && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden p-6 animate-in zoom-in-95 duration-200">
+            <h2 className="text-xl font-bold text-slate-800 mb-4">Editar Projeto</h2>
+            <form onSubmit={handleSaveProjectEdit}>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">Nome do Projeto</label>
+                  <input
+                    type="text"
+                    required
+                    autoFocus
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#00BFA5] focus:border-transparent outline-none transition-all"
+                    value={editingProject.nome}
+                    onChange={(e) => setEditingProject({ ...editingProject, nome: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">Cliente</label>
+                  <input
+                    type="text"
+                    placeholder="Ex: Grupo Cordeiro"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#00BFA5] focus:border-transparent outline-none transition-all"
+                    value={editingProject.cliente}
+                    onChange={(e) => setEditingProject({ ...editingProject, cliente: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">Status</label>
+                  <select
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#00BFA5] focus:border-transparent outline-none transition-all text-slate-700"
+                    value={editingProject.status}
+                    onChange={(e) => setEditingProject({ ...editingProject, status: e.target.value })}
+                  >
+                    <option value="Planejamento">Planejamento</option>
+                    <option value="Rascunho">Rascunho</option>
+                    <option value="Aprovado">Aprovado</option>
+                    <option value="Em Andamento">Em Andamento</option>
+                    <option value="Cancelado">Cancelado</option>
+                  </select>
+                </div>
+                <div className="flex gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsEditModalOpen(false);
+                      setEditingProject(null);
+                    }}
+                    className="flex-1 px-4 py-3 rounded-xl border border-slate-200 font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={salvandoEdicao || !editingProject.nome.trim()}
+                    className="flex-1 px-4 py-3 rounded-xl bg-[#00BFA5] text-white font-bold hover:shadow-lg hover:bg-[#00a892] transition-all disabled:opacity-50"
+                  >
+                    {salvandoEdicao ? "Salvando..." : "Salvar"}
                   </button>
                 </div>
               </div>

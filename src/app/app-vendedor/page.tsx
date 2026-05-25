@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { 
   Plus, MapPin, List, LogOut, Home, Phone, 
-  Map, Calendar, ChevronDown, ChevronUp, Search, Camera, CheckCircle2 
+  Map, Calendar, ChevronDown, ChevronUp, Search, Camera, CheckCircle2, X, Loader 
 } from "lucide-react";
 import Link from "next/link";
 import { signOut, useSession } from "next-auth/react";
@@ -36,6 +36,123 @@ export default function AppVendedorPage() {
   const [loading, setLoading] = useState(true);
   const [expandedLead, setExpandedLead] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+
+  const [editingLeadId, setEditingLeadId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState({
+    nome: "",
+    telefone: "",
+    email: "",
+    endereco: "",
+    observacoes: "",
+    midias: [] as LeadMidia[]
+  });
+  const [savingLead, setSavingLead] = useState(false);
+  const [uploadingField, setUploadingField] = useState<string | null>(null);
+
+  const startEditing = (lead: Lead) => {
+    setEditingLeadId(lead.id);
+    setEditForm({
+      nome: lead.nome,
+      telefone: lead.telefone,
+      email: lead.email || "",
+      endereco: lead.endereco || "",
+      observacoes: lead.observacoes || "",
+      midias: lead.midias || []
+    });
+  };
+
+  const getPhotosForType = (tipo: string) => {
+    if (tipo === "DESCONTO_CONTA") return ["CONTA", "CNH"];
+    if (tipo === "USINA_SOLAR") return ["TELHADO", "CONTA", "PADRAO", "MEDIDOR"];
+    if (tipo === "PONTO_RECARGA") return ["LOCAL", "DRONE", "PADRAO"];
+    return [];
+  };
+
+  const handleEditPhotoUpload = async (tipo: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    
+    const photosOfType = editForm.midias.filter(m => m.tipo === tipo);
+    if (photosOfType.length >= 4) {
+      alert("Limite de 4 fotos por campo atingido.");
+      return;
+    }
+
+    setUploadingField(tipo);
+    try {
+      const file = files[0];
+      
+      let compressedFile = file;
+      try {
+        const imageCompression = (await import("browser-image-compression")).default;
+        const options = {
+          maxSizeMB: 0.3,
+          maxWidthOrHeight: 1280,
+          useWebWorker: true
+        };
+        compressedFile = await imageCompression(file, options);
+      } catch (err) {
+        console.warn("Falha ao compactar imagem. Enviando original...", err);
+      }
+
+      const formData = new FormData();
+      formData.append("file", compressedFile);
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      
+      if (data.url) {
+        setEditForm(prev => ({
+          ...prev,
+          midias: [
+            ...prev.midias,
+            { id: `temp-${Date.now()}`, tipo: tipo, arquivoUrl: data.url }
+          ]
+        }));
+      }
+    } catch (err) {
+      alert("Erro ao enviar foto");
+    } finally {
+      setUploadingField(null);
+    }
+  };
+
+  const removeEditPhoto = (midiaId: string) => {
+    setEditForm(prev => ({
+      ...prev,
+      midias: prev.midias.filter(m => m.id !== midiaId)
+    }));
+  };
+
+  const handleSaveEdit = async (leadId: string) => {
+    if (!editForm.nome || !editForm.telefone) {
+      alert("Nome e Telefone são obrigatórios");
+      return;
+    }
+    setSavingLead(true);
+    try {
+      const res = await fetch(`/api/app-vendedor/leads/${leadId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editForm)
+      });
+      if (res.ok) {
+        const updatedLead = await res.json();
+        setLeads(leads.map(l => l.id === leadId ? updatedLead : l));
+        setEditingLeadId(null);
+      } else {
+        const data = await res.json();
+        alert(data.error || "Erro ao salvar alterações");
+      }
+    } catch (err) {
+      alert("Erro de conexão com o servidor");
+    } finally {
+      setSavingLead(false);
+    }
+  };
 
   // Busca os dados do vendedor em tempo real
   useEffect(() => {
@@ -294,72 +411,220 @@ export default function AppVendedorPage() {
                           {/* Expanded content (accordion details) */}
                           {isExpanded && (
                             <div className="border-t border-slate-100 p-5 bg-slate-50/30 space-y-6 animate-in slide-in-from-top duration-300">
-                              {/* Contact & Address */}
-                              <div className="grid grid-cols-1 gap-4 bg-white p-4 rounded-2xl border border-slate-100">
-                                <div>
-                                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">TELEFONE</span>
-                                  <span className="text-xs font-bold text-slate-700">{lead.telefone}</span>
+                              {editingLeadId === lead.id ? (
+                                <div className="space-y-4 animate-in fade-in duration-200">
+                                  <div className="bg-white p-5 rounded-2xl border border-slate-100 space-y-4 shadow-sm">
+                                    <div className="space-y-1">
+                                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Nome do Cliente</label>
+                                      <input 
+                                        type="text" 
+                                        value={editForm.nome} 
+                                        onChange={e => setEditForm({ ...editForm, nome: e.target.value })}
+                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#1E3A8A]" 
+                                      />
+                                    </div>
+                                    <div className="space-y-1">
+                                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Telefone</label>
+                                      <input 
+                                        type="text" 
+                                        value={editForm.telefone} 
+                                        onChange={e => setEditForm({ ...editForm, telefone: e.target.value })}
+                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#1E3A8A]" 
+                                      />
+                                    </div>
+                                    <div className="space-y-1">
+                                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">E-mail</label>
+                                      <input 
+                                        type="email" 
+                                        value={editForm.email} 
+                                        onChange={e => setEditForm({ ...editForm, email: e.target.value })}
+                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#1E3A8A]" 
+                                      />
+                                    </div>
+                                    <div className="space-y-1">
+                                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Endereço</label>
+                                      <input 
+                                        type="text" 
+                                        value={editForm.endereco} 
+                                        onChange={e => setEditForm({ ...editForm, endereco: e.target.value })}
+                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#1E3A8A]" 
+                                      />
+                                    </div>
+                                    <div className="space-y-1">
+                                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Observações da Visita</label>
+                                      <textarea 
+                                        rows={3}
+                                        value={editForm.observacoes} 
+                                        onChange={e => setEditForm({ ...editForm, observacoes: e.target.value })}
+                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-1 focus:ring-[#1E3A8A] resize-none" 
+                                      />
+                                    </div>
+                                    
+                                    {/* Fotos da Visita em modo de Edição */}
+                                    <div className="space-y-3 pt-2 border-t border-slate-100">
+                                      <div className="flex items-center justify-between ml-1">
+                                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Fotos da Visita</span>
+                                        <span className="text-[8px] font-bold text-slate-300">MÁX 4 POR CAMPO</span>
+                                      </div>
+                                      
+                                      <div className="space-y-4">
+                                        {getPhotosForType(lead.tipo).map((tipo) => {
+                                          const photos = editForm.midias.filter(m => m.tipo === tipo);
+                                          return (
+                                            <div key={tipo} className="space-y-2">
+                                              <span className="text-[8px] font-bold text-slate-500 uppercase tracking-tighter ml-1">{tipo}</span>
+                                              <div className="grid grid-cols-4 gap-2">
+                                                {photos.map((midia) => (
+                                                  <div key={midia.id} className="relative aspect-square rounded-xl overflow-hidden group border border-slate-200 shadow-inner">
+                                                    <img src={midia.arquivoUrl} className="w-full h-full object-cover" />
+                                                    <button 
+                                                      type="button"
+                                                      onClick={() => removeEditPhoto(midia.id)}
+                                                      className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full hover:bg-red-600 transition-colors shadow-md flex items-center justify-center"
+                                                      style={{ width: "18px", height: "18px" }}
+                                                    >
+                                                      <X className="w-2.5 h-2.5" />
+                                                    </button>
+                                                  </div>
+                                                ))}
+                                                {photos.length < 4 && (
+                                                  <>
+                                                    {/* Botão Tirar Foto (Câmera) */}
+                                                    <label className={`aspect-square rounded-xl border border-dashed border-slate-300 bg-slate-50 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-100 transition-all ${uploadingField === tipo ? "opacity-50" : ""}`} title="Tirar foto usando a câmera">
+                                                      <input 
+                                                        type="file" 
+                                                        accept="image/*" 
+                                                        capture="environment" 
+                                                        className="hidden" 
+                                                        disabled={uploadingField === tipo}
+                                                        onChange={(e) => handleEditPhotoUpload(tipo, e)} 
+                                                      />
+                                                      {uploadingField === tipo ? <Loader className="w-4 h-4 animate-spin text-[#1E3A8A]" /> : (
+                                                        <>
+                                                          <Camera className="w-4 h-4 text-slate-400" />
+                                                          <span className="text-[6px] font-black text-slate-400 mt-0.5 uppercase tracking-tighter text-center">Câmera</span>
+                                                        </>
+                                                      )}
+                                                    </label>
+
+                                                    {/* Botão Carregar Arquivo (Galeria) */}
+                                                    <label className={`aspect-square rounded-xl border border-dashed border-slate-300 bg-slate-50 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-100 transition-all ${uploadingField === tipo ? "opacity-50" : ""}`} title="Escolher imagem da galeria">
+                                                      <input 
+                                                        type="file" 
+                                                        accept="image/*" 
+                                                        className="hidden" 
+                                                        disabled={uploadingField === tipo}
+                                                        onChange={(e) => handleEditPhotoUpload(tipo, e)} 
+                                                      />
+                                                      {uploadingField === tipo ? <Loader className="w-4 h-4 animate-spin text-[#1E3A8A]" /> : (
+                                                        <>
+                                                          <Plus className="w-4 h-4 text-slate-400" />
+                                                          <span className="text-[6px] font-black text-slate-400 mt-0.5 uppercase tracking-tighter text-center">Galeria</span>
+                                                        </>
+                                                      )}
+                                                    </label>
+                                                  </>
+                                                )}
+                                              </div>
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <div className="flex gap-2">
+                                    <button 
+                                      onClick={() => handleSaveEdit(lead.id)}
+                                      disabled={savingLead}
+                                      className="flex-1 bg-[#00BFA5] hover:bg-[#00a892] text-white py-3.5 rounded-2xl text-xs font-black uppercase tracking-wider text-center shadow-lg transition-all disabled:opacity-50 font-bold"
+                                    >
+                                      {savingLead ? "Salvando..." : "Salvar"}
+                                    </button>
+                                    <button 
+                                      onClick={() => setEditingLeadId(null)}
+                                      className="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-600 py-3.5 rounded-2xl text-xs font-black uppercase tracking-wider text-center transition-all font-bold"
+                                    >
+                                      Cancelar
+                                    </button>
+                                  </div>
                                 </div>
-                                {lead.email && (
+                              ) : (
+                                <>
+                                  {/* Contact & Address */}
+                                  <div className="grid grid-cols-1 gap-4 bg-white p-4 rounded-2xl border border-slate-100">
+                                    <div>
+                                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">TELEFONE</span>
+                                      <span className="text-xs font-bold text-slate-700">{lead.telefone}</span>
+                                    </div>
+                                    {lead.email && (
+                                      <div>
+                                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">E-MAIL</span>
+                                        <span className="text-xs font-bold text-slate-700">{lead.email}</span>
+                                      </div>
+                                    )}
+                                    <div>
+                                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">ENDEREÇO</span>
+                                      <span className="text-xs font-medium text-slate-600">{lead.endereco || "Não preenchido"}</span>
+                                    </div>
+                                  </div>
+
+                                  {/* Observations */}
+                                  {lead.observacoes && (
+                                    <div className="bg-white p-4 rounded-2xl border border-slate-100">
+                                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">OBSERVAÇÕES DA VISITA</span>
+                                      <p className="text-xs text-slate-600 leading-relaxed font-medium">{lead.observacoes}</p>
+                                    </div>
+                                  )}
+
+                                  {/* Media Photos Gallery */}
                                   <div>
-                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">E-MAIL</span>
-                                    <span className="text-xs font-bold text-slate-700">{lead.email}</span>
+                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-2 ml-1">FOTOS ANEXADAS</span>
+                                    {lead.midias.length === 0 ? (
+                                      <div className="bg-white p-4 rounded-2xl border border-slate-100 border-dashed text-center text-slate-400 text-xs font-bold flex flex-col items-center justify-center gap-1">
+                                        <Camera className="w-5 h-5 text-slate-300" />
+                                        Nenhuma foto anexada a este lead.
+                                      </div>
+                                    ) : (
+                                      <div className="grid grid-cols-4 gap-2">
+                                        {lead.midias.map((midia) => (
+                                          <a 
+                                            key={midia.id} 
+                                            href={midia.arquivoUrl}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="aspect-square rounded-xl overflow-hidden border border-slate-100 bg-white shadow-inner flex items-center justify-center group relative cursor-pointer"
+                                          >
+                                            <img src={midia.arquivoUrl} className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
+                                            <span className="absolute bottom-1 right-1 bg-black/60 text-white text-[8px] font-black px-1.5 py-0.5 rounded uppercase">
+                                              {midia.tipo}
+                                            </span>
+                                          </a>
+                                        ))}
+                                      </div>
+                                    )}
                                   </div>
-                                )}
-                                <div>
-                                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">ENDEREÇO</span>
-                                  <span className="text-xs font-medium text-slate-600">{lead.endereco || "Não preenchido"}</span>
-                                </div>
-                              </div>
 
-                              {/* Observations */}
-                              {lead.observacoes && (
-                                <div className="bg-white p-4 rounded-2xl border border-slate-100">
-                                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">OBSERVAÇÕES DA VISITA</span>
-                                  <p className="text-xs text-slate-600 leading-relaxed font-medium">{lead.observacoes}</p>
-                                </div>
+                                  {/* Action Quick WhatsApp Buttons */}
+                                  <div className="flex gap-2">
+                                    <button 
+                                      onClick={() => startEditing(lead)}
+                                      className="flex-1 bg-[#1E3A8A] hover:bg-[#1e3470] text-white py-3 rounded-2xl text-xs font-black uppercase tracking-wider text-center shadow-lg transition-colors flex items-center justify-center gap-2 font-bold"
+                                    >
+                                      Editar Abordagem
+                                    </button>
+                                    <a 
+                                      href={formatPhone(lead.telefone)}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="flex-1 bg-[#25D366] hover:bg-[#20ba59] text-white py-3 rounded-2xl text-xs font-black uppercase tracking-wider text-center shadow-lg transition-colors flex items-center justify-center gap-2"
+                                    >
+                                      <Phone className="w-4 h-4 fill-white" />
+                                      Chamar no WhatsApp
+                                    </a>
+                                  </div>
+                                </>
                               )}
-
-                              {/* Media Photos Gallery */}
-                              <div>
-                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-2 ml-1">FOTOS ANEXADAS</span>
-                                {lead.midias.length === 0 ? (
-                                  <div className="bg-white p-4 rounded-2xl border border-slate-100 border-dashed text-center text-slate-400 text-xs font-bold flex flex-col items-center justify-center gap-1">
-                                    <Camera className="w-5 h-5 text-slate-300" />
-                                    Nenhuma foto anexada a este lead.
-                                  </div>
-                                ) : (
-                                  <div className="grid grid-cols-4 gap-2">
-                                    {lead.midias.map((midia) => (
-                                      <a 
-                                        key={midia.id} 
-                                        href={midia.arquivoUrl}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="aspect-square rounded-xl overflow-hidden border border-slate-100 bg-white shadow-inner flex items-center justify-center group relative cursor-pointer"
-                                      >
-                                        <img src={midia.arquivoUrl} className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
-                                        <span className="absolute bottom-1 right-1 bg-black/60 text-white text-[8px] font-black px-1.5 py-0.5 rounded uppercase">
-                                          {midia.tipo}
-                                        </span>
-                                      </a>
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
-
-                              {/* Action Quick WhatsApp Buttons */}
-                              <div className="flex gap-2">
-                                <a 
-                                  href={formatPhone(lead.telefone)}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="flex-1 bg-[#25D366] hover:bg-[#20ba59] text-white py-3 rounded-2xl text-xs font-black uppercase tracking-wider text-center shadow-lg transition-colors flex items-center justify-center gap-2"
-                                >
-                                  <Phone className="w-4 h-4 fill-white" />
-                                  Chamar no WhatsApp
-                                </a>
-                              </div>
                             </div>
                           )}
                         </div>

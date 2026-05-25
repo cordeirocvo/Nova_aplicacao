@@ -42,6 +42,30 @@ export default function LeadDetailPage() {
     }
   };
 
+  const downloadImage = async (url: string, filename: string) => {
+    try {
+      const res = await fetch(url);
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      // Fallback para caso de CORS impeditivo, abrindo em nova guia
+      const a = document.createElement("a");
+      a.href = url;
+      a.target = "_blank";
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+  };
+
   if (loading) return <div className="flex justify-center p-20"><Loader className="w-10 h-10 animate-spin text-[#1E3A8A]" /></div>;
   if (!lead) return <div className="p-20 text-center font-bold text-slate-400">Lead não encontrado</div>;
 
@@ -63,7 +87,7 @@ export default function LeadDetailPage() {
                 lead.tipo === "USINA_SOLAR" ? "bg-blue-100 text-blue-700" : 
                 lead.tipo === "PONTO_RECARGA" ? "bg-amber-100 text-amber-700" : 
                 "bg-emerald-100 text-emerald-700"
-              }`}>
+               }`}>
                 {lead.tipo === "USINA_SOLAR" ? "Usina Solar" : 
                  lead.tipo === "PONTO_RECARGA" ? "Ponto de Recarga VE" : 
                  "Desconto"}
@@ -137,49 +161,72 @@ export default function LeadDetailPage() {
           <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-8 border-b border-slate-50 pb-4">Documentação Fotográfica</h3>
           
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            {lead.midias?.map((midia: any) => (
-              <div 
-                key={midia.id} 
-                className="group relative aspect-square rounded-[2rem] overflow-hidden bg-slate-50 border border-slate-100 cursor-zoom-in"
-                onClick={() => setSelectedImage(midia.arquivoUrl)}
-              >
-                <img src={midia.arquivoUrl} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-4">
-                  <div className="flex gap-2 mb-2">
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); setSelectedImage(midia.arquivoUrl); }}
-                      className="p-2 bg-white/20 hover:bg-white/40 rounded-xl transition-all"
-                    >
-                      <Maximize className="text-white w-5 h-5" />
-                    </button>
-                    <a 
-                      href={midia.arquivoUrl} 
-                      download 
-                      target="_blank"
-                      onClick={(e) => e.stopPropagation()}
-                      className="p-2 bg-[#00BFA5] hover:bg-[#00BFA5]/80 rounded-xl transition-all"
-                    >
-                      <Download className="text-white w-5 h-5" />
-                    </a>
+            {lead.midias?.map((midia: any) => {
+              const safeLeadName = lead.nome ? lead.nome.toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-").trim() : "lead";
+              return (
+                <div 
+                  key={midia.id} 
+                  className="group relative aspect-square rounded-[2rem] overflow-hidden bg-slate-50 border border-slate-100 cursor-zoom-in shadow-sm hover:shadow-md transition-shadow duration-300"
+                  onClick={() => setSelectedImage(midia.arquivoUrl)}
+                >
+                  <img src={midia.arquivoUrl} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                  
+                  {/* Sleek Permanent Glassmorphism Controls */}
+                  <div className="absolute bottom-3 left-3 right-3 bg-black/60 backdrop-blur-md rounded-xl p-2.5 flex items-center justify-between border border-white/10 shadow-lg">
+                    <span className="text-[9px] font-black text-white uppercase tracking-widest truncate max-w-[55%]">{midia.tipo}</span>
+                    <div className="flex gap-1.5">
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); setSelectedImage(midia.arquivoUrl); }}
+                        className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-all"
+                        title="Ampliar"
+                      >
+                        <Maximize className="w-3.5 h-3.5" />
+                      </button>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); downloadImage(midia.arquivoUrl, `${safeLeadName}-${midia.tipo.toLowerCase()}.jpg`); }}
+                        className="p-2 bg-[#00BFA5] hover:bg-[#00BFA5]/80 text-white rounded-lg transition-all"
+                        title="Baixar Foto"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
-                  <span className="text-[10px] font-black text-white uppercase tracking-widest">{midia.tipo}</span>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
 
       {/* Modal Zoom */}
-      {selectedImage && (
-        <div 
-          className="fixed inset-0 bg-black/95 z-[9999] flex items-center justify-center p-4 md:p-20"
-          onClick={() => setSelectedImage(null)}
-        >
-          <img src={selectedImage} className="max-w-full max-h-full object-contain animate-in zoom-in duration-300" />
-          <button className="absolute top-10 right-10 text-white font-black uppercase tracking-widest text-xs bg-white/10 px-6 py-3 rounded-2xl hover:bg-white/20 transition-colors">Fechar</button>
-        </div>
-      )}
+      {selectedImage && (() => {
+        const safeLeadName = lead.nome ? lead.nome.toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-").trim() : "lead";
+        const activeMidia = lead.midias?.find((m: any) => m.arquivoUrl === selectedImage);
+        const activeTipo = activeMidia ? activeMidia.tipo.toLowerCase() : "zoom";
+        return (
+          <div 
+            className="fixed inset-0 bg-black/95 z-[9999] flex items-center justify-center p-4 md:p-20 cursor-zoom-out"
+            onClick={() => setSelectedImage(null)}
+          >
+            <img src={selectedImage} className="max-w-full max-h-full object-contain animate-in zoom-in duration-300" />
+            
+            <div className="absolute top-6 right-6 flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
+              <button 
+                onClick={() => downloadImage(selectedImage, `${safeLeadName}-${activeTipo}.jpg`)}
+                className="text-white font-black uppercase tracking-widest text-[10px] bg-[#00BFA5] px-5 py-3 rounded-2xl hover:bg-[#00BFA5]/80 transition-colors flex items-center gap-2 shadow-lg shadow-[#00BFA5]/20 font-bold"
+              >
+                <Download className="w-4 h-4" /> Baixar Imagem
+              </button>
+              <button 
+                onClick={() => setSelectedImage(null)}
+                className="text-white font-black uppercase tracking-widest text-[10px] bg-white/10 px-5 py-3 rounded-2xl hover:bg-white/20 transition-colors"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

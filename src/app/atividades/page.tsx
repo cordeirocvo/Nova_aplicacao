@@ -49,8 +49,8 @@ export default async function AcompanhamentoPage() {
     if (!a.atividadeExtra && b.atividadeExtra) return 1;
 
     // Normal Urgent Checks
-    const aUrgent = a.daysParecer !== null && a.daysParecer < settings.limiteParecer;
-    const bUrgent = b.daysParecer !== null && b.daysParecer < settings.limiteParecer;
+    const aUrgent = a.daysParecer !== null && a.daysParecer <= settings.limiteParecer;
+    const bUrgent = b.daysParecer !== null && b.daysParecer <= settings.limiteParecer;
 
     // Regra 1: Alerta Máximo primeiro
     if (aUrgent && !bUrgent) return -1;

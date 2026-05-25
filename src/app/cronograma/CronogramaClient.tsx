@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useState } from 'react';
+import { calcDaysLate } from '@/lib/dateUtils';
 import { 
   ChevronLeft, ChevronRight, Calendar as CalendarIcon, 
-  Loader, CheckCircle, Plus, Zap, Hammer
+  Loader, CheckCircle, Plus, Zap, Hammer, Paperclip, Download
 } from 'lucide-react';
 import { 
   format, addMonths, subMonths, startOfMonth, endOfMonth, 
@@ -50,17 +51,47 @@ export default function CronogramaClient({ atividades, manutencoes }: any) {
     return null;
   };
 
+  const downloadFile = async (url: string, filename: string) => {
+    try {
+      const res = await fetch(url);
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      const a = document.createElement("a");
+      a.href = url;
+      a.target = "_blank";
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+  };
+
   // Transformar dados em eventos de calendário
   const events = [
-    ...atividades.map((a: any) => ({
-      id: `inst-${a.id}`,
-      type: 'instalacao',
-      title: a.instalacao || 'Sem nome',
-      date: parseDate(a.automaticoPrevInstala || a.vencimentoParecer),
-      original: a,
-      color: a.prioridade ? 'bg-purple-600' : a.atividadeExtra ? 'bg-blue-800' : 'bg-blue-500',
-      status: a.status
-    })),
+    ...atividades.map((a: any) => {
+      const daysParecer = a.vencimentoParecer ? calcDaysLate(a.vencimentoParecer) : null;
+      const isUrgent = daysParecer !== null && daysParecer <= 30;
+      return {
+        id: `inst-${a.id}`,
+        type: 'instalacao',
+        title: a.instalacao || 'Sem nome',
+        date: parseDate(a.automaticoPrevInstala || a.vencimentoParecer),
+        original: a,
+        color: isUrgent ? 'bg-red-600' : (a.prioridade ? 'bg-purple-600' : a.atividadeExtra ? 'bg-blue-800' : 'bg-blue-500'),
+        status: a.status,
+        hasAttachments: (a.anexoFotos && a.anexoFotos.length > 0) || (a.anexoArquivos && a.anexoArquivos.length > 0),
+        isUrgent,
+        daysParecer
+      };
+    }),
     ...manutencoes.map((m: any) => ({
       id: `om-${m.id}`,
       type: 'manutencao',
@@ -168,6 +199,12 @@ export default function CronogramaClient({ atividades, manutencoes }: any) {
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded-full bg-[#F25C27]"></div> Manutenção O&M
         </div>
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded-full bg-slate-300 border border-slate-400"></div> Finalizada
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded-full bg-red-600"></div> Parecer Vencendo (≤ 30 dias)
+        </div>
         <div className="flex items-center gap-2 ml-auto text-slate-300 font-medium normal-case tracking-normal">
           <span>Clique duplo no dia para nova atividade</span>
         </div>
@@ -209,16 +246,39 @@ export default function CronogramaClient({ atividades, manutencoes }: any) {
               </div>
               
               <div className="flex flex-col gap-1 overflow-y-auto max-h-[100px] custom-scrollbar">
-                {dayEvents.map(event => (
-                  <div 
-                    key={event.id}
-                    onClick={(e) => { e.stopPropagation(); setSelectedEvent(event); }}
-                    className={`px-2 py-1 rounded-md text-[10px] font-bold text-white cursor-pointer hover:brightness-90 transition-all truncate shadow-sm ${event.color}`}
-                    title={event.title}
-                  >
-                    {event.title}
-                  </div>
-                ))}
+                {dayEvents.map(event => {
+                  const isFinished = event.status && /conclu/i.test(event.status);
+                  const showFinishedStyle = !!isFinished;
+                  
+                  let tooltipText = event.title;
+                  if (event.isUrgent && !isFinished && event.daysParecer !== null && event.daysParecer !== undefined) {
+                    if (event.daysParecer < 0) {
+                      tooltipText = `${event.title} (Parecer VENCIDO há ${Math.abs(event.daysParecer)} dias)`;
+                    } else if (event.daysParecer === 0) {
+                      tooltipText = `${event.title} (Parecer Vence HOJE)`;
+                    } else {
+                      tooltipText = `${event.title} (Parecer Vencendo em ${event.daysParecer} dias)`;
+                    }
+                  }
+                  
+                  return (
+                    <div 
+                      key={event.id}
+                      onClick={(e) => { e.stopPropagation(); setSelectedEvent(event); }}
+                      className={`px-2 py-0.5 rounded-md text-[10px] font-bold cursor-pointer hover:brightness-90 transition-all truncate shadow-sm flex items-center justify-between gap-1
+                        ${showFinishedStyle 
+                          ? 'bg-slate-200 text-slate-500 line-through border border-slate-300' 
+                          : `${event.color} text-white`
+                        }`}
+                      title={tooltipText}
+                    >
+                      <span className="truncate flex-1">{event.title}</span>
+                      {event.hasAttachments && (
+                        <Paperclip className={`w-3 h-3 shrink-0 ${showFinishedStyle ? 'text-slate-400' : 'text-white/80'}`} />
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           );
@@ -262,6 +322,38 @@ export default function CronogramaClient({ atividades, manutencoes }: any) {
                     <p className="text-[10px] font-black text-slate-400 uppercase mb-2">Observações da Instalação</p>
                     <p className="text-sm text-slate-600 font-medium italic">"{selectedEvent.original.obsInstalacao || 'Sem observações.'}"</p>
                   </div>
+                  {selectedEvent.hasAttachments && (
+                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-2">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Anexos Disponíveis</p>
+                      <div className="flex flex-col gap-2">
+                        {selectedEvent.original.anexoFotos?.map((url: string, idx: number) => (
+                          <button
+                            type="button"
+                            key={`foto-${idx}`}
+                            onClick={() => downloadFile(url, `foto-${idx + 1}-${selectedEvent.original.instalacao || 'anexo'}.jpg`)}
+                            className="flex items-center gap-2 text-xs font-bold text-[#00BFA5] hover:text-[#009b86] transition-colors text-left bg-white p-2.5 rounded-xl border border-slate-200 shadow-sm"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                            <span>Foto {idx + 1} (Imagem)</span>
+                          </button>
+                        ))}
+                        {selectedEvent.original.anexoArquivos?.map((url: string, idx: number) => {
+                          const filename = url.split('/').pop() || `arquivo-${idx + 1}`;
+                          return (
+                            <button
+                              type="button"
+                              key={`arq-${idx}`}
+                              onClick={() => downloadFile(url, `${selectedEvent.original.instalacao || 'anexo'}-${filename}`)}
+                              className="flex items-center gap-2 text-xs font-bold text-[#00BFA5] hover:text-[#009b86] transition-colors text-left bg-white p-2.5 rounded-xl border border-slate-200 shadow-sm"
+                            >
+                              <Download className="w-3.5 h-3.5" />
+                              <span className="truncate flex-1">{filename}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                   <Link 
                     href={`/atividades/editar/${selectedEvent.original.id}`}
                     className="flex items-center justify-center gap-2 w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-200"

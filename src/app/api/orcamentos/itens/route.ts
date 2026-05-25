@@ -10,7 +10,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { etapaId, codigo, descricao, tipo, unidade, quantidade, precoBaseUnitario, bdiPercent } = await req.json();
+    const { etapaId, codigo, descricao, tipo, unidade, quantidade, precoBaseUnitario, bdiPercent, imagemUrl } = await req.json();
 
     if (!etapaId || !descricao || !tipo || !unidade || !quantidade) {
       return NextResponse.json({ error: "Campos obrigatórios faltando" }, { status: 400 });
@@ -26,6 +26,7 @@ export async function POST(req: Request) {
         quantidade: parseFloat(String(quantidade).replace(",", ".")),
         precoBaseUnitario: precoBaseUnitario ? parseFloat(String(precoBaseUnitario).replace(",", ".")) : null,
         bdiPercent: bdiPercent ? parseFloat(String(bdiPercent).replace(",", ".")) : 0,
+        imagemUrl: imagemUrl || null,
       },
     });
 

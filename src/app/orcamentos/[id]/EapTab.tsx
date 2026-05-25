@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, ListTree, Package, Wrench, HardHat, Loader, Trash, Edit, Check, X, Search } from "lucide-react";
+import { Plus, ListTree, Package, Wrench, HardHat, Loader, Trash, Edit, Check, X, Search, Camera } from "lucide-react";
 
 export default function EapTab({ orcamento, onUpdate }: { orcamento: any, onUpdate: () => void }) {
   const [novaEtapa, setNovaEtapa] = useState("");
@@ -13,6 +13,40 @@ export default function EapTab({ orcamento, onUpdate }: { orcamento: any, onUpda
   const [editEtapaName, setEditEtapaName] = useState("");
   const [editingItem, setEditingItem] = useState<string | null>(null);
   const [editItemForm, setEditItemForm] = useState<any>({});
+  const [uploadingItem, setUploadingItem] = useState<string | null>(null);
+
+  const handleItemPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>, isEditMode: boolean, etapaIdOrItemId: string) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingItem(etapaIdOrItemId);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.url) {
+          if (isEditMode) {
+            setEditItemForm((prev: any) => ({ ...prev, imagemUrl: data.url }));
+          } else {
+            updateItemForm(etapaIdOrItemId, "imagemUrl", data.url);
+          }
+        }
+      } else {
+        alert("Erro no upload da foto");
+      }
+    } catch (err) {
+      alert("Erro ao enviar arquivo");
+    } finally {
+      setUploadingItem(null);
+    }
+  };
 
   useEffect(() => {
     fetch("/api/orcamentos/tipos-material").then(res => res.json()).then(data => setTipos(Array.isArray(data) ? data : []));
@@ -117,7 +151,8 @@ export default function EapTab({ orcamento, onUpdate }: { orcamento: any, onUpda
         descricao: item.descricao,
         tipo: item.tipo,
         unidade: item.unidade,
-        precoBaseUnitario: item.precoBaseUnitario || ""
+        precoBaseUnitario: item.precoBaseUnitario || "",
+        imagemUrl: item.imagemUrl || ""
       }
     });
   };
@@ -157,8 +192,11 @@ export default function EapTab({ orcamento, onUpdate }: { orcamento: any, onUpda
           descricao: editItemForm.descricao,
           tipo: editItemForm.tipo,
           unidade: editItemForm.unidade,
-          quantidade: Number(editItemForm.quantidade),
-          precoBaseUnitario: editItemForm.precoBaseUnitario !== "" ? Number(editItemForm.precoBaseUnitario) : null
+          quantidade: parseFloat(String(editItemForm.quantidade).replace(",", ".")),
+          precoBaseUnitario: (editItemForm.precoBaseUnitario !== undefined && editItemForm.precoBaseUnitario !== null && editItemForm.precoBaseUnitario !== "") 
+            ? parseFloat(String(editItemForm.precoBaseUnitario).replace(",", ".")) 
+            : null,
+          imagemUrl: editItemForm.imagemUrl || null
         })
       });
       if (res.ok) {
@@ -252,6 +290,7 @@ export default function EapTab({ orcamento, onUpdate }: { orcamento: any, onUpda
                   <thead className="bg-white border-b border-slate-100 text-xs font-bold text-slate-400 uppercase">
                     <tr>
                       <th className="px-4 py-3 w-12">Item</th>
+                      <th className="px-4 py-3 w-16 text-center">Foto</th>
                       <th className="px-4 py-3 w-24">Código</th>
                       <th className="px-4 py-3">Descrição / Memorial</th>
                       <th className="px-4 py-3 w-36">Tipo</th>
@@ -271,6 +310,37 @@ export default function EapTab({ orcamento, onUpdate }: { orcamento: any, onUpda
                         return (
                           <tr key={item.id} className="bg-[#f8fafc]">
                             <td className="px-4 py-2 font-medium text-slate-400">{index + 1}.{i + 1}</td>
+                            <td className="px-4 py-2 text-center">
+                              <div className="flex flex-col items-center justify-center gap-1">
+                                {editItemForm.imagemUrl ? (
+                                  <div className="relative w-10 h-10 rounded-lg overflow-hidden border border-slate-200 shadow-sm mx-auto group/editimg">
+                                    <img src={editItemForm.imagemUrl} alt="Preview" className="w-full h-full object-cover" />
+                                    <button 
+                                      type="button"
+                                      onClick={() => setEditItemForm({ ...editItemForm, imagemUrl: "" })}
+                                      className="absolute inset-0 bg-black/60 text-white flex items-center justify-center opacity-0 group-hover/editimg:opacity-100 transition-opacity text-[8px] font-black uppercase"
+                                      title="Remover foto"
+                                    >
+                                      Remover
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <label className="w-10 h-10 rounded-lg bg-slate-100 border border-slate-200 border-dashed flex flex-col items-center justify-center text-slate-400 hover:bg-slate-200 transition-all cursor-pointer mx-auto">
+                                    {uploadingItem === item.id ? (
+                                      <Loader className="w-4 h-4 animate-spin text-[#00BFA5]" />
+                                    ) : (
+                                      <Camera className="w-4 h-4 text-slate-400" />
+                                    )}
+                                    <input 
+                                      type="file" 
+                                      accept="image/*" 
+                                      className="hidden" 
+                                      onChange={(e) => handleItemPhotoUpload(e, true, item.id)} 
+                                    />
+                                  </label>
+                                )}
+                              </div>
+                            </td>
                             <td className="px-4 py-2">
                               <input 
                                 type="text" 
@@ -349,6 +419,21 @@ export default function EapTab({ orcamento, onUpdate }: { orcamento: any, onUpda
                       return (
                         <tr key={item.id} className="hover:bg-slate-50/50">
                           <td className="px-4 py-3 font-medium text-slate-400">{index + 1}.{i + 1}</td>
+                          <td className="px-4 py-3 text-center">
+                            {item.imagemUrl ? (
+                              <div 
+                                className="group/img relative w-10 h-10 rounded-lg overflow-hidden border border-slate-100 shadow-sm mx-auto cursor-pointer" 
+                                onClick={() => window.open(item.imagemUrl, "_blank")}
+                                title="Visualizar imagem"
+                              >
+                                <img src={item.imagemUrl} alt="Item" className="w-full h-full object-cover group-hover/img:scale-110 transition-transform duration-300" />
+                              </div>
+                            ) : (
+                              <div className="w-10 h-10 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-300 mx-auto" title="Sem foto">
+                                <Package className="w-5 h-5" />
+                              </div>
+                            )}
+                          </td>
                           <td className="px-4 py-3 text-slate-600 font-mono text-xs">{item.codigo || "-"}</td>
                           <td className="px-4 py-3 font-semibold text-slate-700">{item.descricao}</td>
                           <td className="px-4 py-3">
@@ -375,7 +460,8 @@ export default function EapTab({ orcamento, onUpdate }: { orcamento: any, onUpda
                                     tipo: item.tipo,
                                     unidade: item.unidade,
                                     quantidade: item.quantidade,
-                                    precoBaseUnitario: item.precoBaseUnitario || ""
+                                    precoBaseUnitario: item.precoBaseUnitario || "",
+                                    imagemUrl: item.imagemUrl || ""
                                   });
                                 }} 
                                 className="text-slate-400 hover:text-[#00BFA5]"
@@ -399,6 +485,37 @@ export default function EapTab({ orcamento, onUpdate }: { orcamento: any, onUpda
                     {/* Novo Item Row */}
                     <tr className="bg-[#f8fafc]/80">
                       <td className="px-4 py-3 font-medium text-[#00BFA5] text-xs uppercase tracking-wider whitespace-nowrap">Novo</td>
+                      <td className="px-4 py-2 text-center">
+                        <div className="flex flex-col items-center justify-center gap-1">
+                          {itemForms[etapa.id]?.imagemUrl ? (
+                            <div className="relative w-10 h-10 rounded-lg overflow-hidden border border-slate-200 shadow-sm mx-auto group/newimg">
+                              <img src={itemForms[etapa.id].imagemUrl} alt="Preview" className="w-full h-full object-cover" />
+                              <button 
+                                type="button"
+                                onClick={() => updateItemForm(etapa.id, "imagemUrl", "")}
+                                className="absolute inset-0 bg-black/60 text-white flex items-center justify-center opacity-0 group-hover/newimg:opacity-100 transition-opacity text-[8px] font-black uppercase"
+                                title="Remover foto"
+                              >
+                                Remover
+                              </button>
+                            </div>
+                          ) : (
+                            <label className="w-10 h-10 rounded-lg bg-slate-50 border border-slate-200 border-dashed flex flex-col items-center justify-center text-slate-400 hover:bg-slate-100 transition-all cursor-pointer mx-auto">
+                              {uploadingItem === etapa.id ? (
+                                <Loader className="w-4 h-4 animate-spin text-[#00BFA5]" />
+                              ) : (
+                                <Camera className="w-4 h-4 text-slate-400" />
+                              )}
+                              <input 
+                                type="file" 
+                                accept="image/*" 
+                                className="hidden" 
+                                onChange={(e) => handleItemPhotoUpload(e, false, etapa.id)} 
+                              />
+                            </label>
+                          )}
+                        </div>
+                      </td>
                       <td className="px-4 py-2">
                         <input type="text" placeholder="Código" className="w-full text-xs p-2 border border-slate-200 rounded-lg outline-none focus:border-[#00BFA5]" value={itemForms[etapa.id]?.codigo || ""} onChange={e => updateItemForm(etapa.id, "codigo", e.target.value)} />
                       </td>

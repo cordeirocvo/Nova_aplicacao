@@ -12,11 +12,16 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   try {
     const { id } = await params;
     const body = await req.json();
-    const { codigo, descricao, tipo, unidade, quantidade, precoBaseUnitario } = body;
+    const { codigo, descricao, tipo, unidade, quantidade, precoBaseUnitario, imagemUrl } = body;
 
     if (!descricao || !tipo || !unidade || quantidade === undefined) {
       return NextResponse.json({ error: "Campos obrigatórios ausentes" }, { status: 400 });
     }
+
+    const parsedQuantidade = parseFloat(String(quantidade).replace(",", "."));
+    const parsedPrecoBase = (precoBaseUnitario !== undefined && precoBaseUnitario !== null && precoBaseUnitario !== "")
+      ? parseFloat(String(precoBaseUnitario).replace(",", "."))
+      : null;
 
     const item = await prisma.orcamentoItem.update({
       where: { id },
@@ -25,8 +30,9 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         descricao,
         tipo,
         unidade,
-        quantidade: Number(quantidade),
-        precoBaseUnitario: precoBaseUnitario !== undefined && precoBaseUnitario !== null ? Number(precoBaseUnitario) : null
+        quantidade: isNaN(parsedQuantidade) ? 0 : parsedQuantidade,
+        precoBaseUnitario: (parsedPrecoBase !== null && isNaN(parsedPrecoBase)) ? null : parsedPrecoBase,
+        imagemUrl: imagemUrl || null,
       }
     });
 

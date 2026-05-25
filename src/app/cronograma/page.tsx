@@ -8,22 +8,11 @@ export const metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function CronogramaPage() {
-  // Buscar todas as atividades de instalação que não estão concluídas
-  const atividades = await prisma.planilhaInstalacao.findMany({
-    where: {
-      NOT: {
-        status: { contains: "Conclu", mode: "insensitive" }
-      }
-    }
-  });
+  // Buscar todas as atividades de instalação
+  const atividades = await prisma.planilhaInstalacao.findMany();
 
-  // Buscar todas as manutenções que não estão concluídas
+  // Buscar todas as manutenções O&M
   const manutencoes = await prisma.manutencaoUsina.findMany({
-    where: {
-      NOT: {
-        status: "Concluida"
-      }
-    },
     include: {
       usina: true,
       equipamento: true

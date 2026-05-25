@@ -2,10 +2,33 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from "next/link";
-import { Edit, ShieldAlert, Paperclip } from "lucide-react";
+import { Edit, ShieldAlert, Paperclip, Download } from "lucide-react";
 import { TagToggler } from "./TagToggler";
 
 export default function AtividadesClientView({ atividades, settings, isAdmin, isTV }: any) {
+  const downloadFile = async (url: string, filename: string) => {
+    try {
+      const res = await fetch(url);
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      const a = document.createElement("a");
+      a.href = url;
+      a.target = "_blank";
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+  };
+
   const [currentPage, setCurrentPage] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(10); 
 
@@ -60,128 +83,141 @@ export default function AtividadesClientView({ atividades, settings, isAdmin, is
   // TV View - Render ONLY the table to avoid duplication and use inline styles for safety
   if (isTV) {
     return (
-      <div 
-        className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden relative" 
-        style={{ 
-          display: 'block', 
-          backgroundColor: '#ffffff', 
-          borderRadius: '12px', 
-          border: '1px solid #e2e8f0', 
-          overflow: 'hidden', 
-          position: 'relative',
-          boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
-        }}
-      >
-        <table 
+      <div style={{ padding: '16px', height: 'calc(100vh - 100px)', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
+        <div 
+          className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden relative flex-1 flex flex-col justify-between" 
           style={{ 
-            width: '100%', 
-            borderCollapse: 'collapse', 
-            textAlign: 'left', 
-            fontSize: '13px',
-            tableLayout: 'fixed'
+            backgroundColor: '#ffffff', 
+            borderRadius: '16px', 
+            border: '1px solid #e2e8f0', 
+            overflow: 'hidden', 
+            position: 'relative',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.05)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            height: '100%'
           }}
         >
-          <thead style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-            <tr>
-              <th style={{ width: '25%', padding: '12px', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '11px', color: '#64748b' }}>Cliente / Instalação</th>
-              <th style={{ width: '100px', padding: '12px', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '11px', color: '#64748b' }}>Atraso</th>
-              <th style={{ padding: '12px', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '11px', color: '#64748b' }}>Observações</th>
-              <th style={{ width: '120px', padding: '12px', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '11px', color: '#64748b' }}>Venc. Parecer</th>
-              <th style={{ width: '120px', padding: '12px', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '11px', color: '#64748b' }}>Prev. Instala</th>
-              <th style={{ width: '110px', padding: '12px', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '11px', color: '#64748b' }}>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {currentSlice.map((atv: any) => {
-              const isUrgentParecer = atv.daysParecer !== null && atv.daysParecer < settings.limiteParecer;
-              
-              let diaPrevRender = "-";
-              let inlineStyle: any = { height: '65px', borderBottom: '1px solid #f1f5f9' };
-              let fontColorHex = "#475569";
-              
-              if (atv.daysPrev !== null) {
-                 if (atv.daysPrev >= settings.limiteVerde) {
-                    inlineStyle = { ...inlineStyle, backgroundColor: '#dcfce7', color: '#14532d' };
-                    fontColorHex = "#14532d";
-                 } else if (atv.daysPrev >= settings.limiteAmarelo) {
-                    inlineStyle = { ...inlineStyle, backgroundColor: '#fef9c3', color: '#713f12' };
-                    fontColorHex = "#713f12";
-                 } else {
-                    inlineStyle = { ...inlineStyle, backgroundColor: '#fee2e2', color: '#7f1d1d' };
-                    fontColorHex = "#7f1d1d";
-                 }
-                 diaPrevRender = `${atv.daysPrev} dias`;
-              }
+          <table 
+            style={{ 
+              width: '100%', 
+              borderCollapse: 'collapse', 
+              textAlign: 'left', 
+              fontSize: '13px',
+              tableLayout: 'fixed'
+            }}
+          >
+            <thead style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+              <tr>
+                <th style={{ width: '25%', padding: '12px', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '11px', color: '#64748b' }}>Cliente / Instalação</th>
+                <th style={{ width: '100px', padding: '12px', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '11px', color: '#64748b' }}>Atraso</th>
+                <th style={{ padding: '12px', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '11px', color: '#64748b' }}>Observações</th>
+                <th style={{ width: '120px', padding: '12px', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '11px', color: '#64748b' }}>Venc. Parecer</th>
+                <th style={{ width: '120px', padding: '12px', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '11px', color: '#64748b' }}>Prev. Instala</th>
+                <th style={{ width: '110px', padding: '12px', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '11px', color: '#64748b' }}>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {currentSlice.map((atv: any) => {
+                const isUrgentParecer = atv.daysParecer !== null && atv.daysParecer <= settings.limiteParecer;
+                
+                let diaPrevRender = "-";
+                let inlineStyle: any = { height: '65px', borderBottom: '1px solid #f1f5f9' };
+                let fontColorHex = "#475569";
+                
+                if (atv.daysPrev !== null) {
+                   if (atv.daysPrev >= settings.limiteVerde) {
+                      inlineStyle = { ...inlineStyle, backgroundColor: '#dcfce7', color: '#14532d' };
+                      fontColorHex = "#14532d";
+                   } else if (atv.daysPrev >= settings.limiteAmarelo) {
+                      inlineStyle = { ...inlineStyle, backgroundColor: '#fef9c3', color: '#713f12' };
+                      fontColorHex = "#713f12";
+                   } else {
+                      inlineStyle = { ...inlineStyle, backgroundColor: '#fee2e2', color: '#7f1d1d' };
+                      fontColorHex = "#7f1d1d";
+                   }
+                   diaPrevRender = `${atv.daysPrev} dias`;
+                }
 
-              if (atv.prioridade) {
-                 inlineStyle = { ...inlineStyle, backgroundColor: '#9333ea', color: '#ffffff' };
-                 fontColorHex = "#ffffff";
-              } else if (atv.atividadeExtra) {
-                 inlineStyle = { ...inlineStyle, backgroundColor: '#1E3A8A', color: '#ffffff' };
-                 fontColorHex = "#ffffff";
-              } else if (isUrgentParecer) {
-                 inlineStyle = { ...inlineStyle, backgroundColor: '#dc2626', color: '#ffffff' };
-                 fontColorHex = "#ffffff";
-              }
+                if (atv.prioridade) {
+                   inlineStyle = { ...inlineStyle, backgroundColor: '#9333ea', color: '#ffffff' };
+                   fontColorHex = "#ffffff";
+                } else if (atv.atividadeExtra) {
+                   inlineStyle = { ...inlineStyle, backgroundColor: '#1E3A8A', color: '#ffffff' };
+                   fontColorHex = "#ffffff";
+                } else if (isUrgentParecer) {
+                   inlineStyle = { ...inlineStyle, backgroundColor: '#dc2626', color: '#ffffff' };
+                   fontColorHex = "#ffffff";
+                }
 
-              const hasAttachments = (atv.anexoFotos && atv.anexoFotos.length > 0) || (atv.anexoArquivos && atv.anexoArquivos.length > 0);
-              return (
-                <tr key={atv.id} style={inlineStyle}>
-                  <td style={{ padding: '12px', fontWeight: 'bold', wordWrap: 'break-word' }}>
-                    {isUrgentParecer && <ShieldAlert className="inline-block w-4 h-4 mr-1 mb-0.5" style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '4px', color: '#fecaca' }} />}
-                    <span style={{ fontSize: '14px' }}>{atv.instalacao || "N/A"}</span>
-                    {hasAttachments && (
-                      <span style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '2px',
-                        fontSize: '9px',
-                        fontWeight: 'bold',
-                        padding: '1px 5px',
-                        borderRadius: '4px',
-                        marginLeft: '6px',
-                        textTransform: 'uppercase',
-                        backgroundColor: (atv.prioridade || atv.atividadeExtra || isUrgentParecer) ? 'rgba(255,255,255,0.2)' : 'rgba(79,70,229,0.1)',
-                        color: (atv.prioridade || atv.atividadeExtra || isUrgentParecer) ? '#ffffff' : '#4f46e5',
-                        verticalAlign: 'middle'
-                      }}>
-                        <Paperclip style={{ width: '10px', height: '10px' }} /> Anexos
-                      </span>
-                    )}
-                    <TagToggler id={atv.id} prioridade={atv.prioridade} atividadeExtra={atv.atividadeExtra} isAdmin={!!isAdmin} />
-                  </td>
-                  <td style={{ padding: '12px', fontWeight: '900', fontSize: '12px' }}>
-                    {diaPrevRender}
-                  </td>
-                  <td style={{ padding: '12px', fontSize: '12px', lineHeight: '1.2', color: fontColorHex, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'normal' }}>
-                    {atv.obsInstalacao || "-"}
-                  </td>
-                  <td style={{ padding: '12px', fontWeight: '500', whiteSpace: 'nowrap', color: fontColorHex }}>
-                    {atv.vencimentoParecer || "-"}
-                  </td>
-                  <td style={{ padding: '12px', fontWeight: '500', whiteSpace: 'nowrap', color: fontColorHex }}>
-                    {atv.automaticoPrevInstala || "-"}
-                  </td>
-                  <td style={{ padding: '12px' }}>
-                     <span style={{ 
-                       display: 'inline-flex', 
-                       alignItems: 'center', 
-                       padding: '2px 8px', 
-                       borderRadius: '6px', 
-                       fontSize: '10px', 
-                       fontWeight: 'bold', 
-                       textTransform: 'uppercase',
-                       backgroundColor: (isUrgentParecer || atv.prioridade || atv.atividadeExtra) ? 'rgba(255,255,255,0.2)' : 'rgba(10,25,47,0.05)',
-                       color: (isUrgentParecer || atv.prioridade || atv.atividadeExtra) ? '#ffffff' : '#0A192F'
-                     }}>
-                        {atv.status || "Pendente"}
-                     </span>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                const hasAttachments = (atv.anexoFotos && atv.anexoFotos.length > 0) || (atv.anexoArquivos && atv.anexoArquivos.length > 0);
+                return (
+                  <tr key={atv.id} style={inlineStyle}>
+                    <td style={{ padding: '12px', fontWeight: 'bold', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {isUrgentParecer && <ShieldAlert className="inline-block w-4 h-4 mr-1 mb-0.5" style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '4px', color: '#fecaca' }} />}
+                      <span style={{ fontSize: '14px', verticalAlign: 'middle' }}>{atv.instalacao || "N/A"}</span>
+                      {hasAttachments && (
+                        <span style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '2px',
+                          fontSize: '9px',
+                          fontWeight: 'bold',
+                          padding: '1px 5px',
+                          borderRadius: '4px',
+                          marginLeft: '6px',
+                          textTransform: 'uppercase',
+                          backgroundColor: (atv.prioridade || atv.atividadeExtra || isUrgentParecer) ? 'rgba(255,255,255,0.2)' : 'rgba(79,70,229,0.1)',
+                          color: (atv.prioridade || atv.atividadeExtra || isUrgentParecer) ? '#ffffff' : '#4f46e5',
+                          verticalAlign: 'middle'
+                        }}>
+                          <Paperclip style={{ width: '10px', height: '10px' }} /> Anexos
+                        </span>
+                      )}
+                      {atv.prioridade && (
+                        <span style={{ fontSize: '9px', fontWeight: 'bold', padding: '1px 5px', borderRadius: '4px', backgroundColor: 'rgba(255, 193, 7, 0.2)', color: '#ffc107', marginLeft: '6px', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                          ⭐ PRIORIDADE
+                        </span>
+                      )}
+                      {atv.atividadeExtra && (
+                        <span style={{ fontSize: '9px', fontWeight: 'bold', padding: '1px 5px', borderRadius: '4px', backgroundColor: 'rgba(139, 92, 246, 0.2)', color: '#a78bfa', marginLeft: '6px', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                          ⚡ EXTRA
+                        </span>
+                      )}
+                    </td>
+                    <td style={{ padding: '12px', fontWeight: '900', fontSize: '12px' }}>
+                      {diaPrevRender}
+                    </td>
+                    <td style={{ padding: '12px', fontSize: '12px', color: fontColorHex, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {atv.obsInstalacao || "-"}
+                    </td>
+                    <td style={{ padding: '12px', fontWeight: '500', whiteSpace: 'nowrap', color: fontColorHex }}>
+                      {atv.vencimentoParecer || "-"}
+                    </td>
+                    <td style={{ padding: '12px', fontWeight: '500', whiteSpace: 'nowrap', color: fontColorHex }}>
+                      {atv.automaticoPrevInstala || "-"}
+                    </td>
+                    <td style={{ padding: '12px' }}>
+                       <span style={{ 
+                         display: 'inline-flex', 
+                         alignItems: 'center', 
+                         padding: '2px 8px', 
+                         borderRadius: '6px', 
+                         fontSize: '10px', 
+                         fontWeight: 'bold', 
+                         textTransform: 'uppercase',
+                         backgroundColor: (isUrgentParecer || atv.prioridade || atv.atividadeExtra) ? 'rgba(255,255,255,0.2)' : 'rgba(10,25,47,0.05)',
+                         color: (isUrgentParecer || atv.prioridade || atv.atividadeExtra) ? '#ffffff' : '#0A192F'
+                       }}>
+                          {atv.status || "Pendente"}
+                       </span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
 
         {/* Rodapé de Paginação da TV */}
         {totalPages > 1 && (
@@ -194,6 +230,7 @@ export default function AtividadesClientView({ atividades, settings, isAdmin, is
              <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#64748b', marginLeft: '12px' }}>Página {currentPage + 1} de {totalPages}</span>
           </div>
         )}
+      </div>
       </div>
     );
   }
@@ -217,7 +254,7 @@ export default function AtividadesClientView({ atividades, settings, isAdmin, is
           </thead>
           <tbody className="divide-y divide-slate-100">
             {currentSlice.map((atv: any) => {
-              const isUrgentParecer = atv.daysParecer !== null && atv.daysParecer < settings.limiteParecer;
+              const isUrgentParecer = atv.daysParecer !== null && atv.daysParecer <= settings.limiteParecer;
               
               let bgColorCss = "hover:bg-slate-50 transition-colors h-[65px]";
               let diaPrevRender = "-";
@@ -252,13 +289,41 @@ export default function AtividadesClientView({ atividades, settings, isAdmin, is
                     {isUrgentParecer && <ShieldAlert className="inline-block w-4 h-4 mr-1 mb-0.5 text-red-200" />}
                     <span className="text-sm">{atv.instalacao || "N/A"}</span>
                     {((atv.anexoFotos && atv.anexoFotos.length > 0) || (atv.anexoArquivos && atv.anexoArquivos.length > 0)) && (
-                      <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded ml-2 uppercase vertical-middle ${
-                        (atv.prioridade || atv.atividadeExtra || isUrgentParecer)
-                          ? 'bg-white/20 text-white'
-                          : 'bg-indigo-500/10 text-indigo-600'
-                      }`}>
-                        <Paperclip className="w-3.5 h-3.5" /> Anexos
-                      </span>
+                      <div className="flex flex-wrap gap-1 mt-1.5">
+                        {atv.anexoFotos?.map((url: string, idx: number) => (
+                          <button
+                            type="button"
+                            key={`foto-${idx}`}
+                            onClick={(e) => { e.stopPropagation(); downloadFile(url, `foto-${idx + 1}-${atv.instalacao || 'anexo'}.jpg`); }}
+                            className={`inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded border transition-colors cursor-pointer ${
+                              (atv.prioridade || atv.atividadeExtra || isUrgentParecer)
+                                ? 'bg-white/20 hover:bg-white/30 border-white/25 text-white'
+                                : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-600'
+                            }`}
+                            title="Baixar Foto"
+                          >
+                            <Download className="w-2.5 h-2.5" /> Foto {idx + 1}
+                          </button>
+                        ))}
+                        {atv.anexoArquivos?.map((url: string, idx: number) => {
+                          const filename = url.split('/').pop() || `arq-${idx + 1}`;
+                          return (
+                            <button
+                              type="button"
+                              key={`arq-${idx}`}
+                              onClick={(e) => { e.stopPropagation(); downloadFile(url, `${atv.instalacao || 'anexo'}-${filename}`); }}
+                              className={`inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded border transition-colors cursor-pointer ${
+                                (atv.prioridade || atv.atividadeExtra || isUrgentParecer)
+                                  ? 'bg-white/20 hover:bg-white/30 border-white/25 text-white'
+                                  : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-600'
+                              }`}
+                              title={`Baixar ${filename}`}
+                            >
+                              <Download className="w-2.5 h-2.5" /> {filename.length > 12 ? filename.substring(0, 10) + '...' : filename}
+                            </button>
+                          );
+                        })}
+                      </div>
                     )}
                     <TagToggler id={atv.id} prioridade={atv.prioridade} atividadeExtra={atv.atividadeExtra} isAdmin={!!isAdmin} />
                   </td>
@@ -303,7 +368,7 @@ export default function AtividadesClientView({ atividades, settings, isAdmin, is
       {/* Mobile Card View */}
       <div className="lg:hidden grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
         {currentSlice.map((atv: any) => {
-          const isUrgentParecer = atv.daysParecer !== null && atv.daysParecer < settings.limiteParecer;
+          const isUrgentParecer = atv.daysParecer !== null && atv.daysParecer <= settings.limiteParecer;
           let urgencyColor = "border-slate-100 bg-white";
           
           if (atv.daysPrev !== null) {
@@ -323,13 +388,41 @@ export default function AtividadesClientView({ atividades, settings, isAdmin, is
                   <h3 className="font-bold text-lg leading-tight">
                     {atv.instalacao}
                     {((atv.anexoFotos && atv.anexoFotos.length > 0) || (atv.anexoArquivos && atv.anexoArquivos.length > 0)) && (
-                      <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded ml-2 uppercase vertical-middle ${
-                        (atv.prioridade || atv.atividadeExtra || isUrgentParecer)
-                          ? 'bg-white/20 text-white'
-                          : 'bg-indigo-500/10 text-indigo-600'
-                      }`}>
-                        <Paperclip className="w-3 h-3" /> Anexos
-                      </span>
+                      <div className="flex flex-wrap gap-1 mt-1.5">
+                        {atv.anexoFotos?.map((url: string, idx: number) => (
+                          <button
+                            type="button"
+                            key={`foto-${idx}`}
+                            onClick={(e) => { e.stopPropagation(); downloadFile(url, `foto-${idx + 1}-${atv.instalacao || 'anexo'}.jpg`); }}
+                            className={`inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded border transition-colors cursor-pointer ${
+                              (atv.prioridade || atv.atividadeExtra || isUrgentParecer)
+                                ? 'bg-white/20 hover:bg-white/30 border-white/25 text-white'
+                                : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-600'
+                            }`}
+                            title="Baixar Foto"
+                          >
+                            <Download className="w-2.5 h-2.5" /> Foto {idx + 1}
+                          </button>
+                        ))}
+                        {atv.anexoArquivos?.map((url: string, idx: number) => {
+                          const filename = url.split('/').pop() || `arq-${idx + 1}`;
+                          return (
+                            <button
+                              type="button"
+                              key={`arq-${idx}`}
+                              onClick={(e) => { e.stopPropagation(); downloadFile(url, `${atv.instalacao || 'anexo'}-${filename}`); }}
+                              className={`inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded border transition-colors cursor-pointer ${
+                                (atv.prioridade || atv.atividadeExtra || isUrgentParecer)
+                                  ? 'bg-white/20 hover:bg-white/30 border-white/25 text-white'
+                                  : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-600'
+                              }`}
+                              title={`Baixar ${filename}`}
+                            >
+                              <Download className="w-2.5 h-2.5" /> {filename.length > 12 ? filename.substring(0, 10) + '...' : filename}
+                            </button>
+                          );
+                        })}
+                      </div>
                     )}
                   </h3>
                   <TagToggler id={atv.id} prioridade={atv.prioridade} atividadeExtra={atv.atividadeExtra} isAdmin={!!isAdmin} />

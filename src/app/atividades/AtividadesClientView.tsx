@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from "next/link";
-import { Edit, ShieldAlert, Paperclip, Download } from "lucide-react";
+import { Edit, ShieldAlert, Paperclip, Download, Activity } from "lucide-react";
 import { TagToggler } from "./TagToggler";
 
 export default function AtividadesClientView({ atividades, settings, isAdmin, isTV }: any) {
@@ -29,12 +29,31 @@ export default function AtividadesClientView({ atividades, settings, isAdmin, is
     }
   };
 
+  const [localIsTV, setLocalIsTV] = useState(isTV);
+
+  useEffect(() => {
+    const stored = localStorage.getItem("forcedTvMode");
+    if (stored === "true") {
+      setLocalIsTV(true);
+    } else if (stored === "false") {
+      setLocalIsTV(false);
+    } else {
+      setLocalIsTV(isTV);
+    }
+  }, [isTV]);
+
+  const toggleTvMode = () => {
+    const nextVal = !localIsTV;
+    setLocalIsTV(nextVal);
+    localStorage.setItem("forcedTvMode", String(nextVal));
+  };
+
   const [currentPage, setCurrentPage] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(10); 
 
   useEffect(() => {
     const calcRows = () => {
-      if (!isTV) {
+      if (!localIsTV) {
         setItemsPerPage(atividades.length); 
         return;
       }
@@ -51,10 +70,10 @@ export default function AtividadesClientView({ atividades, settings, isAdmin, is
     calcRows();
     window.addEventListener('resize', calcRows);
     return () => window.removeEventListener('resize', calcRows);
-  }, [isTV, atividades.length]);
+  }, [localIsTV, atividades.length]);
 
   useEffect(() => {
-    if (!isTV || atividades.length <= itemsPerPage) return;
+    if (!localIsTV || atividades.length <= itemsPerPage) return;
     
     const interval = setInterval(() => {
       setCurrentPage((prev) => {
@@ -64,9 +83,9 @@ export default function AtividadesClientView({ atividades, settings, isAdmin, is
     }, 15000);
 
     return () => clearInterval(interval);
-  }, [isTV, atividades.length, itemsPerPage]);
+  }, [localIsTV, atividades.length, itemsPerPage]);
 
-  const currentSlice = isTV 
+  const currentSlice = localIsTV 
      ? atividades.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage) 
      : atividades;
 
@@ -81,175 +100,220 @@ export default function AtividadesClientView({ atividades, settings, isAdmin, is
   }
 
   // TV View - Render ONLY the table to avoid duplication and use inline styles for safety
-  if (isTV) {
+  if (localIsTV) {
     return (
-      <div style={{ padding: '16px', height: 'calc(100vh - 100px)', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
-        <div 
-          className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden relative flex-1 flex flex-col justify-between" 
-          style={{ 
-            backgroundColor: '#ffffff', 
-            borderRadius: '16px', 
-            border: '1px solid #e2e8f0', 
-            overflow: 'hidden', 
-            position: 'relative',
-            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.05)',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-            height: '100%'
-          }}
-        >
-          <table 
+      <>
+        <div style={{ padding: '16px', height: 'calc(100vh - 100px)', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
+          <div 
+            className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden relative flex-1 flex flex-col justify-between" 
             style={{ 
-              width: '100%', 
-              borderCollapse: 'collapse', 
-              textAlign: 'left', 
-              fontSize: '13px',
-              tableLayout: 'fixed'
+              backgroundColor: '#ffffff', 
+              borderRadius: '16px', 
+              border: '1px solid #e2e8f0', 
+              overflow: 'hidden', 
+              position: 'relative',
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.05)',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              height: '100%'
             }}
           >
-            <thead style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-              <tr>
-                <th style={{ width: '25%', padding: '12px', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '11px', color: '#64748b' }}>Cliente / Instalação</th>
-                <th style={{ width: '100px', padding: '12px', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '11px', color: '#64748b' }}>Atraso</th>
-                <th style={{ padding: '12px', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '11px', color: '#64748b' }}>Observações</th>
-                <th style={{ width: '120px', padding: '12px', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '11px', color: '#64748b' }}>Venc. Parecer</th>
-                <th style={{ width: '120px', padding: '12px', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '11px', color: '#64748b' }}>Prev. Instala</th>
-                <th style={{ width: '110px', padding: '12px', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '11px', color: '#64748b' }}>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {currentSlice.map((atv: any) => {
-                const isUrgentParecer = atv.daysParecer !== null && atv.daysParecer <= settings.limiteParecer;
-                
-                let diaPrevRender = "-";
-                let inlineStyle: any = { height: '65px', borderBottom: '1px solid #f1f5f9' };
-                let fontColorHex = "#475569";
-                
-                if (atv.daysPrev !== null) {
-                   if (atv.daysPrev >= settings.limiteVerde) {
-                      inlineStyle = { ...inlineStyle, backgroundColor: '#dcfce7', color: '#14532d' };
-                      fontColorHex = "#14532d";
-                   } else if (atv.daysPrev >= settings.limiteAmarelo) {
-                      inlineStyle = { ...inlineStyle, backgroundColor: '#fef9c3', color: '#713f12' };
-                      fontColorHex = "#713f12";
-                   } else {
-                      inlineStyle = { ...inlineStyle, backgroundColor: '#fee2e2', color: '#7f1d1d' };
-                      fontColorHex = "#7f1d1d";
-                   }
-                   diaPrevRender = `${atv.daysPrev} dias`;
-                }
-
-                if (atv.prioridade) {
-                   inlineStyle = { ...inlineStyle, backgroundColor: '#9333ea', color: '#ffffff' };
-                   fontColorHex = "#ffffff";
-                } else if (atv.atividadeExtra) {
-                   inlineStyle = { ...inlineStyle, backgroundColor: '#1E3A8A', color: '#ffffff' };
-                   fontColorHex = "#ffffff";
-                } else if (isUrgentParecer) {
-                   inlineStyle = { ...inlineStyle, backgroundColor: '#dc2626', color: '#ffffff' };
-                   fontColorHex = "#ffffff";
-                }
-
-                const hasAttachments = (atv.anexoFotos && atv.anexoFotos.length > 0) || (atv.anexoArquivos && atv.anexoArquivos.length > 0);
-                return (
-                  <tr key={atv.id} style={inlineStyle}>
-                    <td style={{ padding: '12px', fontWeight: 'bold', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {isUrgentParecer && <ShieldAlert className="inline-block w-4 h-4 mr-1 mb-0.5" style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '4px', color: '#fecaca' }} />}
-                      <span style={{ fontSize: '14px', verticalAlign: 'middle' }}>{atv.instalacao || "N/A"}</span>
-                      {hasAttachments && (
-                        <span style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '2px',
-                          fontSize: '9px',
-                          fontWeight: 'bold',
-                          padding: '1px 5px',
-                          borderRadius: '4px',
-                          marginLeft: '6px',
-                          textTransform: 'uppercase',
-                          backgroundColor: (atv.prioridade || atv.atividadeExtra || isUrgentParecer) ? 'rgba(255,255,255,0.2)' : 'rgba(79,70,229,0.1)',
-                          color: (atv.prioridade || atv.atividadeExtra || isUrgentParecer) ? '#ffffff' : '#4f46e5',
-                          verticalAlign: 'middle'
-                        }}>
-                          <Paperclip style={{ width: '10px', height: '10px' }} /> Anexos
-                        </span>
-                      )}
-                      {atv.prioridade && (
-                        <span style={{ fontSize: '9px', fontWeight: 'bold', padding: '1px 5px', borderRadius: '4px', backgroundColor: 'rgba(255, 193, 7, 0.2)', color: '#ffc107', marginLeft: '6px', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
-                          ⭐ PRIORIDADE
-                        </span>
-                      )}
-                      {atv.atividadeExtra && (
-                        <span style={{ fontSize: '9px', fontWeight: 'bold', padding: '1px 5px', borderRadius: '4px', backgroundColor: 'rgba(139, 92, 246, 0.2)', color: '#a78bfa', marginLeft: '6px', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
-                          ⚡ EXTRA
-                        </span>
-                      )}
-                    </td>
-                    <td style={{ padding: '12px', fontWeight: '900', fontSize: '12px' }}>
-                      {diaPrevRender}
-                    </td>
-                    <td style={{ padding: '12px', fontSize: '12px', color: fontColorHex, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {atv.obsInstalacao || "-"}
-                    </td>
-                    <td style={{ padding: '12px', fontWeight: '500', whiteSpace: 'nowrap', color: fontColorHex }}>
-                      {atv.vencimentoParecer || "-"}
-                    </td>
-                    <td style={{ padding: '12px', fontWeight: '500', whiteSpace: 'nowrap', color: fontColorHex }}>
-                      {atv.automaticoPrevInstala || "-"}
-                    </td>
-                    <td style={{ padding: '12px' }}>
-                       <span style={{ 
-                         display: 'inline-flex', 
-                         alignItems: 'center', 
-                         padding: '2px 8px', 
-                         borderRadius: '6px', 
-                         fontSize: '10px', 
-                         fontWeight: 'bold', 
-                         textTransform: 'uppercase',
-                         backgroundColor: (isUrgentParecer || atv.prioridade || atv.atividadeExtra) ? 'rgba(255,255,255,0.2)' : 'rgba(10,25,47,0.05)',
-                         color: (isUrgentParecer || atv.prioridade || atv.atividadeExtra) ? '#ffffff' : '#0A192F'
-                       }}>
-                          {atv.status || "Pendente"}
-                       </span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-
-        {/* Rodapé de Paginação da TV */}
-        {totalPages > 1 && (
-          <div style={{ backgroundColor: '#f1f5f9', padding: '8px 16px', textAlign: 'center', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-             <div style={{ display: 'flex' }}>
-               {Array.from({ length: totalPages }).map((_, i) => (
-                 <div key={i} style={{ backgroundColor: currentPage === i ? '#00BFA5' : '#cbd5e1', width: '8px', height: '8px', borderRadius: '50%', marginRight: '4px' }} />
-               ))}
-             </div>
-             <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#64748b', marginLeft: '12px' }}>Página {currentPage + 1} de {totalPages}</span>
-          </div>
-        )}
-      </div>
-      </div>
+            <table 
+              style={{ 
+                width: '100%', 
+                borderCollapse: 'collapse', 
+                textAlign: 'left', 
+                fontSize: '13px',
+                tableLayout: 'fixed'
+              }}
+            >
+              <thead style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                <tr>
+                  <th style={{ width: '25%', padding: '12px', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '11px', color: '#64748b' }}>Cliente / Instalação</th>
+                  <th style={{ width: '100px', padding: '12px', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '11px', color: '#64748b' }}>Atraso</th>
+                  <th style={{ padding: '12px', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '11px', color: '#64748b' }}>Observações</th>
+                  <th style={{ width: '120px', padding: '12px', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '11px', color: '#64748b' }}>Venc. Parecer</th>
+                  <th style={{ width: '120px', padding: '12px', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '11px', color: '#64748b' }}>Prev. Instala</th>
+                  <th style={{ width: '110px', padding: '12px', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '11px', color: '#64748b' }}>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {currentSlice.map((atv: any) => {
+                  const isUrgentParecer = atv.daysParecer !== null && atv.daysParecer <= settings.limiteParecer;
+                  
+                  let diaPrevRender = "-";
+                  let inlineStyle: any = { height: '65px', borderBottom: '1px solid #f1f5f9' };
+                  let fontColorHex = "#475569";
+                  
+                  if (atv.daysPrev !== null) {
+                     if (atv.daysPrev >= settings.limiteVerde) {
+                        inlineStyle = { ...inlineStyle, backgroundColor: '#dcfce7', color: '#14532d' };
+                        fontColorHex = "#14532d";
+                     } else if (atv.daysPrev >= settings.limiteAmarelo) {
+                        inlineStyle = { ...inlineStyle, backgroundColor: '#fef9c3', color: '#713f12' };
+                        fontColorHex = "#713f12";
+                     } else {
+                        inlineStyle = { ...inlineStyle, backgroundColor: '#fee2e2', color: '#7f1d1d' };
+                        fontColorHex = "#7f1d1d";
+                     }
+                     diaPrevRender = `${atv.daysPrev} dias`;
+                  }
+  
+                  if (atv.prioridade) {
+                     inlineStyle = { ...inlineStyle, backgroundColor: '#9333ea', color: '#ffffff' };
+                     fontColorHex = "#ffffff";
+                  } else if (atv.atividadeExtra) {
+                     inlineStyle = { ...inlineStyle, backgroundColor: '#1E3A8A', color: '#ffffff' };
+                     fontColorHex = "#ffffff";
+                  } else if (isUrgentParecer) {
+                     inlineStyle = { ...inlineStyle, backgroundColor: '#dc2626', color: '#ffffff' };
+                     fontColorHex = "#ffffff";
+                  }
+  
+                  const hasAttachments = (atv.anexoFotos && atv.anexoFotos.length > 0) || (atv.anexoArquivos && atv.anexoArquivos.length > 0);
+                  return (
+                    <tr key={atv.id} style={inlineStyle}>
+                      <td style={{ padding: '12px', fontWeight: 'bold', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {isUrgentParecer && <ShieldAlert className="inline-block w-4 h-4 mr-1 mb-0.5" style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '4px', color: '#fecaca' }} />}
+                        <span style={{ fontSize: '14px', verticalAlign: 'middle' }}>{atv.instalacao || "N/A"}</span>
+                        {hasAttachments && (
+                          <span style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '2px',
+                            fontSize: '9px',
+                            fontWeight: 'bold',
+                            padding: '1px 5px',
+                            borderRadius: '4px',
+                            marginLeft: '6px',
+                            textTransform: 'uppercase',
+                            backgroundColor: (atv.prioridade || atv.atividadeExtra || isUrgentParecer) ? 'rgba(255,255,255,0.2)' : 'rgba(79,70,229,0.1)',
+                            color: (atv.prioridade || atv.atividadeExtra || isUrgentParecer) ? '#ffffff' : '#4f46e5',
+                            verticalAlign: 'middle'
+                          }}>
+                            <Paperclip style={{ width: '10px', height: '10px' }} /> Anexos
+                          </span>
+                        )}
+                        {atv.prioridade && (
+                          <span style={{ fontSize: '9px', fontWeight: 'bold', padding: '1px 5px', borderRadius: '4px', backgroundColor: 'rgba(255, 193, 7, 0.2)', color: '#ffc107', marginLeft: '6px', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                            ⭐ PRIORIDADE
+                          </span>
+                        )}
+                        {atv.atividadeExtra && (
+                          <span style={{ fontSize: '9px', fontWeight: 'bold', padding: '1px 5px', borderRadius: '4px', backgroundColor: 'rgba(139, 92, 246, 0.2)', color: '#a78bfa', marginLeft: '6px', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                            ⚡ EXTRA
+                          </span>
+                        )}
+                      </td>
+                      <td style={{ padding: '12px', fontWeight: '900', fontSize: '12px' }}>
+                        {diaPrevRender}
+                      </td>
+                      <td style={{ padding: '12px', fontSize: '12px', color: fontColorHex, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {atv.obsInstalacao || "-"}
+                      </td>
+                      <td style={{ padding: '12px', fontWeight: '500', whiteSpace: 'nowrap', color: fontColorHex }}>
+                        {atv.vencimentoParecer || "-"}
+                      </td>
+                      <td style={{ padding: '12px', fontWeight: '500', whiteSpace: 'nowrap', color: fontColorHex }}>
+                        {atv.automaticoPrevInstala || "-"}
+                      </td>
+                      <td style={{ padding: '12px' }}>
+                         <span style={{ 
+                           display: 'inline-flex', 
+                           alignItems: 'center', 
+                           padding: '2px 8px', 
+                           borderRadius: '6px', 
+                           fontSize: '10px', 
+                           fontWeight: 'bold', 
+                           textTransform: 'uppercase',
+                           backgroundColor: (isUrgentParecer || atv.prioridade || atv.atividadeExtra) ? 'rgba(255,255,255,0.2)' : 'rgba(10,25,47,0.05)',
+                           color: (isUrgentParecer || atv.prioridade || atv.atividadeExtra) ? '#ffffff' : '#0A192F'
+                         }}>
+                            {atv.status || "Pendente"}
+                         </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+  
+          {/* Rodapé de Paginação da TV */}
+          {totalPages > 1 && (
+            <div style={{ backgroundColor: '#f1f5f9', padding: '8px 16px', textAlign: 'center', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+               <div style={{ display: 'flex' }}>
+                 {Array.from({ length: totalPages }).map((_, i) => (
+                   <div key={i} style={{ backgroundColor: currentPage === i ? '#00BFA5' : '#cbd5e1', width: '8px', height: '8px', borderRadius: '50%', marginRight: '4px' }} />
+                 ))}
+               </div>
+               <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#64748b', marginLeft: '12px' }}>Página {currentPage + 1} de {totalPages}</span>
+            </div>
+          )}
+        </div>
+        </div>
+        
+        {/* Floating Button to exit TV view */}
+        <button
+          onClick={toggleTvMode}
+          style={{
+            position: 'fixed',
+            bottom: '16px',
+            right: '16px',
+            zIndex: 9999,
+            backgroundColor: 'rgba(15, 23, 42, 0.85)',
+            backdropFilter: 'blur(4px)',
+            color: '#ffffff',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            borderRadius: '12px',
+            padding: '8px 16px',
+            fontSize: '11px',
+            fontWeight: 'bold',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+            opacity: 0.3,
+            transition: 'opacity 0.2s'
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.3'; }}
+        >
+          <Activity style={{ width: '12px', height: '12px' }} />
+          Alternar Visualização
+        </button>
+      </>
     );
   }
 
   // Desktop/Mobile View
   return (
     <>
+      {/* Botão de Controle do Modo TV Manual */}
+      <div className="flex justify-end mb-4 px-2">
+        <button
+          type="button"
+          onClick={toggleTvMode}
+          className="flex items-center gap-2 px-4 py-2.5 text-xs font-bold text-slate-600 hover:text-slate-800 bg-white hover:bg-slate-55 rounded-xl border border-slate-200 shadow-sm transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+        >
+          <Activity className="w-4 h-4 text-[#00BFA5]" />
+          Ativar Modo TV
+        </button>
+      </div>
+
       {/* Table Desktop View */}
       <div className="hidden lg:block bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden relative">
-        <table className="w-full text-[13px] text-left table-fixed">
+        <table className="w-full text-[13px] text-left table-fixed" style={{ tableLayout: 'fixed' }}>
           <thead className="text-[11px] text-slate-500 uppercase bg-slate-50/80 border-b border-slate-100">
             <tr>
-              <th className="w-1/4 px-3 py-3 font-bold tracking-wider">Cliente / Instalação</th>
-              <th className="w-[100px] px-3 py-3 font-bold tracking-wider">Atraso</th>
+              <th className="w-1/4 px-3 py-3 font-bold tracking-wider" style={{ width: '25%' }}>Cliente / Instalação</th>
+              <th className="w-[100px] px-3 py-3 font-bold tracking-wider" style={{ width: '100px' }}>Atraso</th>
               <th className="px-3 py-3 font-bold tracking-wider">Observações</th>
-              <th className="w-[120px] px-3 py-3 font-bold tracking-wider">Venc. Parecer</th>
-              <th className="w-[120px] px-3 py-3 font-bold tracking-wider">Prev. Instala</th>
-              <th className="w-[110px] px-3 py-3 font-bold tracking-wider">Status</th>
-              {!isTV && <th className="w-[80px] px-3 py-3 font-bold tracking-wider text-right">Ação</th>}
+              <th className="w-[120px] px-3 py-3 font-bold tracking-wider" style={{ width: '120px' }}>Venc. Parecer</th>
+              <th className="w-[120px] px-3 py-3 font-bold tracking-wider" style={{ width: '120px' }}>Prev. Instala</th>
+              <th className="w-[110px] px-3 py-3 font-bold tracking-wider" style={{ width: '110px' }}>Status</th>
+              {!isTV && <th className="w-[80px] px-3 py-3 font-bold tracking-wider text-right" style={{ width: '80px' }}>Ação</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">

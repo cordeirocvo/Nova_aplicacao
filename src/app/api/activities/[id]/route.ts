@@ -8,12 +8,14 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     const { id } = resolvedParams;
     const body = await req.json();
 
+    const obsValue = body.obsInstalacao || body.observacao || "";
     const atividade = await prisma.planilhaInstalacao.update({
       where: { id },
       data: {
         instalacao: body.instalacao,
         solicitacao: body.solicitacao,
-        obsInstalacao: body.obsInstalacao,
+        obsInstalacao: obsValue,
+        observacao: obsValue,
         status: body.status,
         vendedor: body.vendedor,
         telefoneCliente: body.telefoneCliente,

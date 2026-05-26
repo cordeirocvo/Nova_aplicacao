@@ -68,7 +68,12 @@ export default function NovaAtividadePage() {
       }
 
       // 2. Setup payload
-      const payload = { ...form, anexoFotos: fotosUrls, anexoArquivos: arquivosUrls };
+      const payload = { 
+        ...form, 
+        obsInstalacao: form.observacao, 
+        anexoFotos: fotosUrls, 
+        anexoArquivos: arquivosUrls 
+      };
 
       // 3. Save to Prisma via API endpoint
       const res = await fetch("/api/activities", {

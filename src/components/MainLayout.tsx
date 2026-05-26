@@ -39,6 +39,7 @@ const NAV_SECTIONS: NavSection[] = [
       { name: 'Projetos', href: '/engenharia', icon: BarChart },
       { name: 'Análise de Consumo', href: '/engenharia/analise-consumo', icon: Sun },
       { name: 'Dimensionamento BESS', href: '/engenharia/bess', icon: Battery },
+      { name: 'Dimensionamento BESS (pvlib)', href: '/engenharia/bess-sizing', icon: Battery },
       { name: 'Sistema Fotovoltaico', href: '/engenharia/solar', icon: Sun },
       { name: 'Solar Intelligence (SIE)', href: '/engenharia/solar/monitoramento', icon: Sun, badge: 'IA' },
       { name: 'Operação & Manutenção', href: '/engenharia/om', icon: Settings },
@@ -56,6 +57,34 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
+
+  const userObj = session?.user as any;
+  const role = userObj?.role || 'USER';
+  const [localIsTV, setLocalIsTV] = useState(role === 'TV');
+
+  useEffect(() => {
+    const checkTvMode = () => {
+      const stored = localStorage.getItem("forcedTvMode");
+      if (stored === "true") {
+        setLocalIsTV(true);
+      } else if (stored === "false") {
+        setLocalIsTV(false);
+      } else {
+        setLocalIsTV(role === 'TV');
+      }
+    };
+
+    checkTvMode();
+    window.addEventListener("storage", checkTvMode);
+    const interval = setInterval(checkTvMode, 500);
+
+    return () => {
+      window.removeEventListener("storage", checkTvMode);
+      clearInterval(interval);
+    };
+  }, [role]);
+
+  const isTV = localIsTV;
 
   useEffect(() => {
     if (session && session.user) {
@@ -88,10 +117,6 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   }
 
   if (pathname === '/login' || !session) return <>{children}</>;
-
-  const userObj = session.user as any;
-  const role = userObj.role || 'USER';
-  const isTV = role === 'TV';
 
   const toggleSection = (title: string) => {
     setCollapsedSections(function(prev) {

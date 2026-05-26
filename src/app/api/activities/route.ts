@@ -16,11 +16,13 @@ export async function POST(req: Request) {
        return NextResponse.json({ error: "Database model missing" }, { status: 500 });
     }
     
+    const obsValue = data.observacao || data.obsInstalacao || "";
     const newActivity = await prisma.planilhaInstalacao.create({
       data: {
         instalacao: data.instalacao,
         solicitacao: data.solicitacao,
-        observacao: data.observacao,
+        observacao: obsValue,
+        obsInstalacao: obsValue,
         status: data.status,
         vendedor: data.vendedor,
         telefoneCliente: data.telefoneCliente,

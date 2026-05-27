@@ -16,7 +16,7 @@ export async function POST(req: Request) {
        return NextResponse.json({ error: "Database model missing" }, { status: 500 });
     }
     
-    const obsValue = data.observacao || data.obsInstalacao || "";
+    const obsValue = data.observacao || data.obsInstalacao || data.observacoes || "";
     const newActivity = await prisma.planilhaInstalacao.create({
       data: {
         instalacao: data.instalacao,
@@ -28,6 +28,7 @@ export async function POST(req: Request) {
         telefoneCliente: data.telefoneCliente,
         cidade: data.cidade,
         dataPrevista: data.dataPrevista,
+        automaticoPrevInstala: data.dataPrevista || null,
         telefoneVendedor: data.telefoneVendedor,
         anexoFotos: data.anexoFotos || [],
         anexoArquivos: data.anexoArquivos || [],

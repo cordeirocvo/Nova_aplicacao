@@ -131,7 +131,7 @@ export default function AtividadesClientView({ atividades, settings, isAdmin, is
               <thead style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
                 <tr>
                   <th style={{ width: '25%', padding: '12px', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '11px', color: '#64748b' }}>Cliente / Instalação</th>
-                  <th style={{ width: '100px', padding: '12px', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '11px', color: '#64748b' }}>Atraso</th>
+                  <th style={{ width: '130px', padding: '12px', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '11px', color: '#64748b' }}>Dias para Montar</th>
                   <th style={{ padding: '12px', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '11px', color: '#64748b' }}>Observações</th>
                   <th style={{ width: '120px', padding: '12px', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '11px', color: '#64748b' }}>Venc. Parecer</th>
                   <th style={{ width: '120px', padding: '12px', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '11px', color: '#64748b' }}>Prev. Instala</th>
@@ -308,7 +308,7 @@ export default function AtividadesClientView({ atividades, settings, isAdmin, is
           <thead className="text-[11px] text-slate-500 uppercase bg-slate-50/80 border-b border-slate-100">
             <tr>
               <th className="w-1/4 px-3 py-3 font-bold tracking-wider" style={{ width: '25%' }}>Cliente / Instalação</th>
-              <th className="w-[100px] px-3 py-3 font-bold tracking-wider" style={{ width: '100px' }}>Atraso</th>
+              <th className="w-[130px] px-3 py-3 font-bold tracking-wider" style={{ width: '130px' }}>Dias para Montar</th>
               <th className="px-3 py-3 font-bold tracking-wider">Observações</th>
               <th className="w-[120px] px-3 py-3 font-bold tracking-wider" style={{ width: '120px' }}>Venc. Parecer</th>
               <th className="w-[120px] px-3 py-3 font-bold tracking-wider" style={{ width: '120px' }}>Prev. Instala</th>
@@ -504,7 +504,7 @@ export default function AtividadesClientView({ atividades, settings, isAdmin, is
                   <p className="font-semibold">{atv.automaticoPrevInstala || "-"}</p>
                 </div>
                 <div className="col-span-2">
-                   <p className="text-[10px] opacity-70 uppercase font-bold">Atraso Semáforo</p>
+                   <p className="text-[10px] opacity-70 uppercase font-bold">Dias para Montar</p>
                    <p className="font-black text-[#1E3A8A]">{atv.daysPrev !== null ? `${atv.daysPrev} dias` : "-"}</p>
                 </div>
               </div>

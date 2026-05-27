@@ -70,6 +70,7 @@ export default function NovaAtividadePage() {
       // 2. Setup payload
       const payload = { 
         ...form, 
+        observacao: form.observacao,
         obsInstalacao: form.observacao, 
         anexoFotos: fotosUrls, 
         anexoArquivos: arquivosUrls 

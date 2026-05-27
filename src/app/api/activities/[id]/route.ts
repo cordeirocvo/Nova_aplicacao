@@ -8,7 +8,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     const { id } = resolvedParams;
     const body = await req.json();
 
-    const obsValue = body.obsInstalacao || body.observacao || "";
+    const obsValue = body.obsInstalacao || body.observacao || body.observacoes || "";
     const atividade = await prisma.planilhaInstalacao.update({
       where: { id },
       data: {
@@ -22,6 +22,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         cidade: body.cidade,
         diaPrev: body.diaPrev,
         automaticoPrevInstala: body.automaticoPrevInstala,
+        dataPrevista: body.automaticoPrevInstala || undefined,
         telefoneVendedor: body.telefoneVendedor,
         anexoFotos: body.anexoFotos,
         anexoArquivos: body.anexoArquivos,

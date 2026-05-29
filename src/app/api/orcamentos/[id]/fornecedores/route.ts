@@ -72,3 +72,99 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
+
+export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const session: any = await getServerSession(authOptions as any);
+  if (!session?.user?.canEditBudgets && session?.user?.role !== "ADMIN") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const { id } = await params;
+    const { fornecedorId, propostas } = await req.json(); // array de { itemId, precoUnitario }
+
+    if (!fornecedorId || !propostas) {
+      return NextResponse.json({ error: "Fornecedor ID e propostas são obrigatórios" }, { status: 400 });
+    }
+
+    // Salvar/atualizar cada proposta enviada
+    for (const p of propostas) {
+      await prisma.propostaItem.upsert({
+        where: {
+          itemId_fornecedorId_versao: {
+            itemId: p.itemId,
+            fornecedorId,
+            versao: 1
+          }
+        },
+        update: {
+          precoUnitario: parseFloat(String(p.precoUnitario).replace(",", ".")) || 0,
+          dataProposta: new Date()
+        },
+        create: {
+          itemId: p.itemId,
+          fornecedorId,
+          precoUnitario: parseFloat(String(p.precoUnitario).replace(",", ".")) || 0,
+        }
+      });
+    }
+
+    // Garantir que o status do convite esteja como Respondido
+    await prisma.fornecedorOrcamento.updateMany({
+      where: {
+        projetoId: id,
+        fornecedorId
+      },
+      data: {
+        statusConvite: "Respondido"
+      }
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Erro ao atualizar cotação do fornecedor:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const session: any = await getServerSession(authOptions as any);
+  if (!session?.user?.canEditBudgets && session?.user?.role !== "ADMIN") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const { id } = await params;
+    const { searchParams } = new URL(req.url);
+    const fornecedorId = searchParams.get("fornecedorId");
+
+    if (!fornecedorId) {
+      return NextResponse.json({ error: "Fornecedor ID é obrigatório" }, { status: 400 });
+    }
+
+    // Excluir todas as propostas desse fornecedor nos itens desse projeto
+    await prisma.propostaItem.deleteMany({
+      where: {
+        fornecedorId,
+        item: { etapa: { projetoId: id } }
+      }
+    });
+
+    // Resetar o status do convite para Pendente
+    await prisma.fornecedorOrcamento.updateMany({
+      where: {
+        projetoId: id,
+        fornecedorId
+      },
+      data: {
+        statusConvite: "Pendente"
+      }
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Erro ao deletar cotação do fornecedor:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+}
+

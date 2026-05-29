@@ -98,7 +98,7 @@ export default function OrcamentoDetalhePage() {
       <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 p-6 md:p-8 min-h-[500px]">
         {activeTab === "EAP" && <EapTab orcamento={orcamento} onUpdate={fetchOrcamento} />}
         {activeTab === "COTACOES" && <CotacoesTab orcamento={orcamento} onUpdate={fetchOrcamento} />}
-        {activeTab === "EQUALIZACAO" && <EqualizacaoTab orcamento={orcamento} />}
+        {activeTab === "EQUALIZACAO" && <EqualizacaoTab orcamento={orcamento} onUpdate={fetchOrcamento} />}
       </div>
     </div>
   );

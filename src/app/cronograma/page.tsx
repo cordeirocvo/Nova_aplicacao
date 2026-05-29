@@ -21,7 +21,7 @@ export default async function CronogramaPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-1 print:hidden">
         <h1 className="text-3xl font-black text-slate-800 tracking-tight">
           Cronograma Geral de Atividades
         </h1>

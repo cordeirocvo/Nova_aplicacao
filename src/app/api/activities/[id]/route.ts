@@ -22,7 +22,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         cidade: body.cidade,
         diaPrev: body.diaPrev,
         automaticoPrevInstala: body.automaticoPrevInstala,
-        dataPrevista: body.automaticoPrevInstala || undefined,
+        dataPrevista: body.dataPrevista !== undefined ? body.dataPrevista : undefined,
         telefoneVendedor: body.telefoneVendedor,
         anexoFotos: body.anexoFotos,
         anexoArquivos: body.anexoArquivos,

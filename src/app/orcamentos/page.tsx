@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Search, Building, Calendar, LayoutDashboard, ChevronRight, Settings, Edit, Trash } from "lucide-react";
+import { Plus, Search, Building, Calendar, LayoutDashboard, ChevronRight, Settings, Edit, Trash, Copy } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -63,6 +63,28 @@ export default function OrcamentosDashboard() {
         setProjetos(projetos.filter(p => p.id !== projectId));
       } else {
         alert(data.error || "Erro ao excluir o projeto");
+      }
+    } catch (error) {
+      alert("Erro de conexão");
+    }
+  };
+
+  const handleDuplicateProject = async (projectId: string) => {
+    if (typeof window !== "undefined" && !window.confirm("Deseja realmente duplicar este projeto com todas as etapas, itens e fornecedores?")) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/orcamentos/${projectId}/duplicar`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (data.success) {
+        const projectsRes = await fetch("/api/orcamentos");
+        const projectsData = await projectsRes.json();
+        setProjetos(Array.isArray(projectsData) ? projectsData : []);
+      } else {
+        alert(data.error || "Erro ao duplicar o projeto");
       }
     } catch (error) {
       alert("Erro de conexão");
@@ -213,6 +235,17 @@ export default function OrcamentosDashboard() {
                   
                   {/* Botões de Ação de Edição e Exclusão */}
                   <div className="flex items-center gap-1 relative z-20">
+                    <button 
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleDuplicateProject(p.id);
+                      }}
+                      className="p-2 bg-slate-50 hover:bg-blue-50 hover:text-blue-500 text-slate-400 rounded-xl transition-all"
+                      title="Duplicar projeto"
+                    >
+                      <Copy className="w-4 h-4" />
+                    </button>
                     <button 
                       onClick={(e) => {
                         e.preventDefault();

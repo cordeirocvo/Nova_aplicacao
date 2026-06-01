@@ -2,23 +2,35 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ChevronLeft, MapPin, Phone, Mail, Calendar, User, FileText, Loader, ExternalLink, Maximize, ArrowRight, Download } from "lucide-react";
+import { 
+  ChevronLeft, MapPin, Phone, Mail, Calendar, User, FileText, 
+  Loader, ExternalLink, Maximize, ArrowRight, Download, CheckCircle, Clock, UserCheck 
+} from "lucide-react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 
 export default function LeadDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { data: session } = useSession();
+  
   const [lead, setLead] = useState<any>(null);
+  const [vendedores, setVendedores] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
+  const userObj = session?.user as any;
+  const role = userObj?.role || "USER";
+  const isManager = role === "ADMIN" || userObj?.canManageCRM;
+
   useEffect(() => {
     fetchLead();
+    fetchVendedores();
   }, [params.id]);
 
   const fetchLead = async () => {
     try {
-      const res = await fetch("/api/leads"); // Simplificado para MVP
+      const res = await fetch("/api/leads");
       const data = await res.json();
       const currentLead = data.find((l: any) => l.id === params.id);
       setLead(currentLead);
@@ -29,12 +41,51 @@ export default function LeadDetailPage() {
     }
   };
 
+  const fetchVendedores = async () => {
+    try {
+      const res = await fetch("/api/users/vendedores");
+      if (res.ok) {
+        const data = await res.json();
+        setVendedores(Array.isArray(data) ? data : []);
+      }
+    } catch (err) {
+      console.error("Erro ao buscar vendedores:", err);
+    }
+  };
+
   const updateStatus = async (newStatus: string) => {
     try {
-      const res = await fetch(`/api/leads/${lead.id}/status`, {
+      const res = await fetch(`/api/leads/${lead.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),
+      });
+      if (res.ok) fetchLead();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const updateVendedor = async (newVendedorId: string) => {
+    try {
+      const res = await fetch(`/api/leads/${lead.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ vendedorId: newVendedorId }),
+      });
+      if (res.ok) fetchLead();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const toggleAtendido = async () => {
+    const newVal = !lead.atendido;
+    try {
+      const res = await fetch(`/api/leads/${lead.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ atendido: newVal }),
       });
       if (res.ok) fetchLead();
     } catch (err) {
@@ -55,7 +106,6 @@ export default function LeadDetailPage() {
       document.body.removeChild(a);
       URL.revokeObjectURL(blobUrl);
     } catch (err) {
-      // Fallback para caso de CORS impeditivo, abrindo em nova guia
       const a = document.createElement("a");
       a.href = url;
       a.target = "_blank";
@@ -131,8 +181,56 @@ export default function LeadDetailPage() {
               <InfoItem icon={<Calendar className="w-5 h-5" />} label="Data da Abordagem" value={new Date(lead.createdAt).toLocaleDateString("pt-BR")} />
             </div>
 
+            {/* Atendimento & Direcionamento Section */}
+            <div className="pt-6 border-t border-slate-100 space-y-5">
+              <div>
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-2">Status do Atendimento</span>
+                <button
+                  type="button"
+                  onClick={toggleAtendido}
+                  className={`w-full flex items-center justify-between px-5 py-3.5 rounded-2xl border text-xs font-black uppercase tracking-widest transition-all
+                    ${lead.atendido 
+                      ? "bg-green-50 text-green-700 border-green-200/60 hover:bg-green-100 shadow-sm" 
+                      : "bg-slate-50 text-slate-500 border-slate-200/60 hover:bg-slate-100 shadow-inner"
+                    }`}
+                >
+                  <span className="flex items-center gap-2">
+                    {lead.atendido ? <CheckCircle className="w-4 h-4 text-green-500" /> : <Clock className="w-4 h-4 text-slate-400" />}
+                    {lead.atendido ? "Atendido" : "Pendente"}
+                  </span>
+                  <span className="text-[8px] font-extrabold text-slate-400">Alternar</span>
+                </button>
+              </div>
+
+              <div>
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-2">Vendedor Responsável</span>
+                {isManager ? (
+                  <select
+                    value={lead.vendedorId || ""}
+                    onChange={(e) => updateVendedor(e.target.value)}
+                    className="w-full px-4 py-3 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-[#1E3A8A] outline-none text-xs font-bold text-slate-700 bg-white cursor-pointer transition-all"
+                  >
+                    <option value="">Direcionar Vendedor...</option>
+                    {vendedores.map(v => (
+                      <option key={v.id} value={v.id}>
+                        {v.name || v.email} ({v.role === "VENDEDOR" ? "Vendedor" : v.role})
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="flex items-center gap-3 px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl">
+                    <UserCheck className="w-5 h-5 text-slate-400" />
+                    <div>
+                      <span className="text-xs font-bold text-slate-700 block">{lead.vendedor?.name || "Não direcionado"}</span>
+                      <span className="text-[9px] font-semibold text-slate-400 block leading-none mt-0.5">{lead.vendedor?.email || "-"}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
             {lead.latitude && (
-              <div className="pt-4 border-t border-slate-50">
+              <div className="pt-4 border-t border-slate-100">
                 <a 
                   href={`https://www.google.com/maps/search/?api=1&query=${lead.latitude},${lead.longitude}`}
                   target="_blank"

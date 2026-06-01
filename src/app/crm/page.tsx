@@ -3,9 +3,11 @@
 import { useState, useEffect } from "react";
 import { 
   Search, Plus, MapPin, Phone, Mail, MoreHorizontal, 
-  LayoutDashboard, Loader, ChevronRight, Eye, FileText, ArrowRightLeft, Camera
+  LayoutDashboard, Loader, ChevronRight, Eye, FileText, 
+  ArrowRightLeft, Camera, CheckCircle, Clock, UserCheck 
 } from "lucide-react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 
 const COLUMNS = [
   { id: "NOVO", label: "Novos Leads", color: "bg-blue-500", border: "border-blue-500/20" },
@@ -17,13 +19,20 @@ const COLUMNS = [
 ];
 
 export default function CRMLeadsPage() {
+  const { data: session } = useSession();
   const [leads, setLeads] = useState<any[]>([]);
+  const [vendedores, setVendedores] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [draggedOverColumn, setDraggedOverColumn] = useState<string | null>(null);
 
+  const userObj = session?.user as any;
+  const role = userObj?.role || "USER";
+  const isManager = role === "ADMIN" || userObj?.canManageCRM;
+
   useEffect(() => {
     fetchLeads();
+    fetchVendedores();
   }, []);
 
   const fetchLeads = async () => {
@@ -38,18 +47,29 @@ export default function CRMLeadsPage() {
     }
   };
 
+  const fetchVendedores = async () => {
+    try {
+      const res = await fetch("/api/users/vendedores");
+      if (res.ok) {
+        const data = await res.json();
+        setVendedores(Array.isArray(data) ? data : []);
+      }
+    } catch (err) {
+      console.error("Erro ao carregar vendedores:", err);
+    }
+  };
+
   const updateStatus = async (id: string, newStatus: string) => {
     // Atualização otimista na interface para resposta instantânea
     setLeads(prev => prev.map(lead => lead.id === id ? { ...lead, status: newStatus } : lead));
     
     try {
-      const res = await fetch(`/api/leads/${id}/status`, {
+      const res = await fetch(`/api/leads/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),
       });
       if (!res.ok) {
-        // Reverte se falhar
         fetchLeads();
         alert("Erro ao atualizar o status do lead no servidor.");
       }
@@ -59,14 +79,66 @@ export default function CRMLeadsPage() {
     }
   };
 
-  // Filtragem dinâmica por nome, telefone ou e-mail
+  const updateVendedor = async (leadId: string, newVendedorId: string) => {
+    // Encontrar o vendedor selecionado localmente para atualizar a UI otimista
+    const selectedSeller = vendedores.find(v => v.id === newVendedorId);
+    
+    setLeads(prev => prev.map(lead => 
+      lead.id === leadId 
+        ? { ...lead, vendedorId: newVendedorId, vendedor: selectedSeller || null } 
+        : lead
+    ));
+
+    try {
+      const res = await fetch(`/api/leads/${leadId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ vendedorId: newVendedorId }),
+      });
+      if (!res.ok) {
+        fetchLeads();
+        alert("Erro ao direcionar o lead para o vendedor.");
+      }
+    } catch (err) {
+      console.error(err);
+      fetchLeads();
+    }
+  };
+
+  const toggleAtendido = async (leadId: string, currentVal: boolean) => {
+    const newVal = !currentVal;
+    
+    // Atualização otimista
+    setLeads(prev => prev.map(lead => 
+      lead.id === leadId ? { ...lead, atendido: newVal } : lead
+    ));
+
+    try {
+      const res = await fetch(`/api/leads/${leadId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ atendido: newVal }),
+      });
+      if (!res.ok) {
+        fetchLeads();
+        alert("Erro ao atualizar status de atendimento do lead.");
+      }
+    } catch (err) {
+      console.error(err);
+      fetchLeads();
+    }
+  };
+
+  // Filtragem dinâmica por nome, telefone, e-mail, tipo ou vendedor
   const filteredLeads = leads.filter(lead => {
     const query = searchQuery.toLowerCase();
+    const vendedorNome = lead.vendedor?.name || "";
     return (
       lead.nome.toLowerCase().includes(query) ||
       lead.telefone.toLowerCase().includes(query) ||
       (lead.email && lead.email.toLowerCase().includes(query)) ||
-      (lead.tipo && lead.tipo.toLowerCase().includes(query))
+      (lead.tipo && lead.tipo.toLowerCase().includes(query)) ||
+      vendedorNome.toLowerCase().includes(query)
     );
   });
 
@@ -96,7 +168,7 @@ export default function CRMLeadsPage() {
           <h1 className="text-3xl font-black text-[#1E3A8A] uppercase tracking-tight flex items-center gap-3">
             <LayoutDashboard className="w-8 h-8 text-[#00BFA5]" /> Gestão de Leads
           </h1>
-          <p className="text-slate-500 font-medium mt-1">Funil de Vendas interativo com suporte a Drag & Drop e sincronização instantânea.</p>
+          <p className="text-slate-500 font-medium mt-1">Funil de Vendas interativo com suporte a Direcionamento de Vendedores e Status de Atendimento.</p>
         </div>
         
         <div className="flex flex-wrap items-center gap-3">
@@ -116,7 +188,7 @@ export default function CRMLeadsPage() {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-[#1E3A8A] transition-colors" />
             <input 
               type="text" 
-              placeholder="Buscar por nome, telefone ou tipo..."
+              placeholder="Buscar lead, tipo ou vendedor..."
               className="pl-11 pr-6 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-semibold outline-none focus:ring-4 focus:ring-blue-50 focus:border-[#1E3A8A] focus:bg-white transition-all w-72 shadow-inner"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
@@ -163,7 +235,7 @@ export default function CRMLeadsPage() {
                 className={`flex-1 space-y-4 p-2 rounded-3xl transition-all border-2 border-dashed ${
                   isOver 
                     ? "bg-[#1E3A8A]/5 border-[#1E3A8A]/30 scale-[0.99]" 
-                    : "border-transparent bg-slate-50/50"
+                     : "border-transparent bg-slate-50/50"
                 }`}
               >
                 {colLeads.length === 0 ? (
@@ -173,6 +245,8 @@ export default function CRMLeadsPage() {
                 ) : (
                   colLeads.map(lead => {
                     const { label, emoji, color } = getTipoLabel(lead.tipo);
+                    const hasVendedor = !!lead.vendedor;
+                    
                     return (
                       <div 
                         key={lead.id} 
@@ -206,11 +280,46 @@ export default function CRMLeadsPage() {
                         </div>
 
                         {/* Name and Details */}
-                        <h3 className="font-black text-slate-800 text-base leading-tight mb-4 group-hover:text-[#1E3A8A] transition-colors">
+                        <h3 className="font-black text-slate-800 text-base leading-tight mb-2 group-hover:text-[#1E3A8A] transition-colors">
                           {lead.nome}
                         </h3>
+
+                        {/* Status do Atendimento & Vendedor Badge */}
+                        <div className="flex flex-wrap items-center gap-2 mb-4">
+                          {/* Botão de Status do Atendimento (Toggles atendido on click) */}
+                          <button
+                            type="button"
+                            onClick={() => toggleAtendido(lead.id, !!lead.atendido)}
+                            className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider transition-all border
+                              ${lead.atendido 
+                                ? "bg-green-50 text-green-700 border-green-200/60 hover:bg-green-100" 
+                                : "bg-slate-50 text-slate-500 border-slate-200/60 hover:bg-slate-100"
+                              }`}
+                            title="Clique para alternar o status de atendimento"
+                          >
+                            {lead.atendido ? (
+                              <>
+                                <CheckCircle className="w-3 h-3 text-green-500" />
+                                <span>Atendido</span>
+                              </>
+                            ) : (
+                              <>
+                                <Clock className="w-3 h-3 text-slate-400" />
+                                <span>Pendente</span>
+                              </>
+                            )}
+                          </button>
+
+                          {/* Seller assigned marker */}
+                          {hasVendedor && (
+                            <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider bg-blue-50 text-blue-700 border border-blue-100" title="Vendedor Direcionado">
+                              <UserCheck className="w-3 h-3 text-blue-500" />
+                              <span className="max-w-[70px] truncate">{lead.vendedor.name || lead.vendedor.email}</span>
+                            </span>
+                          )}
+                        </div>
                         
-                        <div className="space-y-2 mb-5">
+                        <div className="space-y-2 mb-4">
                           <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
                             <Phone className="w-3.5 h-3.5 text-slate-300" /> {lead.telefone}
                           </div>
@@ -226,6 +335,25 @@ export default function CRMLeadsPage() {
                             </div>
                           )}
                         </div>
+
+                        {/* Dropdown de Direcionar Vendedor (Disponível apenas para Gestores/ADMINs) */}
+                        {isManager && (
+                          <div className="mb-4 pt-3 border-t border-slate-100">
+                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Direcionar Consultor</label>
+                            <select
+                              value={lead.vendedorId || ""}
+                              onChange={(e) => updateVendedor(lead.id, e.target.value)}
+                              className="text-[10px] font-bold bg-slate-50 border border-slate-200/60 rounded-xl py-2 px-3 focus:ring-2 focus:ring-[#1E3A8A] outline-none text-slate-650 cursor-pointer shadow-inner hover:bg-slate-100 transition-colors w-full"
+                            >
+                              <option value="">Selecionar Vendedor...</option>
+                              {vendedores.map(v => (
+                                <option key={v.id} value={v.id}>
+                                  {v.name || v.email} ({v.role === "VENDEDOR" ? "Vendedor" : v.role})
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
 
                         {/* Bottom Actions and Media Preview */}
                         <div className="flex items-center justify-between border-t border-slate-50 pt-4 mt-2">

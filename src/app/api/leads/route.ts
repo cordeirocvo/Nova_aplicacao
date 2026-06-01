@@ -7,13 +7,27 @@ import { sendLeadToGronner } from "@/lib/services/gronner";
 export async function GET(req: Request) {
   try {
     const session: any = await getServerSession(authOptions as any);
-    if (!session || (!session.user.canManageCRM && session.user.role !== "ADMIN")) {
+    if (!session || (!session.user.canManageCRM && session.user.role !== "ADMIN" && session.user.role !== "VENDEDOR")) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 
+    const whereClause: any = {};
+    if (session.user.role === "VENDEDOR") {
+      whereClause.vendedorId = session.user.id;
+    }
+
     const leads = await prisma.lead.findMany({
+      where: whereClause,
       include: {
         midias: true,
+        vendedor: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true
+          }
+        }
       },
       orderBy: {
         createdAt: "desc",

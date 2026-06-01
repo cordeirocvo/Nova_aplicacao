@@ -1,20 +1,31 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, ChevronLeft, MapPin, Phone, MessageSquare, Download, FileText, Filter, Calendar, Loader } from "lucide-react";
+import { 
+  Search, ChevronLeft, MapPin, Phone, MessageSquare, Download, 
+  FileText, Filter, Calendar, Loader, CheckCircle, Clock, UserCheck 
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useSession } from "next-auth/react";
 
 export default function ListaLeadsPage() {
   const router = useRouter();
+  const { data: session } = useSession();
   const [leads, setLeads] = useState<any[]>([]);
+  const [vendedores, setVendedores] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("");
 
+  const userObj = session?.user as any;
+  const role = userObj?.role || "USER";
+  const isManager = role === "ADMIN" || userObj?.canManageCRM;
+
   useEffect(() => {
     fetchLeads();
+    fetchVendedores();
   }, []);
 
   const fetchLeads = async () => {
@@ -29,11 +40,78 @@ export default function ListaLeadsPage() {
     }
   };
 
-  const filteredLeads = leads.filter(l => 
-    l.nome.toLowerCase().includes(filter.toLowerCase()) ||
-    (l.endereco && l.endereco.toLowerCase().includes(filter.toLowerCase())) ||
-    l.telefone.includes(filter)
-  );
+  const fetchVendedores = async () => {
+    try {
+      const res = await fetch("/api/users/vendedores");
+      if (res.ok) {
+        const data = await res.json();
+        setVendedores(Array.isArray(data) ? data : []);
+      }
+    } catch (err) {
+      console.error("Erro ao carregar vendedores:", err);
+    }
+  };
+
+  const updateVendedor = async (leadId: string, newVendedorId: string) => {
+    const selectedSeller = vendedores.find(v => v.id === newVendedorId);
+    
+    // UI otimista
+    setLeads(prev => prev.map(lead => 
+      lead.id === leadId 
+        ? { ...lead, vendedorId: newVendedorId, vendedor: selectedSeller || null } 
+        : lead
+    ));
+
+    try {
+      const res = await fetch(`/api/leads/${leadId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ vendedorId: newVendedorId }),
+      });
+      if (!res.ok) {
+        fetchLeads();
+        alert("Erro ao direcionar o lead.");
+      }
+    } catch (err) {
+      console.error(err);
+      fetchLeads();
+    }
+  };
+
+  const toggleAtendido = async (leadId: string, currentVal: boolean) => {
+    const newVal = !currentVal;
+    
+    // UI otimista
+    setLeads(prev => prev.map(lead => 
+      lead.id === leadId ? { ...lead, atendido: newVal } : lead
+    ));
+
+    try {
+      const res = await fetch(`/api/leads/${leadId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ atendido: newVal }),
+      });
+      if (!res.ok) {
+        fetchLeads();
+        alert("Erro ao atualizar atendimento.");
+      }
+    } catch (err) {
+      console.error(err);
+      fetchLeads();
+    }
+  };
+
+  const filteredLeads = leads.filter(l => {
+    const query = filter.toLowerCase();
+    const vendedorNome = l.vendedor?.name || "";
+    return (
+      l.nome.toLowerCase().includes(query) ||
+      (l.endereco && l.endereco.toLowerCase().includes(query)) ||
+      l.telefone.includes(query) ||
+      vendedorNome.toLowerCase().includes(query)
+    );
+  });
 
   const getTipoLabel = (tipo: string) => {
     const map: any = {
@@ -58,7 +136,7 @@ export default function ListaLeadsPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-6">
+    <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-6 animate-in fade-in duration-500">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
@@ -79,7 +157,7 @@ export default function ListaLeadsPage() {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input 
               type="text" 
-              placeholder="Buscar por nome, endereço..."
+              placeholder="Buscar lead ou vendedor..."
               className="w-full pl-11 pr-4 py-3 bg-white border border-slate-100 rounded-2xl text-sm focus:ring-2 focus:ring-[#1E3A8A] transition-all outline-none shadow-sm"
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
@@ -100,6 +178,8 @@ export default function ListaLeadsPage() {
                 <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Data</th>
                 <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Cliente / Contato</th>
                 <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Modalidade</th>
+                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Atendimento</th>
+                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Vendedor Responsável</th>
                 <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Endereço / Obs</th>
                 <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Ações</th>
               </tr>
@@ -131,7 +211,53 @@ export default function ListaLeadsPage() {
                       {getTipoLabel(lead.tipo)}
                     </span>
                   </td>
-                  <td className="px-6 py-5 max-w-md">
+                  <td className="px-6 py-5">
+                    {/* Quick Attended Status Click Toggle */}
+                    <button
+                      type="button"
+                      onClick={() => toggleAtendido(lead.id, !!lead.atendido)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all
+                        ${lead.atendido 
+                          ? "bg-green-50 text-green-700 border-green-200/60 hover:bg-green-100" 
+                          : "bg-slate-50 text-slate-500 border-slate-200/60 hover:bg-slate-100"
+                        }`}
+                      title="Clique para alternar o status de atendimento"
+                    >
+                      {lead.atendido ? (
+                        <>
+                          <CheckCircle className="w-3.5 h-3.5 text-green-500" />
+                          <span>Atendido</span>
+                        </>
+                      ) : (
+                        <>
+                          <Clock className="w-3.5 h-3.5 text-slate-400" />
+                          <span>Pendente</span>
+                        </>
+                      )}
+                    </button>
+                  </td>
+                  <td className="px-6 py-5">
+                    {isManager ? (
+                      <select
+                        value={lead.vendedorId || ""}
+                        onChange={(e) => updateVendedor(lead.id, e.target.value)}
+                        className="text-xs font-bold bg-slate-50 border border-slate-200/60 rounded-xl py-2 px-3 focus:ring-2 focus:ring-[#1E3A8A] outline-none text-slate-650 cursor-pointer shadow-inner hover:bg-slate-100 transition-colors w-48"
+                      >
+                        <option value="">Selecionar Vendedor...</option>
+                        {vendedores.map(v => (
+                          <option key={v.id} value={v.id}>
+                            {v.name || v.email} ({v.role === "VENDEDOR" ? "Vendedor" : v.role})
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-xl text-xs font-bold bg-slate-50 text-slate-600 border border-slate-100">
+                        <UserCheck className="w-3.5 h-3.5 text-slate-400" />
+                        {lead.vendedor?.name || lead.vendedor?.email || "Não direcionado"}
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-6 py-5 max-w-xs">
                     <div className="space-y-1">
                       <div className="flex items-start gap-2">
                         <MapPin className="w-3.5 h-3.5 text-slate-300 mt-0.5 shrink-0" />

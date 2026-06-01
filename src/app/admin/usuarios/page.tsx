@@ -187,6 +187,8 @@ export default function UsuariosPage() {
     switch (role) {
       case "ADMIN":
         return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800"><Shield className="w-3 h-3" /> Administrador</span>;
+      case "VENDEDOR":
+        return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800"><User className="w-3 h-3" /> Vendedor</span>;
       case "TV":
         return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"><Monitor className="w-3 h-3" /> Acesso TV</span>;
       default:
@@ -329,6 +331,7 @@ export default function UsuariosPage() {
                     >
                       <option value="ADMIN">Administrador (Acesso Total)</option>
                       <option value="USER">Usuário Comum (Visualiza e Cria)</option>
+                      <option value="VENDEDOR">Vendedor (Apenas seus Leads)</option>
                       <option value="TV">Acesso TV (Apenas Visualização)</option>
                     </select>
                   </div>

@@ -6,11 +6,27 @@ import { Plus, Trash, Edit, Camera, Paperclip, FileText, Download, X } from "luc
 export default function EquipamentosTab({ usinaId, usina, onRefresh }: { usinaId: string, usina: any, onRefresh: () => void }) {
   const [showModal, setShowModal] = useState(false);
   const [editMode, setEditMode] = useState(false);
+  const [zoomImageUrl, setZoomImageUrl] = useState<string | null>(null);
   const [equip, setEquip] = useState<any>({
     id: "", usinaId, nome: "", tag: "", localizacao: "", criticidade: "B", periodicidadeDias: "180", fotoBase64: "", anexos: []
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const attachmentInputRef = useRef<HTMLInputElement>(null);
+
+  const downloadFile = (file: any) => {
+    try {
+      const link = document.createElement("a");
+      link.href = file.urlBase64;
+      link.download = file.name;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err) {
+      console.error("Erro ao baixar arquivo:", err);
+      // Fallback
+      window.open(file.urlBase64, "_blank");
+    }
+  };
 
   const handleSave = async () => {
     if (!equip.nome || !equip.tag) return;
@@ -165,9 +181,19 @@ export default function EquipamentosTab({ usinaId, usina, onRefresh }: { usinaId
                 className="border-b border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer"
                 onClick={() => openEdit(eq)}
               >
-                <td className="p-4">
+                <td className="p-4" onClick={(e) => {
+                  if (eq.fotoBase64) {
+                    e.stopPropagation();
+                    setZoomImageUrl(eq.fotoBase64);
+                  }
+                }}>
                   {eq.fotoBase64 ? (
-                    <img src={eq.fotoBase64} alt={eq.nome} className="w-12 h-12 rounded object-cover border border-slate-200" />
+                    <div className="relative group cursor-zoom-in w-12 h-12">
+                      <img src={eq.fotoBase64} alt={eq.nome} className="w-12 h-12 rounded object-cover border border-slate-200 group-hover:brightness-90 transition-all" title="Clique para ampliar" />
+                      <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 rounded flex items-center justify-center transition-opacity text-white text-[8px] font-bold">
+                        Ampliar
+                      </div>
+                    </div>
                   ) : (
                     <div className="w-12 h-12 bg-slate-100 rounded border border-slate-200 flex items-center justify-center text-slate-400">
                       <Camera className="w-5 h-5" />
@@ -249,7 +275,17 @@ export default function EquipamentosTab({ usinaId, usina, onRefresh }: { usinaId
                   <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Foto do Equipamento</label>
                   <div className="flex gap-4 items-center">
                     {equip.fotoBase64 && (
-                      <img src={equip.fotoBase64} alt="Preview" className="w-16 h-16 rounded object-cover border border-slate-200" />
+                      <div className="relative group cursor-pointer" onClick={() => setZoomImageUrl(equip.fotoBase64)}>
+                        <img 
+                          src={equip.fotoBase64} 
+                          alt="Preview" 
+                          className="w-16 h-16 rounded object-cover border border-slate-200 group-hover:brightness-90 transition-all" 
+                          title="Clique para ampliar"
+                        />
+                        <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 rounded flex items-center justify-center transition-opacity text-white text-[10px] font-bold">
+                          Ampliar
+                        </div>
+                      </div>
                     )}
                     <input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={handlePhotoUpload} />
                     <button 
@@ -281,13 +317,18 @@ export default function EquipamentosTab({ usinaId, usina, onRefresh }: { usinaId
                     
                     <div className="max-h-32 overflow-y-auto space-y-1 custom-scrollbar">
                       {equip.anexos?.map((file: any, idx: number) => (
-                        <div key={idx} className="flex items-center justify-between p-2 bg-slate-50 border border-slate-100 rounded-lg text-xs">
-                          <div className="flex items-center gap-2 truncate">
-                            <FileText className="w-3 h-3 text-blue-500 shrink-0" />
-                            <span className="truncate text-slate-600 font-medium">{file.name}</span>
-                          </div>
-                          <button type="button" onClick={() => removeAttachment(idx)} className="text-red-400 hover:text-red-600 p-1">
-                            <X className="w-3 h-3" />
+                        <div key={idx} className="flex items-center justify-between p-2 bg-slate-50 hover:bg-slate-100 border border-slate-100 rounded-lg text-xs transition-colors">
+                          <button
+                            type="button"
+                            onClick={() => downloadFile(file)}
+                            className="flex items-center gap-2 truncate text-left flex-1 border-0 bg-transparent p-0 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors"
+                            title="Clique para baixar/visualizar"
+                          >
+                            <FileText className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                            <span className="truncate font-semibold">{file.name}</span>
+                          </button>
+                          <button type="button" onClick={() => removeAttachment(idx)} className="text-red-400 hover:text-red-650 p-1 cursor-pointer border-0 bg-transparent" title="Remover anexo">
+                            <X className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       ))}
@@ -302,6 +343,31 @@ export default function EquipamentosTab({ usinaId, usina, onRefresh }: { usinaId
                 Salvar
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {/* Modal Zoom de Imagem */}
+      {zoomImageUrl && (
+        <div 
+          className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 md:p-20 cursor-zoom-out"
+          onClick={() => setZoomImageUrl(null)}
+        >
+          <img src={zoomImageUrl} className="max-w-full max-h-full object-contain rounded-lg shadow-2xl animate-in zoom-in-95 duration-200" alt="Equipamento Zoom" />
+          
+          <div className="absolute top-6 right-6 flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
+            <a 
+              href={zoomImageUrl}
+              download="equipamento.jpg"
+              className="text-white font-black uppercase tracking-widest text-[10px] bg-[#00BFA5] px-5 py-3 rounded-2xl hover:bg-[#00BFA5]/80 transition-colors flex items-center gap-2 shadow-lg shadow-[#00BFA5]/20 font-bold border-0 cursor-pointer"
+            >
+              <Download className="w-4 h-4" /> Baixar Imagem
+            </a>
+            <button 
+              onClick={() => setZoomImageUrl(null)}
+              className="text-white font-black uppercase tracking-widest text-[10px] bg-white/10 px-5 py-3 rounded-2xl hover:bg-white/20 transition-colors border-0 cursor-pointer"
+            >
+              Fechar
+            </button>
           </div>
         </div>
       )}

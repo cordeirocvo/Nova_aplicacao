@@ -113,7 +113,7 @@ export default function NovaAtividadePage() {
   const labelClass = "text-sm font-semibold text-slate-700 mb-1 block";
 
   return (
-    <div className="max-w-3xl mx-auto pb-12">
+    <div className="max-w-4xl mx-auto pb-12">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-slate-800">Nova Atividade</h1>
         <p className="text-slate-500">Preencha os campos para inserir um novo registro na base local.</p>
@@ -169,7 +169,7 @@ export default function NovaAtividadePage() {
 
         <div>
           <label className={labelClass}>Observação</label>
-          <textarea rows={4} className={inputClass} placeholder="Detalhes técnicos ou da obra..." value={form.observacao} onChange={e => setForm({...form, observacao: e.target.value})}></textarea>
+          <textarea rows={8} className={inputClass} placeholder="Detalhes técnicos ou da obra..." value={form.observacao} onChange={e => setForm({...form, observacao: e.target.value})}></textarea>
         </div>
 
         {/* Upload Arrays */}

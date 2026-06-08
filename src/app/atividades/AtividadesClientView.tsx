@@ -134,7 +134,7 @@ export default function AtividadesClientView({ atividades, settings, isAdmin, is
                   <th style={{ width: '130px', padding: '12px', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '11px', color: '#64748b' }}>Dias para Montar</th>
                   <th style={{ padding: '12px', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '11px', color: '#64748b' }}>Observações</th>
                   <th style={{ width: '120px', padding: '12px', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '11px', color: '#64748b' }}>Venc. Parecer</th>
-                  <th style={{ width: '120px', padding: '12px', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '11px', color: '#64748b' }}>Prev. Instala</th>
+                  <th style={{ width: '155px', padding: '12px', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '11px', color: '#64748b' }}>Prev. Instalação / Execução</th>
                   <th style={{ width: '110px', padding: '12px', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '11px', color: '#64748b' }}>Status</th>
                 </tr>
               </thead>
@@ -308,13 +308,13 @@ export default function AtividadesClientView({ atividades, settings, isAdmin, is
           <thead className="text-[11px] text-slate-500 uppercase bg-slate-50/80 border-b border-slate-100">
             <tr>
               <th className="w-1/4 px-3 py-3 font-bold tracking-wider" style={{ width: '22%' }}>Cliente / Instalação</th>
-              <th className="w-[110px] px-3 py-3 font-bold tracking-wider" style={{ width: '110px' }}>Dias para Montar</th>
+              <th className="w-[100px] px-3 py-3 font-bold tracking-wider" style={{ width: '100px' }}>Dias para Montar</th>
               <th className="px-3 py-3 font-bold tracking-wider" style={{ width: '20%' }}>Observações</th>
               <th className="px-3 py-3 font-bold tracking-wider" style={{ width: '20%' }}>Histórico</th>
-              <th className="w-[110px] px-3 py-3 font-bold tracking-wider" style={{ width: '110px' }}>Venc. Parecer</th>
-              <th className="w-[110px] px-3 py-3 font-bold tracking-wider" style={{ width: '110px' }}>Prev. Instala</th>
-              <th className="w-[95px] px-3 py-3 font-bold tracking-wider" style={{ width: '95px' }}>Status</th>
-              {!isTV && <th className="w-[75px] px-3 py-3 font-bold tracking-wider text-right" style={{ width: '75px' }}>Ação</th>}
+              <th className="w-[100px] px-3 py-3 font-bold tracking-wider" style={{ width: '100px' }}>Venc. Parecer</th>
+              <th className="w-[140px] px-3 py-3 font-bold tracking-wider" style={{ width: '140px' }}>Prev. Instalação / Execução</th>
+              <th className="w-[90px] px-3 py-3 font-bold tracking-wider" style={{ width: '90px' }}>Status</th>
+              {!isTV && <th className="w-[70px] px-3 py-3 font-bold tracking-wider text-right" style={{ width: '70px' }}>Ação</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -532,7 +532,7 @@ export default function AtividadesClientView({ atividades, settings, isAdmin, is
                   <p className="font-semibold">{atv.vencimentoParecer || "-"}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] opacity-75 uppercase font-bold">Prev. Instala</p>
+                  <p className="text-[10px] opacity-75 uppercase font-bold">Prev. Instalação / Execução</p>
                   <p className="font-semibold">{atv.automaticoPrevInstala || "-"}</p>
                 </div>
                 <div className="col-span-2">

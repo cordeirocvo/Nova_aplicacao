@@ -118,7 +118,7 @@ export default function EditForm({ initialData, statuses }: { initialData: any, 
   const labelClass = "text-sm font-semibold text-slate-700 mb-1 block";
 
   return (
-    <div className="max-w-3xl mx-auto pb-12">
+    <div className="max-w-4xl mx-auto pb-12">
       <div className="mb-6 flex items-center gap-4">
         <button onClick={() => router.back()} className="p-2 bg-white rounded-lg border border-slate-200 shadow-sm hover:bg-slate-50 transition-colors">
           <ArrowLeft className="w-5 h-5 text-slate-600" />
@@ -173,14 +173,14 @@ export default function EditForm({ initialData, statuses }: { initialData: any, 
           </div>
 
           <div>
-             <label className={labelClass}>Prev. Instala</label>
+             <label className={labelClass}>Prev. Instalação / Execução</label>
              <input type="date" className={inputClass} value={form.automaticoPrevInstala} onChange={e => setForm({...form, automaticoPrevInstala: e.target.value})} />
           </div>
         </div>
 
         <div>
            <label className={labelClass}>Obs Instalação / Detalhes</label>
-           <textarea rows={4} className={inputClass} placeholder="Detalhes técnicos da obra que refletem na planilha..." value={form.obsInstalacao} onChange={e => setForm({...form, obsInstalacao: e.target.value})}></textarea>
+           <textarea rows={8} className={inputClass} placeholder="Detalhes técnicos da obra que refletem na planilha..." value={form.obsInstalacao} onChange={e => setForm({...form, obsInstalacao: e.target.value})}></textarea>
         </div>
 
         {/* Upload Arrays */}
@@ -290,7 +290,7 @@ export default function EditForm({ initialData, statuses }: { initialData: any, 
           <div>
             <label className={labelClass}>Histórico de Ações (Leitura)</label>
             {initialData.historico && Array.isArray(initialData.historico) && initialData.historico.length > 0 ? (
-              <div className="bg-slate-50 border border-slate-150 rounded-xl p-4 space-y-2 max-h-48 overflow-y-auto text-xs text-slate-700 shadow-inner">
+              <div className="bg-slate-50 border border-slate-150 rounded-xl p-4 space-y-2 max-h-64 overflow-y-auto text-xs text-slate-700 shadow-inner">
                 {(initialData.historico as any[]).map((h: any, idx: number) => (
                   <div key={idx} className="flex gap-2">
                     <span className="font-bold text-slate-500 min-w-[110px]">{h.date}:</span>
@@ -305,8 +305,8 @@ export default function EditForm({ initialData, statuses }: { initialData: any, 
 
           <div>
             <label className={labelClass}>Adicionar Ação Manual ao Histórico</label>
-            <input 
-              type="text" 
+            <textarea 
+              rows={3}
               className={inputClass} 
               placeholder="Ex: Ligado para o cliente para agendar a visita..." 
               value={novaAcao} 

@@ -107,13 +107,13 @@ export default function GronnerTestView({
                 <tr>
                   <th className="px-4 py-3 w-[100px]" style={{ width: '100px' }}>Origem / ID</th>
                   <th className="px-4 py-3 w-1/4" style={{ width: '22%' }}>Cliente / Instalação</th>
-                  <th className="px-4 py-3 w-[110px]" style={{ width: '110px' }}>Dias para Montar</th>
+                  <th className="px-4 py-3 w-[100px]" style={{ width: '100px' }}>Dias para Montar</th>
                   <th className="px-4 py-3" style={{ width: '18%' }}>Observações</th>
                   <th className="px-4 py-3" style={{ width: '18%' }}>Histórico</th>
-                  <th className="px-4 py-3 w-[110px]" style={{ width: '110px' }}>Venc. Parecer</th>
-                  <th className="px-4 py-3 w-[110px]" style={{ width: '110px' }}>Prev. Instala</th>
-                  <th className="px-4 py-3 w-[95px]" style={{ width: '95px' }}>Status</th>
-                  <th className="px-4 py-3 w-[75px] text-right" style={{ width: '75px' }}>Ação</th>
+                  <th className="px-4 py-3 w-[100px]" style={{ width: '100px' }}>Venc. Parecer</th>
+                  <th className="px-4 py-3 w-[140px]" style={{ width: '140px' }}>Prev. Instalação / Execução</th>
+                  <th className="px-4 py-3 w-[90px]" style={{ width: '90px' }}>Status</th>
+                  <th className="px-4 py-3 w-[70px] text-right" style={{ width: '70px' }}>Ação</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">

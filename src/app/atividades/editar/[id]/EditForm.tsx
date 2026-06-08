@@ -10,6 +10,7 @@ export default function EditForm({ initialData, statuses }: { initialData: any, 
   const [success, setSuccess] = useState(false);
   const [fotos, setFotos] = useState<File[]>([]);
   const [arquivos, setArquivos] = useState<File[]>([]);
+  const [novaAcao, setNovaAcao] = useState("");
 
   // Mantém controle dos anexos salvos anteriormente no banco de dados
   const [fotosSalvas, setFotosSalvas] = useState<string[]>(initialData.anexoFotos || []);
@@ -77,7 +78,8 @@ export default function EditForm({ initialData, statuses }: { initialData: any, 
       const payload = { 
         ...form, 
         anexoFotos: finalFotos, 
-        anexoArquivos: finalArquivos 
+        anexoArquivos: finalArquivos,
+        novaAcao: novaAcao.trim()
       };
 
       const res = await fetch(`/api/activities/${initialData.id}`, {
@@ -280,6 +282,37 @@ export default function EditForm({ initialData, statuses }: { initialData: any, 
                 })}
               </div>
             )}
+          </div>
+        </div>
+
+        {/* Histórico de Ações */}
+        <div className="border-t border-slate-100 mt-8 pt-8 space-y-6">
+          <div>
+            <label className={labelClass}>Histórico de Ações (Leitura)</label>
+            {initialData.historico && Array.isArray(initialData.historico) && initialData.historico.length > 0 ? (
+              <div className="bg-slate-50 border border-slate-150 rounded-xl p-4 space-y-2 max-h-48 overflow-y-auto text-xs text-slate-700 shadow-inner">
+                {(initialData.historico as any[]).map((h: any, idx: number) => (
+                  <div key={idx} className="flex gap-2">
+                    <span className="font-bold text-slate-500 min-w-[110px]">{h.date}:</span>
+                    <span className="break-words leading-tight">{h.action}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-slate-400 italic bg-slate-50 border border-slate-100 rounded-xl p-4">Nenhuma ação registrada ainda.</p>
+            )}
+          </div>
+
+          <div>
+            <label className={labelClass}>Adicionar Ação Manual ao Histórico</label>
+            <input 
+              type="text" 
+              className={inputClass} 
+              placeholder="Ex: Ligado para o cliente para agendar a visita..." 
+              value={novaAcao} 
+              onChange={e => setNovaAcao(e.target.value)} 
+            />
+            <p className="text-[11px] text-slate-400 mt-1">Ao salvar a atividade, este texto será adicionado ao histórico com a data/hora atual.</p>
           </div>
         </div>
 

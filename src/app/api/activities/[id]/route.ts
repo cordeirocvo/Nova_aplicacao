@@ -14,12 +14,22 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       select: { status: true, historico: true }
     });
 
-    let actionDescription = "Atividade editada";
+    let newHistory: any = currentAtv?.historico;
+
+    // Detect status change
     if (currentAtv && body.status && currentAtv.status !== body.status) {
-      actionDescription = `Status alterado para ${body.status}`;
+      newHistory = appendHistory(newHistory, `Status alterado para ${body.status}`);
     }
 
-    const newHistory = appendHistory(currentAtv?.historico, actionDescription);
+    // Append custom manual action if provided
+    if (body.novaAcao) {
+      newHistory = appendHistory(newHistory, body.novaAcao);
+    }
+
+    // Fallback if neither status changed nor manual action was provided
+    if (!body.novaAcao && (!currentAtv || !body.status || currentAtv.status === body.status)) {
+      newHistory = appendHistory(newHistory, "Atividade editada");
+    }
 
     const obsValue = body.obsInstalacao || body.observacao || body.observacoes || "";
     const atividade = await prisma.planilhaInstalacao.update({

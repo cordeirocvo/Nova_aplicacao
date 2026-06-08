@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkAndSendAlarm } from "@/lib/services/whatsappService";
+import { appendHistory } from "@/lib/historyUtils";
 
 // Helper function to recursively find a value by keys
 function findValue(obj: any, keys: string[]): any {
@@ -143,56 +144,74 @@ export async function POST(req: Request) {
     const status = findValue(body, ["status", "status_venda", "etapa"]) || "Pendente";
     const telhado = findValue(body, ["telhado", "tipo_telhado", "roof"]) || "";
 
-    // Upsert into PlanilhaInstalacao
-    // We set manualInstalacao: true so it stays isolated from production lists
-    const updated = await prisma.planilhaInstalacao.upsert({
+    // Query and update/create with history logging
+    const existing = await prisma.planilhaInstalacao.findUnique({
       where: { idInterno: idInterno },
-      update: {
-        instalacao: clientName || undefined,
-        obsInstalacao: obsValue || undefined,
-        dataVenda: dataVenda || undefined,
-        inversor: inversor || undefined,
-        numMod: numMod || undefined,
-        modulo: modulo || undefined,
-        cidadeSheet: city || undefined,
-        bairro: neighborhood || undefined,
-        rua: street || undefined,
-        numRua: number?.toString() || undefined,
-        telhado: telhado || undefined,
-        telefoneSheet: clientPhone || undefined,
-        vendedorSheet: sellerName || undefined,
-        observacao: obsValue || undefined,
-        status: status || undefined,
-        vendedor: sellerName || undefined,
-        telefoneCliente: clientPhone || undefined,
-        cidade: city || undefined,
-        telefoneVendedor: sellerPhone || undefined,
-      },
-      create: {
-        idInterno: idInterno,
-        instalacao: clientName || "Cliente Webhook Teste",
-        obsInstalacao: obsValue || "",
-        dataVenda: dataVenda || "",
-        inversor: inversor || "",
-        numMod: numMod || "",
-        modulo: modulo || "",
-        cidadeSheet: city || "",
-        bairro: neighborhood || "",
-        rua: street || "",
-        numRua: number?.toString() || "",
-        telhado: telhado || "",
-        telefoneSheet: clientPhone || "",
-        vendedorSheet: sellerName || "",
-        observacao: obsValue || "",
-        status: status || "Pendente",
-        vendedor: sellerName || "",
-        telefoneCliente: clientPhone || "",
-        cidade: city || "",
-        telefoneVendedor: sellerPhone || "",
-        manualInstalacao: true, // Crucial: hides from the production dashboard
-        dataSolicitacao: new Date(),
-      },
+      select: { id: true, status: true, historico: true }
     });
+
+    let updated;
+    if (existing) {
+      let actionDescription = "Atualizado via Webhook Gronner";
+      if (status && existing.status !== status) {
+        actionDescription = `Status alterado via Gronner para ${status}`;
+      }
+      const newHistory = appendHistory(existing.historico, actionDescription);
+
+      updated = await prisma.planilhaInstalacao.update({
+        where: { idInterno: idInterno },
+        data: {
+          instalacao: clientName || undefined,
+          obsInstalacao: obsValue || undefined,
+          dataVenda: dataVenda || undefined,
+          inversor: inversor || undefined,
+          numMod: numMod || undefined,
+          modulo: modulo || undefined,
+          cidadeSheet: city || undefined,
+          bairro: neighborhood || undefined,
+          rua: street || undefined,
+          numRua: number?.toString() || undefined,
+          telhado: telhado || undefined,
+          telefoneSheet: clientPhone || undefined,
+          vendedorSheet: sellerName || undefined,
+          observacao: obsValue || undefined,
+          status: status || undefined,
+          vendedor: sellerName || "",
+          telefoneCliente: clientPhone || "",
+          cidade: city || "",
+          telefoneVendedor: sellerPhone || "",
+          historico: newHistory
+        }
+      });
+    } else {
+      updated = await prisma.planilhaInstalacao.create({
+        data: {
+          idInterno: idInterno,
+          instalacao: clientName || "Cliente Webhook Teste",
+          obsInstalacao: obsValue || "",
+          dataVenda: dataVenda || "",
+          inversor: inversor || "",
+          numMod: numMod || "",
+          modulo: modulo || "",
+          cidadeSheet: city || "",
+          bairro: neighborhood || "",
+          rua: street || "",
+          numRua: number?.toString() || "",
+          telhado: telhado || "",
+          telefoneSheet: clientPhone || "",
+          vendedorSheet: sellerName || "",
+          observacao: obsValue || "",
+          status: status || "Pendente",
+          vendedor: sellerName || "",
+          telefoneCliente: clientPhone || "",
+          cidade: city || "",
+          telefoneVendedor: sellerPhone || "",
+          manualInstalacao: true, // Crucial: hides from the production dashboard
+          dataSolicitacao: new Date(),
+          historico: appendHistory([], "Importado via Gronner")
+        }
+      });
+    }
 
     // Send Whatsapp alert if needed (non-blocking)
     try {

@@ -1,12 +1,25 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkAndSendAlarm } from "@/lib/services/whatsappService";
+import { appendHistory } from "@/lib/historyUtils";
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const resolvedParams = await params;
     const { id } = resolvedParams;
     const body = await req.json();
+
+    const currentAtv = await prisma.planilhaInstalacao.findUnique({
+      where: { id },
+      select: { status: true, historico: true }
+    });
+
+    let actionDescription = "Atividade editada";
+    if (currentAtv && body.status && currentAtv.status !== body.status) {
+      actionDescription = `Status alterado para ${body.status}`;
+    }
+
+    const newHistory = appendHistory(currentAtv?.historico, actionDescription);
 
     const obsValue = body.obsInstalacao || body.observacao || body.observacoes || "";
     const atividade = await prisma.planilhaInstalacao.update({
@@ -26,6 +39,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         telefoneVendedor: body.telefoneVendedor,
         anexoFotos: body.anexoFotos,
         anexoArquivos: body.anexoArquivos,
+        historico: newHistory
       },
     });
 

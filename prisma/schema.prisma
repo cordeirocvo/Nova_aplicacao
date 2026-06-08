@@ -62,6 +62,7 @@ model PlanilhaInstalacao {
   prioridade            Boolean  @default(false)
   notificadoWhatsapp    Boolean  @default(false)
   telefoneVendedor      String?
+  historico             Json?    @default("[]")
 
   @@index([idInterno])
 }

@@ -307,13 +307,14 @@ export default function AtividadesClientView({ atividades, settings, isAdmin, is
         <table className="w-full text-[13px] text-left table-fixed" style={{ tableLayout: 'fixed' }}>
           <thead className="text-[11px] text-slate-500 uppercase bg-slate-50/80 border-b border-slate-100">
             <tr>
-              <th className="w-1/4 px-3 py-3 font-bold tracking-wider" style={{ width: '25%' }}>Cliente / Instalação</th>
-              <th className="w-[130px] px-3 py-3 font-bold tracking-wider" style={{ width: '130px' }}>Dias para Montar</th>
-              <th className="px-3 py-3 font-bold tracking-wider">Observações</th>
-              <th className="w-[120px] px-3 py-3 font-bold tracking-wider" style={{ width: '120px' }}>Venc. Parecer</th>
-              <th className="w-[120px] px-3 py-3 font-bold tracking-wider" style={{ width: '120px' }}>Prev. Instala</th>
-              <th className="w-[110px] px-3 py-3 font-bold tracking-wider" style={{ width: '110px' }}>Status</th>
-              {!isTV && <th className="w-[80px] px-3 py-3 font-bold tracking-wider text-right" style={{ width: '80px' }}>Ação</th>}
+              <th className="w-1/4 px-3 py-3 font-bold tracking-wider" style={{ width: '22%' }}>Cliente / Instalação</th>
+              <th className="w-[110px] px-3 py-3 font-bold tracking-wider" style={{ width: '110px' }}>Dias para Montar</th>
+              <th className="px-3 py-3 font-bold tracking-wider" style={{ width: '20%' }}>Observações</th>
+              <th className="px-3 py-3 font-bold tracking-wider" style={{ width: '20%' }}>Histórico</th>
+              <th className="w-[110px] px-3 py-3 font-bold tracking-wider" style={{ width: '110px' }}>Venc. Parecer</th>
+              <th className="w-[110px] px-3 py-3 font-bold tracking-wider" style={{ width: '110px' }}>Prev. Instala</th>
+              <th className="w-[95px] px-3 py-3 font-bold tracking-wider" style={{ width: '95px' }}>Status</th>
+              {!isTV && <th className="w-[75px] px-3 py-3 font-bold tracking-wider text-right" style={{ width: '75px' }}>Ação</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -396,6 +397,19 @@ export default function AtividadesClientView({ atividades, settings, isAdmin, is
                   </td>
                   <td className={`px-3 py-3 text-[12px] leading-tight line-clamp-2 ${fontColor}`} title={atv.obsInstalacao || ""}>
                     {atv.obsInstalacao || "-"}
+                  </td>
+                  <td className={`px-3 py-2 text-[11px] leading-tight ${fontColor}`}>
+                    {Array.isArray(atv.historico) && atv.historico.length > 0 ? (
+                      <div className="space-y-1 max-h-[55px] overflow-y-auto custom-scrollbar pr-1">
+                        {(atv.historico as any[]).map((h: any, idx: number) => (
+                          <div key={idx} className="whitespace-normal break-words">
+                            <span className="font-bold opacity-75">{h.date}:</span> {h.action}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="opacity-60 italic">-</span>
+                    )}
                   </td>
                   <td className={`px-3 py-3 font-medium whitespace-nowrap ${fontColor}`}>
                     {atv.vencimentoParecer || "-"}
@@ -495,16 +509,34 @@ export default function AtividadesClientView({ atividades, settings, isAdmin, is
               </div>
               
               <div className="grid grid-cols-2 gap-y-2 text-sm mt-3 border-t border-black/5 pt-3">
+                <div className="col-span-2">
+                  <p className="text-[10px] opacity-75 uppercase font-bold">Observações</p>
+                  <p className="font-medium whitespace-normal break-words text-xs">{atv.obsInstalacao || "-"}</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-[10px] opacity-75 uppercase font-bold">Histórico de Ações</p>
+                  {Array.isArray(atv.historico) && atv.historico.length > 0 ? (
+                    <div className="mt-1 space-y-1 text-xs max-h-[80px] overflow-y-auto pr-1">
+                      {(atv.historico as any[]).map((h: any, idx: number) => (
+                        <div key={idx} className="whitespace-normal break-words">
+                          <span className="font-bold opacity-75">{h.date}:</span> {h.action}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs opacity-60 italic">-</p>
+                  )}
+                </div>
                 <div>
-                  <p className="text-[10px] opacity-70 uppercase font-bold">Venc. Parecer</p>
+                  <p className="text-[10px] opacity-75 uppercase font-bold">Venc. Parecer</p>
                   <p className="font-semibold">{atv.vencimentoParecer || "-"}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] opacity-70 uppercase font-bold">Prev. Instala</p>
+                  <p className="text-[10px] opacity-75 uppercase font-bold">Prev. Instala</p>
                   <p className="font-semibold">{atv.automaticoPrevInstala || "-"}</p>
                 </div>
                 <div className="col-span-2">
-                   <p className="text-[10px] opacity-70 uppercase font-bold">Dias para Montar</p>
+                   <p className="text-[10px] opacity-75 uppercase font-bold">Dias para Montar</p>
                    <p className="font-black text-[#1E3A8A]">{atv.daysPrev !== null ? `${atv.daysPrev} dias` : "-"}</p>
                 </div>
               </div>

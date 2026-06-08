@@ -106,13 +106,14 @@ export default function GronnerTestView({
               <thead className="text-[10px] text-slate-500 uppercase bg-slate-50 border-b border-slate-200 font-bold">
                 <tr>
                   <th className="px-4 py-3 w-[100px]" style={{ width: '100px' }}>Origem / ID</th>
-                  <th className="px-4 py-3 w-1/4" style={{ width: '25%' }}>Cliente / Instalação</th>
-                  <th className="px-4 py-3 w-[120px]" style={{ width: '120px' }}>Dias para Montar</th>
-                  <th className="px-4 py-3">Observações</th>
-                  <th className="px-4 py-3 w-[120px]" style={{ width: '120px' }}>Venc. Parecer</th>
-                  <th className="px-4 py-3 w-[120px]" style={{ width: '120px' }}>Prev. Instala</th>
-                  <th className="px-4 py-3 w-[110px]" style={{ width: '110px' }}>Status</th>
-                  <th className="px-4 py-3 w-[80px] text-right" style={{ width: '80px' }}>Ação</th>
+                  <th className="px-4 py-3 w-1/4" style={{ width: '22%' }}>Cliente / Instalação</th>
+                  <th className="px-4 py-3 w-[110px]" style={{ width: '110px' }}>Dias para Montar</th>
+                  <th className="px-4 py-3" style={{ width: '18%' }}>Observações</th>
+                  <th className="px-4 py-3" style={{ width: '18%' }}>Histórico</th>
+                  <th className="px-4 py-3 w-[110px]" style={{ width: '110px' }}>Venc. Parecer</th>
+                  <th className="px-4 py-3 w-[110px]" style={{ width: '110px' }}>Prev. Instala</th>
+                  <th className="px-4 py-3 w-[95px]" style={{ width: '95px' }}>Status</th>
+                  <th className="px-4 py-3 w-[75px] text-right" style={{ width: '75px' }}>Ação</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -212,6 +213,20 @@ export default function GronnerTestView({
 
                       <td className={`px-4 py-3 text-[12px] leading-tight line-clamp-2 ${fontColor}`} title={rec.obsInstalacao || rec.observacao || ""}>
                         {rec.obsInstalacao || rec.observacao || "-"}
+                      </td>
+                      
+                      <td className={`px-4 py-2 text-[11px] leading-tight ${fontColor}`}>
+                        {Array.isArray(rec.historico) && rec.historico.length > 0 ? (
+                          <div className="space-y-1 max-h-[55px] overflow-y-auto custom-scrollbar pr-1">
+                            {(rec.historico as any[]).map((h: any, idx: number) => (
+                              <div key={idx} className="whitespace-normal break-words">
+                                <span className="font-bold opacity-75">{h.date}:</span> {h.action}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="opacity-60 italic">-</span>
+                        )}
                       </td>
 
                       <td className={`px-4 py-3 font-medium whitespace-nowrap ${fontColor}`}>

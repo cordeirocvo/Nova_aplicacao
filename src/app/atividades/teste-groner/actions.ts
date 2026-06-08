@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { appendHistory } from "@/lib/historyUtils";
 
 // Clear all test records
 export async function clearTestRecords() {
@@ -69,6 +70,7 @@ export async function createTestActivityExtra(form: {
         anexoArquivos: form.anexoArquivos || [],
         manualInstalacao: true, // Hides from production list
         atividadeExtra: true,   // Mark as extra activity
+        historico: appendHistory([], "Atividade extra de teste criada")
       }
     });
 
@@ -98,44 +100,63 @@ export async function createTestActivityParity(googleId: string, form: {
 
     const idInterno = `GRONNER-${googleId}`;
 
-    const created = await prisma.planilhaInstalacao.upsert({
+    const existing = await prisma.planilhaInstalacao.findUnique({
       where: { idInterno: idInterno },
-      update: {
-        instalacao: form.instalacao,
-        vendedor: form.vendedor,
-        vendedorSheet: form.vendedor,
-        telefoneCliente: form.telefoneCliente,
-        telefoneSheet: form.telefoneCliente,
-        cidade: form.cidade,
-        cidadeSheet: form.cidade,
-        status: form.status,
-        inversor: form.inversor,
-        modulo: form.modulo,
-        numMod: form.numMod,
-        observacao: form.observacao,
-        obsInstalacao: form.observacao,
-        dataVenda: form.dataVenda,
-      },
-      create: {
-        idInterno: idInterno,
-        instalacao: form.instalacao,
-        vendedor: form.vendedor,
-        vendedorSheet: form.vendedor,
-        telefoneCliente: form.telefoneCliente,
-        telefoneSheet: form.telefoneCliente,
-        cidade: form.cidade,
-        cidadeSheet: form.cidade,
-        status: form.status,
-        inversor: form.inversor,
-        modulo: form.modulo,
-        numMod: form.numMod,
-        observacao: form.observacao,
-        obsInstalacao: form.observacao,
-        dataVenda: form.dataVenda,
-        manualInstalacao: true, // Hides from production list
-        dataSolicitacao: new Date(),
-      }
+      select: { id: true, status: true, historico: true }
     });
+
+    let created;
+    if (existing) {
+      let actionDescription = "Atividade de teste atualizada";
+      if (form.status && existing.status !== form.status) {
+        actionDescription = `Status alterado para ${form.status}`;
+      }
+      const newHistory = appendHistory(existing.historico, actionDescription);
+
+      created = await prisma.planilhaInstalacao.update({
+        where: { idInterno: idInterno },
+        data: {
+          instalacao: form.instalacao,
+          vendedor: form.vendedor,
+          vendedorSheet: form.vendedor,
+          telefoneCliente: form.telefoneCliente,
+          telefoneSheet: form.telefoneCliente,
+          cidade: form.cidade,
+          cidadeSheet: form.cidade,
+          status: form.status,
+          inversor: form.inversor,
+          modulo: form.modulo,
+          numMod: form.numMod,
+          observacao: form.observacao,
+          obsInstalacao: form.observacao,
+          dataVenda: form.dataVenda,
+          historico: newHistory
+        }
+      });
+    } else {
+      created = await prisma.planilhaInstalacao.create({
+        data: {
+          idInterno: idInterno,
+          instalacao: form.instalacao,
+          vendedor: form.vendedor,
+          vendedorSheet: form.vendedor,
+          telefoneCliente: form.telefoneCliente,
+          telefoneSheet: form.telefoneCliente,
+          cidade: form.cidade,
+          cidadeSheet: form.cidade,
+          status: form.status,
+          inversor: form.inversor,
+          modulo: form.modulo,
+          numMod: form.numMod,
+          observacao: form.observacao,
+          obsInstalacao: form.observacao,
+          dataVenda: form.dataVenda,
+          manualInstalacao: true, // Hides from production list
+          dataSolicitacao: new Date(),
+          historico: appendHistory([], "Atividade de teste em paridade criada")
+        }
+      });
+    }
 
     revalidatePath("/atividades/teste-groner");
     return { success: true, record: created };

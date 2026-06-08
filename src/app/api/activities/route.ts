@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkAndSendAlarm } from "@/lib/services/whatsappService";
+import { appendHistory } from "@/lib/historyUtils";
 
 export async function POST(req: Request) {
   try {
@@ -32,7 +33,8 @@ export async function POST(req: Request) {
         telefoneVendedor: data.telefoneVendedor,
         anexoFotos: data.anexoFotos || [],
         anexoArquivos: data.anexoArquivos || [],
-        manualInstalacao: true 
+        manualInstalacao: true,
+        historico: appendHistory([], "Atividade criada manualmente")
       }
     });
 

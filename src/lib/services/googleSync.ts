@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { prisma } from '../prisma';
 import { checkAndSendAlarm } from './whatsappService';
+import { appendHistory } from '../historyUtils';
 
 // Aba 'Instalação' padrão via Export CSV (gid=0)
 const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1esS5CGW5uYLHOhLc_Bd1B_0A3_DIYsjcw8wSmy3dvyc/export?format=csv&gid=0';
@@ -63,59 +64,80 @@ export async function syncGoogleSheets() {
         const sheetStatus = row[4] ? row[4].trim().toLowerCase() : '';
         const concluiuNaPlanilha = sheetStatus.includes('conclu');
 
-        // Upsert into Local DB
+        // Query to check if exists for history log
         try {
-          const updated = await prisma.planilhaInstalacao.upsert({
+          const existing = await prisma.planilhaInstalacao.findUnique({
             where: { idInterno: idInterno },
-            update: {
-              instalacao: row[1],
-              diaPrev: row[2],
-              manualInstalacao: isManual,
-              ...(concluiuNaPlanilha ? { status: 'Concluído' } : {}),
-              obsInstalacao: row[5],
-              vencimentoParecer: row[6],
-              vencimentoContrato: row[7],
-              automaticoPrevInstala: row[8],
-              dataVenda: row[9],
-              statusProtocolo: row[10],
-              statusCompra: row[11],
-              inversor: row[12],
-              numMod: row[13],
-              modulo: row[14],
-              cidadeSheet: row[15],
-              bairro: row[16],
-              rua: row[17],
-              numRua: row[18],
-              telhado: row[19],
-              telefoneSheet: row[20],
-              vendedorSheet: row[21],
-            },
-            create: {
-              idInterno: idInterno,
-              instalacao: row[1],
-              diaPrev: row[2],
-              manualInstalacao: isManual,
-              obsInstalacao: row[5],
-              vencimentoParecer: row[6],
-              vencimentoContrato: row[7],
-              automaticoPrevInstala: row[8],
-              dataVenda: row[9],
-              statusProtocolo: row[10],
-              statusCompra: row[11],
-              inversor: row[12],
-              numMod: row[13],
-              modulo: row[14],
-              cidadeSheet: row[15],
-              bairro: row[16],
-              rua: row[17],
-              numRua: row[18],
-              telhado: row[19],
-              telefoneSheet: row[20],
-              vendedorSheet: row[21],
-              status: concluiuNaPlanilha ? 'Concluído' : 'Pendente',
-              dataSolicitacao: new Date(),
-            },
+            select: { id: true, status: true, historico: true }
           });
+
+          let updated;
+          const targetStatus = concluiuNaPlanilha ? 'Concluído' : undefined;
+
+          if (existing) {
+            let actionDescription = "Atualizado via Sincronização Sheets";
+            if (targetStatus && existing.status !== targetStatus) {
+              actionDescription = `Status alterado via Sincronização Sheets para ${targetStatus}`;
+            }
+            const newHistory = appendHistory(existing.historico, actionDescription);
+
+            updated = await prisma.planilhaInstalacao.update({
+              where: { idInterno: idInterno },
+              data: {
+                instalacao: row[1],
+                diaPrev: row[2],
+                manualInstalacao: isManual,
+                ...(targetStatus ? { status: targetStatus } : {}),
+                obsInstalacao: row[5],
+                vencimentoParecer: row[6],
+                vencimentoContrato: row[7],
+                automaticoPrevInstala: row[8],
+                dataVenda: row[9],
+                statusProtocolo: row[10],
+                statusCompra: row[11],
+                inversor: row[12],
+                numMod: row[13],
+                modulo: row[14],
+                cidadeSheet: row[15],
+                bairro: row[16],
+                rua: row[17],
+                numRua: row[18],
+                telhado: row[19],
+                telefoneSheet: row[20],
+                vendedorSheet: row[21],
+                historico: newHistory
+              }
+            });
+          } else {
+            updated = await prisma.planilhaInstalacao.create({
+              data: {
+                idInterno: idInterno,
+                instalacao: row[1],
+                diaPrev: row[2],
+                manualInstalacao: isManual,
+                obsInstalacao: row[5],
+                vencimentoParecer: row[6],
+                vencimentoContrato: row[7],
+                automaticoPrevInstala: row[8],
+                dataVenda: row[9],
+                statusProtocolo: row[10],
+                statusCompra: row[11],
+                inversor: row[12],
+                numMod: row[13],
+                modulo: row[14],
+                cidadeSheet: row[15],
+                bairro: row[16],
+                rua: row[17],
+                numRua: row[18],
+                telhado: row[19],
+                telefoneSheet: row[20],
+                vendedorSheet: row[21],
+                status: concluiuNaPlanilha ? 'Concluído' : 'Pendente',
+                dataSolicitacao: new Date(),
+                historico: appendHistory([], "Criado via Sincronização Sheets")
+              }
+            });
+          }
 
           await checkAndSendAlarm(updated.id);
         } catch (e) {

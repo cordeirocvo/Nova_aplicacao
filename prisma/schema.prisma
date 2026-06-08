@@ -131,6 +131,11 @@ model EVProject {
   id                          String     @id @default(cuid())
   projectName                 String
   clientName                  String?
+  clientDocument              String?
+  clientPhone                 String?
+  clientEmail                 String?
+  clientAddress               String?
+  projectDescription          String?
   utility                     String     @default("CEMIG")
   entranceCategory            String?
   distance                    Float
@@ -165,6 +170,13 @@ model EVProject {
   simultaneityFactor          Float?     @default(0.8)
   isCollective                Boolean    @default(false)
   location                    String?    @default("urbano")
+  cosPhi                      Float?     @default(1.0)
+  existingEntrancePhases      Int?       @default(3)
+  existingEntranceBreaker     Float?     @default(50)
+  existingEntranceCable       Float?     @default(10)
+  existingEntranceCategory    String?
+  demandControlEnabled        Boolean?   @default(false)
+  demandControlLimit          Float?     @default(50)
   createdAt                   DateTime   @default(now())
   updatedAt                   DateTime   @updatedAt
   charger                     Carregador @relation(fields: [chargerId], references: [id])

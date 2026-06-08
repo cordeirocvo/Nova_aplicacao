@@ -4,7 +4,7 @@ import { useTransition } from "react";
 import { Star, PlusCircle } from "lucide-react";
 import { togglePrioridade, toggleAtividadeExtra } from "./actions";
 
-export function TagToggler({ id, prioridade, atividadeExtra, isAdmin }: { id: string, prioridade: boolean, atividadeExtra: boolean, isAdmin: boolean }) {
+export function TagToggler({ id, prioridade, atividadeExtra, isAdmin, light }: { id: string, prioridade: boolean, atividadeExtra: boolean, isAdmin: boolean, light?: boolean }) {
   const [isPending, startTransition] = useTransition();
 
   if (!isAdmin) {
@@ -15,6 +15,15 @@ export function TagToggler({ id, prioridade, atividadeExtra, isAdmin }: { id: st
       </div>
     );
   }
+
+  // Determine text color based on light prop (colored/dark background rows)
+  const prioridadeColor = light 
+    ? (prioridade ? '#fef08a' : 'rgba(255, 255, 255, 0.65)') 
+    : (prioridade ? '#d97706' : '#94a3b8');
+
+  const extraColor = light 
+    ? (atividadeExtra ? '#e9d5ff' : 'rgba(255, 255, 255, 0.65)') 
+    : (atividadeExtra ? '#9333ea' : '#94a3b8');
 
   return (
     <div className="flex flex-col mt-2" style={{ display: 'flex', flexDirection: 'column', marginTop: '8px' }}>
@@ -27,7 +36,10 @@ export function TagToggler({ id, prioridade, atividadeExtra, isAdmin }: { id: st
           className="w-3.5 h-3.5 accent-amber-500 cursor-pointer mr-1.5"
           style={{ width: '14px', height: '14px', marginRight: '6px' }}
         />
-        <span className={`text-[10px] font-bold ${prioridade ? "text-amber-600" : "text-slate-400"}`} style={{ fontSize: '10px', fontWeight: 'bold', color: prioridade ? '#d97706' : '#94a3b8' }}>
+        <span 
+          className="text-[10px] font-bold transition-colors" 
+          style={{ fontSize: '10px', fontWeight: 'bold', color: prioridadeColor }}
+        >
           Prioridade
         </span>
       </label>
@@ -40,7 +52,10 @@ export function TagToggler({ id, prioridade, atividadeExtra, isAdmin }: { id: st
           className="w-3.5 h-3.5 accent-purple-500 cursor-pointer mr-1.5"
           style={{ width: '14px', height: '14px', marginRight: '6px' }}
         />
-        <span className={`text-[10px] font-bold ${atividadeExtra ? "text-purple-600" : "text-slate-400"}`} style={{ fontSize: '10px', fontWeight: 'bold', color: atividadeExtra ? '#9333ea' : '#94a3b8' }}>
+        <span 
+          className="text-[10px] font-bold transition-colors" 
+          style={{ fontSize: '10px', fontWeight: 'bold', color: extraColor }}
+        >
           Atv. Extra
         </span>
       </label>

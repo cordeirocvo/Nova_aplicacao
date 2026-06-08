@@ -5,6 +5,7 @@ import SettingsModal from "./SettingsModal";
 import { calcDaysLate } from "@/lib/dateUtils";
 import SyncButton from "./SyncButton";
 import AtividadesClientView from "./AtividadesClientView";
+import Link from "next/link";
 
 export const metadata = {
   title: "Acompanhamento | Cordeiro Energia",
@@ -21,6 +22,8 @@ export default async function AcompanhamentoPage() {
       NOT: {
         OR: [
           { status: { contains: "Conclu", mode: "insensitive" } },
+          { status: { contains: "Finaliz", mode: "insensitive" } },
+          { status: { contains: "Execut", mode: "insensitive" } },
           { manualInstalacao: true, idInterno: { not: null } }
         ]
       }
@@ -32,11 +35,19 @@ export default async function AcompanhamentoPage() {
   const settings = settingsRaw || { limiteVerde: 40, limiteAmarelo: 20, limiteParecer: 30 };
 
   // Phase 1: Mapear e calcular dias de atraso dinamicamente
-  const atividadesWithDays = atividades.map(atv => {
-    const daysPrev = calcDaysLate(atv.automaticoPrevInstala);
-    const daysParecer = calcDaysLate(atv.vencimentoParecer);
-    return { ...atv, daysPrev, daysParecer };
-  });
+  const atividadesWithDays = atividades
+    .map(atv => {
+      const daysPrev = calcDaysLate(atv.automaticoPrevInstala);
+      const daysParecer = calcDaysLate(atv.vencimentoParecer);
+      return { ...atv, daysPrev, daysParecer };
+    })
+    .filter(atv => {
+      // Clientes com mais de 208 dias de atraso (ex: -208 a -1663) são considerados concluídos/finalizados
+      if (atv.daysPrev !== null && atv.daysPrev <= -208) {
+        return false;
+      }
+      return true;
+    });
 
   // Phase 2: Ordenador avançado
   atividadesWithDays.sort((a, b) => {
@@ -77,6 +88,12 @@ export default async function AcompanhamentoPage() {
         
         {!isTV && isAdmin && (
           <div className="flex items-center gap-3">
+            <Link 
+              href="/atividades/teste-groner" 
+              className="flex items-center gap-2 bg-[#1E3A8A] hover:bg-[#152e75] text-white text-xs font-bold px-4 py-2.5 rounded-lg shadow-sm transition"
+            >
+              Integrar Gronner
+            </Link>
             <SyncButton />
             <SettingsModal initialSettings={settings} />
           </div>

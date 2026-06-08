@@ -389,7 +389,7 @@ export default function AtividadesClientView({ atividades, settings, isAdmin, is
                         })}
                       </div>
                     )}
-                    <TagToggler id={atv.id} prioridade={atv.prioridade} atividadeExtra={atv.atividadeExtra} isAdmin={!!isAdmin} />
+                    <TagToggler id={atv.id} prioridade={atv.prioridade} atividadeExtra={atv.atividadeExtra} isAdmin={!!isAdmin} light={atv.prioridade || atv.atividadeExtra || isUrgentParecer} />
                   </td>
                   <td className="px-3 py-3 font-black text-xs">
                     {diaPrevRender}
@@ -489,7 +489,7 @@ export default function AtividadesClientView({ atividades, settings, isAdmin, is
                       </div>
                     )}
                   </h3>
-                  <TagToggler id={atv.id} prioridade={atv.prioridade} atividadeExtra={atv.atividadeExtra} isAdmin={!!isAdmin} />
+                  <TagToggler id={atv.id} prioridade={atv.prioridade} atividadeExtra={atv.atividadeExtra} isAdmin={!!isAdmin} light={atv.prioridade || atv.atividadeExtra || isUrgentParecer} />
                 </div>
                 <span className="text-xs font-black px-2 py-1 bg-black/5 rounded uppercase tracking-widest">{atv.status || "Pendente"}</span>
               </div>

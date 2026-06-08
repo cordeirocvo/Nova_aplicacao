@@ -46,19 +46,26 @@ export async function PUT(
 
     const charger = existingProject.charger;
     // @ts-ignore
-    const hasTransformer = data.hasTransformer ?? existingProject.hasTransformer;
+    const hasTransformer = data.hasTransformer !== undefined ? Boolean(data.hasTransformer) : existingProject.hasTransformer;
+    const safeCosPhi = data.cosPhi !== undefined ? Number(data.cosPhi) : (existingProject.cosPhi || 1.0);
     
-    console.log(`Updating project ${id}, hasTransformer: ${hasTransformer}`);
+    console.log(`Updating project ${id}, hasTransformer: ${hasTransformer}, cosPhi: ${safeCosPhi}`);
     const result = calculateSizing({
       powerkW: charger.power,
-      voltage: hasTransformer ? (data.transformerSecondaryVoltage || 380) : charger.voltage,
+      voltage: hasTransformer ? (Number(data.transformerSecondaryVoltage) || 380) : charger.voltage,
       phases: charger.phases as 1 | 3,
-      distance: hasTransformer ? (data.chargerDistance || data.distance || 10) : (data.distance || existingProject.distance),
+      distance: hasTransformer ? (Number(data.chargerDistance) || Number(data.distance) || 10) : (Number(data.distance) || existingProject.distance),
       method: data.installationMethod || existingProject.installationMethod,
+      cosPhi: safeCosPhi,
       hasTransformer,
-      primaryVoltage: data.transformerPrimaryVoltage,
-      primaryDistance: data.transformerDistance,
-      groundingType: data.groundingType
+      primaryVoltage: data.transformerPrimaryVoltage !== undefined ? Number(data.transformerPrimaryVoltage) : undefined,
+      primaryDistance: data.transformerDistance !== undefined ? Number(data.transformerDistance) : undefined,
+      groundingType: data.groundingType || undefined,
+      chargerDistance: data.chargerDistance !== undefined ? Number(data.chargerDistance) : undefined,
+      demandControlEnabled: data.demandControlEnabled !== undefined ? Boolean(data.demandControlEnabled) : (existingProject.demandControlEnabled ?? undefined),
+      demandControlLimit: data.demandControlLimit !== undefined ? Number(data.demandControlLimit) : (existingProject.demandControlLimit ?? undefined),
+      existingLoadKW: data.existingLoadKW !== undefined ? Number(data.existingLoadKW) : (existingProject.existingLoadKW ?? undefined),
+      simultaneityFactor: data.simultaneityFactor !== undefined ? Number(data.simultaneityFactor) : (existingProject.simultaneityFactor ?? undefined)
     });
 
     const updated = await prisma.eVProject.update({
@@ -66,7 +73,13 @@ export async function PUT(
       data: {
         projectName: data.projectName,
         clientName: data.clientName,
-        distance: hasTransformer ? (data.chargerDistance || data.distance || 10) : (data.distance || existingProject.distance),
+        clientDocument: data.clientDocument,
+        clientPhone: data.clientPhone,
+        clientEmail: data.clientEmail,
+        clientAddress: data.clientAddress,
+        projectDescription: data.projectDescription,
+        utility: data.utility || existingProject.utility,
+        distance: hasTransformer ? (Number(data.chargerDistance) || Number(data.distance) || 10) : (Number(data.distance) || existingProject.distance),
         installationMethod: data.installationMethod,
         calculatedCurrent: result.current,
         calculatedCableGauge: result.cableGauge,
@@ -80,22 +93,29 @@ export async function PUT(
         groundingAnalysis: result.groundingAnalysis,
         groundingType: data.groundingType,
         hasTransformer,
-        transformerPrimaryVoltage: data.transformerPrimaryVoltage,
-        transformerSecondaryVoltage: data.transformerSecondaryVoltage,
-        transformerDistance: data.transformerDistance,
-        chargerDistance: data.chargerDistance,
+        transformerPrimaryVoltage: data.transformerPrimaryVoltage !== undefined ? Number(data.transformerPrimaryVoltage) : null,
+        transformerSecondaryVoltage: data.transformerSecondaryVoltage !== undefined ? Number(data.transformerSecondaryVoltage) : null,
+        transformerDistance: data.transformerDistance !== undefined ? Number(data.transformerDistance) : null,
+        chargerDistance: data.chargerDistance !== undefined ? Number(data.chargerDistance) : null,
         calculatedPrimaryCable: result.primary?.cableGauge,
         calculatedPrimaryBreaker: result.primary?.breaker,
-        analysisNotes: data.analysisNotes,
-        existingLoadKW: data.existingLoadKW,
-        simultaneityFactor: data.simultaneityFactor,
-        isCollective: data.isCollective,
+        analysisNotes: data.analysisNotes || existingProject.analysisNotes,
+        existingLoadKW: data.existingLoadKW !== undefined ? Number(data.existingLoadKW) : null,
+        simultaneityFactor: data.simultaneityFactor !== undefined ? Number(data.simultaneityFactor) : null,
+        isCollective: data.isCollective !== undefined ? Boolean(data.isCollective) : existingProject.isCollective,
         location: data.location,
+        cosPhi: safeCosPhi,
+        existingEntrancePhases: data.existingEntrancePhases !== undefined ? Math.round(Number(data.existingEntrancePhases)) : existingProject.existingEntrancePhases,
+        existingEntranceBreaker: data.existingEntranceBreaker !== undefined ? Number(data.existingEntranceBreaker) : existingProject.existingEntranceBreaker,
+        existingEntranceCable: data.existingEntranceCable !== undefined ? Number(data.existingEntranceCable) : existingProject.existingEntranceCable,
+        existingEntranceCategory: data.existingEntranceCategory !== undefined ? data.existingEntranceCategory : existingProject.existingEntranceCategory,
+        demandControlEnabled: data.demandControlEnabled !== undefined ? Boolean(data.demandControlEnabled) : existingProject.demandControlEnabled,
+        demandControlLimit: data.demandControlLimit !== undefined ? Number(data.demandControlLimit) : existingProject.demandControlLimit,
         
         // Novos campos de segurança
         fireExtinguisherType: data.fireExtinguisherType || result.fireExtinguisher,
-        hasEmergencyButton5m: data.hasEmergencyButton5m ?? true,
-        requiresWarningSigns: data.requiresWarningSigns ?? true,
+        hasEmergencyButton5m: data.hasEmergencyButton5m !== undefined ? Boolean(data.hasEmergencyButton5m) : existingProject.hasEmergencyButton5m,
+        requiresWarningSigns: data.requiresWarningSigns !== undefined ? Boolean(data.requiresWarningSigns) : existingProject.requiresWarningSigns,
         fireDeptStandards: data.fireDeptStandards || "IT 41/2023 - CBMG",
         abntStandards: data.abntStandards || result.applicableStandards.join(", "),
         specificSafetyNotes: data.specificSafetyNotes || "Instalação exige sinalização visual e botão de emergência externo a 5 metros conforme norma de Bombeiros."

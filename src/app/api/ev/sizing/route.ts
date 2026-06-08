@@ -10,6 +10,11 @@ export async function POST(req: Request) {
     const { 
       projectName, 
       clientName, 
+      clientDocument,
+      clientPhone,
+      clientEmail,
+      clientAddress,
+      projectDescription,
       utility, 
       entranceCategory, 
       distance, 
@@ -21,7 +26,15 @@ export async function POST(req: Request) {
       transformerDistance,
       chargerDistance,
       groundingType,
-      analysisNotes
+      analysisNotes,
+      createCapexProject,
+      cosPhi,
+      existingEntrancePhases,
+      existingEntranceBreaker,
+      existingEntranceCable,
+      existingEntranceCategory,
+      demandControlEnabled,
+      demandControlLimit
     } = data;
 
     console.log("POST /api/ev/sizing - Incoming data:", data);
@@ -39,21 +52,71 @@ export async function POST(req: Request) {
     const safePower = Number(charger.power) || 0;
     const safeVoltage = Number(hasTransformer ? transformerSecondaryVoltage : charger.voltage) || 220;
     const safeDistance = Number(hasTransformer ? (chargerDistance || distance) : distance) || 1;
+    const safeCosPhi = cosPhi !== undefined ? Number(cosPhi) : 1.0;
 
-    console.log("Starting sizing calculation with:", { safePower, safeVoltage, safeDistance });
+    console.log("Starting sizing calculation with:", { safePower, safeVoltage, safeDistance, safeCosPhi });
     const result = calculateSizing({
       powerkW: safePower,
       voltage: safeVoltage,
       phases: (charger.phases as 1 | 3) || 1,
       distance: safeDistance,
       method: (installationMethod as 'B1' | 'C') || 'B1',
+      cosPhi: safeCosPhi,
       hasTransformer,
       primaryVoltage: Number(transformerPrimaryVoltage) || 220,
       primaryDistance: Number(transformerDistance) || 10,
-      groundingType
+      groundingType,
+      chargerDistance: Number(chargerDistance) || 10,
+      demandControlEnabled: Boolean(demandControlEnabled),
+      demandControlLimit: Number(demandControlLimit) || 50,
+      existingLoadKW: Number(data.existingLoadKW) || 0,
+      simultaneityFactor: Number(data.simultaneityFactor) || 0.8
     });
 
     console.log("Sizing result:", result);
+
+    // Se a flag de integração estiver marcada, cria automaticamente o orçamento no módulo de CAPEX
+    if (createCapexProject) {
+      console.log("Sincronizando com módulo de CAPEX...");
+      try {
+        const orcamento = await prisma.orcamentoProjeto.create({
+          data: {
+            nome: `${projectName} [CAPEX VE]`,
+            cliente: clientName || "Cliente Geral",
+            status: "Planejamento",
+            dataAtualizacao: new Date()
+          }
+        });
+
+        const etapa = await prisma.orcamentoEtapa.create({
+          data: {
+            projetoId: orcamento.id,
+            nome: "Infraestrutura de Recarga VE",
+            ordem: 1
+          }
+        });
+
+        if (result.bom && result.bom.length > 0) {
+          for (const item of result.bom) {
+            await prisma.orcamentoItem.create({
+              data: {
+                etapaId: etapa.id,
+                codigo: item.code,
+                descricao: item.description,
+                tipo: item.type === "material" ? "Material" : "Mão de Obra",
+                unidade: item.unit,
+                quantidade: item.quantity,
+                precoBaseUnitario: item.unitPrice,
+                bdiPercent: 0
+              }
+            });
+          }
+        }
+        console.log(`Projeto de CAPEX criado com sucesso com ID: ${orcamento.id}`);
+      } catch (err) {
+        console.error("Erro ao sincronizar com módulo de CAPEX, continuando sem bloquear:", err);
+      }
+    }
 
     // Salvar Projeto
     console.log("Creating project in database with data:", {
@@ -99,6 +162,11 @@ export async function POST(req: Request) {
       data: {
         projectName,
         clientName,
+        clientDocument,
+        clientPhone,
+        clientEmail,
+        clientAddress,
+        projectDescription,
         utility: utility || "CEMIG",
         entranceCategory,
         distance: hasTransformer ? (chargerDistance || distance) : distance,
@@ -127,6 +195,13 @@ export async function POST(req: Request) {
         simultaneityFactor: data.simultaneityFactor || 0.8,
         isCollective: data.isCollective || false,
         location: data.location || "urbano",
+        cosPhi: safeCosPhi,
+        existingEntrancePhases: Number(existingEntrancePhases) || 3,
+        existingEntranceBreaker: Number(existingEntranceBreaker) || 50,
+        existingEntranceCable: Number(existingEntranceCable) || 10,
+        existingEntranceCategory,
+        demandControlEnabled: Boolean(demandControlEnabled),
+        demandControlLimit: Number(demandControlLimit) || 50,
         
         // Novos campos de segurança
         fireExtinguisherType: data.fireExtinguisherType || result.fireExtinguisher,

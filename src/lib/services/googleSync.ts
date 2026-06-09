@@ -64,23 +64,17 @@ export async function syncGoogleSheets() {
         const sheetStatus = row[4] ? row[4].trim().toLowerCase() : '';
         const concluiuNaPlanilha = sheetStatus.includes('conclu');
 
-        // Query to check if exists for history log
+        // Query to check if exists
         try {
           const existing = await prisma.planilhaInstalacao.findUnique({
             where: { idInterno: idInterno },
-            select: { id: true, status: true, historico: true }
+            select: { id: true, status: true }
           });
 
           let updated;
           const targetStatus = concluiuNaPlanilha ? 'Concluído' : undefined;
 
           if (existing) {
-            let actionDescription = "Atualizado via Sincronização Sheets";
-            if (targetStatus && existing.status !== targetStatus) {
-              actionDescription = `Status alterado via Sincronização Sheets para ${targetStatus}`;
-            }
-            const newHistory = appendHistory(existing.historico, actionDescription);
-
             updated = await prisma.planilhaInstalacao.update({
               where: { idInterno: idInterno },
               data: {
@@ -104,8 +98,7 @@ export async function syncGoogleSheets() {
                 numRua: row[18],
                 telhado: row[19],
                 telefoneSheet: row[20],
-                vendedorSheet: row[21],
-                historico: newHistory
+                vendedorSheet: row[21]
               }
             });
           } else {

@@ -73,6 +73,11 @@ export default function LeadReportPage() {
             <div>
               <span className="block text-[10px] font-black uppercase opacity-60 mb-1 tracking-widest">Identificação do Lead</span>
               <h2 className="text-2xl font-black">{lead.nome}</h2>
+              {lead.empresa && (
+                <span className="block text-xs font-black text-blue-200 uppercase tracking-widest mt-1">
+                  🏢 {lead.empresa}
+                </span>
+              )}
               <div className="flex items-center gap-2 mt-2 text-blue-200">
                 <Phone className="w-4 h-4" />
                 <span className="font-bold">{lead.telefone}</span>

@@ -258,32 +258,39 @@ export default function EapTab({ orcamento, onUpdate }: { orcamento: any, onUpda
             <p className="text-xs text-slate-400 mt-1">Comece adicionando a primeira etapa da obra no canto superior direito.</p>
           </div>
         ) : (
-          orcamento.etapas?.map((etapa: any, index: number) => (
-            <div key={etapa.id} className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
-              <div className="bg-slate-50/50 px-6 py-4 border-b border-slate-200 flex items-center justify-between">
-                {editingEtapa === etapa.id ? (
-                  <div className="flex items-center gap-2 flex-1 mr-4">
-                    <input 
-                      type="text" 
-                      className="flex-1 px-3 py-1 border border-slate-200 rounded-lg text-lg font-black text-slate-800 outline-none focus:border-[#00BFA5]"
-                      value={editEtapaName}
-                      onChange={e => setEditEtapaName(e.target.value)}
-                      autoFocus
-                    />
-                    <button onClick={() => handleEditEtapa(etapa.id)} className="p-2 bg-[#00BFA5] text-white rounded-lg hover:bg-[#00a892]"><Check className="w-4 h-4" /></button>
-                    <button onClick={() => setEditingEtapa(null)} className="p-2 bg-slate-200 text-slate-600 rounded-lg hover:bg-slate-300"><X className="w-4 h-4" /></button>
+          orcamento.etapas?.map((etapa: any, index: number) => {
+            const totalEtapa = etapa.itens?.reduce((acc: number, item: any) => acc + ((item.quantidade || 0) * (item.precoBaseUnitario || 0)), 0) || 0;
+            return (
+              <div key={etapa.id} className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+                <div className="bg-slate-50/50 px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+                  {editingEtapa === etapa.id ? (
+                    <div className="flex items-center gap-2 flex-1 mr-4">
+                      <input 
+                        type="text" 
+                        className="flex-1 px-3 py-1 border border-slate-200 rounded-lg text-lg font-black text-slate-800 outline-none focus:border-[#00BFA5]"
+                        value={editEtapaName}
+                        onChange={e => setEditEtapaName(e.target.value)}
+                        autoFocus
+                      />
+                      <button onClick={() => handleEditEtapa(etapa.id)} className="p-2 bg-[#00BFA5] text-white rounded-lg hover:bg-[#00a892]"><Check className="w-4 h-4" /></button>
+                      <button onClick={() => setEditingEtapa(null)} className="p-2 bg-slate-200 text-slate-600 rounded-lg hover:bg-slate-300"><X className="w-4 h-4" /></button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-3">
+                      <h3 className="font-black text-slate-800 text-lg">{index + 1}. {etapa.nome}</h3>
+                      <button onClick={() => { setEditingEtapa(etapa.id); setEditEtapaName(etapa.nome); }} className="text-slate-400 hover:text-[#00BFA5]"><Edit className="w-4 h-4" /></button>
+                      <button onClick={() => handleDeleteEtapa(etapa.id)} className="text-slate-400 hover:text-red-500"><Trash className="w-4 h-4" /></button>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-xs font-black text-[#00BFA5] bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100">
+                      Total: R$ {totalEtapa.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                    <span className="text-xs font-bold text-slate-400 bg-white px-3 py-1 rounded-full border border-slate-200">
+                      {etapa.itens?.length || 0} Itens
+                    </span>
                   </div>
-                ) : (
-                  <div className="flex items-center gap-3">
-                    <h3 className="font-black text-slate-800 text-lg">{index + 1}. {etapa.nome}</h3>
-                    <button onClick={() => { setEditingEtapa(etapa.id); setEditEtapaName(etapa.nome); }} className="text-slate-400 hover:text-[#00BFA5]"><Edit className="w-4 h-4" /></button>
-                    <button onClick={() => handleDeleteEtapa(etapa.id)} className="text-slate-400 hover:text-red-500"><Trash className="w-4 h-4" /></button>
-                  </div>
-                )}
-                <span className="text-xs font-bold text-slate-400 bg-white px-3 py-1 rounded-full border border-slate-200 shrink-0">
-                  {etapa.itens?.length || 0} Itens
-                </span>
-              </div>
+                </div>
               
               <div className="p-0 overflow-x-auto">
                 <table className="w-full text-left text-sm">
@@ -482,6 +489,15 @@ export default function EapTab({ orcamento, onUpdate }: { orcamento: any, onUpda
                       );
                     })}
 
+                    {/* Linha de Subtotal da Etapa */}
+                    <tr className="bg-slate-50/50 font-bold border-t border-slate-200 text-slate-700">
+                      <td colSpan={7} className="px-4 py-3 text-right text-xs uppercase tracking-wider font-black">Total da Etapa:</td>
+                      <td colSpan={2} className="px-4 py-3 text-right font-black text-[#1E3A8A] text-sm">
+                        R$ {totalEtapa.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </td>
+                      <td></td>
+                    </tr>
+
                     {/* Novo Item Row */}
                     <tr className="bg-[#f8fafc]/80">
                       <td className="px-4 py-3 font-medium text-[#00BFA5] text-xs uppercase tracking-wider whitespace-nowrap">Novo</td>
@@ -562,8 +578,9 @@ export default function EapTab({ orcamento, onUpdate }: { orcamento: any, onUpda
                   </tbody>
                 </table>
               </div>
-            </div>
-          ))
+              </div>
+            );
+          })
         )}
       </div>
 

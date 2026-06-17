@@ -199,7 +199,14 @@ export default function ListaLeadsPage() {
                   </td>
                   <td className="px-6 py-5">
                     <div className="flex flex-col">
-                      <span className="text-sm font-black text-[#1E3A8A] leading-tight">{lead.nome}</span>
+                      <span className="text-sm font-black text-[#1E3A8A] leading-tight">
+                        {lead.nome}
+                        {lead.empresa && (
+                          <span className="text-[10px] text-slate-400 font-bold block mt-0.5">
+                            🏢 {lead.empresa}
+                          </span>
+                        )}
+                      </span>
                       <div className="flex items-center gap-1.5 mt-1">
                         <Phone className="w-3 h-3 text-slate-300" />
                         <span className="text-xs text-slate-500 font-medium">{lead.telefone}</span>

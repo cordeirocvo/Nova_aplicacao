@@ -19,6 +19,7 @@ interface Lead {
   nome: string;
   telefone: string;
   email: string | null;
+  empresa: string | null;
   tipo: string;
   status: string;
   latitude: number | null;
@@ -42,6 +43,7 @@ export default function AppVendedorPage() {
     nome: "",
     telefone: "",
     email: "",
+    empresa: "",
     endereco: "",
     observacoes: "",
     midias: [] as LeadMidia[]
@@ -55,6 +57,7 @@ export default function AppVendedorPage() {
       nome: lead.nome,
       telefone: lead.telefone,
       email: lead.email || "",
+      empresa: lead.empresa || "",
       endereco: lead.endereco || "",
       observacoes: lead.observacoes || "",
       midias: lead.midias || []
@@ -388,14 +391,21 @@ export default function AppVendedorPage() {
                             className="p-5 flex items-center justify-between cursor-pointer hover:bg-slate-50/50 transition-colors"
                           >
                             <div className="space-y-1">
-                              <h3 className="font-black text-slate-800 leading-tight tracking-tight">{lead.nome}</h3>
+                              <h3 className="font-black text-slate-800 leading-tight tracking-tight">
+                                {lead.nome}
+                                {lead.empresa && (
+                                  <span className="block text-[10px] text-[#1E3A8A] font-extrabold uppercase mt-0.5">
+                                    🏢 {lead.empresa}
+                                  </span>
+                                )}
+                              </h3>
                               <div className="flex items-center gap-2">
                                 <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider ${color}`}>
                                   {emoji} {label}
                                 </span>
                                 <span className="text-[9px] font-bold text-slate-400 flex items-center gap-1">
                                   <Calendar className="w-2.5 h-2.5" />
-                                  {new Date(lead.createdAt).toLocaleDateString("pt-BR")}
+                                  {new Date(lead.createdAt).toLocaleDateString("pt-BR")} às {new Date(lead.createdAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                                 </span>
                               </div>
                             </div>
@@ -438,6 +448,15 @@ export default function AppVendedorPage() {
                                         type="email" 
                                         value={editForm.email} 
                                         onChange={e => setEditForm({ ...editForm, email: e.target.value })}
+                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#1E3A8A]" 
+                                      />
+                                    </div>
+                                    <div className="space-y-1">
+                                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Nome da Empresa (Opcional)</label>
+                                      <input 
+                                        type="text" 
+                                        value={editForm.empresa} 
+                                        onChange={e => setEditForm({ ...editForm, empresa: e.target.value })}
                                         className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#1E3A8A]" 
                                       />
                                     </div>
@@ -561,6 +580,12 @@ export default function AppVendedorPage() {
                                       <div>
                                         <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">E-MAIL</span>
                                         <span className="text-xs font-bold text-slate-700">{lead.email}</span>
+                                      </div>
+                                    )}
+                                    {lead.empresa && (
+                                      <div>
+                                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">EMPRESA</span>
+                                        <span className="text-xs font-bold text-slate-700">{lead.empresa}</span>
                                       </div>
                                     )}
                                     <div>

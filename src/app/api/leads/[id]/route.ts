@@ -50,6 +50,9 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       if (body.email !== undefined) {
         updateData.email = body.email;
       }
+      if (body.empresa !== undefined) {
+        updateData.empresa = body.empresa;
+      }
     }
 
     // Campos que o vendedor associado ou gestor podem alterar

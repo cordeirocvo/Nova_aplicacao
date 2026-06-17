@@ -538,6 +538,7 @@ model Lead {
   nome        String
   telefone    String
   email       String?
+  empresa     String?
   tipo        String
   status      String      @default("NOVO")
   latitude    Float?
@@ -677,6 +678,8 @@ model Usina {
   inversores      Inversor[]
   telemetria      Telemetria[]
   estacao         EstacaoSolarimetrica? @relation(fields: [estacaoId], references: [id])
+  acoesCorretivas AcaoCorretiva[]
+  metricasDiarias MetricaDiariaUsina[]
 }
 
 model EstacaoSolarimetrica {
@@ -754,4 +757,31 @@ model AnalisePerda {
   performanceRatio Float
   insightsAI       String?
   usina            Usina    @relation(fields: [usinaId], references: [id], onDelete: Cascade)
+}
+
+model AcaoCorretiva {
+  id           String   @id @default(cuid())
+  usinaId      String
+  tipoAcao     String   // 'limpeza_modulos', 'troca_fusivel', 'reparo_string', 'poda_vegetacao'
+  dataExecucao DateTime
+  observacoes  String?
+  executadoPor String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  usina        Usina    @relation(fields: [usinaId], references: [id], onDelete: Cascade)
+}
+
+model MetricaDiariaUsina {
+  id                         String   @id @default(cuid())
+  data                       DateTime
+  usinaId                    String
+  energiaRealKWh             Float
+  energiaProjetadaPvlibKWh   Float
+  performanceRatioReal       Float
+  integralSolarimetricaKWhM2 Float
+  createdAt                  DateTime @default(now())
+  updatedAt                  DateTime @updatedAt
+  usina                      Usina    @relation(fields: [usinaId], references: [id], onDelete: Cascade)
+
+  @@unique([data, usinaId])
 }

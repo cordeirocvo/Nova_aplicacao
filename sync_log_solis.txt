@@ -1260,3 +1260,23 @@ Processando Solis: Usina 75KW GD2 Evandro Diniz Jaíba
 [SOLIS-SYNC] Usina 75KW GD2 Evandro Diniz Jaíba: Final Power=25.37kW, Energy=13.8kWh
 [SOLIS-SYNC] Telemetria atualizada para o balde de 5min (2026-05-18T11:00:00.000Z)
 [SOLIS-SYNC] Motor Finalizado com Sucesso.
+
+[2026-06-17T10:40:12.373Z] Início Solis Sync (Motor Isolado)
+Usinas Solis encontradas no banco: 4
+Processando Solis: Usina Evandro Diniz Fazenda
+[SOLIS-SYNC] Dados Estação: Power=12.79kW, Energy=6.1kWh
+[SOLIS-SYNC] Usina Evandro Diniz Fazenda: Final Power=16.25kW, Energy=6.1kWh
+[SOLIS-SYNC] Nova telemetria criada para o balde de 5min (2026-06-17T10:40:00.000Z)
+Processando Solis: Usina Alipio Lopes Lote 044-046 24KW
+[SOLIS-SYNC] Dados Estação: Power=3.45kW, Energy=1.3kWh
+[SOLIS-SYNC] Usina Alipio Lopes Lote 044-046 24KW: Final Power=5.18kW, Energy=1.3kWh
+[SOLIS-SYNC] Nova telemetria criada para o balde de 5min (2026-06-17T10:40:00.000Z)
+Processando Solis: Usina Wellcas Comércio de Frutas LTDA
+[SOLIS-SYNC] Dados Estação: Power=5.99kW, Energy=2.9kWh
+[SOLIS-SYNC] Usina Wellcas Comércio de Frutas LTDA: Final Power=6.13kW, Energy=2.9kWh
+[SOLIS-SYNC] Nova telemetria criada para o balde de 5min (2026-06-17T10:40:00.000Z)
+Processando Solis: Usina 75KW GD2 Evandro Diniz Jaíba
+[SOLIS-SYNC] Dados Estação: Power=6.81kW, Energy=2.6kWh
+[SOLIS-SYNC] Usina 75KW GD2 Evandro Diniz Jaíba: Final Power=7.28kW, Energy=2.6kWh
+[SOLIS-SYNC] Nova telemetria criada para o balde de 5min (2026-06-17T10:40:00.000Z)
+[SOLIS-SYNC] Motor Finalizado com Sucesso.

@@ -2,16 +2,14 @@ import { prisma } from "@/lib/prisma";
 import CronogramaClient from "./CronogramaClient";
 
 export const metadata = {
-  title: "Cronograma Semanal | Cordeiro Energia",
+  title: "Calendário de Atividades | Cordeiro Energia",
 };
 
 export const dynamic = "force-dynamic";
 
 export default async function CronogramaPage() {
-  // Buscar todas as atividades de instalação
+  // Buscar todas as atividades de instalação e manutenções O&M sequencialmente para evitar concorrência no pooler
   const atividades = await prisma.planilhaInstalacao.findMany();
-
-  // Buscar todas as manutenções O&M
   const manutencoes = await prisma.manutencaoUsina.findMany({
     include: {
       usina: true,
@@ -23,10 +21,10 @@ export default async function CronogramaPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-1 print:hidden">
         <h1 className="text-3xl font-black text-slate-800 tracking-tight">
-          Cronograma Geral de Atividades
+          Calendário de Atividades
         </h1>
         <p className="text-sm text-slate-500 font-medium italic">
-          Visão consolidada de Instalações, Pareceres e Manutenções O&M
+          Instalações, Pareceres e Manutenções O&amp;M — arraste para reagendar, duplo clique para gerar OS
         </p>
       </div>
 

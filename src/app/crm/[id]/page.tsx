@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { 
   ChevronLeft, MapPin, Phone, Mail, Calendar, User, FileText, 
-  Loader, ExternalLink, Maximize, ArrowRight, Download, CheckCircle, Clock, UserCheck 
+  Loader, ExternalLink, Maximize, ArrowRight, Download, CheckCircle, Clock, UserCheck, Building 
 } from "lucide-react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
@@ -177,8 +177,9 @@ export default function LeadDetailPage() {
             <div className="space-y-6">
               <InfoItem icon={<Phone className="w-5 h-5" />} label="WhatsApp" value={lead.telefone} />
               <InfoItem icon={<Mail className="w-5 h-5" />} label="E-mail" value={lead.email || "Não informado"} />
+              <InfoItem icon={<Building className="w-5 h-5" />} label="Empresa" value={lead.empresa || "Não informada"} />
               <InfoItem icon={<MapPin className="w-5 h-5" />} label="Endereço" value={lead.endereco || "Não informado"} />
-              <InfoItem icon={<Calendar className="w-5 h-5" />} label="Data da Abordagem" value={new Date(lead.createdAt).toLocaleDateString("pt-BR")} />
+              <InfoItem icon={<Calendar className="w-5 h-5" />} label="Data/Hora da Abordagem" value={`${new Date(lead.createdAt).toLocaleDateString("pt-BR")} às ${new Date(lead.createdAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`} />
             </div>
 
             {/* Atendimento & Direcionamento Section */}

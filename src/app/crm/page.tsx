@@ -137,6 +137,7 @@ export default function CRMLeadsPage() {
       lead.nome.toLowerCase().includes(query) ||
       lead.telefone.toLowerCase().includes(query) ||
       (lead.email && lead.email.toLowerCase().includes(query)) ||
+      (lead.empresa && lead.empresa.toLowerCase().includes(query)) ||
       (lead.tipo && lead.tipo.toLowerCase().includes(query)) ||
       vendedorNome.toLowerCase().includes(query)
     );
@@ -282,6 +283,11 @@ export default function CRMLeadsPage() {
                         {/* Name and Details */}
                         <h3 className="font-black text-slate-800 text-base leading-tight mb-2 group-hover:text-[#1E3A8A] transition-colors">
                           {lead.nome}
+                          {lead.empresa && (
+                            <span className="block text-[10px] text-slate-400 font-bold uppercase mt-1">
+                              🏢 {lead.empresa}
+                            </span>
+                          )}
                         </h3>
 
                         {/* Status do Atendimento & Vendedor Badge */}

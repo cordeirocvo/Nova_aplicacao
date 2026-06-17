@@ -977,3 +977,25 @@ USINA MANGA GRANDE UFV 2 2243: Match de 4 KPIs de inversores.
 [HUAWEI-SYNC] Gravando USINA MANGA GRANDE UFV 2 2243: Potência=399.12kW, Energia Dia=281.92kWh, Tensão=[829.9V, 828.7V, 828.6V]
 [HUAWEI-SYNC] Telemetria atualizada para o balde de 5min (2026-05-18T11:00:00.000Z)
 [HUAWEI-SYNC] Motor Finalizado com Sucesso.
+
+[2026-06-17T10:40:06.794Z] Início Huawei Sync (Motor Isolado)
+Usinas Huawei encontradas no banco: 2
+Processando conta Huawei: 'Cordeiroapihuawei'
+Login efetuado com sucesso para usuário: Cordeiroapihuawei
+Consultando KPIs para 8 inversores: 1000000045877644,1000000045877645,1000000045877642,1000000045877643,1000000044744208,1000000044737958,1000000044741866,1000000044745514
+Retornados 8 KPIs de dispositivos.
+USINA MANGA GRANDE UFV 1 1852: Match de 4 KPIs de inversores.
+  - Inversor 1000000045877642: CC=0kW, E(Dia)=0kWh
+  - Inversor 1000000045877643: CC=0kW, E(Dia)=0kWh
+  - Inversor 1000000045877644: CC=0kW, E(Dia)=0kWh
+  - Inversor 1000000045877645: CC=0kW, E(Dia)=0kWh
+[HUAWEI-SYNC] Gravando USINA MANGA GRANDE UFV 1 1852: Potência=0.00kW, Energia Dia=0kWh, Tensão=[0V, 0V, 0V]
+[HUAWEI-SYNC] Nova telemetria criada para o balde de 5min (2026-06-17T10:40:00.000Z)
+USINA MANGA GRANDE UFV 2 2243: Match de 4 KPIs de inversores.
+  - Inversor 1000000044741866: CC=0kW, E(Dia)=0kWh
+  - Inversor 1000000044737958: CC=0kW, E(Dia)=0kWh
+  - Inversor 1000000044744208: CC=0kW, E(Dia)=0kWh
+  - Inversor 1000000044745514: CC=0kW, E(Dia)=0kWh
+[HUAWEI-SYNC] Gravando USINA MANGA GRANDE UFV 2 2243: Potência=0.00kW, Energia Dia=0kWh, Tensão=[0V, 0V, 0V]
+[HUAWEI-SYNC] Nova telemetria criada para o balde de 5min (2026-06-17T10:40:00.000Z)
+[HUAWEI-SYNC] Motor Finalizado com Sucesso.

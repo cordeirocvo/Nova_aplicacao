@@ -199,6 +199,7 @@ export default function OrcamentosDashboard() {
               <Link 
                 href={`/orcamentos/${p.id}`} 
                 key={p.id}
+                prefetch={false}
                 className="flex items-center justify-between p-6 hover:bg-slate-50/50 transition-colors group"
               >
                 <div className="flex items-center gap-4">

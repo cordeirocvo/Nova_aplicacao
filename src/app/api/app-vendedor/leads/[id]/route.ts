@@ -23,7 +23,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     }
 
     const body = await req.json();
-    const { nome, telefone, email, endereco, observacoes, midias } = body;
+    const { nome, telefone, email, empresa, endereco, observacoes, midias } = body;
 
     // Validação básica
     if (!nome || !telefone) {
@@ -55,6 +55,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         nome: String(nome).trim(),
         telefone: String(telefone).trim(),
         email: email ? String(email).trim() : null,
+        empresa: empresa ? String(empresa).trim() : null,
         endereco: endereco ? String(endereco).trim() : null,
         observacoes: observacoes ? String(observacoes).trim() : null,
       },

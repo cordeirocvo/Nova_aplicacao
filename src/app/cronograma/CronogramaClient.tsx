@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { calcDaysLate } from '@/lib/dateUtils';
 import { 
   ChevronLeft, ChevronRight, Calendar as CalendarIcon, 
   Loader, CheckCircle, Plus, Zap, Hammer, Paperclip, Download,
-  Printer
+  Printer, MapPin, FileText, X
 } from 'lucide-react';
 import { 
   format, addMonths, subMonths, startOfMonth, endOfMonth, 
@@ -16,88 +17,237 @@ import {
 import { ptBR } from 'date-fns/locale';
 import Link from 'next/link';
 
+// ─── Tipos ──────────────────────────────────────────────────────────────────
+
+interface CalendarEvent {
+  id: string;
+  type: 'instalacao' | 'manutencao';
+  title: string;
+  date: Date;
+  original: any;
+  color: string;
+  status?: string;
+  hasAttachments?: boolean;
+  isUrgent?: boolean;
+  daysParecer?: number | null;
+}
+
+// ─── Gerador de PDF (client-side via jsPDF) ─────────────────────────────────
+
+async function gerarOSPdf(event: CalendarEvent) {
+  const { jsPDF } = await import('jspdf');
+  const doc = new jsPDF();
+  const o = event.original;
+
+  // Cabeçalho timbrado — paleta Cordeiro Energia
+  doc.setFillColor(30, 58, 138); // #1E3A8A
+  doc.rect(0, 0, 210, 38, 'F');
+  doc.setFillColor(0, 191, 165); // #00BFA5
+  doc.rect(0, 35, 210, 3, 'F');
+
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(16);
+  doc.setFont('helvetica', 'bold');
+  doc.text('CORDEIRO ENERGIA', 14, 14);
+
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(180, 210, 255);
+  doc.text('ORDEM DE SERVIÇO — CALENDÁRIO DE ATIVIDADES', 14, 22);
+
+  doc.setFontSize(8);
+  doc.setTextColor(200, 230, 255);
+  doc.text(`OS Nº: ${o.id?.slice(0, 8)?.toUpperCase() || 'N/D'}`, 14, 29);
+  doc.text(`Emissão: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`, 120, 29);
+
+  // ── Seção: Dados da Atividade ──
+  let y = 52;
+  doc.setTextColor(30, 58, 138);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.text('DADOS DA ATIVIDADE', 14, y);
+  doc.setDrawColor(0, 191, 165);
+  doc.setLineWidth(0.5);
+  doc.line(14, y + 2, 196, y + 2);
+  y += 10;
+
+  doc.setTextColor(50, 65, 85);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+
+  const isInst = event.type === 'instalacao';
+
+  const linhas: [string, string][] = isInst ? [
+    ['Tipo', 'Instalação Fotovoltaica'],
+    ['Cliente', o.instalacao || '—'],
+    ['Solicitação', o.solicitacao || '—'],
+    ['Cidade', o.cidade || o.cidadeSheet || '—'],
+    ['Status', event.status || 'Pendente'],
+    ['Data Prevista', format(event.date, 'dd/MM/yyyy')],
+    ['Inversor', o.inversor || '—'],
+    ['Módulos', `${o.numMod || o.modulo || '—'}`],
+    ['Vendedor', o.vendedor || '—'],
+    ['Telefone Cliente', o.telefoneCliente || '—'],
+  ] : [
+    ['Tipo', `Manutenção O&M — ${o.tipo || '—'}`],
+    ['Usina', o.usina?.nome || '—'],
+    ['Localização', o.usina?.localizacao || '—'],
+    ['Responsável', o.responsavel || '—'],
+    ['Status', event.status || 'Agendada'],
+    ['Data Prevista', format(event.date, 'dd/MM/yyyy')],
+  ];
+
+  linhas.forEach(([label, value]) => {
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(100, 116, 139);
+    doc.text(`${label}:`, 14, y);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(30, 41, 59);
+    doc.text(value, 70, y);
+    y += 8;
+  });
+
+  // ── Seção: Observações ──
+  const obs = isInst 
+    ? (o.obsInstalacao || o.observacao || '') 
+    : (o.descricao || '');
+  if (obs) {
+    y += 4;
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(30, 58, 138);
+    doc.setFontSize(11);
+    doc.text('OBSERVAÇÕES / ESCOPO', 14, y);
+    doc.line(14, y + 2, 196, y + 2);
+    y += 10;
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(50, 65, 85);
+    doc.setFontSize(9);
+    const linhasObs = doc.splitTextToSize(obs, 180);
+    doc.text(linhasObs, 14, y);
+    y += linhasObs.length * 5 + 8;
+  }
+
+  // ── Seção: Assinaturas ──
+  y = Math.max(y + 10, 220);
+  doc.setDrawColor(148, 163, 184);
+  doc.setLineWidth(0.4);
+  doc.line(14, y, 90, y);
+  doc.line(120, y, 196, y);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(100, 116, 139);
+  doc.text('Técnico Responsável / Executor', 22, y + 5);
+  doc.text('Aprovação / Supervisão', 135, y + 5);
+
+  // ── Rodapé ──
+  doc.setFontSize(7);
+  doc.setTextColor(150, 160, 180);
+  doc.text('Cordeiro Energia — Documento gerado automaticamente pelo Sistema de Gestão de Atividades', 14, 285);
+  doc.text(`Ref. Interna: ${o.id || ''}`, 165, 285);
+
+  doc.save(`OS_${isInst ? 'Instalacao' : 'OM'}_${o.id?.slice(0, 8) || 'doc'}.pdf`);
+}
+
+// ─── Componente Principal ────────────────────────────────────────────────────
+
 export default function CronogramaClient({ atividades, manutencoes }: any) {
+  const router = useRouter();
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [selectedEvent, setSelectedEvent] = useState<any>(null);
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+  const [osModalEvent, setOsModalEvent] = useState<CalendarEvent | null>(null);
   const [viewMode, setViewMode] = useState<'month' | 'week'>('month');
 
-  // Local state for optimistic updates
+  // Estado local para atualizações otimistas
   const [localAtividades, setLocalAtividades] = useState(atividades);
   const [localManutencoes, setLocalManutencoes] = useState(manutencoes);
 
-  // Drag and drop states
-  const [draggedEvent, setDraggedEvent] = useState<any>(null);
+  // Drag & Drop
+  const [draggedEvent, setDraggedEvent] = useState<CalendarEvent | null>(null);
   const [dragHoveredDay, setDragHoveredDay] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
-  // Sync props to local state if they change
-  useEffect(() => {
-    setLocalAtividades(atividades);
-  }, [atividades]);
-
-  useEffect(() => {
-    setLocalManutencoes(manutencoes);
-  }, [manutencoes]);
-
-  // Estado para o modal de nova atividade
+  // Modal de nova atividade
   const [novaAtividade, setNovaAtividade] = useState<{ open: boolean; date: Date | null }>({ open: false, date: null });
   const [novaForm, setNovaForm] = useState({
-    instalacao: '',
-    solicitacao: '',
-    observacao: '',
-    status: 'Pendente',
-    vendedor: '',
-    telefoneCliente: '',
-    telefoneVendedor: '',
-    cidade: '',
-    dataPrevista: '',
+    instalacao: '', solicitacao: '', observacao: '', status: 'Pendente',
+    vendedor: '', telefoneCliente: '', telefoneVendedor: '', cidade: '', dataPrevista: '',
+    latitude: '', longitude: '',
   });
   const [novaLoading, setNovaLoading] = useState(false);
   const [novaSuccess, setNovaSuccess] = useState(false);
+  const [gpsLoading, setGpsLoading] = useState(false);
+
+  // Geração de PDF
+  const [pdfLoading, setPdfLoading] = useState(false);
+
+  // Tooltip flutuante (JS-based) para evitar corte de overflow
+  const [tooltip, setTooltip] = useState<{
+    event: CalendarEvent;
+    x: number;
+    y: number;
+  } | null>(null);
+
+  const handleMouseEnter = useCallback((e: React.MouseEvent, event: CalendarEvent) => {
+    setTooltip({
+      event,
+      x: e.clientX,
+      y: e.clientY,
+    });
+  }, []);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    setTooltip(prev => prev ? { ...prev, x: e.clientX, y: e.clientY } : null);
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    setTooltip(null);
+  }, []);
+
+  // Double-click detection refs
+  const clickTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+
+  useEffect(() => { setLocalAtividades(atividades); }, [atividades]);
+  useEffect(() => { setLocalManutencoes(manutencoes); }, [manutencoes]);
+
+  // ─── Navegação ──────────────────────────────────────────────────────────────
 
   const prevPeriod = () => {
-    if (viewMode === 'month') {
-      setCurrentMonth(subMonths(currentMonth, 1));
-    } else {
-      setCurrentMonth(subWeeks(currentMonth, 1));
-    }
+    if (viewMode === 'month') setCurrentMonth(subMonths(currentMonth, 1));
+    else setCurrentMonth(subWeeks(currentMonth, 1));
   };
-
   const nextPeriod = () => {
-    if (viewMode === 'month') {
-      setCurrentMonth(addMonths(currentMonth, 1));
-    } else {
-      setCurrentMonth(addWeeks(currentMonth, 1));
-    }
+    if (viewMode === 'month') setCurrentMonth(addMonths(currentMonth, 1));
+    else setCurrentMonth(addWeeks(currentMonth, 1));
   };
+  const handleToday = () => setCurrentMonth(new Date());
 
-  const handleToday = () => {
-    setCurrentMonth(new Date());
-  };
+  // ─── Drag & Drop ────────────────────────────────────────────────────────────
 
-  // Lógica para arrastar e soltar (Drag and Drop)
-  const handleDragStart = (e: React.DragEvent, eventObj: any) => {
+  const handleDragStart = useCallback((e: React.DragEvent, eventObj: CalendarEvent) => {
     setDraggedEvent(eventObj);
+    setSaveError(null);
     e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', JSON.stringify({ id: eventObj.id, type: eventObj.type }));
-  };
+  }, []);
 
-  const handleDragEnd = () => {
+  const handleDragEnd = useCallback(() => {
     setDraggedEvent(null);
-  };
+  }, []);
 
-  const handleDragOver = (e: React.DragEvent, dayStr: string) => {
+  const handleDragOver = useCallback((e: React.DragEvent, dayStr: string) => {
     e.preventDefault();
-    if (dragHoveredDay !== dayStr) {
-      setDragHoveredDay(dayStr);
+    e.dataTransfer.dropEffect = 'move';
+    setDragHoveredDay(dayStr);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    // Evitar flicker ao passar sobre filhos do dia
+    if (!(e.currentTarget as HTMLElement).contains(e.relatedTarget as Node)) {
+      setDragHoveredDay(null);
     }
-  };
+  }, []);
 
-  const handleDragLeave = () => {
-    setDragHoveredDay(null);
-  };
-
-  const handleDrop = async (e: React.DragEvent, targetDay: Date) => {
+  const handleDrop = useCallback(async (e: React.DragEvent, targetDay: Date) => {
     e.preventDefault();
     setDragHoveredDay(null);
 
@@ -105,8 +255,7 @@ export default function CronogramaClient({ atividades, manutencoes }: any) {
 
     const targetDateStr = format(targetDay, 'yyyy-MM-dd');
     const originalDateStr = format(draggedEvent.date, 'yyyy-MM-dd');
-    
-    // Se soltar no mesmo dia, cancela
+
     if (originalDateStr === targetDateStr) {
       setDraggedEvent(null);
       return;
@@ -115,156 +264,147 @@ export default function CronogramaClient({ atividades, manutencoes }: any) {
     const eventId = draggedEvent.original.id;
     const eventType = draggedEvent.type;
 
-    // Cópia para caso de erro
-    const prevAtividades = [...localAtividades];
-    const prevManutencoes = [...localManutencoes];
+    // Snapshot para rollback
+    const prevAtividades = localAtividades;
+    const prevManutencoes = localManutencoes;
 
-    // Atualização otimista imediata na tela
+    // Atualização otimista imediata
     if (eventType === 'instalacao') {
       setLocalAtividades((prev: any[]) =>
-        prev.map(a => (a.id === eventId ? { ...a, automaticoPrevInstala: targetDateStr } : a))
+        prev.map(a => a.id === eventId ? { ...a, automaticoPrevInstala: targetDateStr } : a)
       );
-    } else if (eventType === 'manutencao') {
+    } else {
       setLocalManutencoes((prev: any[]) =>
-        prev.map(m => (m.id === eventId ? { ...m, dataAgendada: targetDateStr } : m))
+        prev.map(m => m.id === eventId ? { ...m, dataAgendada: targetDateStr } : m)
       );
     }
 
     setIsSaving(true);
-    try {
-      if (eventType === 'instalacao') {
-        // Enviar os dados originais, mas OMITIR dataPrevista para preservá-la no backend
-        const { id, dataPrevista, ...rest } = draggedEvent.original;
-        const payload = {
-          ...rest,
-          automaticoPrevInstala: targetDateStr
-        };
+    setSaveError(null);
 
-        const res = await fetch(`/api/activities/${eventId}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        if (!res.ok) throw new Error("Erro ao atualizar data da instalação");
-      } else if (eventType === 'manutencao') {
-        // PATCH para /api/engenharia/om/manutencoes
-        const res = await fetch('/api/engenharia/om/manutencoes', {
+    try {
+      let res: Response;
+
+      if (eventType === 'instalacao') {
+        // ✅ API dedicada — só atualiza o campo de data, sem risco de sobrescrever outros campos
+        res = await fetch('/api/activities/reagendar', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            id: eventId,
-            dataAgendada: targetDateStr
-          })
+          body: JSON.stringify({ id: eventId, novaData: targetDateStr }),
         });
-        if (!res.ok) throw new Error("Erro ao atualizar data da manutenção");
+      } else {
+        res = await fetch('/api/engenharia/om/manutencoes', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: eventId, dataAgendada: targetDateStr }),
+        });
       }
 
-      // Atualizar automaticamente recarregando os dados em tela
-      window.location.reload();
-    } catch (err) {
-      console.error(err);
-      // Reverter alteração otimista
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || `HTTP ${res.status}`);
+      }
+
+      // ✅ router.refresh() — re-fetch server-side sem piscar a tela
+      router.refresh();
+
+    } catch (err: any) {
+      console.error('DROP_ERROR', err);
+      // Rollback da atualização otimista
       setLocalAtividades(prevAtividades);
       setLocalManutencoes(prevManutencoes);
-      alert('Não foi possível salvar o novo agendamento.');
-      setIsSaving(false);
+      setSaveError(`Erro ao reagendar: ${err.message}`);
     } finally {
       setDraggedEvent(null);
+      setIsSaving(false);
     }
-  };
+  }, [draggedEvent, localAtividades, localManutencoes, router]);
 
-  // Função para parsear datas em formatos variados
-  const parseDate = (dateStr: any) => {
+  // ─── Click / Double-click nos eventos ───────────────────────────────────────
+
+  const handleEventClick = useCallback((e: React.MouseEvent, event: CalendarEvent) => {
+    e.stopPropagation();
+
+    const key = event.id;
+    if (clickTimers.current[key]) {
+      // Duplo clique detectado
+      clearTimeout(clickTimers.current[key]);
+      delete clickTimers.current[key];
+      setOsModalEvent(event);
+    } else {
+      // Aguarda possível segundo clique (250ms)
+      clickTimers.current[key] = setTimeout(() => {
+        delete clickTimers.current[key];
+        setSelectedEvent(event);
+      }, 250);
+    }
+  }, []);
+
+  // ─── Parse de datas ─────────────────────────────────────────────────────────
+
+  const parseDate = (dateStr: any): Date | null => {
     if (!dateStr) return null;
-    if (dateStr instanceof Date) return dateStr;
-    
+    if (dateStr instanceof Date) return isValid(dateStr) ? dateStr : null;
     let d = parseISO(dateStr);
     if (isValid(d)) return d;
-
     d = parse(dateStr, 'dd/MM/yyyy', new Date());
     if (isValid(d)) return d;
-
     return null;
   };
+
+  // ─── Download de anexos ─────────────────────────────────────────────────────
 
   const downloadFile = async (url: string, filename: string) => {
     try {
       const res = await fetch(url);
       const blob = await res.blob();
       const blobUrl = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = blobUrl;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
+      const a = document.createElement('a');
+      a.href = blobUrl; a.download = filename;
+      document.body.appendChild(a); a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(blobUrl);
-    } catch (err) {
-      const a = document.createElement("a");
-      a.href = url;
-      a.target = "_blank";
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
+    } catch {
+      const a = document.createElement('a');
+      a.href = url; a.target = '_blank'; a.download = filename;
+      document.body.appendChild(a); a.click();
       document.body.removeChild(a);
     }
   };
 
-  // Transformar dados em eventos de calendário
-  const events = [
-    ...localAtividades.map((a: any) => {
-      const daysParecer = a.vencimentoParecer ? calcDaysLate(a.vencimentoParecer) : null;
-      const isUrgent = daysParecer !== null && daysParecer <= 30;
-      return {
-        id: `inst-${a.id}`,
-        type: 'instalacao',
-        title: a.instalacao || 'Sem nome',
-        date: parseDate(a.automaticoPrevInstala || a.vencimentoParecer),
-        original: a,
-        color: isUrgent ? 'bg-red-600' : (a.prioridade ? 'bg-purple-600' : a.atividadeExtra ? 'bg-blue-800' : 'bg-blue-500'),
-        status: a.status,
-        hasAttachments: (a.anexoFotos && a.anexoFotos.length > 0) || (a.anexoArquivos && a.anexoArquivos.length > 0),
-        isUrgent,
-        daysParecer
-      };
-    }),
-    ...localManutencoes.map((m: any) => ({
-      id: `om-${m.id}`,
-      type: 'manutencao',
-      title: `${m.usina?.nome || 'Usina'} - ${m.tipo}`,
-      date: parseDate(m.dataAgendada),
-      original: m,
-      color: 'bg-[#F25C27]',
-      status: m.status
-    }))
-  ].filter(e => e.date !== null);
+  // ─── GPS ────────────────────────────────────────────────────────────────────
 
-  const monthStart = startOfMonth(currentMonth);
-  const monthEnd = endOfMonth(monthStart);
-  const startDate = startOfWeek(monthStart);
-  const endDate = endOfWeek(monthEnd);
+  const capturarGPS = () => {
+    if (!navigator.geolocation) {
+      alert('Geolocalização não suportada neste navegador.');
+      return;
+    }
+    setGpsLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setNovaForm(f => ({
+          ...f,
+          latitude: pos.coords.latitude.toFixed(6),
+          longitude: pos.coords.longitude.toFixed(6),
+        }));
+        setGpsLoading(false);
+      },
+      () => {
+        alert('Não foi possível obter localização. Ative o GPS/permissão no navegador.');
+        setGpsLoading(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
 
-  const calendarDays = viewMode === 'month'
-    ? eachDayOfInterval({ start: startDate, end: endDate })
-    : eachDayOfInterval({ start: startOfWeek(currentMonth), end: endOfWeek(currentMonth) });
+  // ─── Nova Atividade ─────────────────────────────────────────────────────────
 
-  // Calcular os dias para a impressão: Segunda a Sábado (6 dias)
-  const mondayOfCurrentWeek = startOfWeek(currentMonth, { weekStartsOn: 1 });
-  const printDays = Array.from({ length: 6 }).map((_, idx) => addDays(mondayOfCurrentWeek, idx));
-
-  // Abrir modal de nova atividade com data pré-preenchida
   const handleDayDoubleClick = (day: Date) => {
     const dateStr = format(day, 'yyyy-MM-dd');
     setNovaForm({
-      instalacao: '',
-      solicitacao: '',
-      observacao: '',
-      status: 'Pendente',
-      vendedor: '',
-      telefoneCliente: '',
-      telefoneVendedor: '',
-      cidade: '',
-      dataPrevista: dateStr,
+      instalacao: '', solicitacao: '', observacao: '', status: 'Pendente',
+      vendedor: '', telefoneCliente: '', telefoneVendedor: '', cidade: '',
+      dataPrevista: dateStr, latitude: '', longitude: '',
     });
     setNovaSuccess(false);
     setNovaAtividade({ open: true, date: day });
@@ -277,11 +417,10 @@ export default function CronogramaClient({ atividades, manutencoes }: any) {
       const res = await fetch('/api/activities', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          ...novaForm, 
-          obsInstalacao: novaForm.observacao, 
-          anexoFotos: [], 
-          anexoArquivos: [] 
+        body: JSON.stringify({
+          ...novaForm,
+          obsInstalacao: novaForm.observacao,
+          anexoFotos: [], anexoArquivos: [],
         }),
       });
       if (res.ok) {
@@ -289,31 +428,72 @@ export default function CronogramaClient({ atividades, manutencoes }: any) {
         setTimeout(() => {
           setNovaAtividade({ open: false, date: null });
           setNovaSuccess(false);
-          window.location.reload();
-        }, 1800);
+          router.refresh();
+        }, 1500);
       } else {
         alert('Erro ao salvar atividade.');
       }
-    } catch (err) {
-      console.error(err);
+    } catch {
       alert('Erro ao salvar atividade.');
     } finally {
       setNovaLoading(false);
     }
   };
 
+  // ─── Eventos do Calendário ──────────────────────────────────────────────────
+
+  const events: CalendarEvent[] = [
+    ...localAtividades.map((a: any) => {
+      const daysParecer = a.vencimentoParecer ? calcDaysLate(a.vencimentoParecer) : null;
+      const isUrgent = daysParecer !== null && daysParecer <= 30;
+      return {
+        id: `inst-${a.id}`,
+        type: 'instalacao' as const,
+        title: a.instalacao || 'Sem nome',
+        date: parseDate(a.automaticoPrevInstala || a.vencimentoParecer)!,
+        original: a,
+        color: isUrgent ? 'bg-red-600' : (a.prioridade ? 'bg-purple-600' : a.atividadeExtra ? 'bg-blue-800' : 'bg-blue-500'),
+        status: a.status,
+        hasAttachments: (a.anexoFotos?.length > 0) || (a.anexoArquivos?.length > 0),
+        isUrgent, daysParecer,
+      };
+    }),
+    ...localManutencoes.map((m: any) => ({
+      id: `om-${m.id}`,
+      type: 'manutencao' as const,
+      title: `${m.usina?.nome || 'Usina'} — ${m.tipo}`,
+      date: parseDate(m.dataAgendada)!,
+      original: m,
+      color: 'bg-[#F25C27]',
+      status: m.status,
+    })),
+  ].filter(e => e.date !== null && isValid(e.date));
+
+  // ─── Datas do calendário ────────────────────────────────────────────────────
+
+  const monthStart = startOfMonth(currentMonth);
+  const calendarDays = viewMode === 'month'
+    ? eachDayOfInterval({ start: startOfWeek(monthStart), end: endOfWeek(endOfMonth(monthStart)) })
+    : eachDayOfInterval({ start: startOfWeek(currentMonth), end: endOfWeek(currentMonth) });
+
+  const mondayOfCurrentWeek = startOfWeek(currentMonth, { weekStartsOn: 1 });
+  const printDays = Array.from({ length: 6 }).map((_, idx) => addDays(mondayOfCurrentWeek, idx));
+
+  // ─── Classes utilitárias ─────────────────────────────────────────────────────
+
   const inputClass = "w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-sm shadow-sm";
   const labelClass = "text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1 block";
 
+  // ─── Render ─────────────────────────────────────────────────────────────────
+
   return (
     <div className="w-full">
-      {/* 
-        ========================================================================
-        CONTEÚDO INTERATIVO DA TELA (Oculto ao imprimir)
-        ========================================================================
-      */}
+      {/* ═══════════════════════════════════════════════════════════════════════
+          INTERFACE INTERATIVA (oculta na impressão)
+      ═══════════════════════════════════════════════════════════════════════ */}
       <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden print:hidden">
-        {/* Header do Calendário */}
+
+        {/* ── Header ── */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between p-6 border-b border-slate-100 bg-slate-50/50 gap-4">
           <div className="flex items-center gap-4">
             <div className="bg-white p-2 rounded-xl shadow-sm border border-slate-200">
@@ -321,52 +501,59 @@ export default function CronogramaClient({ atividades, manutencoes }: any) {
             </div>
             <div className="flex flex-col">
               <h2 className="text-xl font-black text-slate-800 capitalize leading-tight">
-                {viewMode === 'month' 
+                {viewMode === 'month'
                   ? format(currentMonth, 'MMMM yyyy', { locale: ptBR })
-                  : `Semana de ${format(startOfWeek(currentMonth), "dd/MM")} a ${format(endOfWeek(currentMonth), "dd/MM")}`
+                  : `Semana de ${format(startOfWeek(currentMonth), 'dd/MM')} a ${format(endOfWeek(currentMonth), 'dd/MM')}`
                 }
               </h2>
               <span className="text-[10px] font-black text-blue-600 uppercase tracking-wider mt-0.5">
-                {viewMode === 'month' ? 'Visão Mensal' : 'Visão Semanal'}
+                {viewMode === 'month' ? 'Calendário de Atividades — Visão Mensal' : 'Calendário de Atividades — Visão Semanal'}
               </span>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            {/* Indicador de Salvamento */}
+            {/* Indicador de salvamento */}
             {isSaving && (
               <div className="flex items-center gap-2 bg-blue-50 text-blue-700 text-xs px-3 py-1.5 rounded-xl border border-blue-100 font-bold shrink-0 animate-pulse">
                 <Loader className="w-3.5 h-3.5 animate-spin" />
-                <span>Atualizando...</span>
+                <span>Reagendando...</span>
+              </div>
+            )}
+            {/* Erro de salvamento */}
+            {saveError && !isSaving && (
+              <div className="flex items-center gap-2 bg-red-50 text-red-700 text-xs px-3 py-1.5 rounded-xl border border-red-100 font-bold shrink-0">
+                <span>⚠ {saveError}</span>
+                <button onClick={() => setSaveError(null)} className="hover:text-red-900">
+                  <X className="w-3 h-3" />
+                </button>
               </div>
             )}
 
-            {/* Alternar Visualização */}
+            {/* Alternância de view */}
             <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 shrink-0">
-              <button 
-                onClick={() => setViewMode('month')} 
+              <button
+                onClick={() => setViewMode('month')}
                 className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${viewMode === 'month' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
               >
                 Mensal
               </button>
-              <button 
-                onClick={() => setViewMode('week')} 
+              <button
+                onClick={() => setViewMode('week')}
                 className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${viewMode === 'week' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
               >
                 Semanal
               </button>
             </div>
 
-            {/* Botão de Impressão Semanal */}
-            <button 
+            <button
               onClick={() => window.print()}
               className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-black rounded-xl transition-all shadow-sm shrink-0"
             >
               <Printer className="w-4 h-4" />
               <span>Imprimir</span>
             </button>
-            
-            {/* Navegação de Datas */}
+
             <div className="flex items-center gap-1.5 bg-slate-100/55 p-1 rounded-xl border border-slate-200/50">
               <button onClick={prevPeriod} className="p-1.5 hover:bg-slate-200 rounded-lg transition-colors">
                 <ChevronLeft className="w-4 h-4" />
@@ -380,64 +567,50 @@ export default function CronogramaClient({ atividades, manutencoes }: any) {
             </div>
           </div>
         </div>
-        
-        {/* Legenda */}
+
+        {/* ── Legenda ── */}
         <div className="flex flex-wrap gap-4 px-6 py-3 border-b border-slate-100 bg-white text-[10px] font-black uppercase tracking-widest text-slate-400">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-blue-500"></div> Instalação
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-purple-600"></div> Prioridade
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-blue-800"></div> Extra
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-[#F25C27]"></div> Manutenção O&M
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-slate-350 border border-slate-400"></div> Finalizada
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-red-600"></div> Parecer Vencendo (≤ 30 dias)
-          </div>
+          <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-blue-500" /> Instalação</div>
+          <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-purple-600" /> Prioridade</div>
+          <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-blue-800" /> Extra</div>
+          <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-[#F25C27]" /> Manutenção O&M</div>
+          <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-red-600" /> Parecer Vencendo (≤ 30 dias)</div>
           <div className="flex items-center gap-2 ml-auto text-slate-300 font-medium normal-case tracking-normal">
-            <span>Arraste atividades ou clique duplo para cadastrar</span>
+            <span>Arraste para reagendar • Clique para detalhes • Duplo clique para OS</span>
           </div>
         </div>
 
-        {/* Corpo do Calendário dependendo da visualização */}
+        {/* ── Grade Mensal ── */}
         {viewMode === 'month' ? (
           <>
-            {/* Cabeçalho dos dias da semana */}
             <div className="grid grid-cols-7 border-b border-slate-100 text-center text-[11px] font-black text-slate-400 uppercase tracking-tighter bg-slate-50/30">
               {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(day => (
                 <div key={day} className="py-3 border-r border-slate-100 last:border-0">{day}</div>
               ))}
             </div>
 
-            {/* Grade dos dias (Mensal) */}
             <div className="grid grid-cols-7 auto-rows-[140px]">
-              {calendarDays.map((day, idx) => {
-                const dayEvents = events.filter(e => isSameDay(e.date as Date, day));
+              {calendarDays.map((day) => {
+                const dayEvents = events.filter(e => isSameDay(e.date, day));
                 const isSelectedMonth = isSameMonth(day, currentMonth);
                 const isTodayDay = isToday(day);
                 const dayStr = format(day, 'yyyy-MM-dd');
                 const isHovered = dragHoveredDay === dayStr;
+                const isDragging = !!draggedEvent;
 
                 return (
-                  <div 
-                    key={day.toString()} 
-                    onDoubleClick={() => handleDayDoubleClick(day)}
+                  <div
+                    key={day.toString()}
+                    onDoubleClick={() => isSelectedMonth && handleDayDoubleClick(day)}
                     onDragOver={(e) => handleDragOver(e, dayStr)}
                     onDragLeave={handleDragLeave}
                     onDrop={(e) => handleDrop(e, day)}
                     className={`border-r border-b border-slate-100 p-2 transition-colors flex flex-col gap-1 group relative
-                      ${!isSelectedMonth ? 'bg-slate-50/50 opacity-40' : 'bg-white hover:bg-blue-50/30 cursor-pointer'}
+                      ${!isSelectedMonth ? 'bg-slate-50/50 opacity-40' : 'bg-white cursor-pointer'}
                       ${isTodayDay ? 'ring-2 ring-inset ring-blue-500/20' : ''}
-                      ${isHovered ? 'bg-blue-50 border border-dashed border-blue-500 z-10 scale-[1.01]' : ''}
+                      ${isHovered && isDragging ? 'bg-blue-50 border border-dashed border-blue-400 z-10 scale-[1.01] shadow-md' : ''}
+                      ${isSelectedMonth && !isHovered ? 'hover:bg-blue-50/20' : ''}
                     `}
-                    title={isSelectedMonth ? 'Clique duplo para nova atividade' : ''}
                   >
                     <div className="flex justify-between items-center mb-1">
                       <span className={`text-xs font-black ${isTodayDay ? 'bg-blue-600 text-white w-6 h-6 flex items-center justify-center rounded-full' : 'text-slate-400'}`}>
@@ -449,44 +622,21 @@ export default function CronogramaClient({ atividades, manutencoes }: any) {
                         </span>
                       )}
                     </div>
-                    
+
                     <div className="flex flex-col gap-1 overflow-y-auto max-h-[100px] custom-scrollbar">
-                      {dayEvents.map(event => {
-                        const isFinished = event.status && /conclu/i.test(event.status);
-                        const showFinishedStyle = !!isFinished;
-                        
-                        let tooltipText = event.title;
-                        if (event.isUrgent && !isFinished && event.daysParecer !== null && event.daysParecer !== undefined) {
-                          if (event.daysParecer < 0) {
-                            tooltipText = `${event.title} (Parecer VENCIDO há ${Math.abs(event.daysParecer)} dias)`;
-                          } else if (event.daysParecer === 0) {
-                            tooltipText = `${event.title} (Parecer Vence HOJE)`;
-                          } else {
-                            tooltipText = `${event.title} (Parecer Vencendo em ${event.daysParecer} dias)`;
-                          }
-                        }
-                        
-                        return (
-                          <div 
-                            key={event.id}
-                            draggable={true}
-                            onDragStart={(e) => handleDragStart(e, event)}
-                            onDragEnd={handleDragEnd}
-                            onClick={(e) => { e.stopPropagation(); setSelectedEvent(event); }}
-                            className={`px-2 py-0.5 rounded-md text-[10px] font-bold cursor-grab active:cursor-grabbing hover:brightness-90 transition-all truncate shadow-sm flex items-center justify-between gap-1
-                              ${showFinishedStyle 
-                                ? 'bg-slate-200 text-slate-500 line-through border border-slate-300' 
-                                : `${event.color} text-white`
-                              }`}
-                            title={tooltipText}
-                          >
-                            <span className="truncate flex-1">{event.title}</span>
-                            {event.hasAttachments && (
-                              <Paperclip className={`w-3 h-3 shrink-0 ${showFinishedStyle ? 'text-slate-400' : 'text-white/80'}`} />
-                            )}
-                          </div>
-                        );
-                      })}
+                      {dayEvents.map(event => (
+                        <EventChip
+                          key={event.id}
+                          event={event}
+                          compact
+                          onDragStart={(e) => handleDragStart(e, event)}
+                          onDragEnd={handleDragEnd}
+                          onClick={(e) => handleEventClick(e, event)}
+                          onMouseEnter={handleMouseEnter}
+                          onMouseMove={handleMouseMove}
+                          onMouseLeave={handleMouseLeave}
+                        />
+                      ))}
                     </div>
                   </div>
                 );
@@ -494,17 +644,18 @@ export default function CronogramaClient({ atividades, manutencoes }: any) {
             </div>
           </>
         ) : (
-          /* Visualização Semanal (Colunas Verticais) */
+          /* ── Grade Semanal ── */
           <div className="p-6 bg-slate-50/50">
             <div className="grid grid-cols-1 md:grid-cols-7 gap-4 min-h-[350px] md:min-h-[500px]">
               {calendarDays.map((day) => {
-                const dayEvents = events.filter(e => isSameDay(e.date as Date, day));
+                const dayEvents = events.filter(e => isSameDay(e.date, day));
                 const isTodayDay = isToday(day);
                 const dayStr = format(day, 'yyyy-MM-dd');
                 const isHovered = dragHoveredDay === dayStr;
+                const isDragging = !!draggedEvent;
 
                 return (
-                  <div 
+                  <div
                     key={day.toString()}
                     onDragOver={(e) => handleDragOver(e, dayStr)}
                     onDragLeave={handleDragLeave}
@@ -512,10 +663,9 @@ export default function CronogramaClient({ atividades, manutencoes }: any) {
                     onDoubleClick={() => handleDayDoubleClick(day)}
                     className={`bg-white rounded-3xl border-2 p-4 transition-all flex flex-col gap-3 min-h-[350px] md:min-h-[500px] shadow-sm
                       ${isTodayDay ? 'border-blue-500 ring-2 ring-blue-500/10' : 'border-slate-100 hover:border-slate-200'}
-                      ${isHovered ? 'border-dashed border-blue-500 bg-blue-50/50 scale-[1.02] z-10 shadow-lg' : ''}
+                      ${isHovered && isDragging ? 'border-dashed border-blue-500 bg-blue-50/50 scale-[1.02] z-10 shadow-lg' : ''}
                     `}
                   >
-                    {/* Header do dia */}
                     <div className="flex justify-between items-center border-b border-slate-100 pb-3">
                       <div className="flex flex-col">
                         <span className={`text-[10px] font-black uppercase tracking-widest ${isTodayDay ? 'text-blue-600' : 'text-slate-400'}`}>
@@ -525,7 +675,7 @@ export default function CronogramaClient({ atividades, manutencoes }: any) {
                           {format(day, 'dd/MM')}
                         </span>
                       </div>
-                      <button 
+                      <button
                         onClick={() => handleDayDoubleClick(day)}
                         className={`p-1.5 rounded-xl transition-colors ${isTodayDay ? 'bg-blue-100 text-blue-600 hover:bg-blue-200' : 'hover:bg-slate-100 text-slate-400'}`}
                       >
@@ -533,7 +683,6 @@ export default function CronogramaClient({ atividades, manutencoes }: any) {
                       </button>
                     </div>
 
-                    {/* Lista de Atividades */}
                     <div className="flex-1 flex flex-col gap-2 overflow-y-auto custom-scrollbar">
                       {dayEvents.length === 0 ? (
                         <div className="flex-1 flex items-center justify-center border-2 border-dashed border-slate-200/50 rounded-2xl p-4 text-center">
@@ -542,56 +691,19 @@ export default function CronogramaClient({ atividades, manutencoes }: any) {
                           </p>
                         </div>
                       ) : (
-                        dayEvents.map(event => {
-                          const isFinished = event.status && /conclu/i.test(event.status);
-                          const showFinishedStyle = !!isFinished;
-                          
-                          let tooltipText = event.title;
-                          if (event.isUrgent && !isFinished && event.daysParecer !== null && event.daysParecer !== undefined) {
-                            if (event.daysParecer < 0) {
-                              tooltipText = `${event.title} (Parecer VENCIDO há ${Math.abs(event.daysParecer)} dias)`;
-                            } else if (event.daysParecer === 0) {
-                              tooltipText = `${event.title} (Parecer Vence HOJE)`;
-                            } else {
-                              tooltipText = `${event.title} (Parecer Vencendo em ${event.daysParecer} dias)`;
-                            }
-                          }
-
-                          return (
-                            <div 
-                              key={event.id}
-                              draggable={true}
-                              onDragStart={(e) => handleDragStart(e, event)}
-                              onDragEnd={handleDragEnd}
-                              onClick={(e) => { e.stopPropagation(); setSelectedEvent(event); }}
-                              className={`px-3 py-2.5 rounded-2xl text-xs font-bold cursor-grab active:cursor-grabbing hover:brightness-95 transition-all shadow-sm flex flex-col gap-1.5 border
-                                ${showFinishedStyle 
-                                  ? 'bg-slate-100 text-slate-500 line-through border border-slate-200' 
-                                  : `${event.color} text-white border-transparent`
-                                }`}
-                              title={tooltipText}
-                            >
-                              <div className="flex items-start justify-between gap-1 w-full">
-                                <span className="font-extrabold truncate flex-1 leading-tight">{event.title}</span>
-                                {event.hasAttachments && (
-                                  <Paperclip className={`w-3.5 h-3.5 shrink-0 ${showFinishedStyle ? 'text-slate-400' : 'text-white/80'}`} />
-                                )}
-                              </div>
-                              
-                              <div className={`text-[9px] font-semibold flex items-center justify-between gap-1 opacity-90
-                                ${showFinishedStyle ? 'text-slate-400' : 'text-white/85'}`}>
-                                <span className="truncate">
-                                  {event.type === 'instalacao' 
-                                    ? (event.original.cidade || event.original.cidadeSheet || 'Instalação') 
-                                    : (event.original.usina?.localizacao || 'O&M')}
-                                </span>
-                                <span className="uppercase shrink-0 text-[8px] tracking-widest font-black bg-white/20 px-1 py-0.25 rounded-md">
-                                  {event.type === 'instalacao' ? 'INST' : 'OM'}
-                                </span>
-                              </div>
-                            </div>
-                          );
-                        })
+                        dayEvents.map(event => (
+                          <EventChip
+                            key={event.id}
+                            event={event}
+                            compact={false}
+                            onDragStart={(e) => handleDragStart(e, event)}
+                            onDragEnd={handleDragEnd}
+                            onClick={(e) => handleEventClick(e, event)}
+                            onMouseEnter={handleMouseEnter}
+                            onMouseMove={handleMouseMove}
+                            onMouseLeave={handleMouseLeave}
+                          />
+                        ))
                       )}
                     </div>
                   </div>
@@ -602,17 +714,14 @@ export default function CronogramaClient({ atividades, manutencoes }: any) {
         )}
       </div>
 
-      {/* 
-        ========================================================================
-        ÁREA DE IMPRESSÃO - GESTÃO À VISTA (6 COLUNAS: SEGUNDA A SÁBADO)
-        ========================================================================
-      */}
+      {/* ═══════════════════════════════════════════════════════════════════════
+          ÁREA DE IMPRESSÃO — GESTÃO À VISTA
+      ═══════════════════════════════════════════════════════════════════════ */}
       <div className="hidden print:block bg-white text-black p-1 w-full overflow-hidden">
-        {/* Cabeçalho do Relatório Compactado ao Máximo */}
         <div className="border-b border-slate-550 pb-1 mb-2.5 flex justify-between items-center">
           <div className="flex items-baseline gap-2">
             <h1 className="text-[14px] font-black tracking-tight text-slate-900 leading-none">CORDEIRO ENERGIA</h1>
-            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none">CRONOGRAMA SEMANAL - GESTÃO À VISTA</span>
+            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none">CALENDÁRIO DE ATIVIDADES — GESTÃO À VISTA</span>
           </div>
           <div className="text-right">
             <span className="text-[9px] font-black text-slate-700 leading-none">
@@ -621,16 +730,13 @@ export default function CronogramaClient({ atividades, manutencoes }: any) {
           </div>
         </div>
 
-        {/* Grade de 6 Colunas Horizontais */}
         <div className="grid grid-cols-6 gap-2 w-full items-start">
           {printDays.map((day) => {
-            const dayEvents = events.filter(e => isSameDay(e.date as Date, day));
-            const totalEvents = dayEvents.length;
-            const useCompactMode = totalEvents > 1; // Comprime automaticamente caso tenha mais de 1 atividade para caber perfeito!
+            const dayEvents = events.filter(e => isSameDay(e.date, day));
+            const useCompactMode = dayEvents.length > 1;
 
             return (
               <div key={day.toString()} className="border border-slate-700 rounded-lg overflow-hidden flex flex-col bg-white break-inside-avoid">
-                {/* Cabeçalho do dia */}
                 <div className="bg-slate-900 text-white py-1 px-2 text-center flex flex-col border-b border-slate-700 shrink-0">
                   <span className="font-black text-[9px] uppercase tracking-wider leading-none">
                     {format(day, 'EEEE', { locale: ptBR }).split('-')[0]}
@@ -640,87 +746,49 @@ export default function CronogramaClient({ atividades, manutencoes }: any) {
                   </span>
                 </div>
 
-                {/* Eventos da coluna */}
-                <div className={`p-1 space-y-1.5 flex-1 min-h-[360px] bg-slate-50/20`}>
-                  {totalEvents === 0 ? (
+                <div className="p-1 space-y-1.5 flex-1 min-h-[360px] bg-slate-50/20">
+                  {dayEvents.length === 0 ? (
                     <div className="h-full flex items-center justify-center text-center py-6">
-                      <p className="text-[8px] font-bold text-slate-300 uppercase tracking-widest italic">
-                        Sem Atividades
-                      </p>
+                      <p className="text-[8px] font-bold text-slate-300 uppercase tracking-widest italic">Sem Atividades</p>
                     </div>
                   ) : (
                     dayEvents.map((event) => {
                       const isInst = event.type === 'instalacao';
                       return (
-                        <div 
-                          key={event.id} 
+                        <div
+                          key={event.id}
                           className={`rounded border border-slate-400 bg-white shadow-sm flex flex-col
                             ${useCompactMode ? 'p-1.5 space-y-1 text-[7.5px]' : 'p-2 space-y-1.5 text-[9px]'}`}
                         >
-                          {/* Tipo / Status */}
                           <div className="flex justify-between items-center border-b border-slate-200 pb-0.5 shrink-0 leading-none">
-                            <span className={`font-black uppercase rounded ${
-                              useCompactMode ? 'text-[7px] px-1' : 'text-[8px] px-1.5 py-0.25'
-                            } ${
-                              isInst ? 'bg-blue-50 text-blue-900 border border-blue-200' : 'bg-orange-50 text-orange-950 border border-orange-200'
-                            }`}>
+                            <span className={`font-black uppercase rounded ${useCompactMode ? 'text-[7px] px-1' : 'text-[8px] px-1.5 py-0.25'} ${isInst ? 'bg-blue-50 text-blue-900 border border-blue-200' : 'bg-orange-50 text-orange-950 border border-orange-200'}`}>
                               {isInst ? 'INST' : 'OM'}
                             </span>
-                            <span className="text-[7px] font-extrabold text-slate-500 uppercase tracking-wide">
-                              {event.status || 'Pendente'}
-                            </span>
+                            <span className="text-[7px] font-extrabold text-slate-500 uppercase tracking-wide">{event.status || 'Pendente'}</span>
                           </div>
-
-                          {/* Nome da Instalação / Título */}
-                          <div className={`font-black text-slate-950 break-words leading-tight
-                            ${useCompactMode ? 'text-[8.5px]' : 'text-[9.5px]'}`}>
+                          <div className={`font-black text-slate-950 break-words leading-tight ${useCompactMode ? 'text-[8.5px]' : 'text-[9.5px]'}`}>
                             {event.title}
                           </div>
-
-                          {/* Detalhes Técnicos Exigidos em Formato Ultra-Compacto */}
                           {isInst ? (
                             <div className="bg-slate-50 p-1.5 rounded border border-slate-200 text-slate-900 flex-1 space-y-0.5">
-                              <div className="leading-tight">
-                                <span className="font-extrabold text-slate-500 mr-0.5">Cli:</span>
-                                <span className="font-bold text-slate-800 break-all">{event.original.instalacao || '-'}</span>
-                              </div>
+                              <div className="leading-tight"><span className="font-extrabold text-slate-500 mr-0.5">Cli:</span><span className="font-bold text-slate-800 break-all">{event.original.instalacao || '-'}</span></div>
                               <div className="flex justify-between gap-1 border-t border-slate-150 pt-0.5 mt-0.5 leading-tight">
-                                <div>
-                                  <span className="font-extrabold text-slate-500 mr-0.5">Cid:</span>
-                                  <span className="font-bold text-slate-800">{event.original.cidade || event.original.cidadeSheet || '-'}</span>
-                                </div>
-                                <div>
-                                  <span className="font-extrabold text-slate-500 mr-0.5">Inv:</span>
-                                  <span className="font-bold text-slate-800">{event.original.inversor || '-'}</span>
-                                </div>
+                                <div><span className="font-extrabold text-slate-500 mr-0.5">Cid:</span><span className="font-bold text-slate-800">{event.original.cidade || event.original.cidadeSheet || '-'}</span></div>
+                                <div><span className="font-extrabold text-slate-500 mr-0.5">Inv:</span><span className="font-bold text-slate-800">{event.original.inversor || '-'}</span></div>
                               </div>
                               <div className="border-t border-slate-150 pt-0.5 mt-0.5 flex justify-between items-center leading-tight">
-                                <div>
-                                  <span className="font-extrabold text-slate-500 mr-0.5">Módulos:</span>
-                                  <span className="font-black text-slate-950">{event.original.numMod || event.original.modulo || '-'}</span>
-                                </div>
+                                <div><span className="font-extrabold text-slate-500 mr-0.5">Módulos:</span><span className="font-black text-slate-950">{event.original.numMod || event.original.modulo || '-'}</span></div>
                               </div>
                             </div>
                           ) : (
                             <div className="bg-slate-50 p-1.5 rounded border border-slate-200 text-slate-900 flex-1 space-y-0.5">
-                              <div className="leading-tight">
-                                <span className="font-extrabold text-slate-500 mr-0.5">Usi:</span>
-                                <span className="font-bold text-slate-800 break-all">{event.original.usina?.nome || '-'}</span>
-                              </div>
+                              <div className="leading-tight"><span className="font-extrabold text-slate-500 mr-0.5">Usi:</span><span className="font-bold text-slate-800 break-all">{event.original.usina?.nome || '-'}</span></div>
                               <div className="flex justify-between gap-1 border-t border-slate-150 pt-0.5 mt-0.5 leading-tight">
-                                <div>
-                                  <span className="font-extrabold text-slate-500 mr-0.5">Loc:</span>
-                                  <span className="font-bold text-slate-800">{event.original.usina?.localizacao || '-'}</span>
-                                </div>
-                                <div>
-                                  <span className="font-extrabold text-slate-500 mr-0.5">Resp:</span>
-                                  <span className="font-bold text-slate-850">{event.original.responsavel || '-'}</span>
-                                </div>
+                                <div><span className="font-extrabold text-slate-500 mr-0.5">Loc:</span><span className="font-bold text-slate-800">{event.original.usina?.localizacao || '-'}</span></div>
+                                <div><span className="font-extrabold text-slate-500 mr-0.5">Resp:</span><span className="font-bold text-slate-850">{event.original.responsavel || '-'}</span></div>
                               </div>
                             </div>
                           )}
-
-                          {/* Observações da Atividade */}
                           {!useCompactMode && (event.original.obsInstalacao || event.original.observacao || event.original.descricao) && (
                             <div className="text-[7.5px] text-slate-500 italic border-l border-slate-350 pl-1 leading-tight pt-0.5 mt-0.5 border-t border-slate-100/50 break-words max-h-[35px] overflow-hidden">
                               Obs: {isInst ? (event.original.obsInstalacao || event.original.observacao) : event.original.descricao}
@@ -737,10 +805,18 @@ export default function CronogramaClient({ atividades, manutencoes }: any) {
         </div>
       </div>
 
-      {/* Modal de Detalhes do Evento */}
+      {/* ═══════════════════════════════════════════════════════════════════════
+          MODAL: DETALHES DO EVENTO (clique simples)
+      ═══════════════════════════════════════════════════════════════════════ */}
       {selectedEvent && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4" onClick={() => setSelectedEvent(null)}>
-          <div className="bg-white rounded-[32px] w-full max-w-md overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+        <div
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4"
+          onClick={() => setSelectedEvent(null)}
+        >
+          <div
+            className="bg-white rounded-[32px] w-full max-w-md overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200"
+            onClick={e => e.stopPropagation()}
+          >
             <div className={`p-8 text-white flex justify-between items-start ${selectedEvent.color}`}>
               <div>
                 <div className="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-black uppercase mb-3 inline-block">
@@ -765,9 +841,9 @@ export default function CronogramaClient({ atividades, manutencoes }: any) {
                 <div className="space-y-1">
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Localização</p>
                   <p className="font-bold text-slate-700 truncate">
-                    {selectedEvent.type === 'instalacao' 
-                      ? (selectedEvent.original.cidade || selectedEvent.original.cidadeSheet || '-') 
-                      : (selectedEvent.original.usina?.localizacao || '-')}
+                    {selectedEvent.type === 'instalacao'
+                      ? (selectedEvent.original.cidade || selectedEvent.original.cidadeSheet || '—')
+                      : (selectedEvent.original.usina?.localizacao || '—')}
                   </p>
                 </div>
               </div>
@@ -776,18 +852,19 @@ export default function CronogramaClient({ atividades, manutencoes }: any) {
                 <div className="space-y-4">
                   <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 text-slate-800">
                     <p className="text-[10px] font-black text-slate-400 uppercase mb-2">Observações da Instalação</p>
-                    <p className="text-sm text-slate-650 font-medium italic">"{selectedEvent.original.obsInstalacao || selectedEvent.original.observacao || 'Sem observações.'}"</p>
+                    <p className="text-sm text-slate-650 font-medium italic">
+                      "{selectedEvent.original.obsInstalacao || selectedEvent.original.observacao || 'Sem observações.'}"
+                    </p>
                   </div>
-                  
-                  {/* Dados Técnicos Rápidos */}
+
                   <div className="grid grid-cols-2 gap-3 text-xs bg-slate-50 p-4 rounded-2xl border border-slate-100 text-slate-800">
                     <div>
                       <p className="font-black text-[9px] text-slate-400 uppercase tracking-wider">Inversor</p>
-                      <p className="font-bold mt-0.5">{selectedEvent.original.inversor || '-'}</p>
+                      <p className="font-bold mt-0.5">{selectedEvent.original.inversor || '—'}</p>
                     </div>
                     <div>
                       <p className="font-black text-[9px] text-slate-400 uppercase tracking-wider">Módulos</p>
-                      <p className="font-bold mt-0.5">{selectedEvent.original.numMod || selectedEvent.original.modulo || '-'}</p>
+                      <p className="font-bold mt-0.5">{selectedEvent.original.numMod || selectedEvent.original.modulo || '—'}</p>
                     </div>
                   </div>
 
@@ -796,39 +873,43 @@ export default function CronogramaClient({ atividades, manutencoes }: any) {
                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Anexos Disponíveis</p>
                       <div className="flex flex-col gap-2">
                         {selectedEvent.original.anexoFotos?.map((url: string, idx: number) => (
-                          <button
-                            type="button"
-                            key={`foto-${idx}`}
+                          <button key={`foto-${idx}`} type="button"
                             onClick={() => downloadFile(url, `foto-${idx + 1}-${selectedEvent.original.instalacao || 'anexo'}.jpg`)}
                             className="flex items-center gap-2 text-xs font-bold text-[#00BFA5] hover:text-[#009b86] transition-colors text-left bg-white p-2.5 rounded-xl border border-slate-200 shadow-sm"
                           >
-                            <Download className="w-3.5 h-3.5" />
-                            <span>Foto {idx + 1} (Imagem)</span>
+                            <Download className="w-3.5 h-3.5" /><span>Foto {idx + 1}</span>
                           </button>
                         ))}
                         {selectedEvent.original.anexoArquivos?.map((url: string, idx: number) => {
                           const filename = url.split('/').pop() || `arquivo-${idx + 1}`;
                           return (
-                            <button
-                              type="button"
-                              key={`arq-${idx}`}
+                            <button key={`arq-${idx}`} type="button"
                               onClick={() => downloadFile(url, `${selectedEvent.original.instalacao || 'anexo'}-${filename}`)}
                               className="flex items-center gap-2 text-xs font-bold text-[#00BFA5] hover:text-[#009b86] transition-colors text-left bg-white p-2.5 rounded-xl border border-slate-200 shadow-sm"
                             >
-                              <Download className="w-3.5 h-3.5" />
-                              <span className="truncate flex-1">{filename}</span>
+                              <Download className="w-3.5 h-3.5" /><span className="truncate flex-1">{filename}</span>
                             </button>
                           );
                         })}
                       </div>
                     </div>
                   )}
-                  <Link 
-                    href={`/atividades/editar/${selectedEvent.original.id}`}
-                    className="flex items-center justify-center gap-2 w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-200"
-                  >
-                    <Zap className="w-4 h-4" /> Acessar Atividade
-                  </Link>
+
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => { setSelectedEvent(null); setOsModalEvent(selectedEvent); }}
+                      className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black text-sm transition-all shadow-lg shadow-emerald-200"
+                    >
+                      <FileText className="w-4 h-4" /> Gerar OS
+                    </button>
+                    <Link
+                      href={`/atividades/editar/${selectedEvent.original.id}`}
+                      prefetch={false}
+                      className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black text-sm transition-all shadow-lg shadow-blue-200"
+                    >
+                      <Zap className="w-4 h-4" /> Editar
+                    </Link>
+                  </div>
                 </div>
               )}
 
@@ -836,14 +917,25 @@ export default function CronogramaClient({ atividades, manutencoes }: any) {
                 <div className="space-y-4">
                   <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 text-slate-800">
                     <p className="text-[10px] font-black text-slate-400 uppercase mb-2">Descrição da Manutenção</p>
-                    <p className="text-sm text-slate-650 font-medium italic">"{selectedEvent.original.descricao || 'Sem descrição.'}"</p>
+                    <p className="text-sm text-slate-650 font-medium italic">
+                      "{selectedEvent.original.descricao || 'Sem descrição.'}"
+                    </p>
                   </div>
-                  <Link 
-                    href={`/engenharia/om/${selectedEvent.original.usinaId}`}
-                    className="flex items-center justify-center gap-2 w-full py-4 bg-[#F25C27] text-white rounded-2xl font-black text-sm hover:bg-[#d44815] transition-all shadow-lg shadow-orange-200"
-                  >
-                    <Hammer className="w-4 h-4" /> Acessar O&M da Usina
-                  </Link>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => { setSelectedEvent(null); setOsModalEvent(selectedEvent); }}
+                      className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black text-sm transition-all shadow-lg shadow-emerald-200"
+                    >
+                      <FileText className="w-4 h-4" /> Gerar OS
+                    </button>
+                    <Link
+                      href={`/engenharia/om/${selectedEvent.original.usinaId}`}
+                      prefetch={false}
+                      className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-[#F25C27] hover:bg-[#d44815] text-white rounded-2xl font-black text-sm transition-all shadow-lg shadow-orange-200"
+                    >
+                      <Hammer className="w-4 h-4" /> Acessar O&M
+                    </Link>
+                  </div>
                 </div>
               )}
             </div>
@@ -851,7 +943,129 @@ export default function CronogramaClient({ atividades, manutencoes }: any) {
         </div>
       )}
 
-      {/* Modal de Nova Atividade */}
+      {/* ═══════════════════════════════════════════════════════════════════════
+          MODAL: GERAR ORDEM DE SERVIÇO (duplo clique)
+      ═══════════════════════════════════════════════════════════════════════ */}
+      {osModalEvent && (
+        <div
+          className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[110] flex items-center justify-center p-4"
+          onClick={() => setOsModalEvent(null)}
+        >
+          <div
+            className="bg-white w-full max-w-xl rounded-3xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Header OS */}
+            <div className="bg-gradient-to-r from-[#1E3A8A] to-[#015299] p-6 text-white flex justify-between items-start">
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-blue-300 block mb-1">
+                  {osModalEvent.type === 'instalacao' ? '📦 Instalação' : '🔧 Manutenção O&M'}
+                </span>
+                <h3 className="text-xl font-black leading-tight">{osModalEvent.title}</h3>
+                <p className="text-blue-200 text-sm mt-1">
+                  {format(osModalEvent.date, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                </p>
+              </div>
+              <button onClick={() => setOsModalEvent(null)} className="p-2 hover:bg-white/20 rounded-xl transition-colors text-white border-0 cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Dados resumo */}
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                {osModalEvent.type === 'instalacao' ? (
+                  <>
+                    <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Cliente</p>
+                      <p className="font-bold text-slate-800 text-sm mt-0.5">{osModalEvent.original.instalacao || '—'}</p>
+                    </div>
+                    <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Cidade</p>
+                      <p className="font-bold text-slate-800 text-sm mt-0.5">{osModalEvent.original.cidade || osModalEvent.original.cidadeSheet || '—'}</p>
+                    </div>
+                    <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Inversor</p>
+                      <p className="font-bold text-slate-800 text-sm mt-0.5">{osModalEvent.original.inversor || '—'}</p>
+                    </div>
+                    <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Módulos</p>
+                      <p className="font-bold text-slate-800 text-sm mt-0.5">{osModalEvent.original.numMod || osModalEvent.original.modulo || '—'}</p>
+                    </div>
+                    <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 col-span-2">
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Observações</p>
+                      <p className="font-medium text-slate-700 text-sm mt-0.5 italic">
+                        {osModalEvent.original.obsInstalacao || osModalEvent.original.observacao || 'Sem observações.'}
+                      </p>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Usina</p>
+                      <p className="font-bold text-slate-800 text-sm mt-0.5">{osModalEvent.original.usina?.nome || '—'}</p>
+                    </div>
+                    <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Responsável</p>
+                      <p className="font-bold text-slate-800 text-sm mt-0.5">{osModalEvent.original.responsavel || '—'}</p>
+                    </div>
+                    <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 col-span-2">
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Descrição</p>
+                      <p className="font-medium text-slate-700 text-sm mt-0.5 italic">
+                        {osModalEvent.original.descricao || 'Sem descrição.'}
+                      </p>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              <div className="bg-amber-50 border border-amber-100 rounded-2xl p-3 text-xs text-amber-700 font-medium flex gap-2 items-start">
+                <span className="text-base leading-none">💡</span>
+                <span>O PDF será gerado com o timbrado Cordeiro Energia e baixado automaticamente. Você pode também editar a atividade antes de gerar.</span>
+              </div>
+            </div>
+
+            {/* Footer OS */}
+            <div className="bg-slate-50 px-6 py-4 flex justify-between gap-3 border-t border-slate-100">
+              <button
+                onClick={() => setOsModalEvent(null)}
+                className="px-4 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-200/60 rounded-xl transition-colors"
+              >
+                Cancelar
+              </button>
+              <div className="flex gap-2">
+                {osModalEvent.type === 'instalacao' && (
+                  <Link
+                    href={`/atividades/editar/${osModalEvent.original.id}`}
+                    prefetch={false}
+                    className="px-4 py-2.5 text-sm font-bold bg-slate-800 hover:bg-slate-900 text-white rounded-xl transition-all flex items-center gap-2"
+                  >
+                    <Zap className="w-4 h-4" /> Editar Atividade
+                  </Link>
+                )}
+                <button
+                  onClick={async () => {
+                    setPdfLoading(true);
+                    try { await gerarOSPdf(osModalEvent); }
+                    finally { setPdfLoading(false); }
+                  }}
+                  disabled={pdfLoading}
+                  className="px-5 py-2.5 text-sm font-black bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-lg shadow-emerald-600/20 transition-all flex items-center gap-2 disabled:opacity-60"
+                >
+                  {pdfLoading
+                    ? <><Loader className="w-4 h-4 animate-spin" /> Gerando...</>
+                    : <><FileText className="w-4 h-4" /> Baixar OS (PDF)</>
+                  }
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════════════════
+          MODAL: NOVA ATIVIDADE
+      ═══════════════════════════════════════════════════════════════════════ */}
       {novaAtividade.open && (
         <div
           className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[110] flex items-center justify-center p-3"
@@ -861,18 +1075,13 @@ export default function CronogramaClient({ atividades, manutencoes }: any) {
             className="bg-white rounded-2xl w-full max-w-xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 max-h-[95vh] flex flex-col"
             onClick={e => e.stopPropagation()}
           >
-            {/* Header compacto */}
             <div className="bg-gradient-to-r from-[#1E3A8A] to-[#015299] px-5 py-3.5 text-white flex justify-between items-center shrink-0">
               <div className="flex items-center gap-3">
-                <div className="bg-white/15 rounded-lg p-1.5">
-                  <Plus className="w-4 h-4" />
-                </div>
+                <div className="bg-white/15 rounded-lg p-1.5"><Plus className="w-4 h-4" /></div>
                 <div>
                   <span className="text-[10px] font-black uppercase tracking-widest opacity-70 block leading-none mb-0.5">Nova Atividade</span>
                   <span className="text-sm font-black capitalize leading-none">
-                    {novaAtividade.date
-                      ? format(novaAtividade.date, "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR })
-                      : ''}
+                    {novaAtividade.date ? format(novaAtividade.date, "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR }) : ''}
                   </span>
                 </div>
               </div>
@@ -884,7 +1093,6 @@ export default function CronogramaClient({ atividades, manutencoes }: any) {
               </button>
             </div>
 
-            {/* Corpo */}
             {novaSuccess ? (
               <div className="flex flex-col items-center justify-center py-14 px-8 text-center">
                 <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mb-3">
@@ -898,69 +1106,39 @@ export default function CronogramaClient({ atividades, manutencoes }: any) {
                 <div className="grid grid-cols-2 gap-3 mb-3">
                   <div className="col-span-2">
                     <label className={labelClass}>Cliente (Instalação) *</label>
-                    <input
-                      required
-                      type="text"
-                      className={inputClass}
-                      placeholder="Ex: João Silva"
-                      value={novaForm.instalacao}
-                      onChange={e => setNovaForm({ ...novaForm, instalacao: e.target.value })}
-                    />
+                    <input required type="text" className={inputClass} placeholder="Ex: João Silva"
+                      value={novaForm.instalacao} onChange={e => setNovaForm({ ...novaForm, instalacao: e.target.value })} />
                   </div>
                   <div className="col-span-2">
                     <label className={labelClass}>Solicitação *</label>
-                    <input
-                      required
-                      type="text"
-                      className={inputClass}
-                      placeholder="Título da solicitação"
-                      value={novaForm.solicitacao}
-                      onChange={e => setNovaForm({ ...novaForm, solicitacao: e.target.value })}
-                    />
+                    <input required type="text" className={inputClass} placeholder="Título da solicitação"
+                      value={novaForm.solicitacao} onChange={e => setNovaForm({ ...novaForm, solicitacao: e.target.value })} />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-3 gap-3 mb-3">
                   <div>
                     <label className={labelClass}>Cidade</label>
-                    <input
-                      type="text"
-                      className={inputClass}
-                      placeholder="Cidade"
-                      value={novaForm.cidade}
-                      onChange={e => setNovaForm({ ...novaForm, cidade: e.target.value })}
-                    />
+                    <input type="text" className={inputClass} placeholder="Cidade"
+                      value={novaForm.cidade} onChange={e => setNovaForm({ ...novaForm, cidade: e.target.value })} />
                   </div>
                   <div>
                     <label className={labelClass}>Vendedor</label>
-                    <input
-                      type="text"
-                      className={inputClass}
-                      placeholder="Vendedor"
-                      value={novaForm.vendedor}
-                      onChange={e => setNovaForm({ ...novaForm, vendedor: e.target.value })}
-                    />
+                    <input type="text" className={inputClass} placeholder="Vendedor"
+                      value={novaForm.vendedor} onChange={e => setNovaForm({ ...novaForm, vendedor: e.target.value })} />
                   </div>
                   <div>
                     <label className={labelClass}>Telefone</label>
-                    <input
-                      type="text"
-                      className={inputClass}
-                      placeholder="(XX) XXXXX-XXXX"
-                      value={novaForm.telefoneCliente}
-                      onChange={e => setNovaForm({ ...novaForm, telefoneCliente: e.target.value })}
-                    />
+                    <input type="text" className={inputClass} placeholder="(XX) XXXXX-XXXX"
+                      value={novaForm.telefoneCliente} onChange={e => setNovaForm({ ...novaForm, telefoneCliente: e.target.value })} />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 mb-3">
                   <div>
                     <label className={labelClass}>Status</label>
-                    <select
-                      className={inputClass}
-                      value={novaForm.status}
-                      onChange={e => setNovaForm({ ...novaForm, status: e.target.value })}
-                    >
+                    <select className={inputClass} value={novaForm.status}
+                      onChange={e => setNovaForm({ ...novaForm, status: e.target.value })}>
                       <option>Pendente</option>
                       <option>Em Andamento</option>
                       <option>Concluído</option>
@@ -968,39 +1146,42 @@ export default function CronogramaClient({ atividades, manutencoes }: any) {
                   </div>
                   <div>
                     <label className={labelClass}>Data Prevista</label>
-                    <input
-                      type="date"
-                      className={inputClass}
-                      value={novaForm.dataPrevista}
-                      onChange={e => setNovaForm({ ...novaForm, dataPrevista: e.target.value })}
-                    />
+                    <input type="date" className={inputClass} value={novaForm.dataPrevista}
+                      onChange={e => setNovaForm({ ...novaForm, dataPrevista: e.target.value })} />
+                  </div>
+                </div>
+
+                {/* GPS */}
+                <div className="mb-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <label className={labelClass + ' mb-0'}>Geolocalização (opcional)</label>
+                    <button type="button" onClick={capturarGPS} disabled={gpsLoading}
+                      className="flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-800 disabled:opacity-50 transition-colors">
+                      {gpsLoading ? <Loader className="w-3 h-3 animate-spin" /> : <MapPin className="w-3 h-3" />}
+                      {gpsLoading ? 'Capturando...' : 'Capturar GPS'}
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <input type="text" className={inputClass} placeholder="Latitude" readOnly
+                      value={novaForm.latitude} />
+                    <input type="text" className={inputClass} placeholder="Longitude" readOnly
+                      value={novaForm.longitude} />
                   </div>
                 </div>
 
                 <div className="mb-4">
                   <label className={labelClass}>Observação</label>
-                  <textarea
-                    rows={2}
-                    className={inputClass}
-                    placeholder="Detalhes técnicos ou da obra..."
-                    value={novaForm.observacao}
-                    onChange={e => setNovaForm({ ...novaForm, observacao: e.target.value })}
-                  />
+                  <textarea rows={2} className={inputClass} placeholder="Detalhes técnicos ou da obra..."
+                    value={novaForm.observacao} onChange={e => setNovaForm({ ...novaForm, observacao: e.target.value })} />
                 </div>
 
                 <div className="flex gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setNovaAtividade({ open: false, date: null })}
-                    className="flex-1 py-3 border border-slate-200 text-slate-650 font-bold rounded-xl hover:bg-slate-55 transition-all text-sm cursor-pointer"
-                  >
+                  <button type="button" onClick={() => setNovaAtividade({ open: false, date: null })}
+                    className="flex-1 py-3 border border-slate-200 text-slate-650 font-bold rounded-xl hover:bg-slate-55 transition-all text-sm cursor-pointer">
                     Cancelar
                   </button>
-                  <button
-                    type="submit"
-                    disabled={novaLoading}
-                    className="flex-1 py-3 bg-gradient-to-r from-[#1E3A8A] to-[#015299] text-white font-black rounded-xl hover:brightness-110 transition-all shadow-lg text-sm flex items-center justify-center gap-2 disabled:opacity-70 cursor-pointer border-0"
-                  >
+                  <button type="submit" disabled={novaLoading}
+                    className="flex-1 py-3 bg-gradient-to-r from-[#1E3A8A] to-[#015299] text-white font-black rounded-xl hover:brightness-110 transition-all shadow-lg text-sm flex items-center justify-center gap-2 disabled:opacity-70 cursor-pointer border-0">
                     {novaLoading ? <Loader className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
                     {novaLoading ? 'Salvando...' : 'Registrar Atividade'}
                   </button>
@@ -1011,53 +1192,131 @@ export default function CronogramaClient({ atividades, manutencoes }: any) {
         </div>
       )}
 
-      <style jsx>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 4px;
-          height: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #e2e8f0;
-          border-radius: 10px;
-        }
+      {/* Tooltip flutuante premium (JS-based) posicionado fora de containers com overflow */}
+      {tooltip && (
+        <div
+          style={{
+            position: 'fixed',
+            left: tooltip.x + 12,
+            top: tooltip.y + 12,
+          }}
+          className="z-[9999] bg-slate-900 text-white rounded-xl shadow-2xl p-3 w-60 pointer-events-none border border-slate-700/50 flex flex-col gap-1 select-none animate-in fade-in duration-100"
+        >
+          <p className="font-black text-[11px] border-b border-slate-700 pb-1.5 mb-0.5 truncate">
+            {tooltip.event.title}
+          </p>
+          {(tooltip.event.type === 'instalacao' ? [
+            { label: 'Cliente', value: tooltip.event.original.instalacao || '—' },
+            { label: 'Cidade', value: tooltip.event.original.cidade || tooltip.event.original.cidadeSheet || '—' },
+            { label: 'Status', value: tooltip.event.status || 'Pendente' },
+            { label: 'Inversor', value: tooltip.event.original.inversor || '—' },
+            { label: 'Módulos', value: tooltip.event.original.numMod || tooltip.event.original.modulo || '—' },
+            ...(tooltip.event.original.vendedor ? [{ label: 'Vendedor', value: tooltip.event.original.vendedor }] : []),
+            ...(tooltip.event.isUrgent && tooltip.event.daysParecer !== null && tooltip.event.daysParecer !== undefined
+              ? [{ label: '⚠ Parecer', value: tooltip.event.daysParecer < 0 ? `Vencido há ${Math.abs(tooltip.event.daysParecer)}d` : tooltip.event.daysParecer === 0 ? 'Vence HOJE' : `Vence em ${tooltip.event.daysParecer}d` }]
+              : []
+            ),
+          ] : [
+            { label: 'Usina', value: tooltip.event.original.usina?.nome || '—' },
+            { label: 'Localização', value: tooltip.event.original.usina?.localizacao || '—' },
+            { label: 'Tipo', value: tooltip.event.original.tipo || '—' },
+            { label: 'Responsável', value: tooltip.event.original.responsavel || '—' },
+            { label: 'Status', value: tooltip.event.status || 'Agendada' },
+          ]).map(({ label, value }) => (
+            <div key={label} className="flex gap-1.5 text-[10px] leading-tight">
+              <span className="text-slate-400 font-bold shrink-0">{label}:</span>
+              <span className="text-slate-100 font-medium truncate">{value}</span>
+            </div>
+          ))}
+          <p className="text-[9px] text-slate-500 mt-1 pt-1 border-t border-slate-700/50">
+            Duplo clique → Gerar OS
+          </p>
+        </div>
+      )}
+
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
         @media print {
-          @page {
-            size: landscape;
-            margin: 0.4cm !important;
-          }
-          body {
-            background-color: white !important;
-            color: black !important;
-          }
-          .break-inside-avoid {
-            page-break-inside: avoid;
-            break-inside: avoid;
-          }
+          @page { size: landscape; margin: 0.4cm !important; }
+          body { background-color: white !important; color: black !important; }
+          .break-inside-avoid { page-break-inside: avoid; break-inside: avoid; }
         }
       `}</style>
     </div>
   );
 }
 
-function X(props: any) {
+// ─── Sub-componente: EventChip ───────────────────────────────────────────────
+
+interface EventChipProps {
+  event: CalendarEvent;
+  compact: boolean;
+  onDragStart: (e: React.DragEvent) => void;
+  onDragEnd: () => void;
+  onClick: (e: React.MouseEvent) => void;
+  onMouseEnter: (e: React.MouseEvent, event: CalendarEvent) => void;
+  onMouseMove: (e: React.MouseEvent) => void;
+  onMouseLeave: () => void;
+}
+
+function EventChip({ event, compact, onDragStart, onDragEnd, onClick, onMouseEnter, onMouseMove, onMouseLeave }: EventChipProps) {
+  const isFinished = event.status && /conclu/i.test(event.status);
+  const o = event.original;
+
+  if (compact) {
+    return (
+      <div
+        className="relative"
+        draggable
+        onDragStart={onDragStart}
+        onDragEnd={onDragEnd}
+        onClick={onClick}
+        onMouseEnter={(e) => onMouseEnter(e, event)}
+        onMouseMove={onMouseMove}
+        onMouseLeave={onMouseLeave}
+      >
+        <div className={`px-2 py-0.5 rounded-md text-[10px] font-bold cursor-grab active:cursor-grabbing hover:brightness-90 transition-all truncate shadow-sm flex items-center justify-between gap-1
+          ${isFinished ? 'bg-slate-200 text-slate-500 line-through border border-slate-300' : `${event.color} text-white`}`}
+        >
+          <span className="truncate flex-1">{event.title}</span>
+          {event.hasAttachments && <Paperclip className={`w-3 h-3 shrink-0 ${isFinished ? 'text-slate-400' : 'text-white/80'}`} />}
+        </div>
+      </div>
+    );
+  }
+
+  // Versão semanal (expandida)
   return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
+    <div
+      className="relative"
+      draggable
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+      onClick={onClick}
+      onMouseEnter={(e) => onMouseEnter(e, event)}
+      onMouseMove={onMouseMove}
+      onMouseLeave={onMouseLeave}
     >
-      <path d="M18 6 6 18" />
-      <path d="m6 6 12 12" />
-    </svg>
+      <div className={`px-3 py-2.5 rounded-2xl text-xs font-bold cursor-grab active:cursor-grabbing hover:brightness-95 transition-all shadow-sm flex flex-col gap-1.5 border
+        ${isFinished ? 'bg-slate-100 text-slate-500 line-through border border-slate-200' : `${event.color} text-white border-transparent`}`}
+      >
+        <div className="flex items-start justify-between gap-1 w-full">
+          <span className="font-extrabold truncate flex-1 leading-tight">{event.title}</span>
+          {event.hasAttachments && <Paperclip className={`w-3.5 h-3.5 shrink-0 ${isFinished ? 'text-slate-400' : 'text-white/80'}`} />}
+        </div>
+        <div className={`text-[9px] font-semibold flex items-center justify-between gap-1 opacity-90 ${isFinished ? 'text-slate-400' : 'text-white/85'}`}>
+          <span className="truncate">
+            {event.type === 'instalacao'
+              ? (o.cidade || o.cidadeSheet || 'Instalação')
+              : (o.usina?.localizacao || 'O&M')}
+          </span>
+          <span className="uppercase shrink-0 text-[8px] tracking-widest font-black bg-white/20 px-1 py-0.5 rounded-md">
+            {event.type === 'instalacao' ? 'INST' : 'OM'}
+          </span>
+        </div>
+      </div>
+    </div>
   );
 }

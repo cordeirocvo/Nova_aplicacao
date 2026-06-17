@@ -20,28 +20,21 @@ export default async function DashboardPage() {
   let monthProg = 0, monthFin = 0;
 
   try {
-    const [counts, totalCount, activities] = await Promise.all([
-      prisma.planilhaInstalacao.groupBy({
-        by: ['status'],
-        _count: { id: true }
-      }),
-      prisma.planilhaInstalacao.count(),
-      prisma.planilhaInstalacao.findMany({
-        select: {
-          status: true,
-          automaticoPrevInstala: true,
-          dataPrevista: true,
-          vencimentoParecer: true,
-          createdAt: true
-        }
-      })
-    ]);
+    const activities = await prisma.planilhaInstalacao.findMany({
+      select: {
+        status: true,
+        automaticoPrevInstala: true,
+        dataPrevista: true,
+        vencimentoParecer: true,
+        createdAt: true
+      }
+    });
 
-    total = totalCount;
-    counts.forEach((c: any) => {
-      if (c.status === "Pendente") pendentes = c._count.id;
-      if (c.status === "Concluído") concluidas = c._count.id;
-      if (c.status === "Em Andamento") emAndamento = c._count.id;
+    total = activities.length;
+    activities.forEach((a: any) => {
+      if (a.status === "Pendente") pendentes++;
+      else if (a.status === "Concluído") concluidas++;
+      else if (a.status === "Em Andamento") emAndamento++;
     });
 
     const parseDate = (dateStr: any) => {

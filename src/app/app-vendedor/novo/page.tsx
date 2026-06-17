@@ -16,6 +16,7 @@ export default function NovoLeadPage() {
     nome: "",
     telefone: "",
     email: "",
+    empresa: "",
     tipo: "", // "DESCONTO_CONTA" | "USINA_SOLAR" | "PONTO_RECARGA"
     endereco: "",
     observacoes: "",
@@ -233,6 +234,12 @@ export default function NovoLeadPage() {
                 placeholder="Nome do Proprietário / Responsável" 
                 className="w-full bg-slate-50 border-none rounded-2xl p-4 text-sm font-medium focus:ring-2 focus:ring-[#1E3A8A] transition-all"
                 value={form.nome} onChange={e => setForm({...form, nome: e.target.value})}
+              />
+              <input 
+                type="text" 
+                placeholder="Nome da Empresa (Opcional)" 
+                className="w-full bg-slate-50 border-none rounded-2xl p-4 text-sm font-medium focus:ring-2 focus:ring-[#1E3A8A] transition-all"
+                value={form.empresa} onChange={e => setForm({...form, empresa: e.target.value})}
               />
               <input 
                 type="tel" 

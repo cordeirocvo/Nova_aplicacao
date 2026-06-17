@@ -20,7 +20,7 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, adminOnly: true },
       { name: 'Atividades', href: '/atividades', icon: ListTodo },
-      { name: 'Cronograma Semanal', href: '/cronograma', icon: Calendar },
+      { name: 'Calendário de Atividades', href: '/cronograma', icon: Calendar },
       { name: 'Nova Atividade', href: '/atividades/nova', icon: PlusCircle },
       { name: 'Gestão de Usuários', href: '/admin/usuarios', icon: Users, adminOnly: true },
       { name: 'Config. de Status', href: '/admin/status', icon: Settings, adminOnly: true },
@@ -233,6 +233,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                           <Link
                             key={item.name}
                             href={disabled ? '#' : item.href}
+                            prefetch={false}
                             onClick={() => { if (!disabled) setIsMobileMenuOpen(false); }}
                             className={clsx(
                               "flex items-center px-3 py-2.5 rounded-xl transition-all duration-200 group",

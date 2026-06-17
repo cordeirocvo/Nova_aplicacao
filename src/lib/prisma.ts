@@ -2,20 +2,37 @@ import { PrismaClient } from '@prisma/client'
 import { PrismaPg } from '@prisma/adapter-pg'
 import { Pool } from 'pg'
 
-const prismaClientSingleton = () => {
+const globalForPool = globalThis as unknown as { pgPool?: Pool }
+
+const getOrCreatePool = () => {
+  if (globalForPool.pgPool) {
+    return globalForPool.pgPool;
+  }
+
+  // Usar DIRECT_URL (porta 5432 - pooler em modo Session) para evitar quedas de conexões do PgBouncer em modo Transaction (porta 6543)
+  const connectionString = process.env.DIRECT_URL || process.env.DATABASE_URL;
+
   const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
+    connectionString,
     ssl: { rejectUnauthorized: false },
-    max: 10,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 5000,
+    max: 20, // Suporta consultas simultâneas massivas (Promise.all)
+    idleTimeoutMillis: 1000, // Fecha conexões ociosas após 1s para evitar dead sockets do PgBouncer
+    connectionTimeoutMillis: 15000,
   })
 
-  // Evitar crash por erros inesperados em conexões ociosas (idle)
   pool.on('error', (err) => {
     console.error('Unexpected error on idle pg client:', err)
   })
 
+  if (process.env.NODE_ENV !== 'production') {
+    globalForPool.pgPool = pool;
+  }
+
+  return pool;
+}
+
+const prismaClientSingleton = () => {
+  const pool = getOrCreatePool()
   const adapter = new PrismaPg(pool)
   return new PrismaClient({ adapter })
 }

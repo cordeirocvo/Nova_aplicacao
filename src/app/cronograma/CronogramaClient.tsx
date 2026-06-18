@@ -1228,6 +1228,26 @@ export default function CronogramaClient({ atividades, manutencoes }: any) {
               <span className="text-slate-100 font-medium truncate">{value}</span>
             </div>
           ))}
+
+          {/* Seção de Observações / Descrição no hover do evento */}
+          {tooltip.event.type === 'instalacao' && (tooltip.event.original.obsInstalacao || tooltip.event.original.observacao) && (
+            <div className="mt-1.5 pt-1.5 border-t border-slate-700/40 text-[10px] leading-normal">
+              <span className="text-slate-400 font-bold block mb-0.5">Observações:</span>
+              <p className="text-slate-200 font-normal whitespace-pre-wrap break-words max-h-24 overflow-y-auto custom-scrollbar pr-1">
+                {tooltip.event.original.obsInstalacao || tooltip.event.original.observacao}
+              </p>
+            </div>
+          )}
+
+          {tooltip.event.type === 'manutencao' && tooltip.event.original.descricao && (
+            <div className="mt-1.5 pt-1.5 border-t border-slate-700/40 text-[10px] leading-normal">
+              <span className="text-slate-400 font-bold block mb-0.5">Descrição:</span>
+              <p className="text-slate-200 font-normal whitespace-pre-wrap break-words max-h-24 overflow-y-auto custom-scrollbar pr-1">
+                {tooltip.event.original.descricao}
+              </p>
+            </div>
+          )}
+
           <p className="text-[9px] text-slate-500 mt-1 pt-1 border-t border-slate-700/50">
             Duplo clique → Gerar OS
           </p>

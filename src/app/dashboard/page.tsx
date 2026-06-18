@@ -20,22 +20,35 @@ export default async function DashboardPage() {
   let monthProg = 0, monthFin = 0;
 
   try {
-    const activities = await prisma.planilhaInstalacao.findMany({
-      select: {
-        status: true,
-        automaticoPrevInstala: true,
-        dataPrevista: true,
-        vencimentoParecer: true,
-        createdAt: true
-      }
-    });
+    const fortyFiveDaysAgo = new Date();
+    fortyFiveDaysAgo.setDate(fortyFiveDaysAgo.getDate() - 45);
 
-    total = activities.length;
-    activities.forEach((a: any) => {
-      if (a.status === "Pendente") pendentes++;
-      else if (a.status === "Concluído") concluidas++;
-      else if (a.status === "Em Andamento") emAndamento++;
-    });
+    // Executa contagens agregadas em paralelo de forma extremamente leve e busca apenas dados recentes para intervalos temporais
+    const [totalCount, pendenteCount, concluidoCount, emAndamentoCount, recentActivities] = await Promise.all([
+      prisma.planilhaInstalacao.count(),
+      prisma.planilhaInstalacao.count({ where: { status: "Pendente" } }),
+      prisma.planilhaInstalacao.count({ where: { status: "Concluído" } }),
+      prisma.planilhaInstalacao.count({ where: { status: "Em Andamento" } }),
+      prisma.planilhaInstalacao.findMany({
+        where: {
+          OR: [
+            { NOT: { status: { in: ["Concluído", "Finalizado", "Executado"] } } },
+            { updatedAt: { gte: fortyFiveDaysAgo } }
+          ]
+        },
+        select: {
+          status: true,
+          automaticoPrevInstala: true,
+          dataPrevista: true,
+          vencimentoParecer: true
+        }
+      })
+    ]);
+
+    total = totalCount;
+    pendentes = pendenteCount;
+    concluidas = concluidoCount;
+    emAndamento = emAndamentoCount;
 
     const parseDate = (dateStr: any) => {
       if (!dateStr) return null;
@@ -64,7 +77,7 @@ export default async function DashboardPage() {
     const startOfCurrentMonth = startOfMonth(now);
     const endOfCurrentMonth = endOfMonth(now);
 
-    activities.forEach((a: any) => {
+    recentActivities.forEach((a: any) => {
       const dateStr = a.automaticoPrevInstala || a.dataPrevista || a.vencimentoParecer;
       const date = parseDate(dateStr);
       if (!date) return;

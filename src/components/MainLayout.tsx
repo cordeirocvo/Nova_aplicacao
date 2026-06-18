@@ -233,7 +233,6 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                           <Link
                             key={item.name}
                             href={disabled ? '#' : item.href}
-                            prefetch={false}
                             onClick={() => { if (!disabled) setIsMobileMenuOpen(false); }}
                             className={clsx(
                               "flex items-center px-3 py-2.5 rounded-xl transition-all duration-200 group",

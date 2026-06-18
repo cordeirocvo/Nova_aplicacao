@@ -49,12 +49,16 @@ export default function AtividadesClientView({ atividades, settings, isAdmin, is
   };
 
   const [currentPage, setCurrentPage] = useState(0);
-  const [itemsPerPage, setItemsPerPage] = useState(10); 
+  const [itemsPerPage, setItemsPerPage] = useState(20); 
+
+  useEffect(() => {
+    setCurrentPage(0);
+  }, [localIsTV]);
 
   useEffect(() => {
     const calcRows = () => {
       if (!localIsTV) {
-        setItemsPerPage(atividades.length); 
+        setItemsPerPage(20); // 20 itens por página no modo convencional (desktop/mobile)
         return;
       }
       
@@ -70,7 +74,7 @@ export default function AtividadesClientView({ atividades, settings, isAdmin, is
     calcRows();
     window.addEventListener('resize', calcRows);
     return () => window.removeEventListener('resize', calcRows);
-  }, [localIsTV, atividades.length]);
+  }, [localIsTV]);
 
   useEffect(() => {
     if (!localIsTV || atividades.length <= itemsPerPage) return;
@@ -85,9 +89,7 @@ export default function AtividadesClientView({ atividades, settings, isAdmin, is
     return () => clearInterval(interval);
   }, [localIsTV, atividades.length, itemsPerPage]);
 
-  const currentSlice = localIsTV 
-     ? atividades.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage) 
-     : atividades;
+  const currentSlice = atividades.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
 
   const totalPages = Math.ceil(atividades.length / itemsPerPage);
 
@@ -553,6 +555,35 @@ export default function AtividadesClientView({ atividades, settings, isAdmin, is
           );
         })}
       </div>
+
+      {/* Paginação do Modo Convencional */}
+      {!localIsTV && totalPages > 1 && (
+        <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 px-5 py-4 bg-white border border-slate-200 rounded-2xl shadow-sm">
+          <div className="text-xs md:text-sm text-slate-505 font-semibold">
+            Mostrando <span className="text-slate-800 font-black">{currentPage * itemsPerPage + 1}</span> a{" "}
+            <span className="text-slate-800 font-black">
+              {Math.min((currentPage + 1) * itemsPerPage, atividades.length)}
+            </span>{" "}
+            de <span className="text-slate-800 font-black">{atividades.length}</span> atividades
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
+              disabled={currentPage === 0}
+              className="px-4 py-2 text-xs font-bold text-slate-650 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200 transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+            >
+              Anterior
+            </button>
+            <button
+              onClick={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))}
+              disabled={currentPage === totalPages - 1}
+              className="px-4 py-2 text-xs font-bold text-slate-650 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200 transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+            >
+              Próximo
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 }

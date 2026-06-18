@@ -65,6 +65,8 @@ model PlanilhaInstalacao {
   historico             Json?    @default("[]")
 
   @@index([idInterno])
+  @@index([status])
+  @@index([createdAt])
 }
 
 model Tarifas {

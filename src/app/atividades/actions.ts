@@ -14,7 +14,7 @@ export async function togglePrioridade(id: string, currentState: boolean) {
   const description = !currentState ? "Prioridade ativada" : "Prioridade desativada";
   const newHistorico = appendHistory(atv?.historico, description);
 
-  await prisma.planilhaInstalacao.update({
+  const updatedAtv = await prisma.planilhaInstalacao.update({
     where: { id },
     data: { 
       prioridade: !currentState,
@@ -24,7 +24,7 @@ export async function togglePrioridade(id: string, currentState: boolean) {
   });
   
   if (!currentState) {
-    await checkAndSendAlarm(id);
+    await checkAndSendAlarm(updatedAtv);
   }
 
   revalidatePath("/atividades");

@@ -53,7 +53,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       },
     });
 
-    await checkAndSendAlarm(id);
+    await checkAndSendAlarm(atividade);
 
     return NextResponse.json({ success: true, atividade });
   } catch (error) {

@@ -8,14 +8,32 @@ export const metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function CronogramaPage() {
-  // Buscar todas as atividades de instalação e manutenções O&M sequencialmente para evitar concorrência no pooler
-  const atividades = await prisma.planilhaInstalacao.findMany();
-  const manutencoes = await prisma.manutencaoUsina.findMany({
-    include: {
-      usina: true,
-      equipamento: true
-    }
-  });
+  const sixMonthsAgo = new Date();
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+  // Buscar atividades e manutenções em paralelo, filtrando históricos concluídos antigos para performance
+  const [atividades, manutencoes] = await Promise.all([
+    prisma.planilhaInstalacao.findMany({
+      where: {
+        OR: [
+          { status: { notIn: ["Concluído", "Finalizado", "Executado"] } },
+          { createdAt: { gte: sixMonthsAgo } }
+        ]
+      }
+    }),
+    prisma.manutencaoUsina.findMany({
+      where: {
+        OR: [
+          { status: { notIn: ["Concluído", "Finalizado"] } },
+          { dataAgendada: { gte: sixMonthsAgo } }
+        ]
+      },
+      include: {
+        usina: true,
+        equipamento: true
+      }
+    })
+  ]);
 
   return (
     <div className="space-y-6">

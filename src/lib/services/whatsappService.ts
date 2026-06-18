@@ -21,17 +21,25 @@ async function sendWhatsApp(to: string, message: string) {
   */
 }
 
-export async function checkAndSendAlarm(atividadeId: string) {
+export async function checkAndSendAlarm(atividadeOrId: string | any, providedSettings?: any) {
   try {
-    const atv = await prisma.planilhaInstalacao.findUnique({
-      where: { id: atividadeId }
-    });
+    let atv: any;
+    if (typeof atividadeOrId === "string") {
+      atv = await prisma.planilhaInstalacao.findUnique({
+        where: { id: atividadeOrId }
+      });
+    } else {
+      atv = atividadeOrId;
+    }
 
     if (!atv || atv.notificadoWhatsapp) return;
 
     // Buscar configurações de limites
-    const settingsRaw = await prisma.systemSettings.findUnique({ where: { id: "default" } });
-    const settings = settingsRaw || { limiteVerde: 40, limiteAmarelo: 20, limiteParecer: 30 };
+    let settings = providedSettings;
+    if (!settings) {
+      const settingsRaw = await prisma.systemSettings.findUnique({ where: { id: "default" } });
+      settings = settingsRaw || { limiteVerde: 40, limiteAmarelo: 20, limiteParecer: 30 };
+    }
 
     // Calcular estados de alarme
     const daysPrev = calcDaysLate(atv.automaticoPrevInstala);
@@ -65,7 +73,7 @@ export async function checkAndSendAlarm(atividadeId: string) {
 
       // Marcar como notificado para não repetir para esta atividade (até que o alarme mude)
       await prisma.planilhaInstalacao.update({
-        where: { id: atividadeId },
+        where: { id: atv.id },
         data: { notificadoWhatsapp: true }
       });
     }

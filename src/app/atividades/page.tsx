@@ -17,21 +17,22 @@ export default async function AcompanhamentoPage() {
   const session: any = await getServerSession(authOptions as any);
   const isAdmin = session?.user?.role === "ADMIN";
   const isTV = session?.user?.role === "TV";
-  const atividades = await prisma.planilhaInstalacao.findMany({
-    where: {
-      NOT: {
-        OR: [
-          { status: { contains: "Conclu", mode: "insensitive" } },
-          { status: { contains: "Finaliz", mode: "insensitive" } },
-          { status: { contains: "Execut", mode: "insensitive" } },
-          { manualInstalacao: true, idInterno: { not: null } }
-        ]
-      }
-    },
-    orderBy: { createdAt: "desc" },
-  });
-
-  const settingsRaw = await prisma.systemSettings.findUnique({ where: { id: "default" } });
+  const [atividades, settingsRaw] = await Promise.all([
+    prisma.planilhaInstalacao.findMany({
+      where: {
+        NOT: {
+          OR: [
+            { status: { contains: "Conclu", mode: "insensitive" } },
+            { status: { contains: "Finaliz", mode: "insensitive" } },
+            { status: { contains: "Execut", mode: "insensitive" } },
+            { manualInstalacao: true, idInterno: { not: null } }
+          ]
+        }
+      },
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.systemSettings.findUnique({ where: { id: "default" } })
+  ]);
   const settings = settingsRaw || { limiteVerde: 40, limiteAmarelo: 20, limiteParecer: 30 };
 
   // Phase 1: Mapear e calcular dias de atraso dinamicamente

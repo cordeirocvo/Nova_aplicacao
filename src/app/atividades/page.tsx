@@ -38,7 +38,7 @@ export default async function AcompanhamentoPage() {
   // Phase 1: Mapear e calcular dias de atraso dinamicamente
   const atividadesWithDays = atividades
     .map(atv => {
-      const daysPrev = calcDaysLate(atv.automaticoPrevInstala);
+      const daysPrev = calcDaysLate(atv.dataPrevista || atv.automaticoPrevInstala);
       const daysParecer = calcDaysLate(atv.vencimentoParecer);
       return { ...atv, daysPrev, daysParecer };
     })

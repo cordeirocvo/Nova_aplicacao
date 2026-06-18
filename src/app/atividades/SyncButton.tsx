@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 
 export default function SyncButton() {
   const [syncing, setSyncing] = useState(false);
-  const [autoSync, setAutoSync] = useState(true); // Automático ativado por padrão
+  const [autoSync, setAutoSync] = useState(false); // Automático desativado por padrão
   const router = useRouter();
 
   const pingSync = async () => {
@@ -25,9 +25,6 @@ export default function SyncButton() {
   };
 
   useEffect(() => {
-    // Sincroniza logo no início para garantir que está com os dados mais flexíveis
-    pingSync();
-
     let intervalId: NodeJS.Timeout;
     if (autoSync) {
        // Loop automático a cada 5 minutos

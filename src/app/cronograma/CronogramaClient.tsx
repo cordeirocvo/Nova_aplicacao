@@ -450,7 +450,7 @@ export default function CronogramaClient({ atividades, manutencoes }: any) {
         id: `inst-${a.id}`,
         type: 'instalacao' as const,
         title: a.instalacao || 'Sem nome',
-        date: parseDate(a.automaticoPrevInstala || a.vencimentoParecer)!,
+        date: parseDate(a.dataPrevista || a.automaticoPrevInstala || a.vencimentoParecer)!,
         original: a,
         color: isUrgent ? 'bg-red-600' : (a.prioridade ? 'bg-purple-600' : a.atividadeExtra ? 'bg-blue-800' : 'bg-blue-500'),
         status: a.status,

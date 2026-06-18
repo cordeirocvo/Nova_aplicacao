@@ -31,11 +31,13 @@ export async function PATCH(req: Request) {
       where: { id },
       data: {
         automaticoPrevInstala: novaData,
+        dataPrevista: novaData,
       },
       select: {
         id: true,
         instalacao: true,
         automaticoPrevInstala: true,
+        dataPrevista: true,
         status: true,
       },
     });

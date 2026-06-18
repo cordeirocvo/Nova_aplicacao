@@ -27,7 +27,7 @@ export default function EditForm({ initialData, statuses }: { initialData: any, 
     telefoneVendedor: initialData.telefoneVendedor || "",
     cidade: initialData.cidade || initialData.cidadeSheet || "",
     diaPrev: initialData.diaPrev || "",
-    automaticoPrevInstala: initialData.automaticoPrevInstala || "",
+    automaticoPrevInstala: initialData.dataPrevista || initialData.automaticoPrevInstala || "",
   });
 
   // Função robusta de upload usando a API local (/api/upload)

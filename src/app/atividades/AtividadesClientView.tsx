@@ -218,7 +218,7 @@ export default function AtividadesClientView({ atividades, settings, isAdmin, is
                         {atv.vencimentoParecer || "-"}
                       </td>
                       <td style={{ padding: '12px', fontWeight: '500', whiteSpace: 'nowrap', color: fontColorHex }}>
-                        {atv.automaticoPrevInstala || "-"}
+                        {atv.dataPrevista || atv.automaticoPrevInstala || "-"}
                       </td>
                       <td style={{ padding: '12px' }}>
                          <span style={{ 
@@ -417,7 +417,7 @@ export default function AtividadesClientView({ atividades, settings, isAdmin, is
                     {atv.vencimentoParecer || "-"}
                   </td>
                   <td className={`px-3 py-3 font-medium whitespace-nowrap ${fontColor}`}>
-                    {atv.automaticoPrevInstala || "-"}
+                    {atv.dataPrevista || atv.automaticoPrevInstala || "-"}
                   </td>
                   <td className="px-3 py-3">
                      <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-tighter ${ (isUrgentParecer || atv.prioridade || atv.atividadeExtra) ? 'bg-white/20 text-white' : 'bg-[#0A192F]/5 text-[#0A192F]'}`}>
@@ -535,7 +535,7 @@ export default function AtividadesClientView({ atividades, settings, isAdmin, is
                 </div>
                 <div>
                   <p className="text-[10px] opacity-75 uppercase font-bold">Prev. Instalação / Execução</p>
-                  <p className="font-semibold">{atv.automaticoPrevInstala || "-"}</p>
+                  <p className="font-semibold">{atv.dataPrevista || atv.automaticoPrevInstala || "-"}</p>
                 </div>
                 <div className="col-span-2">
                    <p className="text-[10px] opacity-75 uppercase font-bold">Dias para Montar</p>

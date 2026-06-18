@@ -15,7 +15,7 @@ const getOrCreatePool = () => {
   const pool = new Pool({
     connectionString,
     ssl: { rejectUnauthorized: false },
-    max: 20, // Suporta consultas simultâneas massivas (Promise.all)
+    max: 4, // Supabase limita a 15 conexões totais em modo Session; reduzir evita EMAXCONNSESSION
     idleTimeoutMillis: 1000, // Fecha conexões ociosas após 1s para evitar dead sockets do PgBouncer
     connectionTimeoutMillis: 15000,
   })
@@ -24,9 +24,8 @@ const getOrCreatePool = () => {
     console.error('Unexpected error on idle pg client:', err)
   })
 
-  if (process.env.NODE_ENV !== 'production') {
-    globalForPool.pgPool = pool;
-  }
+  // Salvar no escopo global para reaproveitar conexões entre warm starts no ambiente serverless (produção/desenvolvimento)
+  globalForPool.pgPool = pool;
 
   return pool;
 }
@@ -41,4 +40,4 @@ const globalForPrisma = globalThis as unknown as { prisma: ReturnType<typeof pri
 
 export const prisma = globalForPrisma.prisma || prismaClientSingleton()
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+globalForPrisma.prisma = prisma

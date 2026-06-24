@@ -5,6 +5,61 @@ export const runtime = 'nodejs';
 import { HuaweiIntegration } from "@/lib/services/huaweiIntegration";
 import { pvlibSimulate } from "@/lib/engenharia/solarEngine";
 
+// Cache para dados de satélite PVGIS/CRECESB (24h de expiração)
+const pvgisHspCache: Record<string, { timestamp: number; hspMap: Record<number, number> }> = {};
+
+async function getSatelliteHSP(lat: number | null, lon: number | null, month: number): Promise<number> {
+  if (!lat || !lon) {
+    return 5.2; // default fallback HSP
+  }
+  
+  const cacheKey = `${lat.toFixed(4)}_${lon.toFixed(4)}`;
+  const now = Date.now();
+  
+  if (pvgisHspCache[cacheKey] && (now - pvgisHspCache[cacheKey].timestamp < 24 * 60 * 60 * 1000)) {
+    return pvgisHspCache[cacheKey].hspMap[month] || 5.2;
+  }
+  
+  try {
+    const url = `https://re.jrc.ec.europa.eu/api/v5_2/PVcalc?lat=${lat}&lon=${lon}&peakpower=1&loss=14&outputformat=json`;
+    console.log(`[PVGIS API] Buscando HSP para lat=${lat}, lon=${lon}, mes=${month}`);
+    const res = await fetch(url, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' }
+    });
+    
+    if (!res.ok) {
+      throw new Error(`PVGIS retornou status ${res.status}`);
+    }
+    
+    const data = await res.json();
+    const monthlyList = data.outputs?.monthly?.fixed || [];
+    const hspMap: Record<number, number> = {};
+    
+    for (let m = 1; m <= 12; m++) {
+      hspMap[m] = 5.2;
+    }
+    
+    monthlyList.forEach((item: any) => {
+      if (item.month && typeof item.E_d === 'number') {
+        hspMap[item.month] = item.E_d;
+      }
+    });
+    
+    pvgisHspCache[cacheKey] = {
+      timestamp: now,
+      hspMap
+    };
+    
+    return hspMap[month] || 5.2;
+  } catch (error) {
+    console.error(`[PVGIS ERROR] Erro ao buscar irradiação do PVGIS para lat=${lat}, lon=${lon}:`, error);
+    if (pvgisHspCache[cacheKey]) {
+      return pvgisHspCache[cacheKey].hspMap[month] || 5.2;
+    }
+    return 5.2;
+  }
+}
+
 // Fuso horário BRT = UTC-3
 function getTodayBRT() {
   const now = new Date();
@@ -16,6 +71,9 @@ function getTodayBRT() {
 
 async function updateMetricasDiarias(usinaId: string, capacidadeKWp: number, coefSujidade: number) {
   try {
+    const usina = await prisma.usina.findUnique({ where: { id: usinaId } });
+    if (!usina) return;
+
     const now = new Date();
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
     
@@ -55,21 +113,59 @@ async function updateMetricasDiarias(usinaId: string, capacidadeKWp: number, coe
           energiaRealKWh = teles.reduce((acc, curr) => acc + ((curr.potenciaAtivaKW || 0) * (5 / 60)), 0);
         }
 
-        let integralSolarimetricaKWhM2 = teles.reduce((acc, curr) => acc + ((curr.irradiancia || 0) * (5 / 60) / 1000), 0);
-        if (integralSolarimetricaKWhM2 <= 0.05) {
-          integralSolarimetricaKWhM2 = 5.2; 
-        }
+        // Resolvendo Irradiação por Ponto considerando a configuração
+        let integralSolarimetricaKWhM2 = 0;
+        let energiaProjetadaPvlibKWh = 0;
 
-        const energiaProjetadaPvlibKWh = teles.reduce((acc, curr) => {
+        const sampleDate = teles[0]?.timestamp ? new Date(teles[0].timestamp) : new Date();
+        const month = sampleDate.getMonth() + 1;
+        const satelliteHsp = await getSatelliteHSP(usina.latitude, usina.longitude, month);
+
+        for (const curr of teles) {
+          let irr = curr.irradiancia || 0;
+          const isSatelliteMode = usina.modoIrradiancia === "SATELITE";
+
+          if (isSatelliteMode || irr === 0) {
+            const t = new Date(curr.timestamp);
+            const hour = t.getHours() + t.getMinutes() / 60;
+            const peakIrr = satelliteHsp / 0.005317;
+            if (hour >= 6 && hour <= 18) {
+              const x = (hour - 12) / 3;
+              irr = Math.max(0, peakIrr * Math.exp(-x * x));
+            } else {
+              irr = 0;
+            }
+          }
+
+          integralSolarimetricaKWhM2 += (irr * (5 / 60) / 1000);
+
+          // Verificando calibração específica por Usina
+          let timeShift = 0;
+          let lowSunCap = 10;
+          let lowSunExp = 1.0;
+
+          if (usina.nome.toUpperCase().includes("MANGA GRANDE")) {
+            timeShift = 20;
+            lowSunCap = 25;
+            lowSunExp = 2.4;
+          }
+
           const expectedPower = pvlibSimulate({
             timestamp: curr.timestamp,
-            irradianciaGHI: curr.irradiancia || (curr.potenciaAtivaKW > 0 ? 600 : 0),
+            irradianciaGHI: irr,
             tempAmbiente: curr.tempAmbiente || 25,
             tempModulos: curr.tempModulos,
-            capacidadeKWp
+            capacidadeKWp: usina.capacidadeKWp,
+            inclinacao: usina.inclinacao || 10,
+            orientacao: usina.orientacao ? (isNaN(parseFloat(usina.orientacao)) ? 180 : parseFloat(usina.orientacao)) : 180,
+            coefTemperatura: usina.coefTemperatura || -0.0035,
+            coefSujidade: usina.coefSujidade || 0.03,
+            timeShiftMinutes: timeShift,
+            lowSunElevationCap: lowSunCap,
+            lowSunExponent: lowSunExp
           });
-          return acc + (expectedPower * (5 / 60));
-        }, 0);
+          energiaProjetadaPvlibKWh += (expectedPower * (5 / 60));
+        }
 
         let performanceRatioReal = 0;
         if (capacidadeKWp > 0 && integralSolarimetricaKWhM2 > 0) {
@@ -136,7 +232,10 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const usinaId = searchParams.get("usinaId");
     const range = searchParams.get("range") || "24h";
-    const cacheKey = `${usinaId || "consolidado"}_${range}`;
+    const manualIrrParam = searchParams.get("manualIrr");
+    const manualIrr = manualIrrParam ? parseFloat(manualIrrParam) : null;
+    const dateParam = searchParams.get("date"); // YYYY-MM-DD
+    const cacheKey = `${usinaId || "consolidado"}_${range}_${manualIrrParam || "auto"}_${dateParam || "auto"}`;
 
     // Verificar cache local (1 minuto TTL)
     const cached = apiCache[cacheKey];
@@ -144,10 +243,25 @@ export async function GET(req: Request) {
       return NextResponse.json(cached.data);
     }
 
-    // Base date para os gráficos de últimas 24 horas (96 pontos de 15 minutos)
     const nowTime = Date.now();
-    const roundedNow = new Date(Math.floor(nowTime / (15 * 60 * 1000)) * (15 * 60 * 1000));
-    const baseDate = new Date(roundedNow.getTime() - 24 * 60 * 60 * 1000);
+    let baseDate: Date;
+    let dEnd: Date;
+    let isToday = true;
+
+    if (dateParam) {
+      // Cria a baseDate na meia-noite local do fuso horário America/Sao_Paulo para o dia solicitado
+      baseDate = new Date(`${dateParam}T00:00:00-03:00`);
+      dEnd = new Date(baseDate.getTime() + 24 * 60 * 60 * 1000);
+      
+      const todayStr = new Date().toLocaleDateString("sv-SE", { timeZone: "America/Sao_Paulo" });
+      isToday = (dateParam === todayStr);
+    } else {
+      // Padrão: dia calendário atual
+      const todayStr = new Date().toLocaleDateString("sv-SE", { timeZone: "America/Sao_Paulo" });
+      baseDate = new Date(`${todayStr}T00:00:00-03:00`);
+      dEnd = new Date(baseDate.getTime() + 24 * 60 * 60 * 1000);
+      isToday = true;
+    }
 
     // ── Filtros Dinâmicos de Períodos Maiores (7d e 30d) ───────────────────
     if (range === "7d" || range === "30d") {
@@ -203,12 +317,31 @@ export async function GET(req: Request) {
           }
         }
 
-        // HSP estimado (média 4.2h por dia * rendimento médio 80%)
-        const cap = usinaId && usinaId !== "consolidado"
-          ? (await prisma.usina.findUnique({ where: { id: usinaId } }))?.capacidadeKWp || 24
-          : (await prisma.usina.findMany()).reduce((acc, u) => acc + u.capacidadeKWp, 0);
+        // HSP estimado (média 4.2h por dia ou dados PVGIS/Satélite * rendimento médio 80%)
+        let expected = 0;
+        const currentMonth = dStart.getMonth() + 1;
 
-        const expected = cap * 4.2 * 0.8;
+        if (usinaId && usinaId !== "consolidado") {
+          const u = await prisma.usina.findUnique({ where: { id: usinaId } });
+          if (u) {
+            let hsp = 4.2;
+            if (u.modoIrradiancia === "SATELITE" && u.latitude && u.longitude) {
+              hsp = await getSatelliteHSP(u.latitude, u.longitude, currentMonth);
+            }
+            expected = u.capacidadeKWp * hsp * 0.8;
+          } else {
+            expected = 24 * 4.2 * 0.8;
+          }
+        } else {
+          const allUsinas = await prisma.usina.findMany();
+          for (const u of allUsinas) {
+            let hsp = 4.2;
+            if (u.modoIrradiancia === "SATELITE" && u.latitude && u.longitude) {
+              hsp = await getSatelliteHSP(u.latitude, u.longitude, currentMonth);
+            }
+            expected += u.capacidadeKWp * hsp * 0.8;
+          }
+        }
 
         daysArray.push({
           time: dateStr,
@@ -463,7 +596,7 @@ export async function GET(req: Request) {
       // Busca telemetrias de 24h para todas as usinas para consolidar a curva
       const telemetriaTodas = await prisma.telemetria.findMany({
         where: {
-          timestamp: { gte: baseDate },
+          timestamp: { gte: baseDate, lt: dEnd },
           usinaId: { in: usinas.map(u => u.id) }
         },
         orderBy: { timestamp: "asc" }
@@ -497,14 +630,44 @@ export async function GET(req: Request) {
             hasTelemetry = true;
           }
 
-          let irr = tUsina?.irradiancia || 0;
-          if (irr === 0) {
-            const hour = slotTime.getHours();
+          let irr = 0;
+          if (manualIrr !== null) {
+            const hour = slotTime.getHours() + slotTime.getMinutes() / 60;
             if (hour >= 6 && hour <= 18) {
-              const peakIrr = 800;
               const x = (hour - 12) / 3;
-              irr = Math.max(0, peakIrr * Math.exp(-x * x));
+              irr = Math.max(0, manualIrr * Math.exp(-x * x));
+            } else {
+              irr = 0;
             }
+          } else {
+            const isSatelliteMode = u.modoIrradiancia === "SATELITE";
+            const stationIrr = tUsina?.irradiancia || 0;
+            
+            if (isSatelliteMode || stationIrr === 0) {
+              const month = slotTime.getMonth() + 1;
+              const hsp = await getSatelliteHSP(u.latitude, u.longitude, month);
+              const peakIrr = hsp / 0.005317;
+              const hour = slotTime.getHours() + slotTime.getMinutes() / 60;
+              if (hour >= 6 && hour <= 18) {
+                const x = (hour - 12) / 3;
+                irr = Math.max(0, peakIrr * Math.exp(-x * x));
+              } else {
+                irr = 0;
+              }
+            } else {
+              irr = stationIrr;
+            }
+          }
+
+          // Verificando calibração específica por Usina
+          let timeShift = 0;
+          let lowSunCap = 10;
+          let lowSunExp = 1.0;
+
+          if (u.nome.toUpperCase().includes("MANGA GRANDE")) {
+            timeShift = 20;
+            lowSunCap = 25;
+            lowSunExp = 2.4;
           }
 
           const expectedVal = pvlibSimulate({
@@ -516,7 +679,10 @@ export async function GET(req: Request) {
             inclinacao: u.inclinacao || 10,
             orientacao: u.orientacao ? (isNaN(parseFloat(u.orientacao)) ? 180 : parseFloat(u.orientacao)) : 180,
             coefTemperatura: u.coefTemperatura || -0.0035,
-            coefSujidade: u.coefSujidade || 0.03
+            coefSujidade: u.coefSujidade || 0.03,
+            timeShiftMinutes: timeShift,
+            lowSunElevationCap: lowSunCap,
+            lowSunExponent: lowSunExp
           });
           expectedSum += expectedVal;
         }
@@ -524,7 +690,7 @@ export async function GET(req: Request) {
         let actualValue: number | null = null;
         if (hasTelemetry) {
           actualValue = parseFloat(actualSum.toFixed(2));
-        } else if (slotTime.getTime() > nowTime) {
+        } else if (isToday && slotTime.getTime() > nowTime) {
           actualValue = null; // Recharts interrompe a linha real no horário atual
         } else {
           actualValue = 0;
@@ -674,7 +840,7 @@ export async function GET(req: Request) {
     const telemetriaHoje = await prisma.telemetria.findMany({
       where: { 
         usinaId,
-        timestamp: { gte: baseDate }
+        timestamp: { gte: baseDate, lt: dEnd }
       },
       orderBy: { timestamp: "asc" }
     });
@@ -743,20 +909,50 @@ export async function GET(req: Request) {
       let actual: number | null = null;
       if (telemetryInSlot) {
         actual = parseFloat(telemetryInSlot.potenciaAtivaKW.toFixed(2));
-      } else if (slotTime.getTime() > nowTime) {
+      } else if (isToday && slotTime.getTime() > nowTime) {
         actual = null; // Linha real interrompida no horário atual
       } else {
         actual = 0;
       }
 
-      let irr = telemetryInSlot?.irradiancia || 0;
-      if (irr === 0) {
-        const hour = slotTime.getHours();
+      let irr = 0;
+      if (manualIrr !== null) {
+        const hour = slotTime.getHours() + slotTime.getMinutes() / 60;
         if (hour >= 6 && hour <= 18) {
-          const peakIrr = 800;
           const x = (hour - 12) / 3;
-          irr = Math.max(0, peakIrr * Math.exp(-x * x));
+          irr = Math.max(0, manualIrr * Math.exp(-x * x));
+        } else {
+          irr = 0;
         }
+      } else {
+        const isSatelliteMode = usina.modoIrradiancia === "SATELITE";
+        const stationIrr = telemetryInSlot?.irradiancia || 0;
+        
+        if (isSatelliteMode || stationIrr === 0) {
+          const month = slotTime.getMonth() + 1;
+          const hsp = await getSatelliteHSP(usina.latitude, usina.longitude, month);
+          const peakIrr = hsp / 0.005317;
+          const hour = slotTime.getHours() + slotTime.getMinutes() / 60;
+          if (hour >= 6 && hour <= 18) {
+            const x = (hour - 12) / 3;
+            irr = Math.max(0, peakIrr * Math.exp(-x * x));
+          } else {
+            irr = 0;
+          }
+        } else {
+          irr = stationIrr;
+        }
+      }
+
+      // Verificando calibração específica por Usina
+      let timeShift = 0;
+      let lowSunCap = 10;
+      let lowSunExp = 1.0;
+
+      if (usina.nome.toUpperCase().includes("MANGA GRANDE")) {
+        timeShift = 20;
+        lowSunCap = 25;
+        lowSunExp = 2.4;
       }
 
       const expectedVal = pvlibSimulate({
@@ -768,7 +964,10 @@ export async function GET(req: Request) {
         inclinacao: usina.inclinacao || 10,
         orientacao: usina.orientacao ? (isNaN(parseFloat(usina.orientacao)) ? 180 : parseFloat(usina.orientacao)) : 180,
         coefTemperatura: usina.coefTemperatura || -0.0035,
-        coefSujidade: usina.coefSujidade || 0.03
+        coefSujidade: usina.coefSujidade || 0.03,
+        timeShiftMinutes: timeShift,
+        lowSunElevationCap: lowSunCap,
+        lowSunExponent: lowSunExp
       });
 
       curvaHoje.push({

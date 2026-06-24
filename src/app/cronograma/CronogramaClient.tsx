@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { calcDaysLate } from '@/lib/dateUtils';
 import { 
@@ -16,6 +16,12 @@ import {
 } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import Link from 'next/link';
+
+// FullCalendar v6 Imports
+import { Calendar } from '@fullcalendar/core';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import interactionPlugin from '@fullcalendar/interaction';
+import ptBrLocale from '@fullcalendar/core/locales/pt-br';
 
 // ─── Tipos ──────────────────────────────────────────────────────────────────
 
@@ -161,9 +167,6 @@ export default function CronogramaClient({ atividades, manutencoes }: any) {
   const [localAtividades, setLocalAtividades] = useState(atividades);
   const [localManutencoes, setLocalManutencoes] = useState(manutencoes);
 
-  // Drag & Drop
-  const [draggedEvent, setDraggedEvent] = useState<CalendarEvent | null>(null);
-  const [dragHoveredDay, setDragHoveredDay] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
@@ -181,164 +184,39 @@ export default function CronogramaClient({ atividades, manutencoes }: any) {
   // Geração de PDF
   const [pdfLoading, setPdfLoading] = useState(false);
 
-  // Tooltip flutuante (JS-based) para evitar corte de overflow
+  // Tooltip flutuante (JS-based)
   const [tooltip, setTooltip] = useState<{
     event: CalendarEvent;
     x: number;
     y: number;
   } | null>(null);
 
-  const handleMouseEnter = useCallback((e: React.MouseEvent, event: CalendarEvent) => {
-    setTooltip({
-      event,
-      x: e.clientX,
-      y: e.clientY,
-    });
-  }, []);
-
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    setTooltip(prev => prev ? { ...prev, x: e.clientX, y: e.clientY } : null);
-  }, []);
-
-  const handleMouseLeave = useCallback(() => {
-    setTooltip(null);
-  }, []);
-
-  // Double-click detection refs
-  const clickTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  // Referências para detectar cliques duplos de forma robusta no FullCalendar
+  const lastClickTimeRef = useRef(0);
+  const lastClickEventIdRef = useRef('');
+  const clickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastDateClickTimeRef = useRef(0);
+  const lastDateClickStrRef = useRef('');
 
   useEffect(() => { setLocalAtividades(atividades); }, [atividades]);
   useEffect(() => { setLocalManutencoes(manutencoes); }, [manutencoes]);
 
-  // ─── Navegação ──────────────────────────────────────────────────────────────
-
-  const prevPeriod = () => {
-    if (viewMode === 'month') setCurrentMonth(subMonths(currentMonth, 1));
-    else setCurrentMonth(subWeeks(currentMonth, 1));
-  };
-  const nextPeriod = () => {
-    if (viewMode === 'month') setCurrentMonth(addMonths(currentMonth, 1));
-    else setCurrentMonth(addWeeks(currentMonth, 1));
-  };
-  const handleToday = () => setCurrentMonth(new Date());
-
-  // ─── Drag & Drop ────────────────────────────────────────────────────────────
-
-  const handleDragStart = useCallback((e: React.DragEvent, eventObj: CalendarEvent) => {
-    setDraggedEvent(eventObj);
-    setSaveError(null);
-    e.dataTransfer.effectAllowed = 'move';
+  // Limpar timer no unmount
+  useEffect(() => {
+    return () => {
+      if (clickTimerRef.current) clearTimeout(clickTimerRef.current);
+    };
   }, []);
 
-  const handleDragEnd = useCallback(() => {
-    setDraggedEvent(null);
-  }, []);
-
-  const handleDragOver = useCallback((e: React.DragEvent, dayStr: string) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    setDragHoveredDay(dayStr);
-  }, []);
-
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    // Evitar flicker ao passar sobre filhos do dia
-    if (!(e.currentTarget as HTMLElement).contains(e.relatedTarget as Node)) {
-      setDragHoveredDay(null);
-    }
-  }, []);
-
-  const handleDrop = useCallback(async (e: React.DragEvent, targetDay: Date) => {
-    e.preventDefault();
-    setDragHoveredDay(null);
-
-    if (!draggedEvent) return;
-
-    const targetDateStr = format(targetDay, 'yyyy-MM-dd');
-    const originalDateStr = format(draggedEvent.date, 'yyyy-MM-dd');
-
-    if (originalDateStr === targetDateStr) {
-      setDraggedEvent(null);
-      return;
-    }
-
-    const eventId = draggedEvent.original.id;
-    const eventType = draggedEvent.type;
-
-    // Snapshot para rollback
-    const prevAtividades = localAtividades;
-    const prevManutencoes = localManutencoes;
-
-    // Atualização otimista imediata
-    if (eventType === 'instalacao') {
-      setLocalAtividades((prev: any[]) =>
-        prev.map(a => a.id === eventId ? { ...a, automaticoPrevInstala: targetDateStr } : a)
-      );
-    } else {
-      setLocalManutencoes((prev: any[]) =>
-        prev.map(m => m.id === eventId ? { ...m, dataAgendada: targetDateStr } : m)
-      );
-    }
-
-    setIsSaving(true);
-    setSaveError(null);
-
-    try {
-      let res: Response;
-
-      if (eventType === 'instalacao') {
-        // ✅ API dedicada — só atualiza o campo de data, sem risco de sobrescrever outros campos
-        res = await fetch('/api/activities/reagendar', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: eventId, novaData: targetDateStr }),
-        });
-      } else {
-        res = await fetch('/api/engenharia/om/manutencoes', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: eventId, dataAgendada: targetDateStr }),
-        });
-      }
-
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error || `HTTP ${res.status}`);
-      }
-
-      // ✅ router.refresh() — re-fetch server-side sem piscar a tela
-      router.refresh();
-
-    } catch (err: any) {
-      console.error('DROP_ERROR', err);
-      // Rollback da atualização otimista
-      setLocalAtividades(prevAtividades);
-      setLocalManutencoes(prevManutencoes);
-      setSaveError(`Erro ao reagendar: ${err.message}`);
-    } finally {
-      setDraggedEvent(null);
-      setIsSaving(false);
-    }
-  }, [draggedEvent, localAtividades, localManutencoes, router]);
-
-  // ─── Click / Double-click nos eventos ───────────────────────────────────────
-
-  const handleEventClick = useCallback((e: React.MouseEvent, event: CalendarEvent) => {
-    e.stopPropagation();
-
-    const key = event.id;
-    if (clickTimers.current[key]) {
-      // Duplo clique detectado
-      clearTimeout(clickTimers.current[key]);
-      delete clickTimers.current[key];
-      setOsModalEvent(event);
-    } else {
-      // Aguarda possível segundo clique (250ms)
-      clickTimers.current[key] = setTimeout(() => {
-        delete clickTimers.current[key];
-        setSelectedEvent(event);
-      }, 250);
-    }
-  }, []);
+  // Seguir mouse no tooltip globalmente enquanto estiver visível
+  useEffect(() => {
+    if (!tooltip) return;
+    const handleGlobalMouseMove = (e: MouseEvent) => {
+      setTooltip(prev => prev ? { ...prev, x: e.clientX, y: e.clientY } : null);
+    };
+    window.addEventListener('mousemove', handleGlobalMouseMove);
+    return () => window.removeEventListener('mousemove', handleGlobalMouseMove);
+  }, [tooltip]);
 
   // ─── Parse de datas ─────────────────────────────────────────────────────────
 
@@ -350,6 +228,288 @@ export default function CronogramaClient({ atividades, manutencoes }: any) {
     d = parse(dateStr, 'dd/MM/yyyy', new Date());
     if (isValid(d)) return d;
     return null;
+  };
+
+  // ─── Mapeamento de Eventos ──────────────────────────────────────────────────
+
+  const events: CalendarEvent[] = useMemo(() => {
+    return [
+      ...localAtividades.map((a: any) => {
+        const daysParecer = a.vencimentoParecer ? calcDaysLate(a.vencimentoParecer) : null;
+        const isUrgent = daysParecer !== null && daysParecer <= 30;
+        return {
+          id: `inst-${a.id}`,
+          type: 'instalacao' as const,
+          title: a.instalacao || 'Sem nome',
+          date: parseDate(a.dataPrevista || a.automaticoPrevInstala || a.vencimentoParecer)!,
+          original: a,
+          color: isUrgent ? 'bg-red-600' : (a.prioridade ? 'bg-purple-600' : a.atividadeExtra ? 'bg-blue-800' : 'bg-blue-500'),
+          status: a.status,
+          hasAttachments: (a.anexoFotos?.length > 0) || (a.anexoArquivos?.length > 0),
+          isUrgent, daysParecer,
+        };
+      }),
+      ...localManutencoes.map((m: any) => ({
+        id: `om-${m.id}`,
+        type: 'manutencao' as const,
+        title: `${m.usina?.nome || 'Usina'} — ${m.tipo}`,
+        date: parseDate(m.dataAgendada)!,
+        original: m,
+        color: 'bg-[#F25C27]',
+        status: m.status,
+      })),
+    ].filter(e => e.date !== null && isValid(e.date));
+  }, [localAtividades, localManutencoes]);
+
+  // Usar ref para evitar closures desatualizadas nos callbacks do FullCalendar
+  const eventsRef = useRef(events);
+  useEffect(() => {
+    eventsRef.current = events;
+  }, [events]);
+
+  const fullCalendarEvents = useMemo(() => {
+    return events.map(e => {
+      let colorHex = '#3B82F6'; // default blue-500
+      if (e.type === 'instalacao') {
+        if (e.isUrgent) {
+          colorHex = '#DC2626'; // red-600
+        } else if (e.original.prioridade) {
+          colorHex = '#9333EA'; // purple-600
+        } else if (e.original.atividadeExtra) {
+          colorHex = '#1E3A8A'; // blue-800
+        }
+      } else if (e.type === 'manutencao') {
+        colorHex = '#F25C27'; // O&M orange
+      }
+
+      return {
+        id: e.id,
+        title: e.title,
+        start: format(e.date, 'yyyy-MM-dd'),
+        backgroundColor: colorHex,
+        borderColor: colorHex,
+        allDay: true,
+        extendedProps: {
+          type: e.type,
+          status: e.status,
+          hasAttachments: e.hasAttachments,
+          isUrgent: e.isUrgent,
+          daysParecer: e.daysParecer,
+          original: e.original
+        }
+      };
+    });
+  }, [events]);
+
+  // ─── Drag & Drop Persistência ──────────────────────────────────────────────
+
+  const handleDrop = useCallback(async (eventId: string, targetDateStr: string, originalDateStr: string) => {
+    if (originalDateStr === targetDateStr) return;
+
+    const eventType = eventId.startsWith('inst-') ? 'instalacao' : 'manutencao';
+    const dbId = eventId.replace('inst-', '').replace('om-', '');
+
+    // Snapshot para rollback
+    const prevAtividades = localAtividades;
+    const prevManutencoes = localManutencoes;
+
+    // Atualização otimista imediata
+    if (eventType === 'instalacao') {
+      setLocalAtividades((prev: any[]) =>
+        prev.map(a => a.id === dbId ? { ...a, automaticoPrevInstala: targetDateStr, dataPrevista: targetDateStr } : a)
+      );
+    } else {
+      setLocalManutencoes((prev: any[]) =>
+        prev.map(m => m.id === dbId ? { ...m, dataAgendada: targetDateStr } : m)
+      );
+    }
+
+    setIsSaving(true);
+    setSaveError(null);
+
+    try {
+      let res: Response;
+
+      if (eventType === 'instalacao') {
+        res = await fetch('/api/activities/reagendar', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: dbId, novaData: targetDateStr }),
+        });
+      } else {
+        res = await fetch('/api/engenharia/om/manutencoes', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: dbId, dataAgendada: targetDateStr }),
+        });
+      }
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || `HTTP ${res.status}`);
+      }
+
+      router.refresh();
+
+    } catch (err: any) {
+      console.error('DROP_ERROR', err);
+      // Rollback da atualização otimista
+      setLocalAtividades(prevAtividades);
+      setLocalManutencoes(prevManutencoes);
+      setSaveError(`Erro ao reagendar: ${err.message}`);
+    } finally {
+      setIsSaving(false);
+    }
+  }, [localAtividades, localManutencoes, router]);
+
+  // ─── Renderização dos Eventos no FullCalendar ──────────────────────────────
+
+  const renderEventContent = useCallback((eventInfo: any) => {
+    const isFinished = eventInfo.event.extendedProps.status && /conclu/i.test(eventInfo.event.extendedProps.status);
+    const title = eventInfo.event.title;
+    const hasAttachments = eventInfo.event.extendedProps.hasAttachments;
+    const type = eventInfo.event.extendedProps.type;
+
+    const finishedClass = isFinished ? 'line-through opacity-60' : '';
+    const paperclip = hasAttachments ? `<span class="ml-1 text-[11px]">📎</span>` : '';
+    const badgeText = type === 'instalacao' ? 'INST' : 'OM';
+    const badgeClass = type === 'instalacao' ? 'bg-white/20 text-white' : 'bg-black/25 text-orange-200';
+
+    return {
+      html: `
+        <div class="flex items-center justify-between gap-1 w-full px-2 py-1 text-[11px] font-bold text-white rounded truncate ${finishedClass}" style="line-height: 1.2;">
+          <span class="truncate flex-1">${title}</span>
+          ${paperclip}
+          <span class="text-[9px] font-black px-1 rounded uppercase tracking-wider ${badgeClass}">${badgeText}</span>
+        </div>
+      `
+    };
+  }, []);
+
+  // ─── Configuração do Instanciamento do FullCalendar ────────────────────────
+
+  const calendarRef = useRef<HTMLDivElement>(null);
+  const [calendarInstance, setCalendarInstance] = useState<Calendar | null>(null);
+
+  useEffect(() => {
+    if (!calendarRef.current) return;
+
+    const calendar = new Calendar(calendarRef.current, {
+      plugins: [dayGridPlugin, interactionPlugin],
+      initialView: viewMode === 'month' ? 'dayGridMonth' : 'dayGridWeek',
+      locale: ptBrLocale,
+      events: fullCalendarEvents,
+      headerToolbar: false, // Ocultar cabeçalho padrão para usar o nosso customizado
+      editable: true,
+      dayMaxEvents: 3,
+      eventContent: renderEventContent,
+      eventClick: (info: any) => {
+        info.jsEvent.preventDefault();
+        const currentTime = new Date().getTime();
+        const clickDelay = currentTime - lastClickTimeRef.current;
+        const eventId = info.event.id;
+        const mappedEvent = eventsRef.current.find(e => e.id === eventId);
+        
+        if (mappedEvent) {
+          if (clickDelay < 300 && lastClickEventIdRef.current === eventId) {
+            // Duplo clique detectado
+            if (clickTimerRef.current) {
+              clearTimeout(clickTimerRef.current);
+              clickTimerRef.current = null;
+            }
+            setOsModalEvent(mappedEvent);
+          } else {
+            // Clique simples
+            if (clickTimerRef.current) clearTimeout(clickTimerRef.current);
+            clickTimerRef.current = setTimeout(() => {
+              setSelectedEvent(mappedEvent);
+            }, 250);
+          }
+        }
+        
+        lastClickTimeRef.current = currentTime;
+        lastClickEventIdRef.current = eventId;
+      },
+      eventMouseEnter: (info: any) => {
+        const eventId = info.event.id;
+        const mappedEvent = eventsRef.current.find(e => e.id === eventId);
+        if (mappedEvent) {
+          setTooltip({
+            event: mappedEvent,
+            x: info.jsEvent.clientX,
+            y: info.jsEvent.clientY
+          });
+        }
+      },
+      eventMouseLeave: (info: any) => {
+        setTooltip(null);
+      },
+      dateClick: (info: any) => {
+        const currentTime = new Date().getTime();
+        const clickDelay = currentTime - lastDateClickTimeRef.current;
+        const dateStr = info.dateStr;
+        
+        if (clickDelay < 300 && lastDateClickStrRef.current === dateStr) {
+          const targetDate = info.date;
+          // Abre modal de criação
+          const formattedDateStr = format(targetDate, 'yyyy-MM-dd');
+          setNovaForm({
+            instalacao: '', solicitacao: '', observacao: '', status: 'Pendente',
+            vendedor: '', telefoneCliente: '', telefoneVendedor: '', cidade: '',
+            dataPrevista: formattedDateStr, latitude: '', longitude: '',
+          });
+          setNovaSuccess(false);
+          setNovaAtividade({ open: true, date: targetDate });
+        }
+        
+        lastDateClickTimeRef.current = currentTime;
+        lastDateClickStrRef.current = dateStr;
+      },
+      eventDrop: (info: any) => {
+        const eventId = info.event.id;
+        const targetDateStr = format(info.event.start!, 'yyyy-MM-dd');
+        const originalDateStr = format(info.oldEvent.start!, 'yyyy-MM-dd');
+        handleDrop(eventId, targetDateStr, originalDateStr);
+      },
+      datesSet: (info: any) => {
+        setCurrentMonth(info.view.currentStart);
+      }
+    });
+
+    calendar.render();
+    setCalendarInstance(calendar);
+
+    return () => {
+      calendar.destroy();
+      setCalendarInstance(null);
+    };
+  }, [handleDrop, renderEventContent]);
+
+  // Sincronizar eventos quando localAtividades ou localManutencoes mudarem
+  useEffect(() => {
+    if (calendarInstance) {
+      calendarInstance.removeAllEventSources();
+      calendarInstance.addEventSource(fullCalendarEvents);
+    }
+  }, [calendarInstance, fullCalendarEvents]);
+
+  // Sincronizar visão quando viewMode mudar
+  useEffect(() => {
+    if (calendarInstance) {
+      calendarInstance.changeView(viewMode === 'month' ? 'dayGridMonth' : 'dayGridWeek');
+    }
+  }, [calendarInstance, viewMode]);
+
+  // ─── Navegação Customizada ──────────────────────────────────────────────────
+
+  const prevPeriod = () => {
+    if (calendarInstance) calendarInstance.prev();
+  };
+  const nextPeriod = () => {
+    if (calendarInstance) calendarInstance.next();
+  };
+  const handleToday = () => {
+    if (calendarInstance) calendarInstance.today();
   };
 
   // ─── Download de anexos ─────────────────────────────────────────────────────
@@ -397,18 +557,7 @@ export default function CronogramaClient({ atividades, manutencoes }: any) {
     );
   };
 
-  // ─── Nova Atividade ─────────────────────────────────────────────────────────
-
-  const handleDayDoubleClick = (day: Date) => {
-    const dateStr = format(day, 'yyyy-MM-dd');
-    setNovaForm({
-      instalacao: '', solicitacao: '', observacao: '', status: 'Pendente',
-      vendedor: '', telefoneCliente: '', telefoneVendedor: '', cidade: '',
-      dataPrevista: dateStr, latitude: '', longitude: '',
-    });
-    setNovaSuccess(false);
-    setNovaAtividade({ open: true, date: day });
-  };
+  // ─── Nova Atividade submit ──────────────────────────────────────────────────
 
   const handleNovaSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -440,51 +589,14 @@ export default function CronogramaClient({ atividades, manutencoes }: any) {
     }
   };
 
-  // ─── Eventos do Calendário ──────────────────────────────────────────────────
-
-  const events: CalendarEvent[] = [
-    ...localAtividades.map((a: any) => {
-      const daysParecer = a.vencimentoParecer ? calcDaysLate(a.vencimentoParecer) : null;
-      const isUrgent = daysParecer !== null && daysParecer <= 30;
-      return {
-        id: `inst-${a.id}`,
-        type: 'instalacao' as const,
-        title: a.instalacao || 'Sem nome',
-        date: parseDate(a.dataPrevista || a.automaticoPrevInstala || a.vencimentoParecer)!,
-        original: a,
-        color: isUrgent ? 'bg-red-600' : (a.prioridade ? 'bg-purple-600' : a.atividadeExtra ? 'bg-blue-800' : 'bg-blue-500'),
-        status: a.status,
-        hasAttachments: (a.anexoFotos?.length > 0) || (a.anexoArquivos?.length > 0),
-        isUrgent, daysParecer,
-      };
-    }),
-    ...localManutencoes.map((m: any) => ({
-      id: `om-${m.id}`,
-      type: 'manutencao' as const,
-      title: `${m.usina?.nome || 'Usina'} — ${m.tipo}`,
-      date: parseDate(m.dataAgendada)!,
-      original: m,
-      color: 'bg-[#F25C27]',
-      status: m.status,
-    })),
-  ].filter(e => e.date !== null && isValid(e.date));
-
-  // ─── Datas do calendário ────────────────────────────────────────────────────
-
-  const monthStart = startOfMonth(currentMonth);
-  const calendarDays = viewMode === 'month'
-    ? eachDayOfInterval({ start: startOfWeek(monthStart), end: endOfWeek(endOfMonth(monthStart)) })
-    : eachDayOfInterval({ start: startOfWeek(currentMonth), end: endOfWeek(currentMonth) });
+  // ─── Impressão datas da semana ──────────────────────────────────────────────
 
   const mondayOfCurrentWeek = startOfWeek(currentMonth, { weekStartsOn: 1 });
   const printDays = Array.from({ length: 6 }).map((_, idx) => addDays(mondayOfCurrentWeek, idx));
 
-  // ─── Classes utilitárias ─────────────────────────────────────────────────────
-
+  // Estilos CSS/Formulário utilitários
   const inputClass = "w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-sm shadow-sm";
   const labelClass = "text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1 block";
-
-  // ─── Render ─────────────────────────────────────────────────────────────────
 
   return (
     <div className="w-full">
@@ -575,143 +687,15 @@ export default function CronogramaClient({ atividades, manutencoes }: any) {
           <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-blue-800" /> Extra</div>
           <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-[#F25C27]" /> Manutenção O&M</div>
           <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-red-600" /> Parecer Vencendo (≤ 30 dias)</div>
-          <div className="flex items-center gap-2 ml-auto text-slate-300 font-medium normal-case tracking-normal">
-            <span>Arraste para reagendar • Clique para detalhes • Duplo clique para OS</span>
+          <div className="flex items-center gap-2 ml-auto text-slate-350 font-medium normal-case tracking-normal">
+            <span>Arraste para reagendar • Clique para detalhes • Duplo clique para OS/Novo</span>
           </div>
         </div>
 
-        {/* ── Grade Mensal ── */}
-        {viewMode === 'month' ? (
-          <>
-            <div className="grid grid-cols-7 border-b border-slate-100 text-center text-[11px] font-black text-slate-400 uppercase tracking-tighter bg-slate-50/30">
-              {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(day => (
-                <div key={day} className="py-3 border-r border-slate-100 last:border-0">{day}</div>
-              ))}
-            </div>
-
-            <div className="grid grid-cols-7 auto-rows-[140px]">
-              {calendarDays.map((day) => {
-                const dayEvents = events.filter(e => isSameDay(e.date, day));
-                const isSelectedMonth = isSameMonth(day, currentMonth);
-                const isTodayDay = isToday(day);
-                const dayStr = format(day, 'yyyy-MM-dd');
-                const isHovered = dragHoveredDay === dayStr;
-                const isDragging = !!draggedEvent;
-
-                return (
-                  <div
-                    key={day.toString()}
-                    onDoubleClick={() => isSelectedMonth && handleDayDoubleClick(day)}
-                    onDragOver={(e) => handleDragOver(e, dayStr)}
-                    onDragLeave={handleDragLeave}
-                    onDrop={(e) => handleDrop(e, day)}
-                    className={`border-r border-b border-slate-100 p-2 transition-colors flex flex-col gap-1 group relative
-                      ${!isSelectedMonth ? 'bg-slate-50/50 opacity-40' : 'bg-white cursor-pointer'}
-                      ${isTodayDay ? 'ring-2 ring-inset ring-blue-500/20' : ''}
-                      ${isHovered && isDragging ? 'bg-blue-50 border border-dashed border-blue-400 z-10 scale-[1.01] shadow-md' : ''}
-                      ${isSelectedMonth && !isHovered ? 'hover:bg-blue-50/20' : ''}
-                    `}
-                  >
-                    <div className="flex justify-between items-center mb-1">
-                      <span className={`text-xs font-black ${isTodayDay ? 'bg-blue-600 text-white w-6 h-6 flex items-center justify-center rounded-full' : 'text-slate-400'}`}>
-                        {format(day, 'd')}
-                      </span>
-                      {isSelectedMonth && (
-                        <span className="opacity-0 group-hover:opacity-100 transition-opacity text-blue-400">
-                          <Plus className="w-3 h-3" />
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="flex flex-col gap-1 overflow-y-auto max-h-[100px] custom-scrollbar">
-                      {dayEvents.map(event => (
-                        <EventChip
-                          key={event.id}
-                          event={event}
-                          compact
-                          onDragStart={(e) => handleDragStart(e, event)}
-                          onDragEnd={handleDragEnd}
-                          onClick={(e) => handleEventClick(e, event)}
-                          onMouseEnter={handleMouseEnter}
-                          onMouseMove={handleMouseMove}
-                          onMouseLeave={handleMouseLeave}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </>
-        ) : (
-          /* ── Grade Semanal ── */
-          <div className="p-6 bg-slate-50/50">
-            <div className="grid grid-cols-1 md:grid-cols-7 gap-4 min-h-[350px] md:min-h-[500px]">
-              {calendarDays.map((day) => {
-                const dayEvents = events.filter(e => isSameDay(e.date, day));
-                const isTodayDay = isToday(day);
-                const dayStr = format(day, 'yyyy-MM-dd');
-                const isHovered = dragHoveredDay === dayStr;
-                const isDragging = !!draggedEvent;
-
-                return (
-                  <div
-                    key={day.toString()}
-                    onDragOver={(e) => handleDragOver(e, dayStr)}
-                    onDragLeave={handleDragLeave}
-                    onDrop={(e) => handleDrop(e, day)}
-                    onDoubleClick={() => handleDayDoubleClick(day)}
-                    className={`bg-white rounded-3xl border-2 p-4 transition-all flex flex-col gap-3 min-h-[350px] md:min-h-[500px] shadow-sm
-                      ${isTodayDay ? 'border-blue-500 ring-2 ring-blue-500/10' : 'border-slate-100 hover:border-slate-200'}
-                      ${isHovered && isDragging ? 'border-dashed border-blue-500 bg-blue-50/50 scale-[1.02] z-10 shadow-lg' : ''}
-                    `}
-                  >
-                    <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-                      <div className="flex flex-col">
-                        <span className={`text-[10px] font-black uppercase tracking-widest ${isTodayDay ? 'text-blue-600' : 'text-slate-400'}`}>
-                          {format(day, 'EEEE', { locale: ptBR }).split('-')[0]}
-                        </span>
-                        <span className={`text-base font-black ${isTodayDay ? 'text-blue-600' : 'text-slate-800'}`}>
-                          {format(day, 'dd/MM')}
-                        </span>
-                      </div>
-                      <button
-                        onClick={() => handleDayDoubleClick(day)}
-                        className={`p-1.5 rounded-xl transition-colors ${isTodayDay ? 'bg-blue-100 text-blue-600 hover:bg-blue-200' : 'hover:bg-slate-100 text-slate-400'}`}
-                      >
-                        <Plus className="w-4 h-4" />
-                      </button>
-                    </div>
-
-                    <div className="flex-1 flex flex-col gap-2 overflow-y-auto custom-scrollbar">
-                      {dayEvents.length === 0 ? (
-                        <div className="flex-1 flex items-center justify-center border-2 border-dashed border-slate-200/50 rounded-2xl p-4 text-center">
-                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-normal">
-                            Sem Atividades
-                          </p>
-                        </div>
-                      ) : (
-                        dayEvents.map(event => (
-                          <EventChip
-                            key={event.id}
-                            event={event}
-                            compact={false}
-                            onDragStart={(e) => handleDragStart(e, event)}
-                            onDragEnd={handleDragEnd}
-                            onClick={(e) => handleEventClick(e, event)}
-                            onMouseEnter={handleMouseEnter}
-                            onMouseMove={handleMouseMove}
-                            onMouseLeave={handleMouseLeave}
-                          />
-                        ))
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
+        {/* ── FullCalendar Container ── */}
+        <div className="p-4 bg-white">
+          <div ref={calendarRef} />
+        </div>
       </div>
 
       {/* ═══════════════════════════════════════════════════════════════════════
@@ -875,7 +859,7 @@ export default function CronogramaClient({ atividades, manutencoes }: any) {
                         {selectedEvent.original.anexoFotos?.map((url: string, idx: number) => (
                           <button key={`foto-${idx}`} type="button"
                             onClick={() => downloadFile(url, `foto-${idx + 1}-${selectedEvent.original.instalacao || 'anexo'}.jpg`)}
-                            className="flex items-center gap-2 text-xs font-bold text-[#00BFA5] hover:text-[#009b86] transition-colors text-left bg-white p-2.5 rounded-xl border border-slate-200 shadow-sm"
+                            className="flex items-center gap-2 text-xs font-bold text-[#00BFA5] hover:text-[#009b86] transition-colors text-left bg-white p-2.5 rounded-xl border border-slate-200 shadow-sm w-full"
                           >
                             <Download className="w-3.5 h-3.5" /><span>Foto {idx + 1}</span>
                           </button>
@@ -885,7 +869,7 @@ export default function CronogramaClient({ atividades, manutencoes }: any) {
                           return (
                             <button key={`arq-${idx}`} type="button"
                               onClick={() => downloadFile(url, `${selectedEvent.original.instalacao || 'anexo'}-${filename}`)}
-                              className="flex items-center gap-2 text-xs font-bold text-[#00BFA5] hover:text-[#009b86] transition-colors text-left bg-white p-2.5 rounded-xl border border-slate-200 shadow-sm"
+                              className="flex items-center gap-2 text-xs font-bold text-[#00BFA5] hover:text-[#009b86] transition-colors text-left bg-white p-2.5 rounded-xl border border-slate-200 shadow-sm w-full"
                             >
                               <Download className="w-3.5 h-3.5" /><span className="truncate flex-1">{filename}</span>
                             </button>
@@ -898,7 +882,7 @@ export default function CronogramaClient({ atividades, manutencoes }: any) {
                   <div className="flex gap-3">
                     <button
                       onClick={() => { setSelectedEvent(null); setOsModalEvent(selectedEvent); }}
-                      className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black text-sm transition-all shadow-lg shadow-emerald-200"
+                      className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black text-sm transition-all shadow-lg shadow-emerald-200 cursor-pointer border-0"
                     >
                       <FileText className="w-4 h-4" /> Gerar OS
                     </button>
@@ -924,7 +908,7 @@ export default function CronogramaClient({ atividades, manutencoes }: any) {
                   <div className="flex gap-3">
                     <button
                       onClick={() => { setSelectedEvent(null); setOsModalEvent(selectedEvent); }}
-                      className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black text-sm transition-all shadow-lg shadow-emerald-200"
+                      className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black text-sm transition-all shadow-lg shadow-emerald-200 cursor-pointer border-0"
                     >
                       <FileText className="w-4 h-4" /> Gerar OS
                     </button>
@@ -1029,7 +1013,7 @@ export default function CronogramaClient({ atividades, manutencoes }: any) {
             <div className="bg-slate-50 px-6 py-4 flex justify-between gap-3 border-t border-slate-100">
               <button
                 onClick={() => setOsModalEvent(null)}
-                className="px-4 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-200/60 rounded-xl transition-colors"
+                className="px-4 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-200/60 rounded-xl transition-colors cursor-pointer border-0"
               >
                 Cancelar
               </button>
@@ -1043,6 +1027,15 @@ export default function CronogramaClient({ atividades, manutencoes }: any) {
                     <Zap className="w-4 h-4" /> Editar Atividade
                   </Link>
                 )}
+                {osModalEvent.type === 'manutencao' && (
+                  <Link
+                    href={`/engenharia/om/${osModalEvent.original.usinaId}`}
+                    prefetch={false}
+                    className="px-4 py-2.5 text-sm font-bold bg-slate-800 hover:bg-slate-900 text-white rounded-xl transition-all flex items-center gap-2"
+                  >
+                    <Hammer className="w-4 h-4" /> Acessar Usina
+                  </Link>
+                )}
                 <button
                   onClick={async () => {
                     setPdfLoading(true);
@@ -1050,7 +1043,7 @@ export default function CronogramaClient({ atividades, manutencoes }: any) {
                     finally { setPdfLoading(false); }
                   }}
                   disabled={pdfLoading}
-                  className="px-5 py-2.5 text-sm font-black bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-lg shadow-emerald-600/20 transition-all flex items-center gap-2 disabled:opacity-60"
+                  className="px-5 py-2.5 text-sm font-black bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-lg shadow-emerald-600/20 transition-all flex items-center gap-2 disabled:opacity-60 cursor-pointer border-0"
                 >
                   {pdfLoading
                     ? <><Loader className="w-4 h-4 animate-spin" /> Gerando...</>
@@ -1156,7 +1149,7 @@ export default function CronogramaClient({ atividades, manutencoes }: any) {
                   <div className="flex items-center justify-between mb-2">
                     <label className={labelClass + ' mb-0'}>Geolocalização (opcional)</label>
                     <button type="button" onClick={capturarGPS} disabled={gpsLoading}
-                      className="flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-800 disabled:opacity-50 transition-colors">
+                      className="flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-800 disabled:opacity-50 transition-colors border-0 bg-transparent cursor-pointer">
                       {gpsLoading ? <Loader className="w-3 h-3 animate-spin" /> : <MapPin className="w-3 h-3" />}
                       {gpsLoading ? 'Capturando...' : 'Capturar GPS'}
                     </button>
@@ -1177,7 +1170,7 @@ export default function CronogramaClient({ atividades, manutencoes }: any) {
 
                 <div className="flex gap-3">
                   <button type="button" onClick={() => setNovaAtividade({ open: false, date: null })}
-                    className="flex-1 py-3 border border-slate-200 text-slate-650 font-bold rounded-xl hover:bg-slate-55 transition-all text-sm cursor-pointer">
+                    className="flex-1 py-3 border border-slate-200 text-slate-650 font-bold rounded-xl hover:bg-slate-55 transition-all text-sm cursor-pointer bg-white">
                     Cancelar
                   </button>
                   <button type="submit" disabled={novaLoading}
@@ -1192,7 +1185,7 @@ export default function CronogramaClient({ atividades, manutencoes }: any) {
         </div>
       )}
 
-      {/* Tooltip flutuante premium (JS-based) posicionado fora de containers com overflow */}
+      {/* Tooltip flutuante premium (JS-based) */}
       {tooltip && (
         <div
           style={{
@@ -1229,7 +1222,6 @@ export default function CronogramaClient({ atividades, manutencoes }: any) {
             </div>
           ))}
 
-          {/* Seção de Observações / Descrição no hover do evento */}
           {tooltip.event.type === 'instalacao' && (tooltip.event.original.obsInstalacao || tooltip.event.original.observacao) && (
             <div className="mt-1.5 pt-1.5 border-t border-slate-700/40 text-[10px] leading-normal">
               <span className="text-slate-400 font-bold block mb-0.5">Observações:</span>
@@ -1249,94 +1241,114 @@ export default function CronogramaClient({ atividades, manutencoes }: any) {
           )}
 
           <p className="text-[9px] text-slate-500 mt-1 pt-1 border-t border-slate-700/50">
-            Duplo clique → Gerar OS
+            Duplo clique → Gerar OS / Editar
           </p>
         </div>
       )}
 
+      {/* Styles local para customizar o FullCalendar de acordo com a paleta da Cordeiro Energia */}
       <style>{`
         .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        
+        /* FullCalendar Premium Overrides */
+        .fc {
+          font-family: inherit;
+          --fc-border-color: #f1f5f9;
+          --fc-today-bg-color: rgba(30, 58, 138, 0.04);
+        }
+        
+        .fc-theme-standard td, .fc-theme-standard th {
+          border: 1px solid #f1f5f9;
+        }
+
+        .fc .fc-col-header-cell {
+          background-color: #f8fafc;
+          border-bottom: 2px solid #e2e8f0;
+        }
+
+        .fc .fc-col-header-cell-cushion {
+          font-size: 11px;
+          font-weight: 800;
+          text-transform: uppercase;
+          color: #64748b;
+          padding: 10px 0;
+          letter-spacing: 0.05em;
+        }
+
+        .fc .fc-daygrid-day-number {
+          font-size: 12px;
+          font-weight: 800;
+          color: #64748b;
+          padding: 8px 10px;
+          transition: color 0.2s;
+        }
+
+        .fc-day-today .fc-daygrid-day-number {
+          color: #1d4ed8 !important;
+          background-color: #dbeafe;
+          border-radius: 9999px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          min-width: 24px;
+          height: 24px;
+          margin: 6px;
+          padding: 0 !important;
+        }
+
+        .fc-daygrid-day {
+          transition: background-color 0.2s;
+          cursor: pointer;
+        }
+
+        .fc-daygrid-day:hover {
+          background-color: rgba(30, 58, 138, 0.015);
+        }
+
+        .fc-event {
+          padding: 0 !important;
+          margin: 2px 4px !important;
+          cursor: grab !important;
+          border-radius: 8px !important;
+          overflow: hidden;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+          transition: transform 0.15s, box-shadow 0.15s;
+        }
+
+        .fc-event:active {
+          cursor: grabbing !important;
+          transform: scale(0.98);
+        }
+
+        .fc-event:hover {
+          box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+          filter: brightness(0.95);
+        }
+
+        .fc-h-event .fc-event-main {
+          color: inherit;
+        }
+        
+        .fc-dayGridMonth-view .fc-daygrid-day-frame {
+          min-height: 110px;
+        }
+
+        .fc-daygrid-more-link {
+          font-size: 10px;
+          font-weight: 800;
+          color: #2563eb !important;
+          margin-left: 6px;
+          text-transform: uppercase;
+        }
+
         @media print {
           @page { size: landscape; margin: 0.4cm !important; }
           body { background-color: white !important; color: black !important; }
           .break-inside-avoid { page-break-inside: avoid; break-inside: avoid; }
         }
       `}</style>
-    </div>
-  );
-}
-
-// ─── Sub-componente: EventChip ───────────────────────────────────────────────
-
-interface EventChipProps {
-  event: CalendarEvent;
-  compact: boolean;
-  onDragStart: (e: React.DragEvent) => void;
-  onDragEnd: () => void;
-  onClick: (e: React.MouseEvent) => void;
-  onMouseEnter: (e: React.MouseEvent, event: CalendarEvent) => void;
-  onMouseMove: (e: React.MouseEvent) => void;
-  onMouseLeave: () => void;
-}
-
-function EventChip({ event, compact, onDragStart, onDragEnd, onClick, onMouseEnter, onMouseMove, onMouseLeave }: EventChipProps) {
-  const isFinished = event.status && /conclu/i.test(event.status);
-  const o = event.original;
-
-  if (compact) {
-    return (
-      <div
-        className="relative"
-        draggable
-        onDragStart={onDragStart}
-        onDragEnd={onDragEnd}
-        onClick={onClick}
-        onMouseEnter={(e) => onMouseEnter(e, event)}
-        onMouseMove={onMouseMove}
-        onMouseLeave={onMouseLeave}
-      >
-        <div className={`px-2 py-0.5 rounded-md text-[10px] font-bold cursor-grab active:cursor-grabbing hover:brightness-90 transition-all truncate shadow-sm flex items-center justify-between gap-1
-          ${isFinished ? 'bg-slate-200 text-slate-500 line-through border border-slate-300' : `${event.color} text-white`}`}
-        >
-          <span className="truncate flex-1">{event.title}</span>
-          {event.hasAttachments && <Paperclip className={`w-3 h-3 shrink-0 ${isFinished ? 'text-slate-400' : 'text-white/80'}`} />}
-        </div>
-      </div>
-    );
-  }
-
-  // Versão semanal (expandida)
-  return (
-    <div
-      className="relative"
-      draggable
-      onDragStart={onDragStart}
-      onDragEnd={onDragEnd}
-      onClick={onClick}
-      onMouseEnter={(e) => onMouseEnter(e, event)}
-      onMouseMove={onMouseMove}
-      onMouseLeave={onMouseLeave}
-    >
-      <div className={`px-3 py-2.5 rounded-2xl text-xs font-bold cursor-grab active:cursor-grabbing hover:brightness-95 transition-all shadow-sm flex flex-col gap-1.5 border
-        ${isFinished ? 'bg-slate-100 text-slate-500 line-through border border-slate-200' : `${event.color} text-white border-transparent`}`}
-      >
-        <div className="flex items-start justify-between gap-1 w-full">
-          <span className="font-extrabold truncate flex-1 leading-tight">{event.title}</span>
-          {event.hasAttachments && <Paperclip className={`w-3.5 h-3.5 shrink-0 ${isFinished ? 'text-slate-400' : 'text-white/80'}`} />}
-        </div>
-        <div className={`text-[9px] font-semibold flex items-center justify-between gap-1 opacity-90 ${isFinished ? 'text-slate-400' : 'text-white/85'}`}>
-          <span className="truncate">
-            {event.type === 'instalacao'
-              ? (o.cidade || o.cidadeSheet || 'Instalação')
-              : (o.usina?.localizacao || 'O&M')}
-          </span>
-          <span className="uppercase shrink-0 text-[8px] tracking-widest font-black bg-white/20 px-1 py-0.5 rounded-md">
-            {event.type === 'instalacao' ? 'INST' : 'OM'}
-          </span>
-        </div>
-      </div>
     </div>
   );
 }

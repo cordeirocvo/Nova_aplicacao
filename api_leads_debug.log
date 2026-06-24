@@ -1,0 +1,82 @@
+[2026-06-19T12:26:18.051Z] GET /api/leads request started
+[2026-06-19T12:26:18.279Z] Session found: email=bruno@cordeiroenergia.com.br, role=ADMIN, canManageCRM=true
+[2026-06-19T12:26:33.261Z] GET /api/leads request started
+[2026-06-19T12:26:33.270Z] Session found: email=bruno@cordeiroenergia.com.br, role=ADMIN, canManageCRM=true
+[2026-06-19T12:26:34.836Z] Query successful, found 92 leads
+[2026-06-19T12:26:47.906Z] Query successful, found 92 leads
+[2026-06-19T13:38:36.418Z] GET /api/leads request started
+[2026-06-19T13:38:36.476Z] Session found: email=bruno@cordeiroenergia.com.br, role=ADMIN, canManageCRM=true
+[2026-06-19T13:38:54.239Z] Query successful, found 92 leads
+[2026-06-19T13:38:54.555Z] GET /api/leads request started
+[2026-06-19T13:38:54.707Z] Session found: email=bruno@cordeiroenergia.com.br, role=ADMIN, canManageCRM=true
+[2026-06-19T13:39:11.628Z] Query successful, found 92 leads
+[2026-06-19T13:39:37.291Z] GET /api/leads request started
+[2026-06-19T13:39:37.307Z] Session found: email=bruno@cordeiroenergia.com.br, role=ADMIN, canManageCRM=true
+[2026-06-19T13:39:57.305Z] GET /api/leads request started
+[2026-06-19T13:39:57.311Z] Session found: email=bruno@cordeiroenergia.com.br, role=ADMIN, canManageCRM=true
+[2026-06-19T13:40:04.776Z] Query successful, found 92 leads
+[2026-06-19T13:40:20.463Z] Query successful, found 92 leads
+[2026-06-19T13:41:05.865Z] GET /api/leads request started
+[2026-06-19T13:41:05.899Z] Session found: email=bruno@cordeiroenergia.com.br, role=ADMIN, canManageCRM=true
+[2026-06-19T13:41:25.865Z] GET /api/leads request started
+[2026-06-19T13:41:25.872Z] Session found: email=bruno@cordeiroenergia.com.br, role=ADMIN, canManageCRM=true
+[2026-06-19T13:41:27.411Z] Query successful, found 92 leads
+[2026-06-19T13:41:46.413Z] Query successful, found 92 leads
+[2026-06-19T13:42:36.378Z] GET /api/leads request started
+[2026-06-19T13:42:36.387Z] Session found: email=bruno@cordeiroenergia.com.br, role=ADMIN, canManageCRM=true
+[2026-06-19T13:42:58.507Z] Query successful, found 92 leads
+[2026-06-19T13:43:27.692Z] GET /api/leads request started
+[2026-06-19T13:43:27.724Z] Session found: email=bruno@cordeiroenergia.com.br, role=ADMIN, canManageCRM=true
+[2026-06-19T13:43:47.709Z] GET /api/leads request started
+[2026-06-19T13:43:47.729Z] Session found: email=bruno@cordeiroenergia.com.br, role=ADMIN, canManageCRM=true
+[2026-06-19T13:43:48.205Z] Query successful, found 92 leads
+[2026-06-19T13:44:05.470Z] Query successful, found 92 leads
+[2026-06-19T13:45:03.776Z] GET /api/leads request started
+[2026-06-19T13:45:03.812Z] Session found: email=bruno@cordeiroenergia.com.br, role=ADMIN, canManageCRM=true
+[2026-06-19T13:45:19.801Z] Query successful, found 92 leads
+[2026-06-19T13:45:20.187Z] GET /api/leads request started
+[2026-06-19T13:45:20.505Z] Session found: email=bruno@cordeiroenergia.com.br, role=ADMIN, canManageCRM=true
+[2026-06-19T13:45:33.841Z] Query successful, found 92 leads
+[2026-06-19T13:46:21.070Z] GET /api/leads request started
+[2026-06-19T13:46:21.078Z] Session found: email=bruno@cordeiroenergia.com.br, role=ADMIN, canManageCRM=true
+[2026-06-19T13:46:37.909Z] Query successful, found 92 leads
+[2026-06-19T13:46:38.243Z] GET /api/leads request started
+[2026-06-19T13:46:38.260Z] Session found: email=bruno@cordeiroenergia.com.br, role=ADMIN, canManageCRM=true
+[2026-06-19T13:46:57.277Z] Query successful, found 92 leads
+[2026-06-19T13:47:41.181Z] GET /api/leads request started
+[2026-06-19T13:47:41.205Z] Session found: email=bruno@cordeiroenergia.com.br, role=ADMIN, canManageCRM=true
+[2026-06-19T13:48:05.584Z] GET /api/leads request started
+[2026-06-19T13:48:05.597Z] GET /api/leads request started
+[2026-06-19T13:48:05.612Z] Session found: email=bruno@cordeiroenergia.com.br, role=ADMIN, canManageCRM=true
+[2026-06-19T13:48:05.616Z] Session found: email=bruno@cordeiroenergia.com.br, role=ADMIN, canManageCRM=true
+[2026-06-19T13:48:35.099Z] Query successful, found 92 leads
+[2026-06-19T13:48:37.846Z] Query successful, found 92 leads
+[2026-06-19T13:48:45.601Z] Query successful, found 92 leads
+[2026-06-19T13:49:17.708Z] GET /api/leads request started
+[2026-06-19T13:49:17.740Z] Session found: email=bruno@cordeiroenergia.com.br, role=ADMIN, canManageCRM=true
+[2026-06-19T13:49:37.748Z] GET /api/leads request started
+[2026-06-19T13:49:37.757Z] Session found: email=bruno@cordeiroenergia.com.br, role=ADMIN, canManageCRM=true
+[2026-06-19T13:49:49.801Z] Query successful, found 92 leads
+[2026-06-19T13:50:12.317Z] Query successful, found 92 leads
+[2026-06-19T13:55:02.348Z] GET /api/leads request started
+[2026-06-19T13:55:02.381Z] Session found: email=bruno@cordeiroenergia.com.br, role=ADMIN, canManageCRM=true
+[2026-06-19T13:55:22.373Z] GET /api/leads request started
+[2026-06-19T13:55:22.390Z] Session found: email=bruno@cordeiroenergia.com.br, role=ADMIN, canManageCRM=true
+[2026-06-19T13:55:27.568Z] Query successful, found 92 leads
+[2026-06-19T13:55:43.975Z] GET /api/leads request started
+[2026-06-19T13:55:44.008Z] Session found: email=bruno@cordeiroenergia.com.br, role=ADMIN, canManageCRM=true
+[2026-06-19T13:56:04.021Z] GET /api/leads request started
+[2026-06-19T13:56:04.027Z] Session found: email=bruno@cordeiroenergia.com.br, role=ADMIN, canManageCRM=true
+[2026-06-19T13:56:07.320Z] Query successful, found 92 leads
+[2026-06-19T13:56:09.623Z] Query successful, found 92 leads
+[2026-06-19T13:56:23.024Z] Query successful, found 92 leads
+[2026-06-19T14:10:07.232Z] GET /api/leads request started
+[2026-06-19T14:10:07.267Z] Session found: email=bruno@cordeiroenergia.com.br, role=ADMIN, canManageCRM=true
+[2026-06-19T14:10:29.019Z] GET /api/leads request started
+[2026-06-19T14:10:29.029Z] GET /api/leads request started
+[2026-06-19T14:10:29.054Z] Session found: email=bruno@cordeiroenergia.com.br, role=ADMIN, canManageCRM=true
+[2026-06-19T14:10:29.058Z] Session found: email=bruno@cordeiroenergia.com.br, role=ADMIN, canManageCRM=true
+[2026-06-19T14:10:32.625Z] Database query error: (EMAXCONNSESSION) max clients reached in session mode - max clients are limited to pool_size: 15
+[2026-06-19T14:10:32.626Z] ERRO CRÍTICO no GET /api/leads: (EMAXCONNSESSION) max clients reached in session mode - max clients are limited to pool_size: 15
+[2026-06-19T14:10:57.144Z] Query successful, found 92 leads
+[2026-06-19T14:11:23.745Z] Query successful, found 92 leads

@@ -9,13 +9,17 @@ import { TagToggler } from "../TagToggler";
 
 export default function GronnerTestView({
   initialGoogleRecords,
+  initialGronnerRecords,
   settings,
 }: {
   initialGoogleRecords: any[];
   initialGronnerRecords: any[];
   settings: { limiteVerde: number; limiteAmarelo: number; limiteParecer: number };
 }) {
+  const [activeTab, setActiveTab] = useState<"google" | "gronner">("google");
   const [actionMessage, setActionMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  const recordsToDisplay = activeTab === "google" ? initialGoogleRecords : initialGronnerRecords;
 
   const downloadFile = async (url: string, filename: string) => {
     try {
@@ -84,21 +88,51 @@ export default function GronnerTestView({
         </div>
       )}
 
+      {/* Tabs Selector */}
+      <div className="flex border-b border-slate-200 gap-2">
+        <button
+          onClick={() => setActiveTab("google")}
+          className={`py-3 px-6 text-sm font-bold border-b-2 transition-all cursor-pointer ${
+            activeTab === "google"
+              ? "border-[#1E3A8A] text-[#1E3A8A]"
+              : "border-transparent text-slate-500 hover:text-slate-800"
+          }`}
+        >
+          Planilha Google &amp; Adicionais ({initialGoogleRecords.length})
+        </button>
+        <button
+          onClick={() => setActiveTab("gronner")}
+          className={`py-3 px-6 text-sm font-bold border-b-2 transition-all cursor-pointer ${
+            activeTab === "gronner"
+              ? "border-[#1E3A8A] text-[#1E3A8A]"
+              : "border-transparent text-slate-500 hover:text-slate-800"
+          }`}
+        >
+          Vendas Gronner ({initialGronnerRecords.length})
+        </button>
+      </div>
+
       {/* Table */}
       <div className="space-y-4">
         <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
           <h2 className="text-lg font-bold text-[#1E3A8A] flex items-center gap-2">
             <FileText className="w-5 h-5 text-[#00BFA5]" />
-            Planilha Google &amp; Atividades Adicionais (Produção)
+            {activeTab === "google" ? "Planilha Google & Atividades Adicionais (Produção)" : "Vendas Importadas do Gronner"}
           </h2>
           <p className="text-xs text-slate-500 mt-1">
-            Visualização direta de todos os registros (sincronizados da planilha ou inseridos manualmente no acompanhamento).
+            {activeTab === "google"
+              ? "Visualização direta de todos os registros (sincronizados da planilha ou inseridos manualmente no acompanhamento)."
+              : "Visualização das vendas integradas do Gronner que foram enviadas via webhook."
+            }
           </p>
         </div>
 
-        {initialGoogleRecords.length === 0 ? (
+        {recordsToDisplay.length === 0 ? (
           <div className="bg-slate-50 rounded-2xl p-8 text-center border border-slate-200 text-xs text-slate-500 italic">
-            Nenhum registro encontrado no banco de produção.
+            {activeTab === "google"
+              ? "Nenhum registro encontrado no banco de produção."
+              : "Nenhum registro do Gronner encontrado."
+            }
           </div>
         ) : (
           <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
@@ -117,7 +151,7 @@ export default function GronnerTestView({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {initialGoogleRecords.map((rec) => {
+                {recordsToDisplay.map((rec) => {
                   const isUrgentParecer = rec.daysParecer !== null && rec.daysParecer <= settings.limiteParecer;
                   
                   let bgColorCss = "hover:bg-slate-50 transition-colors h-[65px]";

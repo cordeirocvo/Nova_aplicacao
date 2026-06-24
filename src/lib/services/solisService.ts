@@ -140,6 +140,16 @@ export class SolisService {
   }
 
   /**
+   * Dados de curva diária - stationDay
+   */
+  static async getStationDay(stationId: string, dateStr: string, keyId?: string, keySecret?: string): Promise<any> {
+    const kid  = keyId    || DEFAULT_KEY;
+    const ksec = keySecret || DEFAULT_SEC;
+    console.log(`[SOLIS] getStationDay stationId=${stationId} date=${dateStr}`);
+    return await solisRequest("/v1/api/stationDay", { id: stationId, money: "BRL", time: dateStr, timeZone: -3 }, kid, ksec);
+  }
+
+  /**
    * Lista todas as usinas da conta
    */
   static async listStations(keyId?: string, keySecret?: string): Promise<any[]> {

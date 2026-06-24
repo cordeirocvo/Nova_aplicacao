@@ -20,12 +20,17 @@ export default async function AcompanhamentoPage() {
   const [atividades, settingsRaw] = await Promise.all([
     prisma.planilhaInstalacao.findMany({
       where: {
+        status: {
+          notIn: [
+            "Concluído", "Concluido", "concluido", "concluído", "CONCLUÍDO",
+            "Finalizado", "finalizado", "FINALIZADO", "Finalizada", "finalizada",
+            "Executado", "executado", "EXECUTADO", "Executada", "executada"
+          ]
+        },
         NOT: {
-          OR: [
-            { status: { contains: "Conclu", mode: "insensitive" } },
-            { status: { contains: "Finaliz", mode: "insensitive" } },
-            { status: { contains: "Execut", mode: "insensitive" } },
-            { manualInstalacao: true, idInterno: { not: null } }
+          AND: [
+            { manualInstalacao: true },
+            { idInterno: { not: null } }
           ]
         }
       },

@@ -145,7 +145,7 @@ export async function POST(req: Request) {
     const telhado = findValue(body, ["telhado", "tipo_telhado", "roof"]) || "";
 
     // Upsert into PlanilhaInstalacao
-    // We set manualInstalacao: true so it stays isolated from production lists
+    // We set manualInstalacao: false so it feeds directly into the production list
     const updated = await prisma.planilhaInstalacao.upsert({
       where: { idInterno: idInterno },
       update: {
@@ -168,6 +168,8 @@ export async function POST(req: Request) {
         telefoneCliente: clientPhone || undefined,
         cidade: city || undefined,
         telefoneVendedor: sellerPhone || undefined,
+        manualInstalacao: false,
+        gronnerPayload: body,
       },
       create: {
         idInterno: idInterno,
@@ -190,7 +192,8 @@ export async function POST(req: Request) {
         telefoneCliente: clientPhone || "",
         cidade: city || "",
         telefoneVendedor: sellerPhone || "",
-        manualInstalacao: true, // Crucial: hides from the production dashboard
+        manualInstalacao: false, // Feeds directly into the production dashboard
+        gronnerPayload: body,
         dataSolicitacao: new Date(),
       },
     });

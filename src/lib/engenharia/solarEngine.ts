@@ -113,6 +113,35 @@ export interface PVSimulationInput {
   coefSujidade?: number;        // Coef. sujidade (ex: 0.03 para 3% de perda)
   latitude?: number;            // Latitude local da usina
   longitude?: number;           // Longitude local da usina
+  timeShiftMinutes?: number;    // Desvio de tempo (calibração de relógio do inversor)
+  lowSunElevationCap?: number;  // Ângulo limite para atenuação de sol baixo (graus)
+  lowSunExponent?: number;      // Expoente de atenuação de sol baixo
+}
+
+function getBrazilLocalTimeInfo(date: Date) {
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+    hour: "numeric",
+    minute: "numeric",
+    second: "numeric",
+    hour12: false
+  });
+  const parts = formatter.formatToParts(date);
+  const map: Record<string, string> = {};
+  for (const part of parts) {
+    map[part.type] = part.value;
+  }
+  return {
+    year: parseInt(map.year),
+    month: parseInt(map.month),
+    day: parseInt(map.day),
+    hour: parseInt(map.hour),
+    minute: parseInt(map.minute),
+    second: parseInt(map.second)
+  };
 }
 
 export function pvlibSimulate(params: PVSimulationInput): number {
@@ -128,17 +157,26 @@ export function pvlibSimulate(params: PVSimulationInput): number {
     coefTemperatura = -0.0035,
     coefSujidade = 0.03,
     latitude = -14.855, // Matias Cardoso, MG (Padrão)
-    longitude = -43.922
+    longitude = -43.922,
+    timeShiftMinutes = 0,
+    lowSunElevationCap = 10,
+    lowSunExponent = 1.0
   } = params;
 
   if (irradianciaGHI <= 5) return 0; // Sem geração relevante à noite
 
-  // 1. Cálculos Astronômicos (Posição Solar)
-  const dateObj = new Date(timestamp);
+  // 1. Ajuste de Desvio de Tempo (Calibração)
+  const adjustedTime = new Date(timestamp.getTime() + timeShiftMinutes * 60 * 1000);
+
+  // 2. Cálculos Astronômicos (Posição Solar) de forma segura em America/Sao_Paulo
+  const localInfo = getBrazilLocalTimeInfo(adjustedTime);
+  const localYear = localInfo.year;
+  const localMonth = localInfo.month;
+  const localDay = localInfo.day;
   
   // Dia do ano (1 a 365)
-  const startOfYear = new Date(dateObj.getFullYear(), 0, 1);
-  const diffMs = dateObj.getTime() - startOfYear.getTime();
+  const startOfYear = new Date(localYear, 0, 1);
+  const diffMs = new Date(localYear, localMonth - 1, localDay).getTime() - startOfYear.getTime();
   const dayOfYear = Math.floor(diffMs / (24 * 60 * 60 * 1000)) + 1;
   
   // Declinação Solar (delta) em radianos
@@ -149,8 +187,7 @@ export function pvlibSimulate(params: PVSimulationInput): number {
   const EoT = 9.87 * Math.sin(2 * B) - 7.53 * Math.cos(B) - 1.5 * Math.sin(B);
   
   // Hora do dia em decimal (Hora Local)
-  // Como estamos em UTC-3, convertemos
-  const localHours = dateObj.getHours() + dateObj.getMinutes() / 60 + dateObj.getSeconds() / 3600;
+  const localHours = localInfo.hour + localInfo.minute / 60 + localInfo.second / 3600;
   
   // Hora Solar Local (LST) e Ângulo Horário (H)
   const LSTM = -45; // Meridiano padrão para UTC-3
@@ -167,7 +204,7 @@ export function pvlibSimulate(params: PVSimulationInput): number {
 
   if (elevation <= 0) return 0; // Sol abaixo do horizonte
 
-  // 2. Transposição de Irradiação (GHI para POA - Plane of Array)
+  // 3. Transposição de Irradiação (GHI para POA - Plane of Array)
   // Ângulo de Incidência na superfície inclinada (theta)
   const tiltRad = inclinacao * (Math.PI / 180);
   const azimuthRad = orientacao * (Math.PI / 180); // 180 = Norte
@@ -184,7 +221,6 @@ export function pvlibSimulate(params: PVSimulationInput): number {
   const theta = Math.acos(Math.max(-1, Math.min(1, cosTheta)));
 
   // Plane of Array (POA) Irradiance (Transposta)
-  // POA = GHI * (cos(theta) / cos(zenith)) + Difusa aproximada
   const cosZenithLimit = Math.max(0.1, Math.cos(zenith));
   const cosThetaLimit = Math.max(0, cosTheta);
   
@@ -195,25 +231,22 @@ export function pvlibSimulate(params: PVSimulationInput): number {
   POA = Math.min(POA, irradianciaGHI * 1.6);
   POA = Math.max(0, POA);
 
-  // 3. Modelo de Temperatura da Célula (Faiman / Sandia Modificada)
+  // 4. Modelo de Temperatura da Célula (Faiman / Sandia Modificada)
   let cellTemp = 25;
   if (tempModulos !== undefined && tempModulos !== null && tempModulos > 0) {
     cellTemp = tempModulos;
   } else {
-    // Faiman cell temperature equation: Tcell = Tamb + E * exp(-u0 - u1 * WS)
-    // Coeficientes típicos de módulo de vidro sobre folha (u0 = -3.56, u1 = -0.075)
-    // Simplificado: Tcell = Tamb + POA * 0.03 (2.5°C a 3.0°C a cada 100 W/m²)
     cellTemp = tempAmbiente + POA * 0.028;
   }
 
-  // 4. Cálculo da Potência Gerada CC (DC)
+  // 5. Cálculo da Potência Gerada CC (DC)
   // Perda por temperatura (coefTemperatura, ex: -0.35%/°C)
   const tempLossFactor = 1 + coefTemperatura * (cellTemp - 25);
   
   // Geração CC bruta
   const P_dc = capacidadeKWp * (POA / 1000) * tempLossFactor;
 
-  // 5. Cálculo da Potência AC Líquida
+  // 6. Cálculo da Potência AC Líquida
   // Inclui perdas de sujidade, degradação natural das placas e eficiência do inversor
   const soilingFactor = 1 - coefSujidade;
   const degradationFactor = 0.985; // Placa com leve envelhecimento
@@ -222,8 +255,14 @@ export function pvlibSimulate(params: PVSimulationInput): number {
   let P_ac = P_dc * soilingFactor * degradationFactor * inverterEfficiency;
   P_ac = Math.max(0, P_ac);
 
-  // 6. Inverter Clipping (Corte do Inversor)
-  // O inversor corta a geração quando excede a sua capacidade nominal AC (aprox. 100% a 105% do kWp da usina)
+  // 7. Atenuação Física de Sol Baixo (Airmass/Horizonte)
+  const elDeg = elevation * (180 / Math.PI);
+  if (elDeg > 0 && elDeg < lowSunElevationCap) {
+    const attenuationFactor = Math.pow(Math.sin((elDeg / lowSunElevationCap) * Math.PI / 2), lowSunExponent);
+    P_ac = P_ac * attenuationFactor;
+  }
+
+  // 8. Inverter Clipping (Corte do Inversor)
   const capInversorLimit = capacidadeKWp * 1.05;
   if (P_ac > capInversorLimit) {
     P_ac = capInversorLimit;

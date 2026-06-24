@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { 
   Plus, MapPin, List, LogOut, Home, Phone, 
-  Map, Calendar, ChevronDown, ChevronUp, Search, Camera, CheckCircle2, X, Loader 
+  Map, Calendar, ChevronDown, ChevronUp, Search, Camera, CheckCircle2, X, Loader, Download 
 } from "lucide-react";
 import Link from "next/link";
 import { signOut, useSession } from "next-auth/react";
@@ -37,6 +37,39 @@ export default function AppVendedorPage() {
   const [loading, setLoading] = useState(true);
   const [expandedLead, setExpandedLead] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  
+  // Lightbox overlay viewer state
+  const [activeLightboxImg, setActiveLightboxImg] = useState<{ url: string; tipo: string } | null>(null);
+
+  const downloadImage = (url: string, filename: string) => {
+    if (url.startsWith("data:")) {
+      const parts = url.split(";base64,");
+      const contentType = parts[0].split(":")[1];
+      const raw = window.atob(parts[1]);
+      const rawLength = raw.length;
+      const uInt8Array = new Uint8Array(rawLength);
+      for (let i = 0; i < rawLength; ++i) {
+        uInt8Array[i] = raw.charCodeAt(i);
+      }
+      const blob = new Blob([uInt8Array], { type: contentType });
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+    } else {
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.target = "_blank";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+  };
 
   const [editingLeadId, setEditingLeadId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({
@@ -495,7 +528,11 @@ export default function AppVendedorPage() {
                                               <div className="grid grid-cols-4 gap-2">
                                                 {photos.map((midia) => (
                                                   <div key={midia.id} className="relative aspect-square rounded-xl overflow-hidden group border border-slate-200 shadow-inner">
-                                                    <img src={midia.arquivoUrl} className="w-full h-full object-cover" />
+                                                    <img 
+                                                       src={midia.arquivoUrl} 
+                                                       className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform" 
+                                                       onClick={() => setActiveLightboxImg({ url: midia.arquivoUrl, tipo })}
+                                                     />
                                                     <button 
                                                       type="button"
                                                       onClick={() => removeEditPhoto(midia.id)}
@@ -613,18 +650,16 @@ export default function AppVendedorPage() {
                                     ) : (
                                       <div className="grid grid-cols-4 gap-2">
                                         {lead.midias.map((midia) => (
-                                          <a 
+                                          <div 
                                             key={midia.id} 
-                                            href={midia.arquivoUrl}
-                                            target="_blank"
-                                            rel="noreferrer"
+                                            onClick={() => setActiveLightboxImg({ url: midia.arquivoUrl, tipo: midia.tipo })}
                                             className="aspect-square rounded-xl overflow-hidden border border-slate-100 bg-white shadow-inner flex items-center justify-center group relative cursor-pointer"
                                           >
                                             <img src={midia.arquivoUrl} className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
                                             <span className="absolute bottom-1 right-1 bg-black/60 text-white text-[8px] font-black px-1.5 py-0.5 rounded uppercase">
                                               {midia.tipo}
                                             </span>
-                                          </a>
+                                          </div>
                                         ))}
                                       </div>
                                     )}
@@ -704,6 +739,47 @@ export default function AppVendedorPage() {
           <span className="text-[9px] font-bold uppercase tracking-wide">Meus Leads</span>
         </button>
       </div>
+
+      {/* Lightbox Modal Image Viewer */}
+      {activeLightboxImg && (
+        <div className="fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4 animate-fade-in">
+          {/* Close button top right */}
+          <button 
+            onClick={() => setActiveLightboxImg(null)}
+            className="absolute top-4 right-4 text-white hover:text-slate-300 bg-slate-950/60 p-2.5 rounded-full transition active:scale-95 z-55"
+          >
+            <X className="w-6 h-6" />
+          </button>
+          
+          {/* Image Container */}
+          <div className="max-w-full max-h-[70vh] flex items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-slate-950/40 relative shadow-2xl">
+            <img 
+              src={activeLightboxImg.url} 
+              alt={activeLightboxImg.tipo} 
+              className="max-w-full max-h-[70vh] object-contain rounded-2xl" 
+            />
+            <span className="absolute bottom-3 left-3 bg-black/70 text-white text-[10px] font-black px-2.5 py-1 rounded-lg uppercase tracking-widest border border-white/5 shadow">
+              {activeLightboxImg.tipo}
+            </span>
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex gap-4 mt-6 w-full max-w-xs px-2">
+            <button 
+              onClick={() => downloadImage(activeLightboxImg.url, `foto-${activeLightboxImg.tipo.toLowerCase()}-${Date.now()}.png`)}
+              className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white py-3 px-6 rounded-2xl text-xs font-black uppercase tracking-wider text-center shadow-lg transition-colors flex items-center justify-center gap-2 font-bold active:scale-95"
+            >
+              <Download className="w-4 h-4" /> Baixar
+            </button>
+            <button 
+              onClick={() => setActiveLightboxImg(null)}
+              className="flex-1 bg-slate-800 hover:bg-slate-700 text-white py-3 px-6 rounded-2xl text-xs font-black uppercase tracking-wider text-center shadow-lg transition-colors active:scale-95"
+            >
+              Fechar
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

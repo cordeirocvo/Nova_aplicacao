@@ -126,7 +126,7 @@ export class HuaweiIntegration {
   static async getPlantData(stationCodes: string, token: string, cookie: string) {
     try {
       const res = await this.hwRequest('/getStationRealKpi', { stationCodes }, token, cookie);
-      return res.data || [];
+      return Array.isArray(res.data) ? res.data : [];
     } catch (error) {
       console.error("Huawei getPlantData Error:", error);
       return [];
@@ -139,7 +139,7 @@ export class HuaweiIntegration {
   static async getDeviceList(stationCodes: string, token: string, cookie: string) {
     try {
       const res = await this.hwRequest('/getDevList', { stationCodes }, token, cookie);
-      return res.data || [];
+      return Array.isArray(res.data) ? res.data : [];
     } catch (error) {
       console.error("Huawei getDeviceList Error:", error);
       return [];
@@ -158,13 +158,36 @@ export class HuaweiIntegration {
       for (let i = 0; i < ids.length; i += 50) {
         const batch = ids.slice(i, i + 50).join(',');
         const res = await this.hwRequest('/getDevRealKpi', { devIds: batch, devTypeId: 1 }, token, cookie);
-        if (res.data) results.push(...res.data);
+        if (res.data && Array.isArray(res.data)) results.push(...res.data);
         if (ids.length > 50) await new Promise(r => setTimeout(r, 1000));
       }
       
       return results;
     } catch (error) {
       console.error("Huawei getDeviceRealData Error:", error);
+      return [];
+    }
+  }
+
+  /**
+   * Busca KPIs históricos de múltiplos dispositivos (Batch)
+   */
+  static async getDeviceHistoryData(devIds: string, startTime: number, endTime: number, token: string, cookie: string) {
+    try {
+      const ids = devIds.split(',');
+      const results: any[] = [];
+      
+      // Processa em lotes de 10 (limite da API do Huawei para histórico)
+      for (let i = 0; i < ids.length; i += 10) {
+        const batch = ids.slice(i, i + 10).join(',');
+        const res = await this.hwRequest('/getDevHistoryKpi', { devIds: batch, devTypeId: 1, startTime, endTime }, token, cookie);
+        if (res.data && Array.isArray(res.data)) results.push(...res.data);
+        if (ids.length > 10) await new Promise(r => setTimeout(r, 1000));
+      }
+      
+      return results;
+    } catch (error) {
+      console.error("Huawei getDeviceHistoryData Error:", error);
       return [];
     }
   }

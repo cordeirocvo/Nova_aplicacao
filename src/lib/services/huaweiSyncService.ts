@@ -65,6 +65,42 @@ export class HuaweiSyncService {
             fs.appendFileSync(logFile, `Retornados ${allDevKpis.length} KPIs de dispositivos.\n`);
           }
 
+          // 4. Lote de KPIs históricos dos dispositivos (sincronização delta inteligente)
+          let allDevHistory: any[] = [];
+          if (inverters.length > 0) {
+            const allDevIds = inverters.map((i: any) => i.id || i.devId).filter(Boolean).join(",");
+            let startTime = Date.now() - 24 * 60 * 60 * 1000;
+            const endTime = Date.now();
+
+            const lastTelemetries = await Promise.all(
+              group.map(u => 
+                prisma.telemetria.findFirst({
+                  where: { usinaId: u.id },
+                  orderBy: { timestamp: "desc" },
+                  select: { timestamp: true }
+                })
+              )
+            );
+            const validTimes = lastTelemetries.filter(Boolean).map(t => t!.timestamp.getTime());
+            if (validTimes.length === group.length) {
+              const minLastTime = Math.min(...validTimes);
+              startTime = Math.max(minLastTime, Date.now() - 24 * 60 * 60 * 1000);
+            }
+
+            // Se o intervalo de delta for menor que 5 minutos, podemos pular a chamada de histórico
+            if (endTime - startTime < 5 * 60 * 1000) {
+              fs.appendFileSync(logFile, `[HUAWEI-SYNC] Delta recente detectado (${Math.round((endTime - startTime)/1000)}s). Pulando consulta histórica para evitar sobrecarga.\n`);
+            } else {
+              fs.appendFileSync(logFile, `Consultando KPIs históricos delta para ${inverters.length} inversores a partir de ${new Date(startTime).toLocaleString("pt-BR", {timeZone: "America/Sao_Paulo"})}...\n`);
+              try {
+                allDevHistory = await HuaweiIntegration.getDeviceHistoryData(allDevIds, startTime, endTime, login.token, login.cookie);
+                fs.appendFileSync(logFile, `Retornados ${allDevHistory.length} registros de KPIs históricos de dispositivos.\n`);
+              } catch (hErr) {
+                fs.appendFileSync(logFile, `Erro ao buscar KPIs históricos: ${hErr}\n`);
+              }
+            }
+          }
+
           for (const usina of group) {
             try {
               const usinaCode = usina.apiId.startsWith("NE=") ? usina.apiId : `NE=${usina.apiId}`;
@@ -169,6 +205,147 @@ export class HuaweiSyncService {
                   }
                 });
                 fs.appendFileSync(logFile, `[HUAWEI-SYNC] Nova telemetria criada para o balde de 5min (${alignedTime.toISOString()})\n`);
+              }
+
+              // 3. Sincronização de Histórico de 24h para Huawei (baldes de 5 minutos)
+              try {
+                if (allDevHistory.length > 0 && usinaInverters.length > 0) {
+                  const invIds = usinaInverters.map((i: any) => i.id || i.devId || i.devSn || i.sn).filter(Boolean);
+                  
+                  // Filtra registros históricos dos inversores desta usina
+                  const usinaHistory = allDevHistory.filter((h: any) => 
+                    invIds.includes(h.devId) || 
+                    invIds.includes(String(h.devId)) || 
+                    invIds.includes(Number(h.devId)) ||
+                    (h.sn && invIds.includes(h.sn))
+                  );
+                  
+                  fs.appendFileSync(logFile, `[HUAWEI-SYNC] Processando ${usinaHistory.length} pontos históricos para ${usina.nome}\n`);
+                  
+                  // Agrupa por balde de 5 minutos
+                  const buckets: Record<number, any[]> = {};
+                  usinaHistory.forEach((h: any) => {
+                    if (!h.collectTime) return;
+                    const alignedMs = Math.floor(h.collectTime / (5 * 60 * 1000)) * (5 * 60 * 1000);
+                    if (!buckets[alignedMs]) buckets[alignedMs] = [];
+                    buckets[alignedMs].push(h);
+                  });
+                  
+                  const bucketTimes = Object.keys(buckets).map(Number);
+                  if (bucketTimes.length > 0) {
+                    const minTime = new Date(Math.min(...bucketTimes));
+                    const maxTime = new Date(Math.max(...bucketTimes));
+                    
+                    const existingTeles = await prisma.telemetria.findMany({
+                      where: {
+                        usinaId: usina.id,
+                        timestamp: { gte: minTime, lte: maxTime }
+                      },
+                      select: { id: true, timestamp: true }
+                    });
+                    
+                    const existingMap = new Map<string, string>();
+                    existingTeles.forEach(t => {
+                      existingMap.set(t.timestamp.toISOString(), t.id);
+                    });
+                    
+                    const creations: any[] = [];
+                    const updates: any[] = [];
+                    
+                    for (const [alignedMsStr, deviceRecords] of Object.entries(buckets)) {
+                      const pAlignedTime = new Date(Number(alignedMsStr));
+                      
+                      let pPowerFinal = 0;
+                      let pEnergyKWh = 0;
+                      const pStringsAcc: Record<string, { V: number; I: number }> = {};
+                      let pV = { a: 0, b: 0, c: 0 }, pCur = { a: 0, b: 0, c: 0 }, pT = 45;
+                      
+                      deviceRecords.forEach((h: any, idx: number) => {
+                        const map = h.dataItemMap || {};
+                        const energyDaily = parseFloat(String(map.day_cap || map.day_power || "0"));
+                        const pDC = parseFloat(String(map.mppt_power ?? map.active_power ?? "0"));
+                        
+                        pPowerFinal += pDC;
+                        pEnergyKWh += energyDaily;
+                        
+                        const invLabel = h.sn || usinaInverters.find((i: any) => i.id === h.devId || i.devId === h.devId)?.sn || `Inv${idx+1}`;
+                        for (let i = 1; i <= 24; i++) {
+                          const vol = parseFloat(String(map[`pv${i}_u`] || "0"));
+                          const amp = parseFloat(String(map[`pv${i}_i`] || "0"));
+                          if (vol > 0) pStringsAcc[`${invLabel}_S${i}`] = { V: vol, I: amp };
+                        }
+                        
+                        if (idx === 0) {
+                          pV = { 
+                            a: parseFloat(String(map.ab_u ?? map.u_ab ?? map.a_u ?? map.u_a ?? "0")), 
+                            b: parseFloat(String(map.bc_u ?? map.u_bc ?? map.b_u ?? map.u_b ?? "0")), 
+                            c: parseFloat(String(map.ca_u ?? map.u_ca ?? map.c_u ?? map.u_c ?? "0")) 
+                          };
+                          pCur = { 
+                            a: parseFloat(String(map.a_i ?? map.i_a ?? "0")), 
+                            b: parseFloat(String(map.b_i ?? map.i_b ?? "0")), 
+                            c: parseFloat(String(map.c_i ?? map.i_c ?? "0")) 
+                          };
+                          pT = parseFloat(String(map.temperature ?? map.tempIGBT ?? "45"));
+                        }
+                      });
+                      
+                      const isoStr = pAlignedTime.toISOString();
+                      const dataObj = {
+                        usinaId: usina.id,
+                        timestamp: pAlignedTime,
+                        potenciaAtivaKW: pPowerFinal,
+                        energiaAcumuladaKWh: pEnergyKWh,
+                        tensaoCA_A: pV.a,
+                        tensaoCA_B: pV.b,
+                        tensaoCA_C: pV.c,
+                        correnteCA_A: pCur.a,
+                        correnteCA_B: pCur.b,
+                        correnteCA_C: pCur.c,
+                        tempIGBT: pT,
+                        dadosStrings: pStringsAcc
+                      };
+                      
+                      if (existingMap.has(isoStr)) {
+                        updates.push({
+                          id: existingMap.get(isoStr)!,
+                          data: dataObj
+                        });
+                      } else {
+                        creations.push(dataObj);
+                      }
+                    }
+                    
+                    if (creations.length > 0) {
+                      await prisma.telemetria.createMany({ data: creations });
+                      fs.appendFileSync(logFile, `[HUAWEI-SYNC] Criadas ${creations.length} novas telemetrias.\n`);
+                    }
+                    
+                    if (updates.length > 0) {
+                      await Promise.all(updates.map(u => 
+                        prisma.telemetria.update({
+                          where: { id: u.id },
+                          data: {
+                            potenciaAtivaKW: u.data.potenciaAtivaKW,
+                            energiaAcumuladaKWh: u.data.energiaAcumuladaKWh,
+                            tensaoCA_A: u.data.tensaoCA_A,
+                            tensaoCA_B: u.data.tensaoCA_B,
+                            tensaoCA_C: u.data.tensaoCA_C,
+                            correnteCA_A: u.data.correnteCA_A,
+                            correnteCA_B: u.data.correnteCA_B,
+                            correnteCA_C: u.data.correnteCA_C,
+                            tempIGBT: u.data.tempIGBT,
+                            dadosStrings: u.data.dadosStrings
+                          }
+                        })
+                      ));
+                      fs.appendFileSync(logFile, `[HUAWEI-SYNC] Atualizadas ${updates.length} telemetrias.\n`);
+                    }
+                  }
+                  fs.appendFileSync(logFile, `[HUAWEI-SYNC] Concluído processamento de histórico para ${usina.nome}\n`);
+                }
+              } catch (histErr) {
+                fs.appendFileSync(logFile, `[HUAWEI-SYNC] Erro no processamento de histórico para ${usina.nome}: ${histErr}\n`);
               }
               
               // Executa cálculo de perdas da IA

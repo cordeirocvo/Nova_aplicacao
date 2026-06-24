@@ -1300,3 +1300,578 @@ Processando Solis: Usina 75KW GD2 Evandro Diniz Jaíba
 [SOLIS-SYNC] Usina 75KW GD2 Evandro Diniz Jaíba: Final Power=7.28kW, Energy=2.6kWh
 [SOLIS-SYNC] Nova telemetria criada para o balde de 5min (2026-06-17T10:50:00.000Z)
 [SOLIS-SYNC] Motor Finalizado com Sucesso.
+
+[2026-06-18T23:36:24.944Z] Início Solis Sync (Motor Isolado)
+Usinas Solis encontradas no banco: 4
+Processando Solis: Usina Evandro Diniz Fazenda
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=399.3kWh
+[SOLIS-SYNC] Usina Evandro Diniz Fazenda: Final Power=0.08kW, Energy=399.3kWh
+[SOLIS-SYNC] Nova telemetria criada para o balde de 5min (2026-06-18T23:35:00.000Z)
+Processando Solis: Usina Alipio Lopes Lote 044-046 24KW
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=142.4kWh
+[SOLIS-SYNC] Usina Alipio Lopes Lote 044-046 24KW: Final Power=0.13kW, Energy=142.4kWh
+[SOLIS-SYNC] Nova telemetria criada para o balde de 5min (2026-06-18T23:35:00.000Z)
+Processando Solis: Usina Wellcas Comércio de Frutas LTDA
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=227.4kWh
+[SOLIS-SYNC] Usina Wellcas Comércio de Frutas LTDA: Final Power=0.01kW, Energy=227.4kWh
+[SOLIS-SYNC] Nova telemetria criada para o balde de 5min (2026-06-18T23:35:00.000Z)
+Processando Solis: Usina 75KW GD2 Evandro Diniz Jaíba
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=403.6kWh
+[SOLIS-SYNC] Usina 75KW GD2 Evandro Diniz Jaíba: Final Power=3.44kW, Energy=403.6kWh
+[SOLIS-SYNC] Nova telemetria criada para o balde de 5min (2026-06-18T23:35:00.000Z)
+[SOLIS-SYNC] Motor Finalizado com Sucesso.
+
+[2026-06-19T00:09:13.467Z] Início Solis Sync (Motor Isolado)
+[SOLIS-SYNC] Falha ao ler do banco: Error: Connection terminated due to connection timeout
+[SOLIS-SYNC] Motor Finalizado com Sucesso.
+
+[2026-06-19T00:30:20.657Z] Início Solis Sync (Motor Isolado)
+Usinas Solis encontradas no banco: 4
+Processando Solis: Usina Evandro Diniz Fazenda
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=399.3kWh
+[SOLIS-SYNC] Usina Evandro Diniz Fazenda: Final Power=0.08kW, Energy=399.3kWh
+[SOLIS-SYNC] Nova telemetria criada para o balde de 5min (2026-06-19T00:30:00.000Z)
+[SOLIS-SYNC] Iniciando backfill histórico para as datas: 2026-06-17, 2026-06-18
+[SOLIS-SYNC] Histórico retornado para 2026-06-17: 146 pontos.
+[SOLIS-SYNC] Histórico retornado para 2026-06-18: 146 pontos.
+Processando Solis: Usina Alipio Lopes Lote 044-046 24KW
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=142.4kWh
+[SOLIS-SYNC] Usina Alipio Lopes Lote 044-046 24KW: Final Power=0.13kW, Energy=142.4kWh
+[SOLIS-SYNC] Nova telemetria criada para o balde de 5min (2026-06-19T00:30:00.000Z)
+[SOLIS-SYNC] Iniciando backfill histórico para as datas: 2026-06-17, 2026-06-18
+[SOLIS-SYNC] Histórico retornado para 2026-06-17: 148 pontos.
+
+[2026-06-19T00:36:32.618Z] Início Solis Sync (Motor Isolado)
+Usinas Solis encontradas no banco: 4
+Processando Solis: Usina Evandro Diniz Fazenda
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=399.3kWh
+[SOLIS-SYNC] Usina Evandro Diniz Fazenda: Final Power=0.08kW, Energy=399.3kWh
+[SOLIS-SYNC] Nova telemetria criada para o balde de 5min (2026-06-19T00:35:00.000Z)
+[SOLIS-SYNC] Iniciando backfill histórico para as datas: 2026-06-17, 2026-06-18
+[SOLIS-SYNC] Histórico retornado para 2026-06-17: 146 pontos.
+[SOLIS-SYNC] Atualizadas 146 telemetrias.
+[SOLIS-SYNC] Histórico retornado para 2026-06-18: 146 pontos.
+[SOLIS-SYNC] Atualizadas 146 telemetrias.
+Processando Solis: Usina Alipio Lopes Lote 044-046 24KW
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=142.4kWh
+[SOLIS-SYNC] Usina Alipio Lopes Lote 044-046 24KW: Final Power=0.13kW, Energy=142.4kWh
+[SOLIS-SYNC] Nova telemetria criada para o balde de 5min (2026-06-19T00:35:00.000Z)
+[SOLIS-SYNC] Iniciando backfill histórico para as datas: 2026-06-17, 2026-06-18
+[SOLIS-SYNC] Histórico retornado para 2026-06-17: 148 pontos.
+[SOLIS-SYNC] Criadas 45 novas telemetrias.
+[SOLIS-SYNC] Atualizadas 103 telemetrias.
+[SOLIS-SYNC] Histórico retornado para 2026-06-18: 147 pontos.
+[SOLIS-SYNC] Criadas 147 novas telemetrias.
+Processando Solis: Usina Wellcas Comércio de Frutas LTDA
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=227.4kWh
+[SOLIS-SYNC] Usina Wellcas Comércio de Frutas LTDA: Final Power=0.01kW, Energy=227.4kWh
+[SOLIS-SYNC] Nova telemetria criada para o balde de 5min (2026-06-19T00:35:00.000Z)
+[SOLIS-SYNC] Iniciando backfill histórico para as datas: 2026-06-17, 2026-06-18
+[SOLIS-SYNC] Histórico retornado para 2026-06-17: 138 pontos.
+[SOLIS-SYNC] Criadas 138 novas telemetrias.
+[SOLIS-SYNC] Histórico retornado para 2026-06-18: 139 pontos.
+[SOLIS-SYNC] Criadas 139 novas telemetrias.
+Processando Solis: Usina 75KW GD2 Evandro Diniz Jaíba
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=403.6kWh
+[SOLIS-SYNC] Usina 75KW GD2 Evandro Diniz Jaíba: Final Power=3.44kW, Energy=403.6kWh
+[SOLIS-SYNC] Nova telemetria criada para o balde de 5min (2026-06-19T00:35:00.000Z)
+[SOLIS-SYNC] Iniciando backfill histórico para as datas: 2026-06-17, 2026-06-18
+[SOLIS-SYNC] Histórico retornado para 2026-06-17: 4 pontos.
+[SOLIS-SYNC] Criadas 4 novas telemetrias.
+[SOLIS-SYNC] Histórico retornado para 2026-06-18: 17 pontos.
+[SOLIS-SYNC] Criadas 17 novas telemetrias.
+[SOLIS-SYNC] Motor Finalizado com Sucesso.
+
+[2026-06-19T01:01:55.267Z] Início Solis Sync (Motor Isolado)
+Usinas Solis encontradas no banco: 4
+Processando Solis: Usina Evandro Diniz Fazenda
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=399.3kWh
+[SOLIS-SYNC] Usina Evandro Diniz Fazenda: Final Power=0.08kW, Energy=399.3kWh
+[SOLIS-SYNC] Nova telemetria criada para o balde de 5min (2026-06-19T01:00:00.000Z)
+[SOLIS-SYNC] Iniciando backfill histórico para as datas: 2026-06-17, 2026-06-18
+[SOLIS-SYNC] Histórico retornado para 2026-06-17: 146 pontos.
+[SOLIS-SYNC] Atualizadas 146 telemetrias.
+[SOLIS-SYNC] Histórico retornado para 2026-06-18: 146 pontos.
+[SOLIS-SYNC] Atualizadas 146 telemetrias.
+Processando Solis: Usina Alipio Lopes Lote 044-046 24KW
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=142.4kWh
+[SOLIS-SYNC] Usina Alipio Lopes Lote 044-046 24KW: Final Power=0.13kW, Energy=142.4kWh
+[SOLIS-SYNC] Nova telemetria criada para o balde de 5min (2026-06-19T01:00:00.000Z)
+[SOLIS-SYNC] Iniciando backfill histórico para as datas: 2026-06-17, 2026-06-18
+[SOLIS-SYNC] Histórico retornado para 2026-06-17: 148 pontos.
+[SOLIS-SYNC] Erro no backfill histórico de Usina Alipio Lopes Lote 044-046 24KW: Error: timeout exceeded when trying to connect
+Processando Solis: Usina Wellcas Comércio de Frutas LTDA
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=227.4kWh
+[SOLIS-SYNC] Usina Wellcas Comércio de Frutas LTDA: Final Power=0.01kW, Energy=227.4kWh
+[SOLIS-SYNC] Nova telemetria criada para o balde de 5min (2026-06-19T01:00:00.000Z)
+[SOLIS-SYNC] Iniciando backfill histórico para as datas: 2026-06-17, 2026-06-18
+[SOLIS-SYNC] Histórico retornado para 2026-06-17: 138 pontos.
+[SOLIS-SYNC] Atualizadas 138 telemetrias.
+[SOLIS-SYNC] Histórico retornado para 2026-06-18: 139 pontos.
+[SOLIS-SYNC] Atualizadas 139 telemetrias.
+Processando Solis: Usina 75KW GD2 Evandro Diniz Jaíba
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=403.6kWh
+[SOLIS-SYNC] Usina 75KW GD2 Evandro Diniz Jaíba: Final Power=3.44kW, Energy=403.6kWh
+[SOLIS-SYNC] Nova telemetria criada para o balde de 5min (2026-06-19T01:00:00.000Z)
+[SOLIS-SYNC] Iniciando backfill histórico para as datas: 2026-06-17, 2026-06-18
+[SOLIS-SYNC] Histórico retornado para 2026-06-17: 4 pontos.
+[SOLIS-SYNC] Atualizadas 4 telemetrias.
+[SOLIS-SYNC] Histórico retornado para 2026-06-18: 17 pontos.
+[SOLIS-SYNC] Atualizadas 17 telemetrias.
+[SOLIS-SYNC] Motor Finalizado com Sucesso.
+
+[2026-06-19T01:15:25.205Z] Início Solis Sync (Motor Isolado)
+Usinas Solis encontradas no banco: 4
+Processando Solis: Usina Evandro Diniz Fazenda
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=399.3kWh
+[SOLIS-SYNC] Usina Evandro Diniz Fazenda: Final Power=0.08kW, Energy=399.3kWh
+[SOLIS-SYNC] Nova telemetria criada para o balde de 5min (2026-06-19T01:15:00.000Z)
+[SOLIS-SYNC] Iniciando backfill histórico para as datas: 2026-06-17, 2026-06-18
+[SOLIS-SYNC] Histórico retornado para 2026-06-17: 146 pontos.
+[SOLIS-SYNC] Erro no backfill histórico de Usina Evandro Diniz Fazenda: Error: timeout exceeded when trying to connect
+Processando Solis: Usina Alipio Lopes Lote 044-046 24KW
+[SOLIS-SYNC] Falha ao obter dados da estação 1298491919450647653
+Processando Solis: Usina Wellcas Comércio de Frutas LTDA
+[SOLIS-SYNC] Falha ao obter dados da estação 1298491919450562556
+Processando Solis: Usina 75KW GD2 Evandro Diniz Jaíba
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=403.6kWh
+[SOLIS-SYNC] Usina 75KW GD2 Evandro Diniz Jaíba: Final Power=3.44kW, Energy=403.6kWh
+[SOLIS-SYNC] Nova telemetria criada para o balde de 5min (2026-06-19T01:15:00.000Z)
+[SOLIS-SYNC] Iniciando backfill histórico para as datas: 2026-06-17, 2026-06-18
+[SOLIS-SYNC] Histórico retornado para 2026-06-17: 4 pontos.
+[SOLIS-SYNC] Atualizadas 4 telemetrias.
+[SOLIS-SYNC] Histórico retornado para 2026-06-18: 17 pontos.
+[SOLIS-SYNC] Atualizadas 17 telemetrias.
+[SOLIS-SYNC] Motor Finalizado com Sucesso.
+
+[2026-06-19T01:25:18.609Z] Início Solis Sync (Motor Isolado)
+Usinas Solis encontradas no banco: 4
+Processando Solis: Usina Evandro Diniz Fazenda
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=399.3kWh
+[SOLIS-SYNC] Usina Evandro Diniz Fazenda: Final Power=0.08kW, Energy=399.3kWh
+[SOLIS-SYNC] Nova telemetria criada para o balde de 5min (2026-06-19T01:25:00.000Z)
+[SOLIS-SYNC] Iniciando backfill histórico para as datas: 2026-06-17, 2026-06-18
+[SOLIS-SYNC] Histórico retornado para 2026-06-17: 146 pontos.
+[SOLIS-SYNC] Criadas 146 novas telemetrias.
+[SOLIS-SYNC] Histórico retornado para 2026-06-18: 146 pontos.
+[SOLIS-SYNC] Criadas 146 novas telemetrias.
+Processando Solis: Usina Alipio Lopes Lote 044-046 24KW
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=142.4kWh
+[SOLIS-SYNC] Usina Alipio Lopes Lote 044-046 24KW: Final Power=0.13kW, Energy=142.4kWh
+[SOLIS-SYNC] Nova telemetria criada para o balde de 5min (2026-06-19T01:25:00.000Z)
+[SOLIS-SYNC] Iniciando backfill histórico para as datas: 2026-06-17, 2026-06-18
+
+[2026-06-19T01:25:59.386Z] Início Solis Sync (Motor Isolado)
+Usinas Solis encontradas no banco: 4
+Processando Solis: Usina Evandro Diniz Fazenda
+[SOLIS-SYNC] Histórico retornado para 2026-06-17: 148 pontos.
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=399.3kWh
+[SOLIS-SYNC] Criadas 148 novas telemetrias.
+[SOLIS-SYNC] Histórico retornado para 2026-06-18: 147 pontos.
+[SOLIS-SYNC] Usina Evandro Diniz Fazenda: Final Power=0.08kW, Energy=399.3kWh
+[SOLIS-SYNC] Telemetria atualizada para o balde de 5min (2026-06-19T01:25:00.000Z)
+[SOLIS-SYNC] Iniciando backfill histórico para as datas: 2026-06-17, 2026-06-18
+[SOLIS-SYNC] Histórico retornado para 2026-06-17: 146 pontos.
+[SOLIS-SYNC] Criadas 147 novas telemetrias.
+Processando Solis: Usina Wellcas Comércio de Frutas LTDA
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=227.4kWh
+[SOLIS-SYNC] Usina Wellcas Comércio de Frutas LTDA: Final Power=0.01kW, Energy=227.4kWh
+[SOLIS-SYNC] Nova telemetria criada para o balde de 5min (2026-06-19T01:25:00.000Z)
+[SOLIS-SYNC] Iniciando backfill histórico para as datas: 2026-06-17, 2026-06-18
+[SOLIS-SYNC] Atualizadas 146 telemetrias.
+[SOLIS-SYNC] Histórico retornado para 2026-06-17: 138 pontos.
+[SOLIS-SYNC] Histórico retornado para 2026-06-18: 146 pontos.
+[SOLIS-SYNC] Criadas 138 novas telemetrias.
+[SOLIS-SYNC] Histórico retornado para 2026-06-18: 139 pontos.
+[SOLIS-SYNC] Criadas 139 novas telemetrias.
+Processando Solis: Usina 75KW GD2 Evandro Diniz Jaíba
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=403.6kWh
+[SOLIS-SYNC] Atualizadas 146 telemetrias.
+Processando Solis: Usina Alipio Lopes Lote 044-046 24KW
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=142.4kWh
+[SOLIS-SYNC] Usina 75KW GD2 Evandro Diniz Jaíba: Final Power=3.44kW, Energy=403.6kWh
+[SOLIS-SYNC] Nova telemetria criada para o balde de 5min (2026-06-19T01:25:00.000Z)
+[SOLIS-SYNC] Iniciando backfill histórico para as datas: 2026-06-17, 2026-06-18
+[SOLIS-SYNC] Histórico retornado para 2026-06-17: 4 pontos.
+[SOLIS-SYNC] Usina Alipio Lopes Lote 044-046 24KW: Final Power=0.13kW, Energy=142.4kWh
+[SOLIS-SYNC] Criadas 4 novas telemetrias.
+[SOLIS-SYNC] Histórico retornado para 2026-06-18: 17 pontos.
+[SOLIS-SYNC] Telemetria atualizada para o balde de 5min (2026-06-19T01:25:00.000Z)
+[SOLIS-SYNC] Iniciando backfill histórico para as datas: 2026-06-17, 2026-06-18
+[SOLIS-SYNC] Histórico retornado para 2026-06-17: 148 pontos.
+[SOLIS-SYNC] Criadas 17 novas telemetrias.
+[SOLIS-SYNC] Motor Finalizado com Sucesso.
+[SOLIS-SYNC] Atualizadas 148 telemetrias.
+[SOLIS-SYNC] Histórico retornado para 2026-06-18: 147 pontos.
+[SOLIS-SYNC] Atualizadas 147 telemetrias.
+Processando Solis: Usina Wellcas Comércio de Frutas LTDA
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=227.4kWh
+[SOLIS-SYNC] Usina Wellcas Comércio de Frutas LTDA: Final Power=0.01kW, Energy=227.4kWh
+[SOLIS-SYNC] Telemetria atualizada para o balde de 5min (2026-06-19T01:25:00.000Z)
+[SOLIS-SYNC] Iniciando backfill histórico para as datas: 2026-06-17, 2026-06-18
+[SOLIS-SYNC] Histórico retornado para 2026-06-17: 138 pontos.
+[SOLIS-SYNC] Atualizadas 138 telemetrias.
+[SOLIS-SYNC] Histórico retornado para 2026-06-18: 139 pontos.
+[SOLIS-SYNC] Atualizadas 139 telemetrias.
+Processando Solis: Usina 75KW GD2 Evandro Diniz Jaíba
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=403.6kWh
+[SOLIS-SYNC] Usina 75KW GD2 Evandro Diniz Jaíba: Final Power=3.44kW, Energy=403.6kWh
+[SOLIS-SYNC] Telemetria atualizada para o balde de 5min (2026-06-19T01:25:00.000Z)
+[SOLIS-SYNC] Iniciando backfill histórico para as datas: 2026-06-17, 2026-06-18
+[SOLIS-SYNC] Histórico retornado para 2026-06-17: 4 pontos.
+[SOLIS-SYNC] Atualizadas 4 telemetrias.
+[SOLIS-SYNC] Histórico retornado para 2026-06-18: 17 pontos.
+[SOLIS-SYNC] Atualizadas 17 telemetrias.
+[SOLIS-SYNC] Motor Finalizado com Sucesso.
+
+[2026-06-19T02:07:15.720Z] Início Solis Sync (Motor Isolado)
+Usinas Solis encontradas no banco: 4
+Processando Solis: Usina Evandro Diniz Fazenda
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=399.3kWh
+[SOLIS-SYNC] Usina Evandro Diniz Fazenda: Final Power=0.08kW, Energy=399.3kWh
+[SOLIS-SYNC] Nova telemetria criada para o balde de 5min (2026-06-19T02:05:00.000Z)
+[SOLIS-SYNC] Iniciando backfill histórico para as datas: 2026-06-17, 2026-06-18
+
+[2026-06-19T02:07:40.159Z] Início Solis Sync (Motor Isolado)
+Usinas Solis encontradas no banco: 4
+Processando Solis: Usina Evandro Diniz Fazenda
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=399.3kWh
+[SOLIS-SYNC] Histórico retornado para 2026-06-17: 146 pontos.
+[SOLIS-SYNC] Usina Evandro Diniz Fazenda: Final Power=0.08kW, Energy=399.3kWh
+[SOLIS-SYNC] Erro no backfill histórico de Usina Evandro Diniz Fazenda: Error: timeout exceeded when trying to connect
+Processando Solis: Usina Alipio Lopes Lote 044-046 24KW
+[SOLIS-SYNC] Erro fatal em Usina Evandro Diniz Fazenda: Error: timeout exceeded when trying to connect
+Processando Solis: Usina Alipio Lopes Lote 044-046 24KW
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=142.4kWh
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=142.4kWh
+[SOLIS-SYNC] Usina Alipio Lopes Lote 044-046 24KW: Final Power=0.13kW, Energy=142.4kWh
+[SOLIS-SYNC] Usina Alipio Lopes Lote 044-046 24KW: Final Power=0.13kW, Energy=142.4kWh
+[SOLIS-SYNC] Nova telemetria criada para o balde de 5min (2026-06-19T02:05:00.000Z)
+[SOLIS-SYNC] Iniciando backfill histórico para as datas: 2026-06-17, 2026-06-18
+[SOLIS-SYNC] Nova telemetria criada para o balde de 5min (2026-06-19T02:05:00.000Z)
+[SOLIS-SYNC] Iniciando backfill histórico para as datas: 2026-06-17, 2026-06-18
+[SOLIS-SYNC] Histórico retornado para 2026-06-17: 148 pontos.
+[SOLIS-SYNC] Histórico retornado para 2026-06-17: 148 pontos.
+[SOLIS-SYNC] Atualizadas 148 telemetrias.
+[SOLIS-SYNC] Histórico retornado para 2026-06-18: 147 pontos.
+[SOLIS-SYNC] Erro no backfill histórico de Usina Alipio Lopes Lote 044-046 24KW: Error: timeout exceeded when trying to connect
+Processando Solis: Usina Wellcas Comércio de Frutas LTDA
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=227.4kWh
+[SOLIS-SYNC] Usina Wellcas Comércio de Frutas LTDA: Final Power=0.01kW, Energy=227.4kWh
+[SOLIS-SYNC] Atualizadas 147 telemetrias.
+Processando Solis: Usina Wellcas Comércio de Frutas LTDA
+[SOLIS-SYNC] Nova telemetria criada para o balde de 5min (2026-06-19T02:05:00.000Z)
+[SOLIS-SYNC] Iniciando backfill histórico para as datas: 2026-06-17, 2026-06-18
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=227.4kWh
+[SOLIS-SYNC] Histórico retornado para 2026-06-17: 138 pontos.
+[SOLIS-SYNC] Usina Wellcas Comércio de Frutas LTDA: Final Power=0.01kW, Energy=227.4kWh
+[SOLIS-SYNC] Atualizadas 138 telemetrias.
+[SOLIS-SYNC] Telemetria atualizada para o balde de 5min (2026-06-19T02:05:00.000Z)
+[SOLIS-SYNC] Iniciando backfill histórico para as datas: 2026-06-17, 2026-06-18
+[SOLIS-SYNC] Histórico retornado para 2026-06-18: 139 pontos.
+[SOLIS-SYNC] Histórico retornado para 2026-06-17: 138 pontos.
+[SOLIS-SYNC] Atualizadas 139 telemetrias.
+Processando Solis: Usina 75KW GD2 Evandro Diniz Jaíba
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=403.6kWh
+[SOLIS-SYNC] Usina 75KW GD2 Evandro Diniz Jaíba: Final Power=3.44kW, Energy=403.6kWh
+[SOLIS-SYNC] Erro no backfill histórico de Usina Wellcas Comércio de Frutas LTDA: Error: timeout exceeded when trying to connect
+Processando Solis: Usina 75KW GD2 Evandro Diniz Jaíba
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=403.6kWh
+[SOLIS-SYNC] Nova telemetria criada para o balde de 5min (2026-06-19T02:05:00.000Z)
+[SOLIS-SYNC] Iniciando backfill histórico para as datas: 2026-06-17, 2026-06-18
+[SOLIS-SYNC] Histórico retornado para 2026-06-17: 4 pontos.
+[SOLIS-SYNC] Usina 75KW GD2 Evandro Diniz Jaíba: Final Power=3.44kW, Energy=403.6kWh
+[SOLIS-SYNC] Telemetria atualizada para o balde de 5min (2026-06-19T02:05:00.000Z)
+[SOLIS-SYNC] Iniciando backfill histórico para as datas: 2026-06-17, 2026-06-18
+[SOLIS-SYNC] Histórico retornado para 2026-06-17: 4 pontos.
+[SOLIS-SYNC] Atualizadas 4 telemetrias.
+[SOLIS-SYNC] Histórico retornado para 2026-06-18: 17 pontos.
+[SOLIS-SYNC] Atualizadas 4 telemetrias.
+[SOLIS-SYNC] Histórico retornado para 2026-06-18: 17 pontos.
+[SOLIS-SYNC] Atualizadas 17 telemetrias.
+[SOLIS-SYNC] Motor Finalizado com Sucesso.
+[SOLIS-SYNC] Atualizadas 17 telemetrias.
+[SOLIS-SYNC] Motor Finalizado com Sucesso.
+
+[2026-06-19T02:25:37.069Z] Início Solis Sync (Motor Isolado)
+Usinas Solis encontradas no banco: 4
+Processando Solis: Usina Evandro Diniz Fazenda
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=399.3kWh
+[SOLIS-SYNC] Usina Evandro Diniz Fazenda: Final Power=0.08kW, Energy=399.3kWh
+[SOLIS-SYNC] Nova telemetria criada para o balde de 5min (2026-06-19T02:25:00.000Z)
+[SOLIS-SYNC] Iniciando backfill histórico para as datas: 2026-06-17, 2026-06-18
+[SOLIS-SYNC] Histórico retornado para 2026-06-17: 146 pontos.
+[SOLIS-SYNC] Atualizadas 146 telemetrias.
+
+[2026-06-19T02:26:01.504Z] Início Solis Sync (Motor Isolado)
+Usinas Solis encontradas no banco: 4
+Processando Solis: Usina Evandro Diniz Fazenda
+[SOLIS-SYNC] Histórico retornado para 2026-06-18: 146 pontos.
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=399.3kWh
+[SOLIS-SYNC] Usina Evandro Diniz Fazenda: Final Power=0.08kW, Energy=399.3kWh
+[SOLIS-SYNC] Atualizadas 146 telemetrias.
+Processando Solis: Usina Alipio Lopes Lote 044-046 24KW
+[SOLIS-SYNC] Telemetria atualizada para o balde de 5min (2026-06-19T02:25:00.000Z)
+[SOLIS-SYNC] Iniciando backfill histórico para as datas: 2026-06-17, 2026-06-18
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=142.4kWh
+[SOLIS-SYNC] Histórico retornado para 2026-06-17: 146 pontos.
+[SOLIS-SYNC] Usina Alipio Lopes Lote 044-046 24KW: Final Power=0.13kW, Energy=142.4kWh
+[SOLIS-SYNC] Atualizadas 146 telemetrias.
+[SOLIS-SYNC] Nova telemetria criada para o balde de 5min (2026-06-19T02:25:00.000Z)
+[SOLIS-SYNC] Iniciando backfill histórico para as datas: 2026-06-17, 2026-06-18
+[SOLIS-SYNC] Histórico retornado para 2026-06-18: 146 pontos.
+[SOLIS-SYNC] Histórico retornado para 2026-06-17: 148 pontos.
+[SOLIS-SYNC] Atualizadas 146 telemetrias.
+Processando Solis: Usina Alipio Lopes Lote 044-046 24KW
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=142.4kWh
+[SOLIS-SYNC] Usina Alipio Lopes Lote 044-046 24KW: Final Power=0.13kW, Energy=142.4kWh
+[SOLIS-SYNC] Atualizadas 148 telemetrias.
+[SOLIS-SYNC] Telemetria atualizada para o balde de 5min (2026-06-19T02:25:00.000Z)
+[SOLIS-SYNC] Iniciando backfill histórico para as datas: 2026-06-17, 2026-06-18
+[SOLIS-SYNC] Histórico retornado para 2026-06-18: 147 pontos.
+[SOLIS-SYNC] Histórico retornado para 2026-06-17: 148 pontos.
+[SOLIS-SYNC] Atualizadas 147 telemetrias.
+Processando Solis: Usina Wellcas Comércio de Frutas LTDA
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=227.4kWh
+[SOLIS-SYNC] Usina Wellcas Comércio de Frutas LTDA: Final Power=0.01kW, Energy=227.4kWh
+[SOLIS-SYNC] Atualizadas 148 telemetrias.
+[SOLIS-SYNC] Nova telemetria criada para o balde de 5min (2026-06-19T02:25:00.000Z)
+[SOLIS-SYNC] Iniciando backfill histórico para as datas: 2026-06-17, 2026-06-18
+[SOLIS-SYNC] Histórico retornado para 2026-06-18: 147 pontos.
+[SOLIS-SYNC] Histórico retornado para 2026-06-17: 138 pontos.
+[SOLIS-SYNC] Atualizadas 147 telemetrias.
+Processando Solis: Usina Wellcas Comércio de Frutas LTDA
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=227.4kWh
+[SOLIS-SYNC] Usina Wellcas Comércio de Frutas LTDA: Final Power=0.01kW, Energy=227.4kWh
+[SOLIS-SYNC] Atualizadas 138 telemetrias.
+[SOLIS-SYNC] Telemetria atualizada para o balde de 5min (2026-06-19T02:25:00.000Z)
+[SOLIS-SYNC] Iniciando backfill histórico para as datas: 2026-06-17, 2026-06-18
+[SOLIS-SYNC] Histórico retornado para 2026-06-18: 139 pontos.
+[SOLIS-SYNC] Histórico retornado para 2026-06-17: 138 pontos.
+[SOLIS-SYNC] Atualizadas 139 telemetrias.
+Processando Solis: Usina 75KW GD2 Evandro Diniz Jaíba
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=403.6kWh
+[SOLIS-SYNC] Usina 75KW GD2 Evandro Diniz Jaíba: Final Power=3.44kW, Energy=403.6kWh
+[SOLIS-SYNC] Atualizadas 138 telemetrias.
+[SOLIS-SYNC] Nova telemetria criada para o balde de 5min (2026-06-19T02:25:00.000Z)
+[SOLIS-SYNC] Iniciando backfill histórico para as datas: 2026-06-17, 2026-06-18
+[SOLIS-SYNC] Histórico retornado para 2026-06-18: 139 pontos.
+[SOLIS-SYNC] Histórico retornado para 2026-06-17: 4 pontos.
+[SOLIS-SYNC] Atualizadas 139 telemetrias.
+Processando Solis: Usina 75KW GD2 Evandro Diniz Jaíba
+[SOLIS-SYNC] Atualizadas 4 telemetrias.
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=403.6kWh
+[SOLIS-SYNC] Histórico retornado para 2026-06-18: 17 pontos.
+[SOLIS-SYNC] Usina 75KW GD2 Evandro Diniz Jaíba: Final Power=3.44kW, Energy=403.6kWh
+[SOLIS-SYNC] Atualizadas 17 telemetrias.
+[SOLIS-SYNC] Motor Finalizado com Sucesso.
+[SOLIS-SYNC] Telemetria atualizada para o balde de 5min (2026-06-19T02:25:00.000Z)
+[SOLIS-SYNC] Iniciando backfill histórico para as datas: 2026-06-17, 2026-06-18
+[SOLIS-SYNC] Histórico retornado para 2026-06-17: 4 pontos.
+[SOLIS-SYNC] Atualizadas 4 telemetrias.
+[SOLIS-SYNC] Histórico retornado para 2026-06-18: 17 pontos.
+[SOLIS-SYNC] Atualizadas 17 telemetrias.
+[SOLIS-SYNC] Motor Finalizado com Sucesso.
+
+[2026-06-19T02:28:17.520Z] Início Solis Sync (Motor Isolado)
+Usinas Solis encontradas no banco: 4
+Processando Solis: Usina Evandro Diniz Fazenda
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=399.3kWh
+[SOLIS-SYNC] Usina Evandro Diniz Fazenda: Final Power=0.08kW, Energy=399.3kWh
+[SOLIS-SYNC] Telemetria atualizada para o balde de 5min (2026-06-19T02:25:00.000Z)
+[SOLIS-SYNC] Iniciando backfill histórico para as datas: 2026-06-17, 2026-06-18
+[SOLIS-SYNC] Histórico retornado para 2026-06-17: 146 pontos.
+[SOLIS-SYNC] Atualizadas 146 telemetrias.
+[SOLIS-SYNC] Histórico retornado para 2026-06-18: 146 pontos.
+[SOLIS-SYNC] Atualizadas 146 telemetrias.
+Processando Solis: Usina Alipio Lopes Lote 044-046 24KW
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=142.4kWh
+[SOLIS-SYNC] Usina Alipio Lopes Lote 044-046 24KW: Final Power=0.13kW, Energy=142.4kWh
+[SOLIS-SYNC] Telemetria atualizada para o balde de 5min (2026-06-19T02:25:00.000Z)
+[SOLIS-SYNC] Iniciando backfill histórico para as datas: 2026-06-17, 2026-06-18
+[SOLIS-SYNC] Histórico retornado para 2026-06-17: 148 pontos.
+[SOLIS-SYNC] Atualizadas 148 telemetrias.
+[SOLIS-SYNC] Histórico retornado para 2026-06-18: 147 pontos.
+[SOLIS-SYNC] Atualizadas 147 telemetrias.
+Processando Solis: Usina Wellcas Comércio de Frutas LTDA
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=227.4kWh
+[SOLIS-SYNC] Usina Wellcas Comércio de Frutas LTDA: Final Power=0.01kW, Energy=227.4kWh
+[SOLIS-SYNC] Telemetria atualizada para o balde de 5min (2026-06-19T02:25:00.000Z)
+[SOLIS-SYNC] Iniciando backfill histórico para as datas: 2026-06-17, 2026-06-18
+[SOLIS-SYNC] Histórico retornado para 2026-06-17: 138 pontos.
+[SOLIS-SYNC] Atualizadas 138 telemetrias.
+
+[2026-06-19T02:29:32.173Z] Início Solis Sync (Motor Isolado)
+Usinas Solis encontradas no banco: 4
+Processando Solis: Usina Evandro Diniz Fazenda
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=399.3kWh
+[SOLIS-SYNC] Histórico retornado para 2026-06-18: 139 pontos.
+[SOLIS-SYNC] Usina Evandro Diniz Fazenda: Final Power=0.08kW, Energy=399.3kWh
+[SOLIS-SYNC] Atualizadas 139 telemetrias.
+Processando Solis: Usina 75KW GD2 Evandro Diniz Jaíba
+[SOLIS-SYNC] Telemetria atualizada para o balde de 5min (2026-06-19T02:25:00.000Z)
+[SOLIS-SYNC] Iniciando backfill histórico para as datas: 2026-06-17, 2026-06-18
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=403.6kWh
+[SOLIS-SYNC] Histórico retornado para 2026-06-17: 146 pontos.
+[SOLIS-SYNC] Usina 75KW GD2 Evandro Diniz Jaíba: Final Power=3.44kW, Energy=403.6kWh
+[SOLIS-SYNC] Telemetria atualizada para o balde de 5min (2026-06-19T02:25:00.000Z)
+[SOLIS-SYNC] Iniciando backfill histórico para as datas: 2026-06-17, 2026-06-18
+[SOLIS-SYNC] Histórico retornado para 2026-06-17: 4 pontos.
+[SOLIS-SYNC] Atualizadas 146 telemetrias.
+[SOLIS-SYNC] Atualizadas 4 telemetrias.
+[SOLIS-SYNC] Histórico retornado para 2026-06-18: 17 pontos.
+[SOLIS-SYNC] Histórico retornado para 2026-06-18: 146 pontos.
+[SOLIS-SYNC] Atualizadas 146 telemetrias.
+Processando Solis: Usina Alipio Lopes Lote 044-046 24KW
+[SOLIS-SYNC] Atualizadas 17 telemetrias.
+[SOLIS-SYNC] Motor Finalizado com Sucesso.
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=142.4kWh
+[SOLIS-SYNC] Usina Alipio Lopes Lote 044-046 24KW: Final Power=0.13kW, Energy=142.4kWh
+[SOLIS-SYNC] Nova telemetria criada para o balde de 5min (2026-06-19T02:30:00.000Z)
+[SOLIS-SYNC] Iniciando backfill histórico para as datas: 2026-06-17, 2026-06-18
+[SOLIS-SYNC] Histórico retornado para 2026-06-17: 148 pontos.
+[SOLIS-SYNC] Atualizadas 148 telemetrias.
+[SOLIS-SYNC] Histórico retornado para 2026-06-18: 147 pontos.
+[SOLIS-SYNC] Atualizadas 147 telemetrias.
+Processando Solis: Usina Wellcas Comércio de Frutas LTDA
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=227.4kWh
+[SOLIS-SYNC] Usina Wellcas Comércio de Frutas LTDA: Final Power=0.01kW, Energy=227.4kWh
+[SOLIS-SYNC] Nova telemetria criada para o balde de 5min (2026-06-19T02:30:00.000Z)
+[SOLIS-SYNC] Iniciando backfill histórico para as datas: 2026-06-17, 2026-06-18
+[SOLIS-SYNC] Histórico retornado para 2026-06-17: 138 pontos.
+[SOLIS-SYNC] Atualizadas 138 telemetrias.
+[SOLIS-SYNC] Histórico retornado para 2026-06-18: 139 pontos.
+[SOLIS-SYNC] Atualizadas 139 telemetrias.
+Processando Solis: Usina 75KW GD2 Evandro Diniz Jaíba
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=403.6kWh
+[SOLIS-SYNC] Usina 75KW GD2 Evandro Diniz Jaíba: Final Power=3.44kW, Energy=403.6kWh
+[SOLIS-SYNC] Nova telemetria criada para o balde de 5min (2026-06-19T02:30:00.000Z)
+[SOLIS-SYNC] Iniciando backfill histórico para as datas: 2026-06-17, 2026-06-18
+[SOLIS-SYNC] Histórico retornado para 2026-06-17: 4 pontos.
+[SOLIS-SYNC] Atualizadas 4 telemetrias.
+[SOLIS-SYNC] Histórico retornado para 2026-06-18: 17 pontos.
+[SOLIS-SYNC] Atualizadas 17 telemetrias.
+[SOLIS-SYNC] Motor Finalizado com Sucesso.
+
+[2026-06-19T10:31:00.873Z] Início Solis Sync (Motor Isolado)
+Usinas Solis encontradas no banco: 4
+Processando Solis: Usina Evandro Diniz Fazenda
+[SOLIS-SYNC] Dados Estação: Power=14.13kW, Energy=5.8kWh
+[SOLIS-SYNC] Usina Evandro Diniz Fazenda: Final Power=15.25kW, Energy=5.8kWh
+[SOLIS-SYNC] Nova telemetria criada para o balde de 5min (2026-06-19T10:30:00.000Z)
+[SOLIS-SYNC] Iniciando backfill histórico para as datas: 2026-06-18, 2026-06-19
+[SOLIS-SYNC] Histórico retornado para 2026-06-18: 146 pontos.
+[SOLIS-SYNC] Atualizadas 146 telemetrias.
+[SOLIS-SYNC] Histórico retornado para 2026-06-19: 16 pontos.
+[SOLIS-SYNC] Criadas 16 novas telemetrias.
+Processando Solis: Usina Alipio Lopes Lote 044-046 24KW
+[SOLIS-SYNC] Dados Estação: Power=1.99kW, Energy=0.6kWh
+[SOLIS-SYNC] Usina Alipio Lopes Lote 044-046 24KW: Final Power=3.40kW, Energy=0.6kWh
+[SOLIS-SYNC] Nova telemetria criada para o balde de 5min (2026-06-19T10:30:00.000Z)
+[SOLIS-SYNC] Iniciando backfill histórico para as datas: 2026-06-18, 2026-06-19
+[SOLIS-SYNC] Histórico retornado para 2026-06-18: 147 pontos.
+[SOLIS-SYNC] Atualizadas 147 telemetrias.
+[SOLIS-SYNC] Histórico retornado para 2026-06-19: 17 pontos.
+[SOLIS-SYNC] Criadas 16 novas telemetrias.
+[SOLIS-SYNC] Atualizadas 1 telemetrias.
+Processando Solis: Usina Wellcas Comércio de Frutas LTDA
+[SOLIS-SYNC] Dados Estação: Power=5.85kW, Energy=1.6kWh
+[SOLIS-SYNC] Usina Wellcas Comércio de Frutas LTDA: Final Power=6.04kW, Energy=1.6kWh
+[SOLIS-SYNC] Nova telemetria criada para o balde de 5min (2026-06-19T10:30:00.000Z)
+[SOLIS-SYNC] Iniciando backfill histórico para as datas: 2026-06-18, 2026-06-19
+[SOLIS-SYNC] Histórico retornado para 2026-06-18: 139 pontos.
+[SOLIS-SYNC] Atualizadas 139 telemetrias.
+[SOLIS-SYNC] Histórico retornado para 2026-06-19: 15 pontos.
+[SOLIS-SYNC] Criadas 14 novas telemetrias.
+[SOLIS-SYNC] Atualizadas 1 telemetrias.
+Processando Solis: Usina 75KW GD2 Evandro Diniz Jaíba
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=0.6kWh
+[SOLIS-SYNC] Usina 75KW GD2 Evandro Diniz Jaíba: Final Power=2.47kW, Energy=0.6kWh
+[SOLIS-SYNC] Nova telemetria criada para o balde de 5min (2026-06-19T10:30:00.000Z)
+[SOLIS-SYNC] Iniciando backfill histórico para as datas: 2026-06-18, 2026-06-19
+[SOLIS-SYNC] Histórico retornado para 2026-06-18: 17 pontos.
+[SOLIS-SYNC] Atualizadas 17 telemetrias.
+[SOLIS-SYNC] Histórico retornado para 2026-06-19: 2 pontos.
+[SOLIS-SYNC] Criadas 2 novas telemetrias.
+[SOLIS-SYNC] Motor Finalizado com Sucesso.
+
+[2026-06-19T10:41:25.065Z] Início Solis Sync (Motor Isolado)
+Usinas Solis encontradas no banco: 4
+Processando Solis: Usina Evandro Diniz Fazenda
+[SOLIS-SYNC] Dados Estação: Power=16.57kW, Energy=8.4kWh
+[SOLIS-SYNC] Usina Evandro Diniz Fazenda: Final Power=20.37kW, Energy=8.4kWh
+[SOLIS-SYNC] Nova telemetria criada para o balde de 5min (2026-06-19T10:40:00.000Z)
+[SOLIS-SYNC] Iniciando backfill histórico para as datas: 2026-06-18, 2026-06-19
+[SOLIS-SYNC] Histórico retornado para 2026-06-18: 146 pontos.
+[SOLIS-SYNC] Atualizadas 146 telemetrias.
+[SOLIS-SYNC] Histórico retornado para 2026-06-19: 18 pontos.
+[SOLIS-SYNC] Criadas 1 novas telemetrias.
+[SOLIS-SYNC] Atualizadas 17 telemetrias.
+Processando Solis: Usina Alipio Lopes Lote 044-046 24KW
+[SOLIS-SYNC] Dados Estação: Power=3.43kW, Energy=0.9kWh
+[SOLIS-SYNC] Usina Alipio Lopes Lote 044-046 24KW: Final Power=5.39kW, Energy=0.9kWh
+[SOLIS-SYNC] Nova telemetria criada para o balde de 5min (2026-06-19T10:40:00.000Z)
+[SOLIS-SYNC] Iniciando backfill histórico para as datas: 2026-06-18, 2026-06-19
+[SOLIS-SYNC] Histórico retornado para 2026-06-18: 147 pontos.
+[SOLIS-SYNC] Atualizadas 147 telemetrias.
+[SOLIS-SYNC] Histórico retornado para 2026-06-19: 18 pontos.
+[SOLIS-SYNC] Criadas 1 novas telemetrias.
+[SOLIS-SYNC] Atualizadas 17 telemetrias.
+Processando Solis: Usina Wellcas Comércio de Frutas LTDA
+[SOLIS-SYNC] Dados Estação: Power=8.56kW, Energy=2.8kWh
+[SOLIS-SYNC] Usina Wellcas Comércio de Frutas LTDA: Final Power=8.71kW, Energy=2.8kWh
+[SOLIS-SYNC] Nova telemetria criada para o balde de 5min (2026-06-19T10:40:00.000Z)
+[SOLIS-SYNC] Iniciando backfill histórico para as datas: 2026-06-18, 2026-06-19
+[SOLIS-SYNC] Histórico retornado para 2026-06-18: 139 pontos.
+[SOLIS-SYNC] Atualizadas 139 telemetrias.
+[SOLIS-SYNC] Histórico retornado para 2026-06-19: 17 pontos.
+[SOLIS-SYNC] Criadas 1 novas telemetrias.
+[SOLIS-SYNC] Atualizadas 16 telemetrias.
+Processando Solis: Usina 75KW GD2 Evandro Diniz Jaíba
+[SOLIS-SYNC] Dados Estação: Power=0kW, Energy=0.6kWh
+[SOLIS-SYNC] Usina 75KW GD2 Evandro Diniz Jaíba: Final Power=2.47kW, Energy=0.6kWh
+[SOLIS-SYNC] Nova telemetria criada para o balde de 5min (2026-06-19T10:40:00.000Z)
+[SOLIS-SYNC] Iniciando backfill histórico para as datas: 2026-06-18, 2026-06-19
+[SOLIS-SYNC] Histórico retornado para 2026-06-18: 17 pontos.
+[SOLIS-SYNC] Erro no backfill histórico de Usina 75KW GD2 Evandro Diniz Jaíba: Error: Connection terminated unexpectedly
+[SOLIS-SYNC] Motor Finalizado com Sucesso.
+
+[2026-06-19T11:24:05.801Z] Início Solis Sync (Motor Isolado)
+Usinas Solis encontradas no banco: 4
+Processando Solis: Usina Evandro Diniz Fazenda
+[SOLIS-SYNC] Dados Estação: Power=30.01kW, Energy=27.8kWh
+[SOLIS-SYNC] Usina Evandro Diniz Fazenda: Final Power=30.62kW, Energy=27.8kWh
+[SOLIS-SYNC] Nova telemetria criada para o balde de 5min (2026-06-19T11:20:00.000Z)
+[SOLIS-SYNC] Pulando backfill para 2026-06-18 pois já existem 149 registros no banco.
+[SOLIS-SYNC] Iniciando backfill histórico para as datas: 2026-06-19
+[SOLIS-SYNC] Histórico retornado para 2026-06-19: 27 pontos.
+[SOLIS-SYNC] Criadas 7 novas telemetrias.
+[SOLIS-SYNC] Atualizadas 20 telemetrias.
+Processando Solis: Usina Alipio Lopes Lote 044-046 24KW
+[SOLIS-SYNC] Dados Estação: Power=11.65kW, Energy=6.7kWh
+[SOLIS-SYNC] Usina Alipio Lopes Lote 044-046 24KW: Final Power=12.82kW, Energy=6.7kWh
+[SOLIS-SYNC] Nova telemetria criada para o balde de 5min (2026-06-19T11:20:00.000Z)
+[SOLIS-SYNC] Pulando backfill para 2026-06-18 pois já existem 152 registros no banco.
+[SOLIS-SYNC] Iniciando backfill histórico para as datas: 2026-06-19
+[SOLIS-SYNC] Histórico retornado para 2026-06-19: 27 pontos.
+[SOLIS-SYNC] Criadas 7 novas telemetrias.
+[SOLIS-SYNC] Atualizadas 20 telemetrias.
+Processando Solis: Usina Wellcas Comércio de Frutas LTDA
+[SOLIS-SYNC] Dados Estação: Power=16.85kW, Energy=11.5kWh
+[SOLIS-SYNC] Usina Wellcas Comércio de Frutas LTDA: Final Power=17.16kW, Energy=11.5kWh
+[SOLIS-SYNC] Nova telemetria criada para o balde de 5min (2026-06-19T11:20:00.000Z)
+[SOLIS-SYNC] Pulando backfill para 2026-06-18 pois já existem 143 registros no banco.
+[SOLIS-SYNC] Iniciando backfill histórico para as datas: 2026-06-19
+[SOLIS-SYNC] Histórico retornado para 2026-06-19: 25 pontos.
+[SOLIS-SYNC] Criadas 7 novas telemetrias.
+[SOLIS-SYNC] Atualizadas 18 telemetrias.
+Processando Solis: Usina 75KW GD2 Evandro Diniz Jaíba
+[SOLIS-SYNC] Dados Estação: Power=25.37kW, Energy=17.6kWh
+[SOLIS-SYNC] Usina 75KW GD2 Evandro Diniz Jaíba: Final Power=26.69kW, Energy=17.6kWh
+[SOLIS-SYNC] Nova telemetria criada para o balde de 5min (2026-06-19T11:20:00.000Z)
+[SOLIS-SYNC] Iniciando backfill histórico para as datas: 2026-06-18, 2026-06-19
+[SOLIS-SYNC] Histórico retornado para 2026-06-18: 17 pontos.
+[SOLIS-SYNC] Atualizadas 17 telemetrias.
+[SOLIS-SYNC] Histórico retornado para 2026-06-19: 3 pontos.
+[SOLIS-SYNC] Atualizadas 3 telemetrias.
+[SOLIS-SYNC] Motor Finalizado com Sucesso.

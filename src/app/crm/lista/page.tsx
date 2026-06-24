@@ -102,16 +102,29 @@ export default function ListaLeadsPage() {
     }
   };
 
+  console.log("CRM Lista - Total leads:", leads.length, "Filter query:", filter);
+
   const filteredLeads = leads.filter(l => {
-    const query = filter.toLowerCase();
-    const vendedorNome = l.vendedor?.name || "";
-    return (
-      l.nome.toLowerCase().includes(query) ||
-      (l.endereco && l.endereco.toLowerCase().includes(query)) ||
-      l.telefone.includes(query) ||
-      vendedorNome.toLowerCase().includes(query)
-    );
+    try {
+      const query = (filter || "").toLowerCase();
+      const nome = (l.nome || "").toLowerCase();
+      const endereco = (l.endereco || "").toLowerCase();
+      const telefone = (l.telefone || "").toLowerCase();
+      const vendedorNome = (l.vendedor?.name || l.vendedor?.email || "").toLowerCase();
+      
+      return (
+        nome.includes(query) ||
+        endereco.includes(query) ||
+        telefone.includes(query) ||
+        vendedorNome.includes(query)
+      );
+    } catch (err) {
+      console.error("Erro ao filtrar lead:", l, err);
+      return false;
+    }
   });
+
+  console.log("CRM Lista - Filtered leads:", filteredLeads.length);
 
   const getTipoLabel = (tipo: string) => {
     const map: any = {

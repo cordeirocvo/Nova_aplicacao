@@ -19,6 +19,27 @@ export default async function CronogramaPage() {
           { status: { notIn: ["Concluído", "Finalizado", "Executado"] } },
           { createdAt: { gte: sixMonthsAgo } }
         ]
+      },
+      select: {
+        id: true,
+        instalacao: true,
+        automaticoPrevInstala: true,
+        dataPrevista: true,
+        vencimentoParecer: true,
+        prioridade: true,
+        atividadeExtra: true,
+        status: true,
+        cidade: true,
+        cidadeSheet: true,
+        inversor: true,
+        numMod: true,
+        modulo: true,
+        obsInstalacao: true,
+        observacao: true,
+        vendedor: true,
+        telefoneCliente: true,
+        anexoFotos: true,
+        anexoArquivos: true,
       }
     }),
     prisma.manutencaoUsina.findMany({
@@ -28,9 +49,20 @@ export default async function CronogramaPage() {
           { dataAgendada: { gte: sixMonthsAgo } }
         ]
       },
-      include: {
-        usina: true,
-        equipamento: true
+      select: {
+        id: true,
+        usinaId: true,
+        tipo: true,
+        dataAgendada: true,
+        descricao: true,
+        responsavel: true,
+        status: true,
+        usina: {
+          select: {
+            nome: true,
+            localizacao: true
+          }
+        }
       }
     })
   ]);

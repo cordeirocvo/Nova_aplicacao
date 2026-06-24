@@ -63,10 +63,12 @@ model PlanilhaInstalacao {
   notificadoWhatsapp    Boolean  @default(false)
   telefoneVendedor      String?
   historico             Json?    @default("[]")
+  gronnerPayload        Json?
 
   @@index([idInterno])
   @@index([status])
   @@index([createdAt])
+  @@index([updatedAt])
 }
 
 model Tarifas {
@@ -464,6 +466,10 @@ model ManutencaoUsina {
   custoMaoDeObra Float?
   equipamento    EquipamentoUsina? @relation(fields: [equipamentoId], references: [id])
   usina          UsinaFotovoltaica @relation(fields: [usinaId], references: [id], onDelete: Cascade)
+
+  @@index([usinaId])
+  @@index([status])
+  @@index([dataAgendada])
 }
 
 model ComissionamentoUsina {
@@ -675,6 +681,9 @@ model Usina {
   estacaoId       String?
   apiKey          String?
   apiSecret       String?
+  latitude        Float?
+  longitude       Float?
+  modoIrradiancia String                @default("ESTACAO")
   alarmes         Alarme[]
   analises        AnalisePerda[]
   inversores      Inversor[]

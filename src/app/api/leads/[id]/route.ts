@@ -53,6 +53,12 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       if (body.empresa !== undefined) {
         updateData.empresa = body.empresa;
       }
+      if (body.endereco !== undefined) {
+        updateData.endereco = body.endereco;
+      }
+      if (body.tipo !== undefined) {
+        updateData.tipo = body.tipo;
+      }
     }
 
     // Campos que o vendedor associado ou gestor podem alterar

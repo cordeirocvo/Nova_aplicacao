@@ -32,7 +32,13 @@ export default function GestaoUsinasPage() {
     coefSujidade: 0.03,
     coefTemperatura: -0.0035,
     taxaDegradacao: 0.005,
-    estacaoId: ""
+    estacaoId: "",
+    latitude: "" as any,
+    longitude: "" as any,
+    modoIrradiancia: "ESTACAO",
+    localizacao: "",
+    inclinacao: 10,
+    orientacao: "180"
   });
 
   useEffect(() => {
@@ -152,7 +158,13 @@ export default function GestaoUsinasPage() {
       coefSujidade: usina.coefSujidade,
       coefTemperatura: usina.coefTemperatura,
       taxaDegradacao: usina.taxaDegradacao,
-      estacaoId: usina.estacaoId || ""
+      estacaoId: usina.estacaoId || "",
+      latitude: usina.latitude !== null && usina.latitude !== undefined ? usina.latitude.toString() : "",
+      longitude: usina.longitude !== null && usina.longitude !== undefined ? usina.longitude.toString() : "",
+      modoIrradiancia: usina.modoIrradiancia || "ESTACAO",
+      localizacao: usina.localizacao || "",
+      inclinacao: usina.inclinacao !== null && usina.inclinacao !== undefined ? usina.inclinacao : 10,
+      orientacao: usina.orientacao || "180"
     });
     setIsModalOpen(true);
   };
@@ -185,7 +197,24 @@ export default function GestaoUsinasPage() {
           <button 
             onClick={() => { 
               setEditingUsina(null); 
-              setNewUsina({ nome: "", capacidadeKWp: 0, apiFornecedor: "", apiId: "", apiKey: "", apiSecret: "", coefSujidade: 0.03, coefTemperatura: -0.0035, taxaDegradacao: 0.005, estacaoId: "" }); 
+              setNewUsina({ 
+                nome: "", 
+                capacidadeKWp: 0, 
+                apiFornecedor: "", 
+                apiId: "", 
+                apiKey: "", 
+                apiSecret: "", 
+                coefSujidade: 0.03, 
+                coefTemperatura: -0.0035, 
+                taxaDegradacao: 0.005, 
+                estacaoId: "",
+                latitude: "",
+                longitude: "",
+                modoIrradiancia: "ESTACAO",
+                localizacao: "",
+                inclinacao: 10,
+                orientacao: "180"
+              }); 
               setDiscoveredUsinas([]);
               setIsModalOpen(true); 
             }}
@@ -232,11 +261,113 @@ export default function GestaoUsinasPage() {
               <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-1">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nome da Usina</label>
-                  <input className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm" value={newUsina.nome} onChange={e => setNewUsina({...newUsina, nome: e.target.value})} />
+                  <input className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-semibold" value={newUsina.nome} onChange={e => setNewUsina({...newUsina, nome: e.target.value})} />
                 </div>
                 <div className="space-y-1">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Capacidade (kWp)</label>
-                  <input type="number" step="0.01" className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm" value={newUsina.capacidadeKWp} onChange={e => setNewUsina({...newUsina, capacidadeKWp: parseFloat(e.target.value) || 0})} />
+                  <input type="number" step="0.01" className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-semibold" value={newUsina.capacidadeKWp} onChange={e => setNewUsina({...newUsina, capacidadeKWp: parseFloat(e.target.value) || 0})} />
+                </div>
+              </div>
+
+              {/* Fonte de Irradiação e Estação */}
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Fonte de Irradiação</label>
+                  <select 
+                    className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm text-slate-800 font-semibold"
+                    value={newUsina.modoIrradiancia}
+                    onChange={e => setNewUsina({...newUsina, modoIrradiancia: e.target.value})}
+                  >
+                    <option value="ESTACAO">Estação Solarimétrica</option>
+                    <option value="SATELITE">Satélite / Climatológico (CRECESB/PVGIS)</option>
+                  </select>
+                </div>
+                
+                {newUsina.modoIrradiancia === "ESTACAO" ? (
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Estação Solarimétrica</label>
+                    <select 
+                      className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm text-slate-800 font-semibold"
+                      value={newUsina.estacaoId}
+                      onChange={e => setNewUsina({...newUsina, estacaoId: e.target.value})}
+                    >
+                      <option value="">Nenhuma / Sem vínculo</option>
+                      {estacoes.map(e => <option key={e.id} value={e.id}>{e.nome}</option>)}
+                    </select>
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Localização (Cidade/Estado)</label>
+                    <input 
+                      placeholder="Ex: Barreiras - BA" 
+                      className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-semibold"
+                      value={newUsina.localizacao} 
+                      onChange={e => setNewUsina({...newUsina, localizacao: e.target.value})} 
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Coordenadas e Geometria */}
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Latitude</label>
+                  <input 
+                    placeholder="Ex: -12.1524" 
+                    type="number"
+                    step="any"
+                    className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-semibold" 
+                    value={newUsina.latitude} 
+                    onChange={e => setNewUsina({...newUsina, latitude: e.target.value})} 
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Longitude</label>
+                  <input 
+                    placeholder="Ex: -44.9961" 
+                    type="number"
+                    step="any"
+                    className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-semibold" 
+                    value={newUsina.longitude} 
+                    onChange={e => setNewUsina({...newUsina, longitude: e.target.value})} 
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Inclinação dos Painéis (°)</label>
+                  <input 
+                    type="number"
+                    className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-semibold" 
+                    value={newUsina.inclinacao} 
+                    onChange={e => setNewUsina({...newUsina, inclinacao: parseFloat(e.target.value) || 0})} 
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Orientação / Azimute (180° = Norte)</label>
+                  <input 
+                    type="number"
+                    className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-semibold" 
+                    value={newUsina.orientacao} 
+                    onChange={e => setNewUsina({...newUsina, orientacao: e.target.value})} 
+                  />
+                </div>
+              </div>
+
+              {/* Coeficientes de Calibração */}
+              <div className="grid grid-cols-3 gap-4 bg-slate-50 p-6 rounded-3xl border border-slate-100">
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider ml-1">Perda Sujidade (Ex: 0.03)</label>
+                  <input type="number" step="0.001" className="w-full px-4 py-3 bg-white border border-slate-100 rounded-xl text-xs font-semibold" value={newUsina.coefSujidade} onChange={e => setNewUsina({...newUsina, coefSujidade: parseFloat(e.target.value) || 0})} />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider ml-1">Coef Temp (Ex: -0.0035)</label>
+                  <input type="number" step="0.0001" className="w-full px-4 py-3 bg-white border border-slate-100 rounded-xl text-xs font-semibold" value={newUsina.coefTemperatura} onChange={e => setNewUsina({...newUsina, coefTemperatura: parseFloat(e.target.value) || 0})} />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider ml-1">Degradação (Ex: 0.005)</label>
+                  <input type="number" step="0.0001" className="w-full px-4 py-3 bg-white border border-slate-100 rounded-xl text-xs font-semibold" value={newUsina.taxaDegradacao} onChange={e => setNewUsina({...newUsina, taxaDegradacao: parseFloat(e.target.value) || 0})} />
                 </div>
               </div>
 
@@ -339,14 +470,24 @@ function UsinaCard({ usina, onUpdate, onEdit, estacaoNome }: { usina: any, onUpd
   return (
     <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm relative group">
       <div className="flex items-center justify-between mb-8">
-        <span className="px-4 py-2 bg-slate-50 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-400">{usina.apiFornecedor}</span>
+        <span className="px-4 py-2 bg-slate-50 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-400">
+          {usina.apiFornecedor} | {usina.modoIrradiancia === "SATELITE" ? "🛰️ SATÉLITE" : "📡 ESTAÇÃO"}
+        </span>
         <div className="flex items-center gap-2">
           <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit(); }} className="p-2 text-slate-300 hover:text-cordeiro-orange"><Settings className="w-5 h-5" /></button>
           <button type="button" onClick={handleDelete} className="p-2 text-slate-300 hover:text-red-500">{isDeleting ? <Loader className="w-5 h-5 animate-spin" /> : <Trash className="w-5 h-5" />}</button>
         </div>
       </div>
       <h3 className="text-2xl font-black text-slate-800 leading-tight mb-2">{usina.nome}</h3>
-      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-8">ID: {usina.apiId} {estacaoNome && `| ${estacaoNome}`}</p>
+      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">
+        ID: {usina.apiId} {usina.modoIrradiancia === "ESTACAO" && estacaoNome ? `| ${estacaoNome}` : ""}
+      </p>
+      {usina.modoIrradiancia === "SATELITE" && usina.latitude && usina.longitude && (
+        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-4">
+          COORD: {usina.latitude.toFixed(4)}, {usina.longitude.toFixed(4)} {usina.localizacao ? `(${usina.localizacao})` : ""}
+        </p>
+      )}
+      <div className="mb-4" /> {/* Spacer */}
       <div className="grid grid-cols-2 gap-4 mb-8">
         <div className="bg-slate-50 p-4 rounded-3xl">
           <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Potência</p>

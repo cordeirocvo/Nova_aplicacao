@@ -15,9 +15,10 @@ const getOrCreatePool = () => {
   const pool = new Pool({
     connectionString,
     ssl: { rejectUnauthorized: false },
-    max: 4, // Supabase limita a 15 conexões totais em modo Session; reduzir evita EMAXCONNSESSION
-    idleTimeoutMillis: 1000, // Fecha conexões ociosas após 1s para evitar dead sockets do PgBouncer
-    connectionTimeoutMillis: 15000,
+    max: 4, // Limita o número de conexões simultâneas por container do Next.js
+    idleTimeoutMillis: 10000, // Mantém a conexão por até 10s para reutilização, evitando reconexões agressivas
+    connectionTimeoutMillis: 30000, // Limite de 30s para obter uma conexão (tolera picos de carga e cold starts)
+    keepAlive: true, // Habilita TCP Keep-Alive para evitar desconexões silenciosas por firewalls/PgBouncer
   })
 
   pool.on('error', (err) => {

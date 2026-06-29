@@ -9,8 +9,8 @@ const getOrCreatePool = () => {
     return globalForPool.pgPool;
   }
 
-  // Usar DIRECT_URL (porta 5432 - pooler em modo Session) para evitar quedas de conexões do PgBouncer em modo Transaction (porta 6543)
-  const connectionString = process.env.DIRECT_URL || process.env.DATABASE_URL;
+  // Usar DATABASE_URL (porta 6543 - pooler em modo Transaction com ?pgbouncer=true) para evitar EMAXCONNSESSION (limite de 15 conexões do modo Session / DIRECT_URL)
+  const connectionString = process.env.DATABASE_URL || process.env.DIRECT_URL;
 
   const pool = new Pool({
     connectionString,

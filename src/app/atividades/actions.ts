@@ -28,7 +28,6 @@ export async function togglePrioridade(id: string, currentState: boolean) {
   }
 
   revalidatePath("/atividades");
-  revalidatePath("/atividades/teste-groner");
 }
 
 export async function toggleAtividadeExtra(id: string, currentState: boolean) {
@@ -48,5 +47,4 @@ export async function toggleAtividadeExtra(id: string, currentState: boolean) {
     },
   });
   revalidatePath("/atividades");
-  revalidatePath("/atividades/teste-groner");
 }

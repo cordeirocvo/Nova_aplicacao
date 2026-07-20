@@ -63,7 +63,6 @@ model PlanilhaInstalacao {
   notificadoWhatsapp    Boolean  @default(false)
   telefoneVendedor      String?
   historico             Json?    @default("[]")
-  gronnerPayload        Json?
 
   @@index([idInterno])
   @@index([status])

@@ -5,7 +5,6 @@ import SettingsModal from "./SettingsModal";
 import { calcDaysLate } from "@/lib/dateUtils";
 import SyncButton from "./SyncButton";
 import AtividadesClientView from "./AtividadesClientView";
-import Link from "next/link";
 
 export const metadata = {
   title: "Acompanhamento | Cordeiro Energia",
@@ -17,6 +16,7 @@ export default async function AcompanhamentoPage() {
   const session: any = await getServerSession(authOptions as any);
   const isAdmin = session?.user?.role === "ADMIN";
   const isTV = session?.user?.role === "TV";
+
   const [atividades, settingsRaw] = await Promise.all([
     prisma.planilhaInstalacao.findMany({
       where: {
@@ -34,10 +34,26 @@ export default async function AcompanhamentoPage() {
           ]
         }
       },
+      select: {
+        id: true,
+        idInterno: true,
+        instalacao: true,
+        obsInstalacao: true,
+        vencimentoParecer: true,
+        automaticoPrevInstala: true,
+        dataPrevista: true,
+        status: true,
+        prioridade: true,
+        atividadeExtra: true,
+        anexoFotos: true,
+        anexoArquivos: true,
+        historico: true,
+      },
       orderBy: { createdAt: "desc" },
     }),
     prisma.systemSettings.findUnique({ where: { id: "default" } })
   ]);
+
   const settings = settingsRaw || { limiteVerde: 40, limiteAmarelo: 20, limiteParecer: 30 };
 
   // Phase 1: Mapear e calcular dias de atraso dinamicamente
@@ -94,12 +110,6 @@ export default async function AcompanhamentoPage() {
         
         {!isTV && isAdmin && (
           <div className="flex items-center gap-3">
-            <Link 
-              href="/atividades/teste-groner" 
-              className="flex items-center gap-2 bg-[#1E3A8A] hover:bg-[#152e75] text-white text-xs font-bold px-4 py-2.5 rounded-lg shadow-sm transition"
-            >
-              Integrar Gronner
-            </Link>
             <SyncButton />
             <SettingsModal initialSettings={settings} />
           </div>

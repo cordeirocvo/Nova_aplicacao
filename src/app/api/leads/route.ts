@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { sendLeadToGronner } from "@/lib/services/gronner";
 
 import fs from "fs";
 import path from "path";
@@ -133,13 +132,6 @@ export async function POST(req: Request) {
     });
 
     console.log("Lead criado com sucesso:", lead.id);
-
-    // Integração com Gronner (não deve travar o retorno se falhar)
-    try {
-      await sendLeadToGronner(lead);
-    } catch (gronnerError) {
-      console.error("Erro não-crítico na integração Gronner:", gronnerError);
-    }
 
     return NextResponse.json(lead);
   } catch (error: any) {

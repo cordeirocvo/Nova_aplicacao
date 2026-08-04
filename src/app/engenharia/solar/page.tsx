@@ -4,25 +4,44 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { 
   Sun, Zap, MapPin, Settings, Info, Loader, Save, 
   ChevronRight, BarChart as BarChartIcon, AlertTriangle, CheckCircle,
-  Maximize, ArrowRight, Layers, Compass, MoveUp, Activity
+  Maximize, ArrowRight, Layers, Compass, MoveUp, Activity, Plus,
+  Battery, User, Building2, Calendar, FileText, Sparkles
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, 
-  ResponsiveContainer, Legend, Cell, LabelList
+  ResponsiveContainer, Legend, LabelList
 } from "recharts";
 import { 
   calcularPotenciaNecessaria, 
   verificarCompatibilidadeEletrica 
 } from "@/lib/engenharia/solarEngine";
+import { ModalCadastrarModulo } from "@/components/engenharia/ModalCadastrarModulo";
+import { ModalCadastrarInversor } from "@/components/engenharia/ModalCadastrarInversor";
+import { SimuladorBESSDinamico } from "@/components/engenharia/SimuladorBESSDinamico";
+
+const MESES_NOMES = [
+  "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+];
+
+const MESES_SIGLAS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 
 function SolarContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const projetoId = searchParams.get("projetoId") || "";
 
+  // Navigation Tab State
+  const [activeTab, setActiveTab] = useState<'SOLAR' | 'BESS_DINAMICO'>('SOLAR');
+
   const [loading, setLoading] = useState(true);
   const [fetchingPvgis, setFetchingPvgis] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [savedSuccess, setSavedSuccess] = useState(false);
+
+  // Modals for Equipment Registration with Datasheets
+  const [modalModuloOpen, setModalModuloOpen] = useState(false);
+  const [modalInversorOpen, setModalInversorOpen] = useState(false);
   
   // Data State
   const [projetos, setProjetos] = useState<any[]>([]);
@@ -30,50 +49,42 @@ function SolarContent() {
   const [modulos, setModulos] = useState<any[]>([]);
   const [inversores, setInversores] = useState<any[]>([]);
   
+  // Client & Location Metadata
+  const [nomeCliente, setNomeCliente] = useState("");
+  const [cidadeProjeto, setCidadeProjeto] = useState("");
+  const [cidadeSolar, setCidadeSolar] = useState("");
+
+  // 12 Months Consumption Inputs (kWh)
+  const [consumo12Meses, setConsumo12Meses] = useState<number[]>([
+    1000, 1000, 1000, 1000, 1000, 1000,
+    1000, 1000, 1000, 1000, 1000, 1000
+  ]);
+
+  // Calculated 12-month average consumption
+  const mediaConsumo12Meses = useMemo(() => {
+    const sum = consumo12Meses.reduce((acc, curr) => acc + (curr || 0), 0);
+    return Math.round(sum / 12);
+  }, [consumo12Meses]);
+
   // Simulation Config
   const [config, setConfig] = useState({
     lat: -19.91,
     lon: -43.93,
     hspManual: 5.2,
     pr: 0.75, // Performance Ratio
-    perdaSistema: 0.14, // Outras perdas
-    metaGeracaoKWh: 1000,
+    perdaSistema: 0.14,
     selectedModuloId: "",
     selectedInversorId: "",
     numStrings: 1,
     quantidadeModulos: 0,
     tilt: 15,
-    azimuth: 0, // Agora 0° é Norte
-    overEnclosureAlvo: 1.40
+    azimuth: 0, // 0° = Norte no Brasil
+    overPercent: 30, // 30% overdimensionamento (Ratio DC/AC = 1.30)
   });
 
   const [pvgisData, setPvgisData] = useState<any[]>([]);
-  
-  // Custom Equipment State (Manual Input)
-  const [isCustomModulo, setIsCustomModulo] = useState(false);
-  const [customModulo, setCustomModulo] = useState({
-    fabricante: "Genérico",
-    modelo: "Custom",
-    potenciaPicoWp: 550,
-    Voc: 49.6,
-    Vmp: 40.9,
-    Isc: 14.0,
-    Imp: 13.4,
-    dimensoes: "2279x1134x35",
-    pesoKg: 28
-  });
-  const [isCustomInversor, setIsCustomInversor] = useState(false);
-  const [customInversor, setCustomInversor] = useState({
-    fabricante: "Genérico",
-    modelo: "Custom",
-    potenciaNominalKW: 5,
-    tensaoEntradaMinV: 100,
-    tensaoEntradaMaxV: 600,
-    correnteMaxCC: 12.5,
-    numeroStringsMPPT: 2
-  });
 
-  // 1. Carregamento inicial de dados (Projetos e Equipamentos)
+  // 1. Initial Data Fetching
   const fetchData = async () => {
     setLoading(true);
     const [resProj, resMod, resInv] = await Promise.all([
@@ -82,47 +93,87 @@ function SolarContent() {
       fetch("/api/engenharia/equipamentos/inversores")
     ]);
     
+    let modData: any[] = [];
+    let invData: any[] = [];
+
     if (resProj.ok) setProjetos(await resProj.json());
-    if (resMod.ok) setModulos(await resMod.json());
-    if (resInv.ok) setInversores(await resInv.json());
+    if (resMod.ok) {
+      modData = await resMod.json();
+      setModulos(modData);
+    }
+    if (resInv.ok) {
+      invData = await resInv.json();
+      setInversores(invData);
+    }
     
     if (projetoId) {
-      const metaSugestao = searchParams.get("meta");
       const resEstudo = await fetch(`/api/engenharia/solar?projetoId=${projetoId}`);
       if (resEstudo.ok) {
         const d = await resEstudo.json();
-          const base = d.base || d.estudo?.projeto;
-          setProjetoBase(base);
-          
-          const consumoMeses = base?.analiseFatura?.consumoMeses || [];
-          let avgHFP = 0;
-          if (consumoMeses.length > 0 && consumoMeses[0].energiaHFP !== undefined) {
-             avgHFP = consumoMeses.reduce((s: number, m: any) => s + (m.energiaHFP || 0), 0) / consumoMeses.length;
-          }
-          const consumoMeta = avgHFP > 0 ? avgHFP : (base?.analiseFatura?.consumoMedioMensalKWh || 1000);
+        const base = d.base || d.estudo?.projeto;
+        setProjetoBase(base);
 
-          if (d.estudo) {
-            const e = d.estudo;
-            setConfig({
-              lat: e.lat || -19.91,
-              lon: e.lon || -43.93,
-              hspManual: e.hspManual || 5.2,
-              pr: e.pr || 0.75,
-              perdaSistema: e.perdaSistema || 0.14,
-              metaGeracaoKWh: e.geracaoAlvoKWh || (metaSugestao ? parseFloat(metaSugestao) : consumoMeta),
-              selectedModuloId: e.moduloId || "",
-              selectedInversorId: e.inversorId || "",
-              numStrings: e.numStrings || 1,
-              quantidadeModulos: e.quantidadeModulos || 0,
-              tilt: e.tilt ?? 15,
-              azimuth: e.azimuth ?? 0,
-              overEnclosureAlvo: e.overEnclosureAlvo || 1.40
-            });
-          } else {
-             const meta = metaSugestao ? parseFloat(metaSugestao) : consumoMeta;
-             setConfig(prev => ({ ...prev, metaGeracaoKWh: meta }));
+        if (base) {
+          if (base.cliente) setNomeCliente(base.cliente);
+          if (base.cidade) setCidadeProjeto(base.cidade);
+
+          // Populates 12 months consumption if present in invoice analysis
+          const fatura = base.analiseFatura;
+          if (fatura) {
+            if (fatura.endereco && !cidadeProjeto) {
+              setCidadeProjeto(fatura.endereco.split('-')[0] || fatura.endereco);
+            }
+            if (fatura.nomeCliente && !nomeCliente) {
+              setNomeCliente(fatura.nomeCliente);
+            }
+
+            if (fatura.consumoMeses && Array.isArray(fatura.consumoMeses) && fatura.consumoMeses.length > 0) {
+              const arr = Array.from({ length: 12 }, (_, i) => {
+                const mesMatch = fatura.consumoMeses.find((m: any) => {
+                  if (typeof m.mes === 'number') return m.mes === i + 1;
+                  if (typeof m.mes === 'string') {
+                    const prefix = m.mes.substring(0, 3).toUpperCase();
+                    return MESES_SIGLAS[i].toUpperCase() === prefix;
+                  }
+                  return false;
+                });
+                return mesMatch?.kwh || fatura.consumoMedioMensalKWh || 1000;
+              });
+              setConsumo12Meses(arr);
+            } else if (fatura.consumoMedioMensalKWh) {
+              setConsumo12Meses(Array(12).fill(Math.round(fatura.consumoMedioMensalKWh)));
+            }
           }
+        }
+
+        if (d.estudo) {
+          const e = d.estudo;
+          setConfig(prev => ({
+            ...prev,
+            lat: e.lat || -19.91,
+            lon: e.long || -43.93,
+            hspManual: e.hspManual || 5.2,
+            pr: e.pr || 0.75,
+            perdaSistema: e.perdaSistema || 0.14,
+            selectedModuloId: e.moduloId || (modData[0]?.id || ""),
+            selectedInversorId: e.inversorId || (invData[0]?.id || ""),
+            numStrings: e.numStrings || 1,
+            quantidadeModulos: e.quantidadeModulos || 0,
+            tilt: e.tilt ?? 15,
+            azimuth: e.azimuth ?? 0,
+            overPercent: e.overEnclosureAlvo ? Math.round((e.overEnclosureAlvo - 1) * 100) : 30
+          }));
+        } else {
+          setConfig(prev => ({
+            ...prev,
+            selectedModuloId: prev.selectedModuloId || (modData[0]?.id || ""),
+            selectedInversorId: prev.selectedInversorId || (invData[0]?.id || "")
+          }));
+        }
       }
+    } else {
+      if (modData.length > 0) setConfig(prev => ({ ...prev, selectedModuloId: modData[0].id }));
+      if (invData.length > 0) setConfig(prev => ({ ...prev, selectedInversorId: invData[0].id }));
     }
     setLoading(false);
   };
@@ -131,112 +182,81 @@ function SolarContent() {
     fetchData();
   }, [projetoId]);
 
-  const fetchEquipamentos = async () => {
-    const [resMod, resInv] = await Promise.all([
-      fetch("/api/engenharia/equipamentos/modulos"),
-      fetch("/api/engenharia/equipamentos/inversores")
-    ]);
-    if (resMod.ok) setModulos(await resMod.json());
-    if (resInv.ok) setInversores(await resInv.json());
+  // 2. Query Solar Irradiance from PVLIB / PVGIS
+  const fetchPVLIBData = async () => {
+    setFetchingPvgis(true);
+    try {
+      let queryUrl = `/api/engenharia/solar?action=pvgis&lat=${config.lat}&lon=${config.lon}&tilt=${config.tilt}&azimuth=${config.azimuth}`;
+      if (cidadeSolar) {
+        queryUrl = `/api/engenharia/irradiacao?endereco=${encodeURIComponent(cidadeSolar)}`;
+      }
+      
+      const res = await fetch(queryUrl);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.lat && data.lng) {
+          setConfig(prev => ({ ...prev, lat: data.lat, lon: data.lng }));
+        }
+
+        const raw = data.mensal || data.outputs?.monthly?.fixed || [];
+        const monthly = raw.map((m: any) => ({
+          mes: m.month || m.mes,
+          hsp: (m["H(i)_m"] ? m["H(i)_m"] / 30 : m.hsp) || 5.2,
+          energySpecific: m.E_m || 0,
+        }));
+
+        if (monthly.length > 0) {
+          setPvgisData(monthly);
+          const avgHsp = data.hsp || (monthly.reduce((acc: number, cur: any) => acc + cur.hsp, 0) / 12);
+          setConfig(prev => ({ ...prev, hspManual: parseFloat(avgHsp.toFixed(2)) }));
+        }
+      } else {
+        alert("Não foi possível consultar os dados solarimétricos PVLIB. Verifique a cidade ou coordenadas.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Erro de conexão ao buscar dados PVLIB.");
+    } finally {
+      setFetchingPvgis(false);
+    }
   };
 
-  // 2. Re-simular PVGIS quando a geometria muda e sugerir inversor se necessário
+  // Re-fetch PVGIS when geometry changes
   useEffect(() => {
     if (!loading && config.lat && config.lon) {
-      triggerPvgisFetch(config.lat, config.lon, config.tilt, config.azimuth);
+      fetchPVLIBData();
     }
   }, [config.lat, config.lon, config.tilt, config.azimuth, loading]);
 
-  // Sugestão automática ao trocar o módulo
-  useEffect(() => {
-    if (config.selectedModuloId && !config.selectedInversorId && calculated.sugestoes.length > 0) {
-       aplicarSugestaoInversor();
-    }
-  }, [config.selectedModuloId]);
-
-  const triggerPvgisFetch = async (lat: number, lon: number, tilt: number, azimuth: number) => {
-    setFetchingPvgis(true);
-    try {
-      const res = await fetch(`/api/engenharia/solar?action=pvgis&lat=${lat}&lon=${lon}&tilt=${tilt}&azimuth=${azimuth}`);
-      if (res.ok) {
-        const data = await res.json();
-        const raw = data.outputs?.monthly?.fixed || [];
-        const monthly = raw.map((m: any) => ({
-          mes: m.month,
-          hsp: m["H(i)_m"] / 30,
-          energySpecific: m.E_m,
-        }));
-        setPvgisData(monthly);
-      }
-    } catch (err) { console.error(err); }
-    setFetchingPvgis(false);
-  };
-
-  const fetchPvgis = async () => {
-    setFetchingPvgis(true);
-    const res = await fetch(`/api/engenharia/irradiacao?lat=${config.lat}&lng=${config.lon}`);
-    if (res.ok) {
-      const data = await res.json();
-      const raw = data.mensal || [];
-      const monthly = raw.map((m: any) => ({
-        mes: m.month,
-        hsp: m["H(i)_m"] / 30,
-        energySpecific: m.E_m,
-      }));
-      if (monthly.length > 0) {
-         setPvgisData(monthly);
-         const avgHsp = data.hsp || (monthly.reduce((acc: number, cur: any) => acc + cur.hsp, 0) / 12);
-         setConfig(prev => ({ ...prev, hspManual: parseFloat(avgHsp.toFixed(2)) }));
-      }
-    } else {
-      alert("Falha na comunicação com PVGIS. Verifique as coordenadas.");
-    }
-    setFetchingPvgis(false);
-  };
-
-  const fetchPvgisPorEndereco = async () => {
-    const endereco = projetoBase?.analiseFatura?.endereco;
-    if (!endereco) return alert("Fatura não possui endereço extraído para geocodificação.");
-    
-    setFetchingPvgis(true);
-    const res = await fetch(`/api/engenharia/irradiacao?endereco=${encodeURIComponent(endereco)}`);
-    if (res.ok) {
-      const data = await res.json();
-      
-      setConfig(prev => ({ ...prev, lat: data.lat, lon: data.lng, hspManual: data.hsp }));
-
-      const raw = data.mensal || [];
-      const monthly = raw.map((m: any) => ({
-        mes: m.month,
-        hsp: m["H(i)_m"] / 30,
-        energySpecific: m.E_m,
-      }));
-      if (monthly.length > 0) setPvgisData(monthly);
-    } else {
-      alert("Não foi possível encontrar a Lat/Long para este endereço.");
-    }
-    setFetchingPvgis(false);
-  };
-
-  // Calculations
+  // Main Solar Sizing Calculations
   const calculated = useMemo(() => {
     const kwpNecessario = calcularPotenciaNecessaria({
-      metaGeracaoMensalKWh: config.metaGeracaoKWh,
+      metaGeracaoMensalKWh: mediaConsumo12Meses,
       hspCity: config.hspManual,
       pr: config.pr
     });
 
-    const modulo = isCustomModulo ? customModulo : modulos.find(m => m.id === config.selectedModuloId);
-    const inversor = isCustomInversor ? customInversor : inversores.find(i => i.id === config.selectedInversorId);
+    const modulo = modulos.find(m => m.id === config.selectedModuloId) || modulos[0];
+    const inversor = inversores.find(i => i.id === config.selectedInversorId) || inversores[0];
 
-    // Ajuste de quantidade de módulos baseado no kWp
+    // Calculated modules count
     let qteModulos = config.quantidadeModulos;
-    if (modulo && qteModulos === 0) {
+    if (modulo && (qteModulos === 0 || !qteModulos)) {
       qteModulos = Math.ceil((kwpNecessario * 1000) / modulo.potenciaPicoWp);
     }
 
     const kwpAtual = modulo ? (qteModulos * (modulo.potenciaPicoWp as number)) / 1000 : 0;
 
+    // Inverter Oversizing Ratio Calculation
+    const targetOverRatio = 1 + (config.overPercent / 100);
+    const inverterPowerTargetKW = kwpAtual / targetOverRatio;
+
+    let overActualPercent = 0;
+    if (inversor && inversor.potenciaNominalKW > 0) {
+      overActualPercent = Math.round(((kwpAtual / inversor.potenciaNominalKW) - 1) * 100);
+    }
+
+    // Electrical String Compatibility
     const compatibilidade = (modulo && inversor) ? verificarCompatibilidadeEletrica({
       inversor,
       modulo,
@@ -244,165 +264,136 @@ function SolarContent() {
       numStrings: config.numStrings
     }) : null;
 
-    // Área e Peso
+    // Physical Footprint
     let area = 0, peso = 0;
     if (modulo && modulo.dimensoes) {
       const parts = modulo.dimensoes.split('x');
-      const w = parseFloat(parts[0]) / 1000;
-      const h = parseFloat(parts[1]) / 1000;
-      area = w * h * qteModulos;
-      peso = ((modulo as any).pesoKg || 25) * qteModulos;
+      if (parts.length >= 2) {
+        const w = parseFloat(parts[0]) / 1000;
+        const h = parseFloat(parts[1]) / 1000;
+        area = Math.round(w * h * qteModulos * 10) / 10;
+      }
+      peso = Math.round(((modulo.pesoKg || 27) * qteModulos));
     }
 
+    // 12-Month Generation Curve vs 12-Month Consumption
     const monthlyGeneration = Array.from({ length: 12 }, (_, i) => {
       const mesNum = i + 1;
       const pvgisMatch = pvgisData.find(m => m.mes === mesNum);
-      
+      const consumoMes = consumo12Meses[i] || mediaConsumo12Meses;
+
       let geracaoCalculada = 0;
       let hsp = 0;
-      
+
       if (pvgisMatch && pvgisMatch.energySpecific) {
         hsp = pvgisMatch.hsp;
         geracaoCalculada = pvgisMatch.energySpecific * (kwpAtual || 0);
       } else {
-        // Fallback dinâmico: Curva senoidal + Fator de Projeção Geométrica (Cos θ)
-        // Isso dá feedback instantâneo ao usuário enquanto o PVGIS não carrega.
         const sazonalidade = 1 + 0.15 * Math.cos((2 * Math.PI * (mesNum - 1)) / 12);
-        
-        // Fator de perda simplificado por orientação:
-        // Ideal para Brasil (Hemisfério Sul) é Norte. Com a inversão, Norte agora é 0°.
-        const deltaAz = Math.abs(config.azimuth - 0);
-        const projectionFactor = Math.cos((config.tilt * Math.PI) / 180) * Math.cos((deltaAz * Math.PI) / 360);
-        
         hsp = (pvgisMatch ? pvgisMatch.hsp : config.hspManual) || 5.2;
-        geracaoCalculada = hsp * 30 * (kwpAtual || 0) * (config.pr || 0) * sazonalidade * Math.max(0.5, projectionFactor);
+        geracaoCalculada = hsp * 30 * (kwpAtual || 0) * (config.pr || 0) * sazonalidade;
       }
-
-      const realConsumo = (projetoBase?.analiseFatura?.consumoMeses as any[])?.find((m: any) => {
-         if (typeof m.mes === 'string') {
-            const prefix = m.mes.substring(0, 3).toUpperCase();
-            const index = ["JAN","FEV","MAR","ABR","MAI","JUN","JUL","AGO","SET","OUT","NOV","DEZ"].indexOf(prefix);
-            return index + 1 === mesNum;
-         }
-         return m.mes === mesNum;
-      })?.kwh;
 
       return {
         mes: mesNum,
+        mesNome: MESES_NOMES[i],
+        mesSigla: MESES_SIGLAS[i],
         hsp: Number(hsp.toFixed(2)),
-        geracao: Number(geracaoCalculada.toFixed(0)),
-        consumo: Number((realConsumo || config.metaGeracaoKWh || 0).toFixed(0))
+        geracao: Math.round(geracaoCalculada),
+        consumo: Math.round(consumoMes),
+        saldo: Math.round(geracaoCalculada - consumoMes)
       };
     });
 
-    // Lógica de Sugestão de Inversores baseada em Fases e Precisão de Over
-    const padrao = projetoBase?.analiseFatura?.padraoConexao || "TRIFASICO";
-    const acPowerTarget = kwpAtual / (config.overEnclosureAlvo || 1.4);
-    let sugestoes: any[] = [];
+    const geracaoAnualTotal = monthlyGeneration.reduce((acc, curr) => acc + curr.geracao, 0);
+    const consumoAnualTotal = monthlyGeneration.reduce((acc, curr) => acc + curr.consumo, 0);
+    const coberturaAnualPercent = Math.round((geracaoAnualTotal / (consumoAnualTotal || 1)) * 100);
 
-    if (kwpAtual > 0) {
-      if (padrao === "TRIFASICO") {
-        // Busca o inversor que deixa o over o mais próximo possível do alvo
-        const options = inversores
-          .filter(i => i.fase === 3 || !i.fase)
-          .map(i => ({ ...i, overDiff: Math.abs((kwpAtual / i.potenciaNominalKW) - config.overEnclosureAlvo) }))
-          .sort((a, b) => a.overDiff - b.overDiff);
-        
-        if (options[0]) sugestoes = [{ ...options[0], quantidade: 1 }];
-      } else if (padrao === "BIFASICO") {
-        const halfPowerTarget = acPowerTarget / 2;
-        const options = inversores
-          .filter(i => i.fase === 1 || i.fase === 2)
-          .map(i => ({ ...i, overDiff: Math.abs(( (kwpAtual/2) / i.potenciaNominalKW) - config.overEnclosureAlvo) }))
-          .sort((a, b) => a.overDiff - b.overDiff);
-        
-        if (options[0]) sugestoes = [{ ...options[0], quantidade: 2 }];
-      } else {
-        const options = inversores
-          .filter(i => i.fase === 1 || !i.fase)
-          .map(i => ({ ...i, overDiff: Math.abs((kwpAtual / i.potenciaNominalKW) - config.overEnclosureAlvo) }))
-          .sort((a, b) => a.overDiff - b.overDiff);
-        
-        if (options[0]) sugestoes = [{ ...options[0], quantidade: 1 }];
-      }
-    }
+    return { 
+      kwpNecessario, 
+      kwpAtual, 
+      qteModulos, 
+      inverterPowerTargetKW,
+      overActualPercent, 
+      compatibilidade, 
+      area, 
+      peso, 
+      monthlyGeneration, 
+      geracaoAnualTotal,
+      consumoAnualTotal,
+      coberturaAnualPercent,
+      modulo,
+      inversor
+    };
+  }, [config, modulos, inversores, consumo12Meses, mediaConsumo12Meses, pvgisData]);
 
-    const overActual = sugestoes.length > 0 
-      ? kwpAtual / sugestoes.reduce((acc, cur) => acc + (cur.potenciaNominalKW * cur.quantidade), 0)
-      : 0;
-
-    const idealAC = kwpAtual / (config.overEnclosureAlvo || 1.4);
-    return { kwpNecessario, kwpAtual, qteModulos, compatibilidade, area, peso, monthlyGeneration, sugestoes, padrao, overActual, idealAC };
-  }, [config, modulos, inversores, isCustomModulo, customModulo, isCustomInversor, customInversor, projetoBase, pvgisData]);
-
-  const aplicarSugestaoInversor = () => {
-    if (calculated.sugestoes.length > 0) {
-      const sugerido = calculated.sugestoes[0];
-      setConfig(prev => ({
-        ...prev,
-        selectedInversorId: sugerido.id
-      }));
-    }
-  };
-
+  // Handle Save Solar Sizing
   const handleSave = async () => {
     if (!projetoId) return;
     setSaving(true);
-    await fetch("/api/engenharia/solar", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        projetoId,
-        lat: Number(config.lat),
-        long: Number(config.lon),
-        hspManual: Number(config.hspManual),
-        pr: Number(config.pr),
-        geracaoAlvoKWh: Number(config.metaGeracaoKWh),
-        potenciaNecessariaKWp: Number(calculated.kwpNecessario),
-        moduloId: config.selectedModuloId,
-        inversorId: config.selectedInversorId,
-        quantidadeModulos: Number(calculated.qteModulos),
-        numStrings: Number(config.numStrings),
-        modulosPorString: Number(calculated.compatibilidade?.modulosPorString || 0),
-        tilt: Number(config.tilt),
-        azimuth: Number(config.azimuth),
-        overEnclosureAlvo: Number(config.overEnclosureAlvo),
-        inversoresSugeridos: calculated.sugestoes.map(s => ({ id: s.id, quantidade: s.quantidade })),
-        areaOcupadaM2: Number(calculated.area),
-        pesoTotalKg: Number(calculated.peso)
-      })
-    });
-    setSaving(false);
+    try {
+      await fetch("/api/engenharia/solar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          projetoId,
+          lat: Number(config.lat),
+          long: Number(config.lon),
+          hspManual: Number(config.hspManual),
+          pr: Number(config.pr),
+          geracaoAlvoKWh: Number(mediaConsumo12Meses),
+          potenciaNecessariaKWp: Number(calculated.kwpNecessario),
+          moduloId: config.selectedModuloId,
+          inversorId: config.selectedInversorId,
+          quantidadeModulos: Number(calculated.qteModulos),
+          numStrings: Number(config.numStrings),
+          modulosPorString: Number(calculated.compatibilidade?.modulosPorString || 0),
+          tilt: Number(config.tilt),
+          azimuth: Number(config.azimuth),
+          overEnclosureAlvo: 1 + (config.overPercent / 100),
+          areaOcupadaM2: Number(calculated.area),
+          pesoTotalKg: Number(calculated.peso)
+        })
+      });
+      setSavedSuccess(true);
+      setTimeout(() => setSavedSuccess(false), 3000);
+    } catch (err) {
+      alert("Erro ao salvar estudo solar.");
+    } finally {
+      setSaving(false);
+    }
   };
 
-  if (loading) return <div className="flex h-[80vh] items-center justify-center"><Loader className="w-8 h-8 animate-spin text-[#00BFA5]" /></div>;
+  if (loading) {
+    return (
+      <div className="flex h-[80vh] items-center justify-center">
+        <Loader className="w-8 h-8 animate-spin text-[#00BFA5]" />
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+    <div className="max-w-7xl mx-auto space-y-6 pb-12">
+      
+      {/* Top Header & Navigation */}
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between bg-white p-6 rounded-3xl border border-slate-100 shadow-sm gap-4">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 bg-gradient-to-br from-yellow-400 to-amber-600 rounded-2xl flex items-center justify-center text-white shadow-lg">
             <Sun className="w-7 h-7" />
           </div>
           <div>
             <button 
-              onClick={() => router.push(`/engenharia/analise-consumo?projetoId=${projetoId}`)}
+              onClick={() => router.push(`/engenharia`)}
               className="text-[10px] font-black text-slate-400 hover:text-[#1E3A8A] uppercase tracking-widest mb-1 flex items-center gap-1 transition-colors"
             >
-               ← Voltar para Análise de Consumo
+               ← Central de Engenharia
             </button>
-            <h1 className="text-2xl font-black text-slate-800">Sistema Fotovoltaico</h1>
-            <p className="text-slate-500 text-sm">Dimensionamento de Geração e Strings</p>
+            <h1 className="text-2xl font-black text-slate-800">Dimensionamento Solar FV & BESS</h1>
+            <p className="text-slate-500 text-sm">Cálculo de Consumo, Geração PVLIB e Simulação Híbrida de Baterias</p>
           </div>
         </div>
-        <div className="flex gap-3">
-          <button 
-            onClick={() => router.push(`/engenharia/solar-teste?projetoId=${projetoId}`)}
-            className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-4 py-2.5 rounded-xl flex items-center gap-2 font-bold text-sm hover:bg-emerald-100 transition-all"
-          >
-            Testar Simulador Diário
-          </button>
+
+        <div className="flex items-center gap-3">
           <select 
             className="px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-medium bg-slate-50 outline-none focus:ring-2 focus:ring-[#00BFA5]"
             value={projetoId}
@@ -411,534 +402,526 @@ function SolarContent() {
             <option value="">Selecione um Projeto</option>
             {projetos.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
           </select>
+
           <button 
             disabled={!projetoId || saving}
             onClick={handleSave}
-            className="bg-[#1E3A8A] text-white px-5 py-2.5 rounded-xl flex items-center gap-2 font-bold text-sm hover:bg-blue-900 transition-all disabled:opacity-40"
+            className="bg-[#1E3A8A] text-white px-5 py-2.5 rounded-xl flex items-center gap-2 font-bold text-sm hover:bg-blue-900 transition-all disabled:opacity-40 shadow-sm"
           >
-            {saving ? <Loader className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            Salvar Estudo
+            {saving ? <Loader className="w-4 h-4 animate-spin" /> : (savedSuccess ? <CheckCircle className="w-4 h-4 text-emerald-400" /> : <Save className="w-4 h-4" />)}
+            {savedSuccess ? "Salvo!" : "Salvar Estudo"}
           </button>
         </div>
       </div>
 
-      {projetoBase && (
-        <div className="bg-blue-50 border border-blue-100 p-4 rounded-3xl flex items-center justify-between">
-           <div className="flex items-center gap-3">
-             <div className="w-10 h-10 bg-white rounded-2xl flex items-center justify-center shadow-sm">
-               <Zap className="w-5 h-5 text-[#1E3A8A]" />
-             </div>
-             <div>
-               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Padrão do Cliente</p>
-               <p className="text-sm font-bold text-[#1E3A8A]">{calculated.padrao} — {projetoBase?.analiseFatura?.concessionaria}</p>
-             </div>
-           </div>
-           <div className="text-right">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Consumo Médio</p>
-              <p className="text-sm font-bold text-slate-700">{projetoBase?.analiseFatura?.consumoMedioMensalKWh?.toFixed(0)} kWh/mês</p>
-           </div>
-        </div>
-      )}
+      {/* Main Feature Tabs */}
+      <div className="flex border-b border-slate-200">
+        <button
+          onClick={() => setActiveTab('SOLAR')}
+          className={`flex items-center gap-2 px-6 py-3 font-bold text-sm transition-all border-b-2 ${
+            activeTab === 'SOLAR'
+              ? 'border-[#00BFA5] text-[#1E3A8A]'
+              : 'border-transparent text-slate-400 hover:text-slate-600'
+          }`}
+        >
+          <Sun className="w-4 h-4 text-amber-500" /> 1. Dimensionamento Fotovoltaico (Solar FV)
+        </button>
 
-      {!projetoId ? (
-        <div className="bg-slate-100 rounded-3xl p-20 text-center border-2 border-dashed border-slate-200">
-          <Info className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-          <h3 className="text-xl font-bold text-slate-700">Inicie um Projeto Solar</h3>
-          <p className="text-slate-500 mt-2 max-w-md mx-auto">Vincule a um projeto de engenharia para carregar o histórico de consumo e meta de compensação.</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <button
+          onClick={() => setActiveTab('BESS_DINAMICO')}
+          className={`flex items-center gap-2 px-6 py-3 font-bold text-sm transition-all border-b-2 ${
+            activeTab === 'BESS_DINAMICO'
+              ? 'border-[#00BFA5] text-[#1E3A8A]'
+              : 'border-transparent text-slate-400 hover:text-slate-600'
+          }`}
+        >
+          <Battery className="w-4 h-4 text-[#00BFA5]" /> 2. Simulação Dinâmica de BESS (Operação 24h)
+        </button>
+      </div>
+
+      {/* TAB 1: SOLAR SIZING TOOL */}
+      {activeTab === 'SOLAR' && (
+        <div className="space-y-6">
           
-          {/* Sizing Controls */}
-          <div className="lg:col-span-1 space-y-4">
-            <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-6">
-              <h3 className="font-bold text-slate-800 flex items-center gap-2 border-b border-slate-50 pb-4">
-                <MapPin className="w-5 h-5 text-amber-500" /> Irradiação & Local
-              </h3>
+          {/* Section 1: Customer Metadata & 12-Month Consumption Table */}
+          <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-6">
+            
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+              <h2 className="text-lg font-black text-slate-800 flex items-center gap-2">
+                <User className="w-5 h-5 text-[#1E3A8A]" /> Cadastro do Projeto & Histórico de Consumo (12 Meses)
+              </h2>
 
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">Latitude</label>
-                    <input type="number" step="0.0001" className="w-full px-4 py-2 rounded-xl border border-slate-100 bg-slate-50 text-sm" value={config.lat || 0} onChange={e => {
-                      const val = parseFloat(e.target.value);
-                      setConfig({...config, lat: isNaN(val) ? 0 : val});
-                    }} />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">Longitude</label>
-                    <input type="number" step="0.0001" className="w-full px-4 py-2 rounded-xl border border-slate-100 bg-slate-50 text-sm" value={config.lon || 0} onChange={e => {
-                      const val = parseFloat(e.target.value);
-                      setConfig({...config, lon: isNaN(val) ? 0 : val});
-                    }} />
-                  </div>
+              <div className="bg-emerald-50 text-emerald-800 border border-emerald-200 px-4 py-2 rounded-2xl flex items-center gap-3">
+                <Sparkles className="w-5 h-5 text-emerald-600" />
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-wider text-emerald-600">Média dos 12 Meses</p>
+                  <p className="text-lg font-black text-emerald-900">{mediaConsumo12Meses.toLocaleString('pt-BR')} kWh/mês</p>
                 </div>
-                
+              </div>
+            </div>
+
+            {/* Inputs: Customer Name & City */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[11px] font-black text-slate-500 uppercase mb-1 flex items-center gap-1">
+                  <User className="w-3.5 h-3.5" /> Nome do Cliente
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ex: João da Silva / Indústria Alfa S.A."
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#00BFA5] outline-none text-sm font-bold text-slate-800"
+                  value={nomeCliente}
+                  onChange={(e) => setNomeCliente(e.target.value)}
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-black text-slate-500 uppercase mb-1 flex items-center gap-1">
+                  <Building2 className="w-3.5 h-3.5" /> Cidade para Cadastro do Projeto
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ex: Belo Horizonte - MG"
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#00BFA5] outline-none text-sm font-bold text-slate-800"
+                  value={cidadeProjeto}
+                  onChange={(e) => setCidadeProjeto(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* 12 Months Consumption Grid Inputs */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <label className="text-xs font-black text-slate-600 uppercase tracking-wider flex items-center gap-1">
+                  <Calendar className="w-4 h-4 text-amber-500" /> Consumo Mensal dos Últimos 12 Meses (kWh)
+                </label>
+
                 <div className="flex gap-2">
-                  <button 
-                    onClick={fetchPvgis} disabled={fetchingPvgis}
-                    className="flex-1 py-2 bg-amber-50 text-amber-700 border border-amber-200 rounded-xl text-[10px] font-bold hover:bg-amber-100 flex items-center justify-center gap-1 uppercase"
-                  >
-                    {fetchingPvgis ? <Loader className="w-3 h-3 animate-spin" /> : <BarChart className="w-3 h-3" />}
-                    Atualizar p/ Lat/Lng
-                  </button>
-                  {projetoBase?.analiseFatura?.endereco && (
-                    <button 
-                      onClick={fetchPvgisPorEndereco} disabled={fetchingPvgis}
-                      className="flex-1 py-2 bg-[#1E3A8A] text-white rounded-xl text-[10px] font-bold hover:bg-blue-900 flex items-center justify-center gap-1 uppercase"
+                  {projetoBase?.analiseFatura?.consumoMeses?.length > 0 && (
+                    <button
+                      onClick={() => {
+                        const fat = projetoBase.analiseFatura.consumoMeses;
+                        const arr = Array.from({ length: 12 }, (_, i) => fat[i]?.kwh || fat[0]?.kwh || 1000);
+                        setConsumo12Meses(arr);
+                      }}
+                      className="text-[10px] font-bold px-3 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100"
                     >
-                      {fetchingPvgis ? <Loader className="w-3 h-3 animate-spin" /> : <MapPin className="w-3 h-3" />}
-                      Automático Fatura
+                      Restaurar da Fatura
                     </button>
                   )}
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">HSP Diária (Manual)</label>
-                  <input type="number" step="0.1" className="w-full px-4 py-2.5 rounded-xl border border-slate-100 bg-slate-50 text-sm font-bold text-[#1E3A8A]" value={config.hspManual || 0} onChange={e => {
-                    const val = parseFloat(e.target.value);
-                    setConfig({...config, hspManual: isNaN(val) ? 0 : val});
-                  }} />
-                </div>
-
-                <div className="border-t border-slate-50 pt-4 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Orientação (Azimute)</label>
-                    <span className="text-xs font-bold text-[#1E3A8A]">{config.azimuth}°</span>
-                  </div>
-                  
-                  <div className="flex justify-center py-2 relative group">
-                    <div className="w-24 h-24 rounded-full border-2 border-slate-100 flex items-center justify-center relative bg-slate-50/50 shadow-inner">
-                       <Compass className="w-full h-full text-slate-200 absolute inset-0 opacity-20" />
-                       <div className="text-[8px] absolute top-1 font-black text-slate-400">N</div>
-                       <div className="text-[8px] absolute bottom-1 font-black text-slate-400">S</div>
-                       <div className="text-[8px] absolute left-1 font-black text-slate-400">E</div>
-                       <div className="text-[8px] absolute right-1 font-black text-slate-400">W</div>
-                       <div 
-                         className="w-1.5 h-12 bg-gradient-to-t from-red-500 to-red-600 rounded-full transition-transform duration-500 shadow-sm"
-                         style={{ transform: `rotate(${config.azimuth}deg)` }}
-                       >
-                         <div className="w-3 h-3 bg-white border border-red-500 rounded-full absolute -top-1 -left-0.5 shadow-sm" />
-                       </div>
-                    </div>
-                  </div>
-
-                  <input 
-                    type="range" min="-180" max="180" step="15" 
-                    className="w-full" 
-                    value={config.azimuth || 0} 
-                    onChange={e => setConfig({...config, azimuth: parseInt(e.target.value) || 0})} 
-                  />
-                  <div className="flex justify-between text-[8px] font-black text-slate-300 uppercase">
-                    <span>Oeste (-90°)</span>
-                    <span>Sul (180°)</span>
-                    <span>Sul (-180°)</span>
-                    <span>Leste (90°)</span>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Inclinação (Tilt)</label>
-                    <span className="text-xs font-bold text-[#1E3A8A]">{config.tilt}°</span>
-                  </div>
-                  <div className="flex items-end gap-1 h-8 px-2 border-b border-slate-100">
-                     <div 
-                       className="w-12 h-0.5 bg-slate-300 origin-left transition-transform duration-300"
-                       style={{ transform: `rotate(-${config.tilt}deg)` }}
-                     />
-                     <MoveUp className="w-3 h-3 text-amber-500 -mb-1.5" />
-                  </div>
-                  <input 
-                    type="range" min="0" max="90" step="1" 
-                    className="w-full" 
-                    value={config.tilt || 0} 
-                    onChange={e => setConfig({...config, tilt: parseInt(e.target.value) || 0})} 
-                  />
+                  <button
+                    onClick={() => {
+                      const val = prompt("Digite um consumo mensal fixo para aplicar aos 12 meses (kWh):", String(mediaConsumo12Meses));
+                      if (val) {
+                        const num = parseFloat(val) || 0;
+                        setConsumo12Meses(Array(12).fill(num));
+                      }
+                    }}
+                    className="text-[10px] font-bold px-3 py-1 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200"
+                  >
+                    Fixar Valor Único
+                  </button>
                 </div>
               </div>
 
-              <h3 className="font-bold text-slate-800 flex items-center gap-2 border-b border-slate-50 pb-4 pt-2">
-                <Settings className="w-5 h-5 text-[#00BFA5]" /> Dimensionamento
-              </h3>
+              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
+                {consumo12Meses.map((val, idx) => (
+                  <div key={idx} className="bg-slate-50 p-2.5 rounded-2xl border border-slate-200/80">
+                    <span className="block text-[10px] font-black text-slate-400 uppercase mb-1">
+                      {idx + 1}. {MESES_SIGLAS[idx]}
+                    </span>
+                    <input
+                      type="number"
+                      step="1"
+                      className="w-full px-2 py-1.5 rounded-xl border border-slate-200 bg-white font-bold text-slate-800 text-xs focus:ring-2 focus:ring-[#00BFA5] outline-none"
+                      value={val}
+                      onChange={(e) => {
+                        const newArr = [...consumo12Meses];
+                        newArr[idx] = parseFloat(e.target.value) || 0;
+                        setConsumo12Meses(newArr);
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
 
-              <div className="space-y-4">
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">Meta de Geração (kWh/mês)</label>
-                    {projetoBase?.analiseFatura?.consumoMeses?.length > 0 && (
-                      <button 
-                        onClick={() => {
-                          const meses = projetoBase.analiseFatura.consumoMeses;
-                          let avg = meses.reduce((s: number, m: any) => s + (m.energiaHFP || 0), 0) / meses.length;
-                          if (avg === 0) avg = projetoBase.analiseFatura.consumoMedioMensalKWh;
-                          if (avg > 0) setConfig(prev => ({ ...prev, metaGeracaoKWh: Math.round(avg) }));
-                        }}
-                        className="text-[9px] font-black px-2 py-0.5 rounded-full uppercase border bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100"
+          </div>
+
+          {/* Section 2: Location, PVLIB Solar Index & Sizing Parameters */}
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            
+            {/* Left Column: Location, PVLIB API, Over-enclosure & Parameters */}
+            <div className="lg:col-span-1 space-y-4">
+              <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-5">
+                
+                <h3 className="font-bold text-slate-800 flex items-center gap-2 border-b border-slate-50 pb-3">
+                  <MapPin className="w-5 h-5 text-amber-500" /> Irradiação (PVLIB) & Local
+                </h3>
+
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Cidade para Índice Solar</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="Ex: Montes Claros, MG"
+                        className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-xs font-medium"
+                        value={cidadeSolar}
+                        onChange={(e) => setCidadeSolar(e.target.value)}
+                      />
+                      <button
+                        onClick={fetchPVLIBData}
+                        disabled={fetchingPvgis}
+                        className="px-3 py-2 bg-amber-500 text-white rounded-xl font-bold text-xs hover:bg-amber-600 flex items-center gap-1 shadow-sm disabled:opacity-50"
                       >
-                        Puxar Média Fatura
+                        {fetchingPvgis ? <Loader className="w-3.5 h-3.5 animate-spin" /> : <MapPin className="w-3.5 h-3.5" />}
+                        PVLIB
                       </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Latitude</label>
+                      <input
+                        type="number"
+                        step="0.0001"
+                        className="w-full px-3 py-2 rounded-xl border border-slate-100 bg-slate-50 text-xs font-medium"
+                        value={config.lat || 0}
+                        onChange={e => setConfig({ ...config, lat: parseFloat(e.target.value) || 0 })}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Longitude</label>
+                      <input
+                        type="number"
+                        step="0.0001"
+                        className="w-full px-3 py-2 rounded-xl border border-slate-100 bg-slate-50 text-xs font-medium"
+                        value={config.lon || 0}
+                        onChange={e => setConfig({ ...config, lon: parseFloat(e.target.value) || 0 })}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="bg-amber-50 p-3 rounded-2xl border border-amber-100 flex items-center justify-between">
+                    <span className="text-xs font-bold text-amber-900">Irradiação HSP Médica</span>
+                    <div className="text-right">
+                      <input
+                        type="number"
+                        step="0.01"
+                        className="w-20 px-2 py-1 rounded-lg border border-amber-300 text-sm font-black text-amber-900 bg-white text-right"
+                        value={config.hspManual}
+                        onChange={e => setConfig({ ...config, hspManual: parseFloat(e.target.value) || 0 })}
+                      />
+                      <span className="block text-[9px] text-amber-700 font-medium">kWh/m²/dia</span>
+                    </div>
+                  </div>
+
+                  {/* Overpaneling (Over %) Input */}
+                  <div className="border-t border-slate-50 pt-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[10px] font-black text-slate-500 uppercase">Over de Módulos (%)</label>
+                      <span className="text-xs font-black text-[#1E3A8A]">{config.overPercent}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="80"
+                      step="5"
+                      className="w-full"
+                      value={config.overPercent}
+                      onChange={e => setConfig({ ...config, overPercent: parseInt(e.target.value) || 0 })}
+                    />
+                    <div className="flex justify-between text-[9px] text-slate-400 font-bold">
+                      <span>0% (Sem Over)</span>
+                      <span>30% (Standard)</span>
+                      <span>60% (Alto)</span>
+                    </div>
+                  </div>
+
+                  {/* Geometry: Tilt & Azimuth */}
+                  <div className="border-t border-slate-50 pt-3 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[10px] font-black text-slate-500 uppercase">Orientação (Azimute)</label>
+                      <span className="text-xs font-bold text-slate-700">{config.azimuth}° (Norte=0°)</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="-180"
+                      max="180"
+                      step="15"
+                      className="w-full"
+                      value={config.azimuth}
+                      onChange={e => setConfig({ ...config, azimuth: parseInt(e.target.value) || 0 })}
+                    />
+
+                    <div className="flex items-center justify-between">
+                      <label className="text-[10px] font-black text-slate-500 uppercase">Inclinação (Tilt)</label>
+                      <span className="text-xs font-bold text-slate-700">{config.tilt}°</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="60"
+                      step="1"
+                      className="w-full"
+                      value={config.tilt}
+                      onChange={e => setConfig({ ...config, tilt: parseInt(e.target.value) || 0 })}
+                    />
+                  </div>
+
+                </div>
+
+              </div>
+            </div>
+
+            {/* Right Column: Module & Inverter Selection + Sizing Dashboard Cards + Charts */}
+            <div className="lg:col-span-3 space-y-6">
+              
+              {/* Module & Inverter Selection Card with Datasheet Registration Buttons */}
+              <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-6">
+                
+                <h3 className="font-bold text-slate-800 flex items-center gap-2 border-b border-slate-50 pb-3">
+                  <Settings className="w-5 h-5 text-[#00BFA5]" /> Seleção de Componentes & Datasheet
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  
+                  {/* Photovoltaic Module Selection */}
+                  <div className="space-y-3 bg-amber-50/40 p-4 rounded-2xl border border-amber-100/80">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-black text-amber-900 uppercase flex items-center gap-1">
+                        <Sun className="w-4 h-4 text-amber-500" /> Módulo Fotovoltaico
+                      </label>
+                      <button
+                        onClick={() => setModalModuloOpen(true)}
+                        className="text-[10px] font-bold px-2.5 py-1 bg-amber-500 text-white rounded-lg hover:bg-amber-600 flex items-center gap-1 shadow-sm transition-all"
+                      >
+                        <Plus className="w-3 h-3" /> Datasheet Módulo
+                      </button>
+                    </div>
+
+                    <select
+                      className="w-full px-3 py-2.5 rounded-xl border border-amber-200 bg-white text-xs font-bold text-slate-800 focus:ring-2 focus:ring-amber-500 outline-none"
+                      value={config.selectedModuloId}
+                      onChange={e => setConfig({ ...config, selectedModuloId: e.target.value })}
+                    >
+                      {modulos.map(m => (
+                        <option key={m.id} value={m.id}>
+                          {m.fabricante} {m.modelo} — {m.potenciaPicoWp}Wp (Voc: {m.Voc}V | Vmp: {m.Vmp}V)
+                        </option>
+                      ))}
+                    </select>
+
+                    {calculated.modulo && (
+                      <div className="text-[11px] text-slate-600 grid grid-cols-2 gap-2 pt-1 font-medium">
+                        <span>Potência: <strong className="text-slate-800">{calculated.modulo.potenciaPicoWp} Wp</strong></span>
+                        <span>Eficiência: <strong className="text-slate-800">{calculated.modulo.eficiencia}%</strong></span>
+                        <span>Voc: <strong className="text-slate-800">{calculated.modulo.Voc} V</strong></span>
+                        <span>Isc: <strong className="text-slate-800">{calculated.modulo.Isc} A</strong></span>
+                        {calculated.modulo.datasheetUrl && (
+                          <div className="col-span-2 pt-1">
+                            <a
+                              href={calculated.modulo.datasheetUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-amber-700 font-bold underline hover:text-amber-900 text-[10px] flex items-center gap-1"
+                            >
+                              <FileText className="w-3 h-3" /> Abrir Datasheet do Módulo (PDF)
+                            </a>
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
-                  <input type="number" className="w-full px-4 py-2.5 rounded-xl border border-slate-100 bg-slate-50 text-sm font-bold" value={config.metaGeracaoKWh || 0} onChange={e => {
-                    const val = parseFloat(e.target.value);
-                    setConfig({...config, metaGeracaoKWh: isNaN(val) ? 0 : val});
-                  }} />
-                </div>
 
-                <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">Performance Ratio (PR)</label>
-                  <input type="number" step="0.01" className="w-full px-4 py-2.5 rounded-xl border border-slate-100 bg-slate-50 text-sm" value={config.pr || 0} onChange={e => {
-                    const val = parseFloat(e.target.value);
-                    setConfig({...config, pr: isNaN(val) ? 0 : val});
-                  }} />
-                  <p className="text-[10px] text-slate-400 mt-1">Padrão 0.75 (25% de perdas)</p>
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">Over-enclosure Alvo (DC/AC)</label>
-                  <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 flex items-center justify-between">
-                    <input 
-                      type="number" step="0.01" min="1" max="2"
-                      className="w-20 bg-transparent text-sm font-black text-[#1E3A8A] outline-none" 
-                      value={config.overEnclosureAlvo || 1.4} 
-                      onChange={e => {
-                        const val = parseFloat(e.target.value);
-                        setConfig({...config, overEnclosureAlvo: isNaN(val) ? 1.4 : val});
-                      }} 
-                    />
-                    <div className="flex gap-1">
-                      {[1.2, 1.4, 1.5].map(v => (
-                        <button key={v} onClick={() => setConfig({...config, overEnclosureAlvo: v})} className={`px-2 py-1 rounded-lg text-[10px] font-bold border transition-all ${config.overEnclosureAlvo === v ? 'bg-[#1E3A8A] text-white border-[#1E3A8A]' : 'bg-white text-slate-400 border-slate-200'}`}>
-                          {v}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                   <div className="flex items-center justify-between mb-2">
-                     <div className="flex items-center gap-2">
-                       <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">Módulo Fotovoltaico</label>
-                       <button onClick={fetchEquipamentos} className="text-[9px] font-black px-1.5 py-0.5 rounded-full uppercase border bg-green-50 text-green-700 border-green-200 hover:bg-green-100">
-                         Atualizar DB
-                       </button>
-                     </div>
-                     <button onClick={() => setIsCustomModulo(!isCustomModulo)} className={`text-[9px] font-black px-1.5 py-0.5 rounded-full uppercase border ${isCustomModulo ? 'bg-amber-100 text-amber-700 border-amber-200' : 'text-slate-400 border-slate-200'}`}>
-                       {isCustomModulo ? 'Manual' : 'Auto'}
-                     </button>
-                   </div>
-                   {!isCustomModulo ? (
-                     <select className="w-full px-4 py-2.5 rounded-xl border border-slate-100 bg-slate-50 text-sm" value={config.selectedModuloId} onChange={e => setConfig({...config, selectedModuloId: e.target.value, quantidadeModulos: 0})}>
-                       <option value="">Selecione...</option>
-                       {modulos.map(m => <option key={m.id} value={m.id}>{m.fabricante} {m.potenciaPicoWp}Wp</option>)}
-                     </select>
-                   ) : (
-                     <div className="space-y-2 p-3 bg-slate-50 rounded-2xl border border-slate-100">
-                        <div className="grid grid-cols-2 gap-2">
-                          <input type="number" placeholder="Wp" className="w-full px-2 py-1.5 rounded-lg border text-xs" value={customModulo.potenciaPicoWp || 0} onChange={e => {
-                            const val = parseInt(e.target.value);
-                            setCustomModulo({...customModulo, potenciaPicoWp: isNaN(val) ? 0 : val});
-                          }} />
-                          <input type="number" placeholder="Voc" className="w-full px-2 py-1.5 rounded-lg border text-xs" value={customModulo.Voc || 0} onChange={e => {
-                            const val = parseFloat(e.target.value);
-                            setCustomModulo({...customModulo, Voc: isNaN(val) ? 0 : val});
-                          }} />
-                        </div>
-                        <input type="text" placeholder="Fabricante/Modelo" className="w-full px-2 py-1.5 rounded-lg border text-xs" value={`${customModulo.fabricante} ${customModulo.modelo}`} onChange={e => setCustomModulo({...customModulo, fabricante: e.target.value})} />
-                     </div>
-                   )}
-                </div>
-
-                <div>
-                   <div className="flex items-center justify-between mb-2">
-                     <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">Inversor</label>
-                     <button onClick={() => setIsCustomInversor(!isCustomInversor)} className={`text-[9px] font-black px-1.5 py-0.5 rounded-full uppercase border ${isCustomInversor ? 'bg-amber-100 text-amber-700 border-amber-200' : 'text-slate-400 border-slate-200'}`}>
-                       {isCustomInversor ? 'Manual' : 'Auto'}
-                     </button>
-                   </div>
-                   {!isCustomInversor ? (
-                     <div className="space-y-2">
-                       <select className="w-full px-4 py-2.5 rounded-xl border border-slate-100 bg-slate-50 text-sm" value={config.selectedInversorId} onChange={e => setConfig({...config, selectedInversorId: e.target.value})}>
-                         <option value="">Selecione...</option>
-                         {inversores.filter(i => i.tipoConexao !== 'OFF_GRID').map(i => (
-                           <option key={i.id} value={i.id}>
-                             {i.fabricante} {i.potenciaNominalKW}kW ({i.fase === 1 ? 'Mono' : i.fase === 3 ? 'Tri' : 'Bi-fásico'})
-                           </option>
-                         ))}
-                       </select>
-                       {calculated.kwpAtual > 0 && (
-                         <div className="p-3 bg-blue-50 border border-blue-100 rounded-2xl">
-                           <p className="text-[10px] font-black text-[#1E3A8A] uppercase tracking-widest flex items-center gap-1 mb-2">
-                             <Zap className="w-3 h-3" /> Potência Sugerida: {calculated.idealAC.toFixed(1)} kW AC
-                           </p>
-                           <p className="text-xs text-slate-500">
-                             Para {calculated.kwpAtual.toFixed(2)} kWp de painéis com FDI alvo de {config.overEnclosureAlvo?.toFixed(2) || '1.40'}.
-                           </p>
-                         </div>
-                       )}
-                       {calculated.sugestoes.length > 0 && (
-                         <div className="p-3 bg-blue-50 border border-blue-100 rounded-2xl space-y-2">
-                            <div className="flex items-center justify-between">
-                              <p className="text-[9px] font-black text-[#1E3A8A] uppercase tracking-widest flex items-center gap-1">
-                                <Zap className="w-3 h-3" /> Sugestão (Ideal: {calculated.idealAC.toFixed(1)}kW AC)
-                              </p>
-                              <span className="text-[9px] font-bold text-slate-400">Total CA: {calculated.sugestoes.reduce((acc, cur) => acc + (cur.potenciaNominalKW * cur.quantidade), 0)}kW</span>
-                            </div>
-                           {calculated.sugestoes.map((s, idx) => (
-                             <div key={idx} className="flex items-center justify-between">
-                               <span className="text-xs font-bold text-slate-700">{s.quantidade}x {s.fabricante} {s.potenciaNominalKW}kW</span>
-                               {config.selectedInversorId !== s.id && (
-                                 <button onClick={() => setConfig({...config, selectedInversorId: s.id})} className="text-[10px] font-black text-white bg-[#00BFA5] px-2 py-0.5 rounded-full hover:bg-[#00a690]">
-                                   Usar
-                                 </button>
-                               )}
-
-                        {/* Detalhes do Inversor Selecionado */}
-                        {config.selectedInversorId && (
-                          (() => {
-                            const inv = inversores.find(i => i.id === config.selectedInversorId);
-                            if (!inv) return null;
-                            return (
-                              <div className="p-4 bg-[#0A192F] rounded-2xl border border-white/5 space-y-3 mt-4 animate-in fade-in slide-in-from-top-2">
-                                <div className="flex items-center justify-between">
-                                  <h4 className="text-[10px] font-black text-[#00BFA5] uppercase tracking-widest flex items-center gap-2">
-                                    <Info className="w-3 h-3 text-[#00BFA5]" /> Especificações Técnicas
-                                  </h4>
-                                  <div className="w-2 h-2 rounded-full bg-[#00BFA5] animate-pulse" />
-                                </div>
-                                <div className="grid grid-cols-2 gap-3">
-                                  <div>
-                                    <p className="text-[8px] text-white/30 uppercase font-black">Potência CA</p>
-                                    <p className="text-xs font-bold text-white tracking-wide">{inv.potenciaNominalKW} kW</p>
-                                  </div>
-                                  <div>
-                                    <p className="text-[8px] text-white/30 uppercase font-black">MPPTs / Strings</p>
-                                    <p className="text-xs font-bold text-white tracking-wide">{inv.numeroStringsMPPT || 2} / {inv.numeroStringsMPPT || 2}</p>
-                                  </div>
-                                  <div className="col-span-2 py-2 border-t border-white/5 space-y-1">
-                                     <div className="flex justify-between">
-                                        <span className="text-[8px] text-white/30 uppercase">Tensão Ent. CC</span>
-                                        <span className="text-[10px] text-white font-medium">{inv.tensaoEntradaMinV || 100}V — {inv.tensaoEntradaMaxV || 1000}V</span>
-                                     </div>
-                                     <div className="flex justify-between">
-                                        <span className="text-[8px] text-white/30 uppercase">Corr. Máx. CC (A)</span>
-                                        <span className="text-[10px] text-white font-medium">{inv.correnteMaxCC || 12.5}A </span>
-                                     </div>
-                                     <div className="flex justify-between">
-                                        <span className="text-[8px] text-white/30 uppercase">Fator Pot. / Efic.</span>
-                                        <span className="text-[10px] text-white font-medium">{inv.fatorPotencia || 1.0} / {((inv.eficiencia || 0.98)*100).toFixed(1)}%</span>
-                                     </div>
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          })()
-                        )}
-                             </div>
-                           ))}
-                         </div>
-                       )}
-                     </div>
-                   ) : (
-                     <div className="space-y-2 p-3 bg-slate-50 rounded-2xl border border-slate-100">
-                        <div className="grid grid-cols-2 gap-2">
-                          <input type="number" placeholder="kW" className="w-full px-2 py-1.5 rounded-lg border text-xs" value={customInversor.potenciaNominalKW || 0} onChange={e => {
-                            const val = parseFloat(e.target.value);
-                            setCustomInversor({...customInversor, potenciaNominalKW: isNaN(val) ? 0 : val});
-                          }} />
-                          <input type="number" placeholder="MPPTs" className="w-full px-2 py-1.5 rounded-lg border text-xs" value={customInversor.numeroStringsMPPT || 0} onChange={e => {
-                            const val = parseInt(e.target.value);
-                            setCustomInversor({...customInversor, numeroStringsMPPT: isNaN(val) ? 0 : val});
-                          }} />
-                        </div>
-                     </div>
-                   )}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Sizing Results & Charts */}
-          <div className="lg:col-span-3 space-y-6">
-            
-            {/* Quick Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-                <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Potência Necessária</p>
-                <p className="text-xl font-black text-[#1E3A8A]">{calculated.kwpNecessario} <span className="text-sm font-medium opacity-50">kWp</span></p>
-              </div>
-              <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm text-[#00BFA5]">
-                <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Qte. de Módulos</p>
-                <p className="text-xl font-black">{calculated.qteModulos} <span className="text-sm font-medium opacity-50">UN</span></p>
-              </div>
-              <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-                <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Área Estimada</p>
-                <p className="text-xl font-black">{calculated.area.toFixed(1)} <span className="text-sm font-medium opacity-50">m²</span></p>
-              </div>
-              <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-                <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Peso Total</p>
-                <p className="text-xl font-black">{calculated.peso.toFixed(0)} <span className="text-sm font-medium opacity-50">kg</span></p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Seasonal Generation Chart */}
-              <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm flex flex-col">
-                <div className="flex items-center justify-between mb-6">
-                   <h3 className="font-bold text-slate-800 flex items-center gap-2"><BarChartIcon className="w-5 h-5 text-amber-500" /> Sazonalidade (HSP)</h3>
-                   {pvgisData.length > 0 && <span className="text-[10px] font-black bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full uppercase tracking-widest">via PVGIS</span>}
-                </div>
-                <div className="flex-1 h-64">
-                   <ResponsiveContainer width="100%" height="100%">
-                     <BarChart data={calculated.monthlyGeneration}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                        <XAxis dataKey="mes" tick={{fontSize: 10}} tickFormatter={m => ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][m-1]} />
-                        <YAxis tick={{fontSize: 10}} />
-                        <Tooltip contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)'}} />
-                        <Bar dataKey="hsp" name="HSP (Irradiação)" fill="#fbbf24" radius={[4, 4, 0, 0]}>
-                           {calculated.monthlyGeneration.map((_, index) => (
-                             <Cell key={`cell-${index}`} fillOpacity={0.8} />
-                           ))}
-                           <LabelList dataKey="hsp" position="top" style={{ fontSize: '8px', fontWeight: 'bold', fill: '#92400e' }} offset={8} />
-                        </Bar>
-                     </BarChart>
-                   </ResponsiveContainer>
-                </div>
-                <p className="text-[10px] text-slate-400 mt-4 leading-relaxed">
-                  Gráfico de HSP média diária por mês. Esta variação impacta diretamente na geração do sistema ao longo do ano.
-                </p>
-              </div>
-
-              {/* Electrical Matching */}
-              <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm flex flex-col">
-                 <h3 className="font-bold text-slate-800 mb-6 flex items-center gap-2"><Layers className="w-5 h-5 text-[#1E3A8A]" /> Configuração Elétrica</h3>
-                 
-                 <div className="flex-1 space-y-6">
-                    <div className="flex justify-between items-end border-b border-slate-50 pb-4">
-                       <div>
-                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Strings</p>
-                         <div className="flex items-center gap-4 mt-1">
-                           <button onClick={() => setConfig({...config, numStrings: Math.max(1, config.numStrings - 1)})} className="p-1 bg-slate-100 rounded-lg"><ChevronRight className="w-4 h-4 rotate-180" /></button>
-                           <span className="text-2xl font-black">{config.numStrings}</span>
-                           <button onClick={() => setConfig({...config, numStrings: config.numStrings + 1})} className="p-1 bg-slate-100 rounded-lg"><ChevronRight className="w-4 h-4" /></button>
-                         </div>
-                       </div>
-                       <div className="text-right">
-                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Módulos / String</p>
-                         <p className="text-2xl font-black text-[#1E3A8A]">{calculated.compatibilidade?.modulosPorString || 0}</p>
-                       </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                       <div className="p-4 bg-slate-50 rounded-2xl">
-                          <p className="text-[10px] font-black text-slate-400 uppercase">Tensão Voc String</p>
-                          <p className="text-sm font-black text-slate-800 mt-1">{calculated.compatibilidade?.vocTotal.toFixed(1)} V</p>
-                       </div>
-                       <div className="p-4 bg-slate-50 rounded-2xl">
-                          <p className="text-[10px] font-black text-slate-400 uppercase">Tensão Vmp String</p>
-                          <p className="text-sm font-black text-slate-800 mt-1">{calculated.compatibilidade?.vmpTotal.toFixed(1)} V</p>
-                       </div>
-                    </div>
-
-                    <div className="space-y-2">
-                       {calculated.compatibilidade?.warnings.length === 0 && config.selectedModuloId && (
-                         <div className="flex items-center gap-3 p-3 bg-emerald-50 text-emerald-700 rounded-xl text-xs font-medium border border-emerald-100">
-                           <CheckCircle className="w-4 h-4" /> Configuração elétrica compatível!
-                         </div>
-                       )}
-                       {calculated.compatibilidade?.warnings.map((w, i) => (
-                         <div key={i} className="flex items-start gap-3 p-3 bg-amber-50 text-amber-700 rounded-xl text-xs font-medium border border-amber-100">
-                           <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" /> {w}
-                         </div>
-                       ))}
-                    </div>
-                 </div>
-
-                 <div className="mt-6 pt-6 border-t border-slate-50 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                       <Maximize className="w-4 h-4 text-slate-400" />
-                       <span className="text-xs text-slate-500">Overenclosure (CC/CA):</span>
-                    </div>
-                    <span className="text-sm font-bold text-slate-700">{(calculated.kwpAtual / (inversores.find(i => i.id === config.selectedInversorId)?.potenciaNominalKW || 1)).toFixed(2)}</span>
-                 </div>
-              </div>
-            </div>
-
-            {/* Monthly Balance Chart */}
-            <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
-                <div className="flex items-center justify-between mb-6">
-                   <h3 className="font-bold text-slate-800 flex items-center gap-2"><ArrowRight className="w-5 h-5 text-[#00BFA5]" /> Balanço Energético Mensal</h3>
-                   <div className="flex gap-4">
-                     <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-[#1E3A8A] rounded-full" />
-                        <span className="text-[10px] font-bold text-slate-500 uppercase">Consumo</span>
-                     </div>
-                     <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-[#00BFA5] rounded-full" />
-                        <span className="text-[10px] font-bold text-slate-500 uppercase">Geração</span>
-                     </div>
-                   </div>
-                </div>
-                <div className="h-72">
-                   <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={calculated.monthlyGeneration}>
-                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                         <XAxis dataKey="mes" tick={{fontSize: 10}} tickFormatter={m => ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][m-1]} />
-                         <YAxis tick={{fontSize: 10}} unit="kWh" />
-                         <Tooltip contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)'}} />
-                         <Bar dataKey="consumo" name="Consumo (Fatura)" fill="#1E3A8A" radius={[4, 4, 0, 0]} barSize={20}><LabelList dataKey="consumo" position="top" style={{ fontSize: '7px', fontWeight: 'bold', fill: '#1E3A8A' }} offset={5} /></Bar>
-                         <Bar dataKey="geracao" name="Geração Projetada" fill="#00BFA5" radius={[4, 4, 0, 0]} barSize={20}><LabelList dataKey="geracao" position="top" style={{ fontSize: '7px', fontWeight: 'bold', fill: '#065f46' }} offset={5} /></Bar>
-                      </BarChart>
-                   </ResponsiveContainer>
-                </div>
-                <div className="mt-6 p-4 bg-slate-50 rounded-2xl flex items-center justify-between">
-                   <p className="text-xs text-slate-500 font-medium italic">Simulação baseada na inclinação de {config.tilt}° e azimute de {config.azimuth}°.</p>
-                   <div className="text-right flex items-center justify-end gap-4">
-                      <div>
-                        <p className="text-[10px] font-black text-slate-400 uppercase">Saldo Anual Projetado</p>
-                        <p className={`text-sm font-black ${calculated.monthlyGeneration.reduce((acc, c) => acc + (c.geracao - c.consumo), 0) >= 0 ? 'text-[#00BFA5]' : 'text-red-500'}`}>
-                          {calculated.monthlyGeneration.reduce((acc, c) => acc + (c.geracao - c.consumo), 0).toFixed(0)} kWh
-                        </p>
-                      </div>
-                      <button 
-                        onClick={fetchData} 
-                        className="p-2.5 bg-white border border-slate-200 rounded-xl hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200 transition-all shadow-sm" 
-                        title="Recarregar e Atualizar Saldo (Sinc. de Fatura)"
+                  {/* Inverter Selection */}
+                  <div className="space-y-3 bg-blue-50/40 p-4 rounded-2xl border border-blue-100/80">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-black text-blue-900 uppercase flex items-center gap-1">
+                        <Zap className="w-4 h-4 text-blue-600" /> Inversor Fotovoltaico
+                      </label>
+                      <button
+                        onClick={() => setModalInversorOpen(true)}
+                        className="text-[10px] font-bold px-2.5 py-1 bg-[#1E3A8A] text-white rounded-lg hover:bg-blue-900 flex items-center gap-1 shadow-sm transition-all"
                       >
-                         <Activity className="w-4 h-4" />
+                        <Plus className="w-3 h-3" /> Datasheet Inversor
                       </button>
-                   </div>
+                    </div>
+
+                    <select
+                      className="w-full px-3 py-2.5 rounded-xl border border-blue-200 bg-white text-xs font-bold text-slate-800 focus:ring-2 focus:ring-[#1E3A8A] outline-none"
+                      value={config.selectedInversorId}
+                      onChange={e => setConfig({ ...config, selectedInversorId: e.target.value })}
+                    >
+                      {inversores.map(i => (
+                        <option key={i.id} value={i.id}>
+                          {i.fabricante} {i.modelo} — {i.potenciaNominalKW} kW ({i.fase === 3 ? 'Trifásico' : 'Monofásico'} | MPPT: {i.tensaoEntradaMinV}-{i.tensaoEntradaMaxV}V)
+                        </option>
+                      ))}
+                    </select>
+
+                    {calculated.inversor && (
+                      <div className="text-[11px] text-slate-600 grid grid-cols-2 gap-2 pt-1 font-medium">
+                        <span>Potência Nom.: <strong className="text-slate-800">{calculated.inversor.potenciaNominalKW} kW</strong></span>
+                        <span>MPPT Range: <strong className="text-slate-800">{calculated.inversor.tensaoEntradaMinV}-{calculated.inversor.tensaoEntradaMaxV} V</strong></span>
+                        <span>Nº Strings/MPPT: <strong className="text-slate-800">{calculated.inversor.numeroStringsMPPT || 2}</strong></span>
+                        <span>Over Real: <strong className={calculated.overActualPercent > 45 ? "text-amber-600" : "text-emerald-600"}>{calculated.overActualPercent}%</strong></span>
+                        {calculated.inversor.datasheetUrl && (
+                          <div className="col-span-2 pt-1">
+                            <a
+                              href={calculated.inversor.datasheetUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-blue-800 font-bold underline hover:text-blue-900 text-[10px] flex items-center gap-1"
+                            >
+                              <FileText className="w-3 h-3" /> Abrir Datasheet do Inversor (PDF)
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
                 </div>
+
+                {/* String Configuration Controls */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-500 uppercase mb-1">Nº Módulos Ajustado</label>
+                    <input
+                      type="number"
+                      className="w-full px-3 py-1.5 rounded-xl border border-slate-200 bg-white font-bold text-slate-800 text-xs"
+                      value={calculated.qteModulos}
+                      onChange={e => setConfig({ ...config, quantidadeModulos: parseInt(e.target.value) || 0 })}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-500 uppercase mb-1">Número de Strings</label>
+                    <input
+                      type="number"
+                      className="w-full px-3 py-1.5 rounded-xl border border-slate-200 bg-white font-bold text-slate-800 text-xs"
+                      value={config.numStrings}
+                      onChange={e => setConfig({ ...config, numStrings: parseInt(e.target.value) || 1 })}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-500 uppercase mb-1">Módulos / String</label>
+                    <p className="font-bold text-slate-800 text-sm py-1.5">{calculated.compatibilidade?.modulosPorString || 0} unid.</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-500 uppercase mb-1">Área & Peso Total</label>
+                    <p className="font-bold text-slate-800 text-xs py-1.5">{calculated.area} m² / {calculated.peso} kg</p>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Sizing Results KPI Cards */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div className="bg-amber-50/70 border border-amber-200/60 p-4 rounded-2xl">
+                  <p className="text-[10px] font-black text-amber-800 uppercase tracking-widest">Potência Pico (kWp)</p>
+                  <p className="text-2xl font-black text-amber-900 mt-1">{calculated.kwpAtual.toFixed(2)} kWp</p>
+                  <p className="text-[10px] text-amber-700 mt-0.5">{calculated.qteModulos} módulos de {calculated.modulo?.potenciaPicoWp}Wp</p>
+                </div>
+
+                <div className="bg-blue-50/70 border border-blue-200/60 p-4 rounded-2xl">
+                  <p className="text-[10px] font-black text-blue-800 uppercase tracking-widest">Inversor Recomendado</p>
+                  <p className="text-2xl font-black text-[#1E3A8A] mt-1">{calculated.inversor?.potenciaNominalKW || 0} kW</p>
+                  <p className="text-[10px] text-blue-700 mt-0.5">Over: {calculated.overActualPercent}% (Alvo: {config.overPercent}%)</p>
+                </div>
+
+                <div className="bg-emerald-50/70 border border-emerald-200/60 p-4 rounded-2xl">
+                  <p className="text-[10px] font-black text-emerald-800 uppercase tracking-widest">Geração Estimada</p>
+                  <p className="text-2xl font-black text-emerald-900 mt-1">
+                    ~{Math.round(calculated.kwpAtual * config.hspManual * 30 * config.pr).toLocaleString('pt-BR')} kWh/mês
+                  </p>
+                  <p className="text-[10px] text-emerald-700 mt-0.5">Anual: {calculated.geracaoAnualTotal.toLocaleString('pt-BR')} kWh</p>
+                </div>
+
+                <div className="bg-purple-50/70 border border-purple-200/60 p-4 rounded-2xl">
+                  <p className="text-[10px] font-black text-purple-800 uppercase tracking-widest">Cobertura da Fatura</p>
+                  <p className="text-2xl font-black text-purple-900 mt-1">{calculated.coberturaAnualPercent}%</p>
+                  <p className="text-[10px] text-purple-700 mt-0.5">Saldo Anual: {(calculated.geracaoAnualTotal - calculated.consumoAnualTotal).toLocaleString('pt-BR')} kWh</p>
+                </div>
+              </div>
+
+              {/* Recharts Bar Chart: 12-Month Generation vs 12-Month Consumption */}
+              <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-4">
+                
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-50 pb-3">
+                  <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                    <BarChartIcon className="w-5 h-5 text-[#00BFA5]" /> Curva de Geração Mensal vs Consumo Fatura (12 Meses)
+                  </h3>
+
+                  <div className="flex items-center gap-4 text-xs font-bold">
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-3 h-3 bg-[#1E3A8A] rounded-md" />
+                      <span className="text-slate-600">Consumo (kWh)</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-3 h-3 bg-[#00BFA5] rounded-md" />
+                      <span className="text-slate-600">Geração PVLIB (kWh)</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={calculated.monthlyGeneration}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                      <XAxis dataKey="mesSigla" tick={{ fontSize: 11, fontWeight: 'bold' }} stroke="#64748B" />
+                      <YAxis tick={{ fontSize: 10 }} stroke="#64748B" unit=" kWh" />
+                      <Tooltip contentStyle={{ borderRadius: '12px', border: '1px solid #CBD5E1', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }} />
+                      <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
+                      <Bar dataKey="consumo" name="Consumo Fatura (kWh)" fill="#1E3A8A" radius={[4, 4, 0, 0]} barSize={22} />
+                      <Bar dataKey="geracao" name="Geração PVLIB (kWh)" fill="#00BFA5" radius={[4, 4, 0, 0]} barSize={22} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+
+              </div>
+
             </div>
 
-            {/* Inverter Choice Detail */}
-            <div className="bg-[#0A192F] text-white p-8 rounded-3xl shadow-lg flex flex-col md:flex-row items-center gap-8">
-               <div className="w-20 h-20 bg-white/10 rounded-3xl flex items-center justify-center">
-                  <ArrowRight className="w-10 h-10 text-[#00BFA5]" />
-               </div>
-               <div className="flex-1">
-                  <h3 className="text-lg font-bold">Resumo do Dimensionamento</h3>
-                  <p className="text-slate-400 text-sm mt-1">
-                    Com este arranjo de <strong>{calculated.qteModulos} módulos</strong> de {modulos.find(m => m.id === config.selectedModuloId)?.potenciaPicoWp}Wp e <strong>{config.numStrings} string(s)</strong>, 
-                    você terá uma potência instalada de <strong>{calculated.kwpAtual.toFixed(2)} kWp</strong>.
-                  </p>
-                  <div className="mt-4 flex gap-4">
-                     <div className="bg-white/5 px-4 py-2 rounded-xl text-center">
-                        <p className="text-[10px] text-white/40 uppercase font-black tracking-tighter">Geração Estimada</p>
-                        <p className="font-black text-[#00BFA5]">~{(calculated.kwpAtual * config.hspManual * 30 * config.pr).toFixed(0)} kWh/mês</p>
-                     </div>
-                     <div className="bg-white/5 px-4 py-2 rounded-xl text-center">
-                        <p className="text-[10px] text-white/40 uppercase font-black tracking-tighter">Emissões Evitadas</p>
-                        <p className="font-black">~{(calculated.kwpAtual * 0.5).toFixed(1)} Ton CO2/ano</p>
-                     </div>
-                  </div>
-               </div>
-            </div>
           </div>
+
         </div>
       )}
+
+      {/* TAB 2: DYNAMIC BESS SIMULATOR (24h) */}
+      {activeTab === 'BESS_DINAMICO' && (
+        <SimuladorBESSDinamico
+          solarKWpDefault={calculated.kwpAtual || 100}
+          hspDefault={config.hspManual || 5.2}
+          latDefault={config.lat}
+          lonDefault={config.lon}
+        />
+      )}
+
+      {/* Modals for Equipment Datasheet Registration */}
+      <ModalCadastrarModulo
+        isOpen={modalModuloOpen}
+        onClose={() => setModalModuloOpen(false)}
+        onSuccess={(newMod) => {
+          setModulos(prev => [...prev, newMod]);
+          setConfig(prev => ({ ...prev, selectedModuloId: newMod.id }));
+        }}
+      />
+
+      <ModalCadastrarInversor
+        isOpen={modalInversorOpen}
+        onClose={() => setModalInversorOpen(false)}
+        onSuccess={(newInv) => {
+          setInversores(prev => [...prev, newInv]);
+          setConfig(prev => ({ ...prev, selectedInversorId: newInv.id }));
+        }}
+      />
+
     </div>
   );
 }

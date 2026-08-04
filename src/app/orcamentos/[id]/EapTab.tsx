@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Plus, ListTree, Package, Wrench, HardHat, Loader, Trash, Edit, Check, X, Search, Camera } from "lucide-react";
+import { Plus, ListTree, Package, Wrench, HardHat, Loader, Trash, Edit, Check, X, Search, Camera, Copy, Printer, FileSpreadsheet, CheckSquare, Square } from "lucide-react";
+import * as XLSX from "xlsx";
 
 export default function EapTab({ orcamento, onUpdate }: { orcamento: any, onUpdate: () => void }) {
   const [novaEtapa, setNovaEtapa] = useState("");
@@ -14,6 +15,9 @@ export default function EapTab({ orcamento, onUpdate }: { orcamento: any, onUpda
   const [editingItem, setEditingItem] = useState<string | null>(null);
   const [editItemForm, setEditItemForm] = useState<any>({});
   const [uploadingItem, setUploadingItem] = useState<string | null>(null);
+
+  // Seleção de etapas para gerar lista de materiais
+  const [selectedEtapas, setSelectedEtapas] = useState<string[]>([]);
 
   const handleItemPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>, isEditMode: boolean, etapaIdOrItemId: string) => {
     const file = e.target.files?.[0];
@@ -211,6 +215,209 @@ export default function EapTab({ orcamento, onUpdate }: { orcamento: any, onUpda
     }
   };
 
+  const handleToggleSelectEtapa = (etapaId: string) => {
+    setSelectedEtapas(prev => 
+      prev.includes(etapaId) ? prev.filter(id => id !== etapaId) : [...prev, etapaId]
+    );
+  };
+
+  const handleSelectAll = () => {
+    if (!orcamento.etapas) return;
+    setSelectedEtapas(orcamento.etapas.map((e: any) => e.id));
+  };
+
+  const handleClearSelection = () => {
+    setSelectedEtapas([]);
+  };
+
+  const handleExportExcel = () => {
+    const itemsToExport: any[] = [];
+    orcamento.etapas?.forEach((etapa: any) => {
+      if (selectedEtapas.includes(etapa.id)) {
+        etapa.itens?.forEach((item: any) => {
+          itemsToExport.push({
+            "Etapa": etapa.nome,
+            "Código": item.codigo || "",
+            "Descrição": item.descricao,
+            "Tipo": item.tipo,
+            "Unidade": item.unidade,
+            "Quantidade": item.quantidade,
+            "Preço Unitário Base (R$)": item.precoBaseUnitario || 0,
+            "Total Base (R$)": (item.quantidade || 0) * (item.precoBaseUnitario || 0)
+          });
+        });
+      }
+    });
+
+    if (itemsToExport.length === 0) {
+      alert("Nenhum item encontrado nas etapas selecionadas.");
+      return;
+    }
+
+    const worksheet = XLSX.utils.json_to_sheet(itemsToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Lista de Materiais");
+    
+    worksheet["!cols"] = [
+      { wch: 25 },
+      { wch: 15 },
+      { wch: 45 },
+      { wch: 15 },
+      { wch: 8 },
+      { wch: 12 },
+      { wch: 25 },
+      { wch: 20 }
+    ];
+
+    XLSX.writeFile(workbook, `Lista_Materiais_${orcamento.nome.replace(/\s+/g, "_")}.xlsx`);
+  };
+
+  const handleCopyToClipboard = () => {
+    let text = `📋 *LISTA DE MATERIAIS PARA ORÇAMENTO*\n`;
+    text += `*Projeto:* ${orcamento.nome}\n`;
+    text += `*Cliente:* ${orcamento.cliente || "Cordeiro Energia"}\n`;
+    text += `*Data:* ${new Date().toLocaleDateString("pt-BR")}\n\n`;
+
+    let itemIndex = 1;
+    let hasItems = false;
+
+    orcamento.etapas?.forEach((etapa: any) => {
+      if (selectedEtapas.includes(etapa.id)) {
+        const stageItens = etapa.itens || [];
+        if (stageItens.length > 0) {
+          text += `🔹 *${etapa.nome.toUpperCase()}*\n`;
+          stageItens.forEach((item: any) => {
+            text += `${itemIndex++}. ${item.descricao} | Qtd: ${item.quantidade} ${item.unidade}`;
+            if (item.codigo) text += ` (Cód: ${item.codigo})`;
+            text += `\n`;
+          });
+          text += `\n`;
+          hasItems = true;
+        }
+      }
+    });
+
+    if (!hasItems) {
+      alert("Nenhum item encontrado nas etapas selecionadas.");
+      return;
+    }
+
+    navigator.clipboard.writeText(text);
+    alert("Lista de materiais formatada copiada para a área de transferência!");
+  };
+
+  const handlePrintPdf = () => {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
+
+    const selectedEtapaObjs = orcamento.etapas?.filter((e: any) => selectedEtapas.includes(e.id)) || [];
+    
+    let rowsHtml = "";
+    let itemIndex = 1;
+    
+    selectedEtapaObjs.forEach((etapa: any) => {
+      rowsHtml += `
+        <tr style="background-color: #f8fafc; font-weight: bold; border-top: 2px solid #e2e8f0;">
+          <td colspan="5" style="padding: 12px; border: 1px solid #cbd5e1; color: #1e3a8a; font-size: 14px;">${etapa.nome}</td>
+        </tr>
+      `;
+      if (!etapa.itens || etapa.itens.length === 0) {
+        rowsHtml += `
+          <tr>
+            <td colspan="5" style="padding: 12px; border: 1px solid #cbd5e1; text-align: center; color: #94a3b8; font-style: italic;">Nenhum item nesta etapa</td>
+          </tr>
+        `;
+      } else {
+        etapa.itens.forEach((item: any) => {
+          rowsHtml += `
+            <tr>
+              <td style="padding: 10px; border: 1px solid #cbd5e1; text-align: center; color: #64748b;">${itemIndex++}</td>
+              <td style="padding: 10px; border: 1px solid #cbd5e1; font-family: monospace; color: #475569;">${item.codigo || "-"}</td>
+              <td style="padding: 10px; border: 1px solid #cbd5e1; font-weight: 600; color: #334155;">${item.descricao}</td>
+              <td style="padding: 10px; border: 1px solid #cbd5e1; text-align: center; color: #475569;">${item.unidade}</td>
+              <td style="padding: 10px; border: 1px solid #cbd5e1; text-align: right; font-weight: 800; color: #0f172a;">${item.quantidade}</td>
+            </tr>
+          `;
+        });
+      }
+    });
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Solicitação de Orçamento - ${orcamento.nome}</title>
+          <style>
+            body { font-family: system-ui, -apple-system, sans-serif; padding: 40px; color: #334155; line-height: 1.5; }
+            .header { border-bottom: 3px solid #1E3A8A; padding-bottom: 20px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: flex-end; }
+            .title-area { flex-grow: 1; }
+            .title { font-size: 26px; font-weight: 900; color: #1e3a8a; text-transform: uppercase; letter-spacing: -0.5px; }
+            .meta { font-size: 13px; margin-top: 12px; color: #64748b; font-weight: 500; }
+            .meta strong { color: #334155; }
+            .logo { font-size: 24px; font-weight: 900; color: #1e3a8a; text-transform: uppercase; }
+            table { width: 100%; border-collapse: collapse; margin-top: 25px; font-size: 13px; }
+            th { background-color: #1E3A8A; color: white; padding: 12px; border: 1px solid #cbd5e1; text-transform: uppercase; font-weight: 800; font-size: 11px; letter-spacing: 0.5px; text-align: left; }
+            td { border: 1px solid #cbd5e1; }
+            .instructions { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-top: 30px; font-size: 12px; color: #475569; }
+            .instructions strong { color: #1e3a8a; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div class="title-area">
+              <div class="title">Solicitação de Cotação de Materiais</div>
+              <div class="meta">
+                <strong>Projeto:</strong> ${orcamento.nome} <br/>
+                <strong>Cliente:</strong> ${orcamento.cliente || "Geral"} <br/>
+                <strong>Data da Solicitação:</strong> ${new Date().toLocaleDateString("pt-BR")}
+              </div>
+            </div>
+            <div class="logo">CORDEIRO ENERGIA</div>
+          </div>
+          
+          <div class="instructions">
+            <strong>Prezado Fornecedor,</strong> <br/>
+            Por favor, forneça os preços unitários e condições de fornecimento para os materiais listados abaixo. Retorne este documento preenchido ou envie sua proposta comercial correspondente.
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 50px; text-align: center;">Item</th>
+                <th style="width: 120px;">Código</th>
+                <th>Descrição do Material / Memorial Descritivo</th>
+                <th style="width: 80px; text-align: center;">Unidade</th>
+                <th style="width: 100px; text-align: right;">Quantidade</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rowsHtml}
+            </tbody>
+          </table>
+          
+          <div style="margin-top: 60px; font-size: 11px; color: #94a3b8; text-align: center; border-top: 1px solid #e2e8f0; padding-top: 20px;">
+            Cordeiro Energia • Curvelo - MG • CNPJ: 55.302.950/0001-62 <br/>
+            Documento gerado automaticamente pelo sistema de engenharia.
+          </div>
+          <script>
+            window.onload = function() { window.print(); }
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+  
+  // Custom helper to calculate total items from selected stages
+  const getSelectedItemsCount = () => {
+    let count = 0;
+    orcamento.etapas?.forEach((e: any) => {
+      if (selectedEtapas.includes(e.id)) {
+        count += e.itens?.length || 0;
+      }
+    });
+    return count;
+  };
+
   // Cálculos Consolidados
   let totalProjeto = 0;
   const totaisPorTipo: Record<string, number> = {};
@@ -250,6 +457,32 @@ export default function EapTab({ orcamento, onUpdate }: { orcamento: any, onUpda
         </div>
       </div>
 
+      {orcamento.etapas?.length > 0 && (
+        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleSelectAll}
+              className="text-xs font-bold text-slate-500 hover:text-[#00BFA5] flex items-center gap-1 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100 transition-colors"
+            >
+              <CheckSquare className="w-3.5 h-3.5" /> Selecionar Tudo
+            </button>
+            {selectedEtapas.length > 0 && (
+              <button
+                onClick={handleClearSelection}
+                className="text-xs font-bold text-slate-500 hover:text-red-500 flex items-center gap-1 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100 transition-colors"
+              >
+                <Square className="w-3.5 h-3.5" /> Desmarcar Tudo
+              </button>
+            )}
+          </div>
+          {selectedEtapas.length > 0 && (
+            <span className="text-xs font-bold text-slate-400 bg-slate-100 px-3 py-1 rounded-full">
+              {selectedEtapas.length} de {orcamento.etapas.length} etapas selecionadas
+            </span>
+          )}
+        </div>
+      )}
+
       <div className="space-y-6">
         {orcamento.etapas?.length === 0 ? (
           <div className="text-center p-10 bg-slate-50 border border-dashed border-slate-200 rounded-[2rem]">
@@ -277,6 +510,13 @@ export default function EapTab({ orcamento, onUpdate }: { orcamento: any, onUpda
                     </div>
                   ) : (
                     <div className="flex items-center gap-3">
+                      <input 
+                        type="checkbox"
+                        checked={selectedEtapas.includes(etapa.id)}
+                        onChange={() => handleToggleSelectEtapa(etapa.id)}
+                        className="w-4 h-4 text-[#00BFA5] border-slate-300 rounded focus:ring-[#00BFA5] cursor-pointer"
+                        title="Selecionar esta etapa"
+                      />
                       <h3 className="font-black text-slate-800 text-lg">{index + 1}. {etapa.nome}</h3>
                       <button onClick={() => { setEditingEtapa(etapa.id); setEditEtapaName(etapa.nome); }} className="text-slate-400 hover:text-[#00BFA5]"><Edit className="w-4 h-4" /></button>
                       <button onClick={() => handleDeleteEtapa(etapa.id)} className="text-slate-400 hover:text-red-500"><Trash className="w-4 h-4" /></button>
@@ -601,6 +841,55 @@ export default function EapTab({ orcamento, onUpdate }: { orcamento: any, onUpda
           ))}
         </div>
       </div>
+
+      {/* Floating Action Bar for Material List RFQ */}
+      {selectedEtapas.length > 0 && (
+        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-white/95 backdrop-blur-md border border-slate-200 px-6 py-4 rounded-2xl shadow-2xl z-50 flex items-center justify-between gap-6 max-w-4xl w-[90%] animate-in fade-in slide-in-from-bottom duration-300">
+          <div className="flex flex-col">
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+              {selectedEtapas.length} {selectedEtapas.length === 1 ? "Etapa Selecionada" : "Etapas Selecionadas"}
+            </span>
+            <span className="text-sm font-black text-slate-800">
+              {getSelectedItemsCount()} {getSelectedItemsCount() === 1 ? "item cadastrado" : "itens cadastrados"}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleCopyToClipboard}
+              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs flex items-center gap-2 transition-all cursor-pointer"
+              title="Copiar para WhatsApp / Email"
+            >
+              <Copy className="w-3.5 h-3.5" /> WhatsApp
+            </button>
+            
+            <button
+              onClick={handleExportExcel}
+              className="px-4 py-2 bg-[#00BFA5]/10 hover:bg-[#00BFA5]/20 text-[#00BFA5] font-black rounded-xl text-xs flex items-center gap-2 transition-all cursor-pointer"
+              title="Baixar Planilha Excel"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5" /> Exportar Excel
+            </button>
+
+            <button
+              onClick={handlePrintPdf}
+              className="px-4 py-2 bg-[#1E3A8A] hover:bg-blue-900 text-white font-bold rounded-xl text-xs flex items-center gap-2 transition-all shadow-md hover:shadow-lg cursor-pointer"
+              title="Visualizar e Imprimir RFQ"
+            >
+              <Printer className="w-3.5 h-3.5" /> PDF / Imprimir
+            </button>
+
+            <div className="w-px h-6 bg-slate-200 mx-1"></div>
+
+            <button
+              onClick={handleClearSelection}
+              className="px-3 py-2 bg-slate-200 hover:bg-slate-300 text-slate-600 font-bold rounded-xl text-xs transition-all cursor-pointer"
+            >
+              Limpar
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

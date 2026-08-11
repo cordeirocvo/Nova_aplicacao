@@ -80,6 +80,8 @@ export default function GestaoAtivosPage() {
   const [formError, setFormError] = useState("");
   const [formSuccess, setFormSuccess] = useState("");
   const [historyTab, setHistoryTab] = useState<"uso" | "combustivel">("uso");
+  const [editingLog, setEditingLog] = useState<any | null>(null);
+  const [editingLogType, setEditingLogType] = useState<"uso" | "combustivel" | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -269,6 +271,86 @@ export default function GestaoAtivosPage() {
         fetchData();
       } else {
         setFormError(data.error || "Erro ao registrar movimentação.");
+      }
+    } catch (err) {
+      setFormError("Erro de conexão.");
+    }
+  };
+
+  const handleDeleteHoursLog = async (id: string) => {
+    if (!confirm("Tem certeza que deseja excluir este lançamento de horas? Os custos e o horômetro do ativo serão deduzidos automaticamente.")) return;
+    try {
+      const res = await fetch(`/api/ativos/uso/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setFormSuccess("Lançamento de horas excluído!");
+        fetchData();
+      } else {
+        alert("Erro ao excluir lançamento.");
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleDeleteFuelLog = async (id: string) => {
+    if (!confirm("Tem certeza que deseja excluir este abastecimento? O custo associado será deduzido do ativo.")) return;
+    try {
+      const res = await fetch(`/api/ativos/combustivel/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setFormSuccess("Abastecimento excluído com sucesso!");
+        fetchData();
+      } else {
+        alert("Erro ao excluir abastecimento.");
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleUpdateLog = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormError("");
+    setFormSuccess("");
+
+    if (!editingLog || !editingLogType) return;
+
+    try {
+      const endpoint = editingLogType === "uso" 
+        ? `/api/ativos/uso/${editingLog.id}` 
+        : `/api/ativos/combustivel/${editingLog.id}`;
+
+      const bodyPayload = editingLogType === "uso" 
+        ? {
+            horasTrabalhadas: editingLog.horasTrabalhadas,
+            obra: editingLog.obra,
+            responsavel: editingLog.responsavel,
+            observacoes: editingLog.observacoes,
+            dataUso: editingLog.dataUso
+          }
+        : {
+            litros: editingLog.litros,
+            precoPorLitro: editingLog.precoPorLitro,
+            horimetro: editingLog.horimetro,
+            obra: editingLog.obra,
+            responsavel: editingLog.responsavel,
+            observacoes: editingLog.observacoes,
+            data: editingLog.data
+          };
+
+      const res = await fetch(endpoint, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(bodyPayload)
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setFormSuccess("Lançamento atualizado com sucesso!");
+        setEditingLog(null);
+        setEditingLogType(null);
+        fetchData();
+      } else {
+        setFormError(data.error || "Erro ao atualizar lançamento.");
       }
     } catch (err) {
       setFormError("Erro de conexão.");
@@ -1014,6 +1096,7 @@ export default function GestaoAtivosPage() {
                       <th className="p-3 text-right">Custo</th>
                       <th className="p-3 text-left">Responsável</th>
                       <th className="p-3 text-center">Data</th>
+                      <th className="p-3 text-center w-[80px]">Ações</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1038,11 +1121,35 @@ export default function GestaoAtivosPage() {
                         <td className="p-3 text-center text-slate-400 font-medium">
                           {new Date(log.dataUso).toLocaleDateString("pt-BR")}
                         </td>
+                        <td className="p-3 text-center">
+                          <div className="flex items-center justify-center gap-1.5">
+                            <button
+                              onClick={() => {
+                                setEditingLog({
+                                  ...log,
+                                  dataUso: new Date(log.dataUso).toISOString().split("T")[0]
+                                });
+                                setEditingLogType("uso");
+                              }}
+                              className="p-1 text-slate-400 hover:text-blue-600 transition-colors cursor-pointer"
+                              title="Editar"
+                            >
+                              <FileText className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteHoursLog(log.id)}
+                              className="p-1 text-slate-400 hover:text-red-600 transition-colors cursor-pointer"
+                              title="Excluir"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
                       </tr>
                     ))}
                     {ativos.every(a => !a.historicoUso || a.historicoUso.length === 0) && (
                       <tr>
-                        <td colSpan={6} className="p-12 text-center text-slate-400 italic">
+                        <td colSpan={7} className="p-12 text-center text-slate-400 italic">
                           Nenhum registro de horas encontrado.
                         </td>
                       </tr>
@@ -1061,6 +1168,7 @@ export default function GestaoAtivosPage() {
                       <th className="p-3 text-center">Horímetro</th>
                       <th className="p-3 text-left">Responsável</th>
                       <th className="p-3 text-center">Data</th>
+                      <th className="p-3 text-center w-[80px]">Ações</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1087,11 +1195,35 @@ export default function GestaoAtivosPage() {
                         <td className="p-3 text-center text-slate-400 font-medium">
                           {new Date(log.data).toLocaleDateString("pt-BR")}
                         </td>
+                        <td className="p-3 text-center">
+                          <div className="flex items-center justify-center gap-1.5">
+                            <button
+                              onClick={() => {
+                                setEditingLog({
+                                  ...log,
+                                  data: new Date(log.data).toISOString().split("T")[0]
+                                });
+                                setEditingLogType("combustivel");
+                              }}
+                              className="p-1 text-slate-400 hover:text-blue-600 transition-colors cursor-pointer"
+                              title="Editar"
+                            >
+                              <FileText className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteFuelLog(log.id)}
+                              className="p-1 text-slate-400 hover:text-red-600 transition-colors cursor-pointer"
+                              title="Excluir"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
                       </tr>
                     ))}
                     {ativos.every(a => !a.combustiveis || a.combustiveis.length === 0) && (
                       <tr>
-                        <td colSpan={8} className="p-12 text-center text-slate-400 italic">
+                        <td colSpan={9} className="p-12 text-center text-slate-400 italic">
                           Nenhum registro de abastecimento encontrado.
                         </td>
                       </tr>
@@ -1382,6 +1514,176 @@ export default function GestaoAtivosPage() {
             </div>
           </div>
 
+        </div>
+      )}
+
+      {/* ================= MODAL DE EDIÇÃO DE LANÇAMENTO ================= */}
+      {editingLog && editingLogType && (
+        <div className="fixed inset-0 z-50 bg-[#0a192f]/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-md rounded-[2.5rem] border border-slate-100 shadow-2xl p-6 relative animate-in slide-in-from-bottom-8 duration-300">
+            
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <h3 className="text-base font-black text-slate-800 uppercase tracking-tight flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-[#f15a24]" /> 
+                  Editar Lançamento
+                </h3>
+                <p className="text-[10px] text-slate-500 mt-0.5">
+                  Ajuste as informações registradas para recálculo do custo.
+                </p>
+              </div>
+              <button 
+                type="button"
+                onClick={() => {
+                  setEditingLog(null);
+                  setEditingLogType(null);
+                }}
+                className="text-slate-400 hover:text-slate-600 font-black text-lg p-1 cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateLog} className="space-y-4">
+              
+              {editingLogType === "uso" ? (
+                <>
+                  {/* Horas Trabalhadas fields */}
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Horas Operadas *</label>
+                    <input 
+                      type="number"
+                      step="0.1"
+                      required
+                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                      value={editingLog.horasTrabalhadas || ""}
+                      onChange={e => setEditingLog({...editingLog, horasTrabalhadas: e.target.value})}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Data do Uso *</label>
+                    <input 
+                      type="date"
+                      required
+                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                      value={editingLog.dataUso || ""}
+                      onChange={e => setEditingLog({...editingLog, dataUso: e.target.value})}
+                    />
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* Combustível fields */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Litros *</label>
+                      <input 
+                        type="number"
+                        step="0.01"
+                        required
+                        className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                        value={editingLog.litros || ""}
+                        onChange={e => setEditingLog({...editingLog, litros: e.target.value})}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Preço / Litro (R$) *</label>
+                      <input 
+                        type="number"
+                        step="0.01"
+                        required
+                        className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                        value={editingLog.precoPorLitro || ""}
+                        onChange={e => setEditingLog({...editingLog, precoPorLitro: e.target.value})}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Leitura Horímetro (h)</label>
+                      <input 
+                        type="number"
+                        step="0.1"
+                        className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                        value={editingLog.horimetro || ""}
+                        onChange={e => setEditingLog({...editingLog, horimetro: e.target.value})}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Data *</label>
+                      <input 
+                        type="date"
+                        required
+                        className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                        value={editingLog.data || ""}
+                        onChange={e => setEditingLog({...editingLog, data: e.target.value})}
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Obra Vinculada (CAPEX) *</label>
+                <select
+                  required
+                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                  value={editingLog.obra || ""}
+                  onChange={e => setEditingLog({...editingLog, obra: e.target.value})}
+                >
+                  <option value="">Selecione a Obra...</option>
+                  {capexProjects.map(p => (
+                    <option key={p.id} value={p.nome}>{p.nome}</option>
+                  ))}
+                  <option value="Geral - Sem Obra Específica">Geral - Sem Obra Específica</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Responsável / Encarregado *</label>
+                <input 
+                  type="text"
+                  required
+                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                  value={editingLog.responsavel || ""}
+                  onChange={e => setEditingLog({...editingLog, responsavel: e.target.value})}
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Observações</label>
+                <textarea 
+                  rows={2}
+                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 outline-none focus:ring-2 focus:ring-[#f15a24] resize-none"
+                  value={editingLog.observacoes || ""}
+                  onChange={e => setEditingLog({...editingLog, observacoes: e.target.value})}
+                />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingLog(null);
+                    setEditingLogType(null);
+                  }}
+                  className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs py-3.5 rounded-xl uppercase tracking-wider transition-all cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 bg-[#f15a24] hover:bg-orange-600 text-white font-black text-xs py-3.5 rounded-xl uppercase tracking-wider transition-all cursor-pointer shadow-md"
+                >
+                  Salvar Alterações
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 

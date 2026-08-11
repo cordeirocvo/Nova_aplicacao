@@ -21,6 +21,10 @@ export async function GET() {
         historicoUso: {
           orderBy: { dataUso: "desc" },
           take: 5
+        },
+        combustiveis: {
+          orderBy: { data: "desc" },
+          take: 5
         }
       },
       orderBy: { nome: "asc" }

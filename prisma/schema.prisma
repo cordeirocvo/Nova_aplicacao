@@ -812,6 +812,7 @@ model Ativo {
   updatedAt                  DateTime             @updatedAt
   movimentacoes              MovimentacaoAtivo[]
   historicoUso               HistoricoUsoAtivo[]
+  combustiveis               RegistroCombustivel[]
 }
 
 model MovimentacaoAtivo {
@@ -837,4 +838,19 @@ model HistoricoUsoAtivo {
   observacoes     String?
   createdAt       DateTime @default(now())
   ativo           Ativo    @relation(fields: [ativoId], references: [id], onDelete: Cascade)
+}
+
+model RegistroCombustivel {
+  id             String   @id @default(cuid())
+  ativoId        String
+  litros         Float
+  precoPorLitro  Float
+  custoTotal     Float
+  horimetro      Float?
+  obra           String
+  data           DateTime @default(now())
+  responsavel    String
+  observacoes    String?
+  createdAt      DateTime @default(now())
+  ativo          Ativo    @relation(fields: [ativoId], references: [id], onDelete: Cascade)
 }

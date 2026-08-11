@@ -19,6 +19,9 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
         },
         historicoUso: {
           orderBy: { dataUso: "desc" }
+        },
+        combustiveis: {
+          orderBy: { data: "desc" }
         }
       }
     });

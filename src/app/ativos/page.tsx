@@ -29,6 +29,9 @@ export default function GestaoAtivosPage() {
   const [filterCategoria, setFilterCategoria] = useState("TODOS");
   const [filterStatus, setFilterStatus] = useState("TODOS");
 
+  // Obras do CAPEX list state
+  const [capexProjects, setCapexProjects] = useState<any[]>([]);
+
   // New Asset Form State
   const [showAddForm, setShowAddForm] = useState(false);
   const [newAsset, setNewAsset] = useState({
@@ -52,6 +55,18 @@ export default function GestaoAtivosPage() {
     dataUso: new Date().toISOString().split("T")[0]
   });
 
+  // Fuel Logging Form State
+  const [selectedAssetForFuel, setSelectedAssetForFuel] = useState("");
+  const [fuelForm, setFuelForm] = useState({
+    litros: "",
+    precoPorLitro: "",
+    horimetro: "",
+    obra: "",
+    responsavel: "",
+    observacoes: "",
+    data: new Date().toISOString().split("T")[0]
+  });
+
   // Tool Checkout/Return Form State
   const [selectedAssetForMove, setSelectedAssetForMove] = useState("");
   const [moveForm, setMoveForm] = useState({
@@ -64,6 +79,7 @@ export default function GestaoAtivosPage() {
 
   const [formError, setFormError] = useState("");
   const [formSuccess, setFormSuccess] = useState("");
+  const [historyTab, setHistoryTab] = useState<"uso" | "combustivel">("uso");
 
   useEffect(() => {
     fetchData();
@@ -72,9 +88,10 @@ export default function GestaoAtivosPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [resAtivos, resDashboard] = await Promise.all([
+      const [resAtivos, resDashboard, resCapex] = await Promise.all([
         fetch("/api/ativos"),
-        fetch("/api/ativos/dashboard")
+        fetch("/api/ativos/dashboard"),
+        fetch("/api/orcamentos")
       ]);
       if (resAtivos.ok) {
         const data = await resAtivos.json();
@@ -83,6 +100,10 @@ export default function GestaoAtivosPage() {
       if (resDashboard.ok) {
         const data = await resDashboard.json();
         setDashboardData(data);
+      }
+      if (resCapex.ok) {
+        const data = await resCapex.json();
+        setCapexProjects(data);
       }
     } catch (error) {
       console.error("Erro ao buscar dados de ativos:", error);
@@ -174,6 +195,44 @@ export default function GestaoAtivosPage() {
         fetchData();
       } else {
         setFormError(data.error || "Erro ao registrar horas.");
+      }
+    } catch (err) {
+      setFormError("Erro de conexão com o servidor.");
+    }
+  };
+
+  const handleLogFuel = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormError("");
+    setFormSuccess("");
+
+    if (!selectedAssetForFuel || !fuelForm.litros || !fuelForm.precoPorLitro || !fuelForm.obra || !fuelForm.responsavel) {
+      setFormError("Preencha todos os campos obrigatórios.");
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/ativos/${selectedAssetForFuel}/combustivel`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(fuelForm)
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setFormSuccess("Abastecimento de combustível registrado com sucesso!");
+        setFuelForm({
+          litros: "",
+          precoPorLitro: "",
+          horimetro: "",
+          obra: "",
+          responsavel: "",
+          observacoes: "",
+          data: new Date().toISOString().split("T")[0]
+        });
+        setSelectedAssetForFuel("");
+        fetchData();
+      } else {
+        setFormError(data.error || "Erro ao registrar abastecimento.");
       }
     } catch (err) {
       setFormError("Erro de conexão com o servidor.");
@@ -665,161 +724,385 @@ export default function GestaoAtivosPage() {
       )}
 
       {/* ================= HORAS TAB (MAQUINAS PESADAS) ================= */}
-      {activeTab === "horas" && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in duration-300">
           
-          {/* Hours Input Form Panel */}
-          <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col justify-between">
-            <form onSubmit={handleLogHours} className="space-y-4">
-              <div>
-                <h3 className="text-base font-black text-slate-800 uppercase tracking-tight">Lançar Horas Trabalhadas</h3>
-                <p className="text-xs text-slate-500 mt-0.5">Informe o tempo de operação para calcular o custo operacional e atualizar as horas.</p>
-              </div>
+          {/* Column 1: Forms Container */}
+          <div className="space-y-6">
+            
+            {/* Hours Input Form Panel */}
+            <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
+              <form onSubmit={handleLogHours} className="space-y-4">
+                <div>
+                  <h3 className="text-base font-black text-slate-800 uppercase tracking-tight flex items-center gap-2">
+                    <Clock className="w-5 h-5 text-[#f15a24]" /> Registrar Horas de Uso
+                  </h3>
+                  <p className="text-[10px] text-slate-500 mt-0.5">Informe as horas operadas pelo maquinário pesado para cálculo do CAPEX.</p>
+                </div>
 
-              <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Selecionar Máquina Pesada *</label>
-                <select
-                  required
-                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
-                  value={selectedAssetForHours}
-                  onChange={e => setSelectedAssetForHours(e.target.value)}
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Equipamento Pesado *</label>
+                  <select
+                    required
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                    value={selectedAssetForHours}
+                    onChange={e => setSelectedAssetForHours(e.target.value)}
+                  >
+                    <option value="">Selecione uma máquina...</option>
+                    {ativos.filter(a => a.categoria === "PESADO").map(a => (
+                      <option key={a.id} value={a.id}>
+                        {a.nome} ({a.codigo}) - R$ {a.taxaHoraria || 0}/h
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Horas Operadas *</label>
+                    <input 
+                      type="number"
+                      step="0.1"
+                      required
+                      placeholder="Ex: 8.5"
+                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                      value={hoursForm.horasTrabalhadas}
+                      onChange={e => setHoursForm({...hoursForm, horasTrabalhadas: e.target.value})}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Data do Uso *</label>
+                    <input 
+                      type="date"
+                      required
+                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                      value={hoursForm.dataUso}
+                      onChange={e => setHoursForm({...hoursForm, dataUso: e.target.value})}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Obra Vinculada (CAPEX) *</label>
+                  <select
+                    required
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                    value={hoursForm.obra}
+                    onChange={e => setHoursForm({...hoursForm, obra: e.target.value})}
+                  >
+                    <option value="">Selecione a Obra...</option>
+                    {capexProjects.map(p => (
+                      <option key={p.id} value={p.nome}>{p.nome}</option>
+                    ))}
+                    <option value="Geral - Sem Obra Específica">Geral - Sem Obra Específica</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Operador Responsável *</label>
+                  <input 
+                    type="text"
+                    required
+                    placeholder="Ex: João da Silva"
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                    value={hoursForm.responsavel}
+                    onChange={e => setHoursForm({...hoursForm, responsavel: e.target.value})}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Observações</label>
+                  <textarea 
+                    rows={2}
+                    placeholder="Serviços realizados..."
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 outline-none focus:ring-2 focus:ring-[#f15a24] resize-none"
+                    value={hoursForm.observacoes}
+                    onChange={e => setHoursForm({...hoursForm, observacoes: e.target.value})}
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full bg-[#f15a24] hover:bg-orange-600 text-white font-black text-xs py-3.5 rounded-xl uppercase tracking-wider transition-all cursor-pointer shadow-md"
                 >
-                  <option value="">Selecione um Equipamento...</option>
-                  {ativos.filter(a => a.categoria === "PESADO").map(a => (
-                    <option key={a.id} value={a.id}>
-                      {a.nome} - Tag: {a.codigo} (R$ {a.taxaHoraria || 0}/h)
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Horas Operadas *</label>
-                  <input 
-                    type="number"
-                    step="0.1"
-                    required
-                    placeholder="Ex: 8.5"
-                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
-                    value={hoursForm.horasTrabalhadas}
-                    onChange={e => setHoursForm({...hoursForm, horasTrabalhadas: e.target.value})}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Data do Uso *</label>
-                  <input 
-                    type="date"
-                    required
-                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
-                    value={hoursForm.dataUso}
-                    onChange={e => setHoursForm({...hoursForm, dataUso: e.target.value})}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Obra / Canteiro *</label>
-                <input 
-                  type="text"
-                  required
-                  placeholder="Ex: Obra Curvelo Centro"
-                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
-                  value={hoursForm.obra}
-                  onChange={e => setHoursForm({...hoursForm, obra: e.target.value})}
-                />
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Operador Responsável *</label>
-                <input 
-                  type="text"
-                  required
-                  placeholder="Ex: João da Silva"
-                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
-                  value={hoursForm.responsavel}
-                  onChange={e => setHoursForm({...hoursForm, responsavel: e.target.value})}
-                />
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Observações</label>
-                <textarea 
-                  rows={3}
-                  placeholder="Ex: Serviços de terraplenagem e cercamento lateral."
-                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 outline-none focus:ring-2 focus:ring-[#f15a24] resize-none"
-                  value={hoursForm.observacoes}
-                  onChange={e => setHoursForm({...hoursForm, observacoes: e.target.value})}
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="w-full bg-[#f15a24] hover:bg-orange-600 text-white font-black text-xs py-3.5 rounded-xl uppercase tracking-wider transition-all cursor-pointer shadow-md mt-2"
-              >
-                Registrar e Atualizar Custo
-              </button>
-            </form>
-          </div>
-
-          {/* Hours History Logs Grid */}
-          <div className="col-span-1 lg:col-span-2 bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col">
-            <div>
-              <h3 className="text-base font-black text-slate-800 uppercase tracking-tight">Histórico Recente de Lançamentos</h3>
-              <p className="text-xs text-slate-500 mt-0.5">Últimos logs operacionais e custos vinculados a cada obra.</p>
+                  Registrar Horas de Uso
+                </button>
+              </form>
             </div>
 
-            <div className="mt-4 flex-1 overflow-x-auto">
-              <table className="w-full border-collapse border border-slate-100 text-xs">
-                <thead>
-                  <tr className="bg-slate-50 text-slate-400 font-bold uppercase text-[9px]">
-                    <th className="p-3 text-left">Equipamento</th>
-                    <th className="p-3 text-left">Obra</th>
-                    <th className="p-3 text-center">Horas</th>
-                    <th className="p-3 text-right">Custo Calculado</th>
-                    <th className="p-3 text-left">Operador</th>
-                    <th className="p-3 text-center">Data</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {ativos.flatMap(ativo => 
-                    (ativo.historicoUso || []).map((uso: any) => ({
-                      ...uso,
-                      ativoNome: ativo.nome,
-                      ativoCodigo: ativo.codigo
-                    }))
-                  )
-                  .sort((a, b) => new Date(b.dataUso).getTime() - new Date(a.dataUso).getTime())
-                  .slice(0, 10)
-                  .map((log: any) => (
-                    <tr key={log.id} className="border-b border-slate-100 hover:bg-slate-50/50">
-                      <td className="p-3 text-slate-800 font-bold">{log.ativoNome} <span className="text-[10px] text-slate-400 font-normal">({log.ativoCodigo})</span></td>
-                      <td className="p-3 text-slate-600 font-semibold">{log.obra}</td>
-                      <td className="p-3 text-center text-slate-800 font-black">{log.horasTrabalhadas} h</td>
-                      <td className="p-3 text-right text-[#f15a24] font-black">
-                        {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(log.custoCalculado)}
-                      </td>
-                      <td className="p-3 text-slate-600">{log.responsavel}</td>
-                      <td className="p-3 text-center text-slate-400 font-medium">
-                        {new Date(log.dataUso).toLocaleDateString("pt-BR")}
-                      </td>
+            {/* Fuel Input Form Panel */}
+            <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
+              <form onSubmit={handleLogFuel} className="space-y-4">
+                <div>
+                  <h3 className="text-base font-black text-slate-800 uppercase tracking-tight flex items-center gap-2">
+                    <Coins className="w-5 h-5 text-[#00BFA5]" /> Registrar Abastecimento
+                  </h3>
+                  <p className="text-[10px] text-slate-500 mt-0.5">Lançamento de combustível (litros e custo) com impacto automático no CAPEX.</p>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Equipamento Pesado / Máquina *</label>
+                  <select
+                    required
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                    value={selectedAssetForFuel}
+                    onChange={e => setSelectedAssetForFuel(e.target.value)}
+                  >
+                    <option value="">Selecione uma máquina...</option>
+                    {ativos.filter(a => a.categoria === "PESADO").map(a => (
+                      <option key={a.id} value={a.id}>
+                        {a.nome} ({a.codigo})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Litros *</label>
+                    <input 
+                      type="number"
+                      step="0.01"
+                      required
+                      placeholder="Ex: 50"
+                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                      value={fuelForm.litros}
+                      onChange={e => setFuelForm({...fuelForm, litros: e.target.value})}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Preço / Litro (R$) *</label>
+                    <input 
+                      type="number"
+                      step="0.01"
+                      required
+                      placeholder="Ex: 5.89"
+                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                      value={fuelForm.precoPorLitro}
+                      onChange={e => setFuelForm({...fuelForm, precoPorLitro: e.target.value})}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Leitura Horímetro (h)</label>
+                    <input 
+                      type="number"
+                      step="0.1"
+                      placeholder="Ex: 1245.5"
+                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                      value={fuelForm.horimetro}
+                      onChange={e => setFuelForm({...fuelForm, horimetro: e.target.value})}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Data *</label>
+                    <input 
+                      type="date"
+                      required
+                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                      value={fuelForm.data}
+                      onChange={e => setFuelForm({...fuelForm, data: e.target.value})}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-center bg-slate-50 px-4 py-2.5 rounded-xl border border-slate-100 text-xs font-bold text-slate-700">
+                  <span>Custo Estimado:</span>
+                  <span className="text-[#00BFA5]">
+                    {fuelForm.litros && fuelForm.precoPorLitro 
+                      ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(parseFloat(fuelForm.litros) * parseFloat(fuelForm.precoPorLitro))
+                      : "R$ 0,00"
+                    }
+                  </span>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Obra Destino (CAPEX) *</label>
+                  <select
+                    required
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                    value={fuelForm.obra}
+                    onChange={e => setFuelForm({...fuelForm, obra: e.target.value})}
+                  >
+                    <option value="">Selecione a Obra...</option>
+                    {capexProjects.map(p => (
+                      <option key={p.id} value={p.nome}>{p.nome}</option>
+                    ))}
+                    <option value="Geral - Sem Obra Específica">Geral - Sem Obra Específica</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Responsável Abastecimento *</label>
+                  <input 
+                    type="text"
+                    required
+                    placeholder="Ex: João da Silva"
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                    value={fuelForm.responsavel}
+                    onChange={e => setFuelForm({...fuelForm, responsavel: e.target.value})}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Observações</label>
+                  <textarea 
+                    rows={2}
+                    placeholder="Notas adicionais..."
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 outline-none focus:ring-2 focus:ring-[#f15a24] resize-none"
+                    value={fuelForm.observacoes}
+                    onChange={e => setFuelForm({...fuelForm, observacoes: e.target.value})}
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full bg-[#00BFA5] hover:bg-teal-600 text-white font-black text-xs py-3.5 rounded-xl uppercase tracking-wider transition-all cursor-pointer shadow-md"
+                >
+                  Registrar Combustível
+                </button>
+              </form>
+            </div>
+
+          </div>
+
+          {/* Column 2: Logs History Panels */}
+          <div className="col-span-1 lg:col-span-2 bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col justify-between min-h-[500px]">
+            <div>
+              <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 className="text-base font-black text-slate-800 uppercase tracking-tight">Histórico de Lançamentos</h3>
+                
+                {/* Secondary tab selectors */}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setHistoryTab("uso")}
+                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${
+                      historyTab === "uso" 
+                        ? "bg-[#0a192f] text-white" 
+                        : "bg-slate-50 text-slate-400 hover:bg-slate-100"
+                    }`}
+                  >
+                    Horas Trabalhadas
+                  </button>
+                  <button
+                    onClick={() => setHistoryTab("combustivel")}
+                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${
+                      historyTab === "combustivel" 
+                        ? "bg-[#0a192f] text-white" 
+                        : "bg-slate-50 text-slate-400 hover:bg-slate-100"
+                    }`}
+                  >
+                    Abastecimentos
+                  </button>
+                </div>
+              </div>
+              <p className="text-xs text-slate-500 mt-2">Últimos logs operacionais e despesas vinculadas aos projetos.</p>
+            </div>
+
+            <div className="mt-4 flex-grow overflow-y-auto">
+              {historyTab === "uso" ? (
+                <table className="w-full border-collapse border border-slate-100 text-xs">
+                  <thead>
+                    <tr className="bg-slate-50 text-slate-400 font-bold uppercase text-[9px]">
+                      <th className="p-3 text-left">Equipamento</th>
+                      <th className="p-3 text-left">Obra</th>
+                      <th className="p-3 text-center">Horas</th>
+                      <th className="p-3 text-right">Custo</th>
+                      <th className="p-3 text-left">Responsável</th>
+                      <th className="p-3 text-center">Data</th>
                     </tr>
-                  ))}
-                  {ativos.every(a => !a.historicoUso || a.historicoUso.length === 0) && (
-                    <tr>
-                      <td colSpan={6} className="p-12 text-center text-slate-400 italic">
-                        Nenhum registro de horas encontrado.
-                      </td>
+                  </thead>
+                  <tbody>
+                    {ativos.flatMap(ativo => 
+                      (ativo.historicoUso || []).map((uso: any) => ({
+                        ...uso,
+                        ativoNome: ativo.nome,
+                        ativoCodigo: ativo.codigo
+                      }))
+                    )
+                    .sort((a, b) => new Date(b.dataUso).getTime() - new Date(a.dataUso).getTime())
+                    .slice(0, 15)
+                    .map((log: any) => (
+                      <tr key={log.id} className="border-b border-slate-100 hover:bg-slate-50/50">
+                        <td className="p-3 text-slate-800 font-bold">{log.ativoNome} <span className="text-[10px] text-slate-400 font-normal">({log.ativoCodigo})</span></td>
+                        <td className="p-3 text-slate-600 font-semibold">{log.obra}</td>
+                        <td className="p-3 text-center text-slate-800 font-black">{log.horasTrabalhadas} h</td>
+                        <td className="p-3 text-right text-[#f15a24] font-black">
+                          {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(log.custoCalculado)}
+                        </td>
+                        <td className="p-3 text-slate-600">{log.responsavel}</td>
+                        <td className="p-3 text-center text-slate-400 font-medium">
+                          {new Date(log.dataUso).toLocaleDateString("pt-BR")}
+                        </td>
+                      </tr>
+                    ))}
+                    {ativos.every(a => !a.historicoUso || a.historicoUso.length === 0) && (
+                      <tr>
+                        <td colSpan={6} className="p-12 text-center text-slate-400 italic">
+                          Nenhum registro de horas encontrado.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              ) : (
+                <table className="w-full border-collapse border border-slate-100 text-xs">
+                  <thead>
+                    <tr className="bg-slate-50 text-slate-400 font-bold uppercase text-[9px]">
+                      <th className="p-3 text-left">Equipamento</th>
+                      <th className="p-3 text-left">Obra</th>
+                      <th className="p-3 text-center">Litros</th>
+                      <th className="p-3 text-center">R$/L</th>
+                      <th className="p-3 text-right">Custo Total</th>
+                      <th className="p-3 text-center">Horímetro</th>
+                      <th className="p-3 text-left">Responsável</th>
+                      <th className="p-3 text-center">Data</th>
                     </tr>
-                  )}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {ativos.flatMap(ativo => 
+                      (ativo.combustiveis || []).map((comb: any) => ({
+                        ...comb,
+                        ativoNome: ativo.nome,
+                        ativoCodigo: ativo.codigo
+                      }))
+                    )
+                    .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())
+                    .slice(0, 15)
+                    .map((log: any) => (
+                      <tr key={log.id} className="border-b border-slate-100 hover:bg-slate-50/50">
+                        <td className="p-3 text-slate-800 font-bold">{log.ativoNome} <span className="text-[10px] text-slate-400 font-normal">({log.ativoCodigo})</span></td>
+                        <td className="p-3 text-slate-600 font-semibold">{log.obra}</td>
+                        <td className="p-3 text-center text-slate-800 font-black">{log.litros} L</td>
+                        <td className="p-3 text-center text-slate-500 font-medium">R$ {log.precoPorLitro}</td>
+                        <td className="p-3 text-right text-[#00BFA5] font-black">
+                          {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(log.custoTotal)}
+                        </td>
+                        <td className="p-3 text-center text-slate-600 font-mono font-bold">{log.horimetro ? `${log.horimetro} h` : "-"}</td>
+                        <td className="p-3 text-slate-600">{log.responsavel}</td>
+                        <td className="p-3 text-center text-slate-400 font-medium">
+                          {new Date(log.data).toLocaleDateString("pt-BR")}
+                        </td>
+                      </tr>
+                    ))}
+                    {ativos.every(a => !a.combustiveis || a.combustiveis.length === 0) && (
+                      <tr>
+                        <td colSpan={8} className="p-12 text-center text-slate-400 italic">
+                          Nenhum registro de abastecimento encontrado.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              )}
             </div>
           </div>
 
         </div>
-      )}
 
       {/* ================= MOVIMENTACAO TAB ================= */}
       {activeTab === "movimentacao" && (
@@ -890,14 +1173,18 @@ export default function GestaoAtivosPage() {
               {moveForm.tipo === "SAIDA" && (
                 <div>
                   <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Destino / Obra de Utilização *</label>
-                  <input 
-                    type="text"
+                  <select
                     required={moveForm.tipo === "SAIDA"}
-                    placeholder="Ex: Obra Curvelo Norte"
                     className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
                     value={moveForm.destino}
                     onChange={e => setMoveForm({...moveForm, destino: e.target.value})}
-                  />
+                  >
+                    <option value="">Selecione a Obra de Destino...</option>
+                    {capexProjects.map(p => (
+                      <option key={p.id} value={p.nome}>{p.nome}</option>
+                    ))}
+                    <option value="Outro Local / Almoxarifado Geral">Outro Local / Almoxarifado Geral</option>
+                  </select>
                 </div>
               )}
 
@@ -1001,13 +1288,21 @@ export default function GestaoAtivosPage() {
                 <thead>
                   <tr className="bg-slate-50 text-slate-400 font-bold uppercase text-[9px]">
                     <th className="p-4 text-left">Nome da Obra / Projeto</th>
-                    <th className="p-4 text-right">Custos Totais Logados (R$)</th>
+                    <th className="p-4 text-right">Custo Horas de Uso (R$)</th>
+                    <th className="p-4 text-right">Custo Combustível (R$)</th>
+                    <th className="p-4 text-right">Custo Total (R$)</th>
                   </tr>
                 </thead>
                 <tbody>
                   {dashboardData.custosPorObra.map((costGroup: any, idx: number) => (
                     <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50/50">
                       <td className="p-4 text-slate-800 font-bold text-sm">{costGroup.obra}</td>
+                      <td className="p-4 text-right text-slate-600 font-semibold">
+                        {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(costGroup.custoHoras || 0)}
+                      </td>
+                      <td className="p-4 text-right text-[#00BFA5] font-semibold">
+                        {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(costGroup.custoCombustivel || 0)}
+                      </td>
                       <td className="p-4 text-right text-[#f15a24] font-black text-sm">
                         {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(costGroup.totalCusto)}
                       </td>
@@ -1015,7 +1310,7 @@ export default function GestaoAtivosPage() {
                   ))}
                   {dashboardData.custosPorObra.length === 0 && (
                     <tr>
-                      <td colSpan={2} className="p-12 text-center text-slate-400 italic">
+                      <td colSpan={4} className="p-12 text-center text-slate-400 italic">
                         Nenhum custo por obra registrado ainda.
                       </td>
                     </tr>

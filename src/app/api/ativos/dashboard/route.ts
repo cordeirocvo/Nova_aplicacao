@@ -25,25 +25,49 @@ export async function GET() {
       return ativo.horasUso >= ativo.horasManutencaoPreventiva;
     });
 
-    const historicoUso = await prisma.historicoUsoAtivo.findMany({
-      select: {
-        obra: true,
-        custoCalculado: true
-      }
-    });
+    const [historicoUso, historicoCombustivel] = await Promise.all([
+      prisma.historicoUsoAtivo.findMany({
+        select: {
+          obra: true,
+          custoCalculado: true
+        }
+      }),
+      prisma.registroCombustivel.findMany({
+        select: {
+          obra: true,
+          custoTotal: true
+        }
+      })
+    ]);
 
-    const custosPorObraMap: Record<string, number> = {};
+    const custosPorObraMap: Record<string, { horas: number; combustivel: number; total: number }> = {};
     let totalCustoAcumulado = 0;
 
     historicoUso.forEach(log => {
       const obra = log.obra || "Obra Indefinida";
-      custosPorObraMap[obra] = (custosPorObraMap[obra] || 0) + log.custoCalculado;
+      if (!custosPorObraMap[obra]) {
+        custosPorObraMap[obra] = { horas: 0, combustivel: 0, total: 0 };
+      }
+      custosPorObraMap[obra].horas += log.custoCalculado;
+      custosPorObraMap[obra].total += log.custoCalculado;
       totalCustoAcumulado += log.custoCalculado;
     });
 
-    const custosPorObra = Object.entries(custosPorObraMap).map(([obra, totalCusto]) => ({
+    historicoCombustivel.forEach(log => {
+      const obra = log.obra || "Obra Indefinida";
+      if (!custosPorObraMap[obra]) {
+        custosPorObraMap[obra] = { horas: 0, combustivel: 0, total: 0 };
+      }
+      custosPorObraMap[obra].combustivel += log.custoTotal;
+      custosPorObraMap[obra].total += log.custoTotal;
+      totalCustoAcumulado += log.custoTotal;
+    });
+
+    const custosPorObra = Object.entries(custosPorObraMap).map(([obra, detail]) => ({
       obra,
-      totalCusto
+      custoHoras: detail.horas,
+      custoCombustivel: detail.combustivel,
+      totalCusto: detail.total
     })).sort((a, b) => b.totalCusto - a.totalCusto);
 
     return NextResponse.json({

@@ -7,7 +7,7 @@ import { useSession, signOut } from 'next-auth/react';
 import { 
   LayoutDashboard, ListTodo, PlusCircle, Settings, LogOut,
   Menu, X, Zap, Users, Sun, Battery, BarChart, Package,
-  BatteryCharging, ChevronDown, ChevronRight, Calendar, Activity
+  BatteryCharging, ChevronDown, ChevronRight, Calendar, Activity, Wrench
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -22,6 +22,7 @@ const NAV_SECTIONS: NavSection[] = [
       { name: 'Atividades', href: '/atividades', icon: ListTodo },
       { name: 'Calendário de Atividades', href: '/cronograma', icon: Calendar },
       { name: 'Nova Atividade', href: '/atividades/nova', icon: PlusCircle },
+      { name: 'Gestão de Ativos', href: '/ativos', icon: Wrench },
       { name: 'Gestão de Usuários', href: '/admin/usuarios', icon: Users, adminOnly: true },
       { name: 'Config. de Status', href: '/admin/status', icon: Settings, adminOnly: true },
     ],

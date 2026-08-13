@@ -36,8 +36,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       if (descricao !== undefined) updateData.descricao = descricao;
       if (responsavelId !== undefined) updateData.responsavelId = responsavelId;
       if (status !== undefined) updateData.status = status;
-      if (dataInicio !== undefined) updateData.dataInicio = dataInicio ? new Date(dataInicio) : null;
-      if (dataFim !== undefined) updateData.dataFim = dataFim ? new Date(dataFim) : null;
+      if (dataInicio !== undefined) updateData.dataInicio = dataInicio ? new Date(`${dataInicio}T12:00:00`) : null;
+      if (dataFim !== undefined) updateData.dataFim = dataFim ? new Date(`${dataFim}T12:00:00`) : null;
     } else {
       // Executor can only update the status of their task
       if (status !== undefined) updateData.status = status;

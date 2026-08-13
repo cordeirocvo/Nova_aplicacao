@@ -75,8 +75,8 @@ export async function POST(req: Request) {
         descricao,
         responsavelId,
         status: status || "PLANEJADA",
-        dataInicio: dataInicio ? new Date(dataInicio) : null,
-        dataFim: dataFim ? new Date(dataFim) : null
+        dataInicio: dataInicio ? new Date(`${dataInicio}T12:00:00`) : null,
+        dataFim: dataFim ? new Date(`${dataFim}T12:00:00`) : null
       },
       include: {
         projeto: true,

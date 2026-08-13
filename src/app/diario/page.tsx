@@ -9,6 +9,16 @@ import {
   Sparkles, BarChart3, Upload, HardHat, Square, AlertCircle, MessageSquare, Pencil
 } from "lucide-react";
 
+// Formats a date string/ISO from DB without UTC→local timezone shift
+// (new Date("2026-08-17") parses as UTC midnight → shows 16/08 in UTC-3)
+const fmtDate = (val: string | Date | null | undefined): string => {
+  if (!val) return "—";
+  const iso = typeof val === "string" ? val : val.toISOString();
+  const datePart = iso.split("T")[0]; // "2026-08-17"
+  const [y, m, d] = datePart.split("-");
+  return `${d}/${m}/${y}`;
+};
+
 export default function DiarioObrasPage() {
   const { data: session, status: sessionStatus } = useSession();
   const router = useRouter();
@@ -1022,9 +1032,9 @@ export default function DiarioObrasPage() {
                               <div className="text-[9.5px] text-[#f15a24] font-black uppercase mt-1 flex items-center gap-1">
                                 <span>📅</span>
                                 <span>
-                                  {act.dataInicio ? new Date(act.dataInicio).toLocaleDateString("pt-BR") : "—"} 
+                                  {fmtDate(act.dataInicio)} 
                                   {" até "} 
-                                  {act.dataFim ? new Date(act.dataFim).toLocaleDateString("pt-BR") : "—"}
+                                  {fmtDate(act.dataFim)}
                                 </span>
                               </div>
                             )}
@@ -1085,8 +1095,8 @@ export default function DiarioObrasPage() {
                                     descricao: act.descricao,
                                     responsavelId: act.responsavelId,
                                     status: act.status,
-                                    dataInicio: act.dataInicio ? new Date(act.dataInicio).toISOString().split("T")[0] : "",
-                                    dataFim: act.dataFim ? new Date(act.dataFim).toISOString().split("T")[0] : ""
+                                    dataInicio: act.dataInicio ? fmtDate(act.dataInicio).split("/").reverse().join("-") : "",
+                                    dataFim: act.dataFim ? fmtDate(act.dataFim).split("/").reverse().join("-") : ""
                                   });
                                 }}
                                 className="p-1 text-blue-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all cursor-pointer"
@@ -1640,9 +1650,9 @@ export default function DiarioObrasPage() {
                         <div className="text-[9.5px] text-[#f15a24] font-black uppercase flex items-center gap-1 mt-1">
                           <span>📅</span>
                           <span>
-                            {act.dataInicio ? new Date(act.dataInicio).toLocaleDateString("pt-BR") : "—"} 
+                            {fmtDate(act.dataInicio)} 
                             {" até "} 
-                            {act.dataFim ? new Date(act.dataFim).toLocaleDateString("pt-BR") : "—"}
+                            {fmtDate(act.dataFim)}
                           </span>
                         </div>
                       )}

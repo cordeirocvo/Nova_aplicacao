@@ -17,6 +17,16 @@ import {
 import { ptBR } from 'date-fns/locale';
 import Link from 'next/link';
 
+// ── Timezone-safe date formatter ────────────────────────────────────────────
+// new Date("2026-08-17T00:00:00.000Z") formats as 16/08 in UTC-3 via toLocaleDateString.
+// Instead, read the date part from the ISO string directly.
+const fmtDateStr = (val: string | Date | null | undefined): string => {
+  if (!val) return '—';
+  const iso = typeof val === 'string' ? val : val.toISOString();
+  const [y, m, d] = iso.split('T')[0].split('-');
+  return `${d}/${m}/${y}`;
+};
+
 // FullCalendar v6 Imports
 import { Calendar } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
@@ -237,9 +247,18 @@ export default function CronogramaClient({ atividades, manutencoes, diarioAtivid
   const parseDate = (dateStr: any): Date | null => {
     if (!dateStr) return null;
     if (dateStr instanceof Date) return isValid(dateStr) ? dateStr : null;
-    let d = parseISO(dateStr);
+    // Strip timezone — always parse as local noon to avoid UTC→local day shift.
+    // e.g. "2026-08-17T00:00:00.000Z" would become 16/08 in UTC-3 otherwise.
+    const isoStr = typeof dateStr === 'string' ? dateStr : (dateStr as Date).toISOString();
+    const datePart = isoStr.split('T')[0]; // "2026-08-17"
+    if (/^\d{4}-\d{2}-\d{2}$/.test(datePart)) {
+      const d = parseISO(`${datePart}T12:00:00`);
+      if (isValid(d)) return d;
+    }
+    // Fallback: try full ISO and then dd/MM/yyyy
+    let d = parseISO(isoStr);
     if (isValid(d)) return d;
-    d = parse(dateStr, 'dd/MM/yyyy', new Date());
+    d = parse(isoStr, 'dd/MM/yyyy', new Date());
     if (isValid(d)) return d;
     return null;
   };
@@ -964,8 +983,8 @@ export default function CronogramaClient({ atividades, manutencoes, diarioAtivid
                     </p>
                     {selectedEvent.original.dataInicio && (
                       <p className="text-[10px] text-[#059669] font-bold mt-2">
-                        Período: {format(parseDate(selectedEvent.original.dataInicio)!, 'dd/MM/yyyy')} 
-                        {selectedEvent.original.dataFim ? ` até ${format(parseDate(selectedEvent.original.dataFim)!, 'dd/MM/yyyy')}` : ''}
+                        Período: {fmtDateStr(selectedEvent.original.dataInicio)} 
+                        {selectedEvent.original.dataFim ? ` até ${fmtDateStr(selectedEvent.original.dataFim)}` : ''}
                       </p>
                     )}
                   </div>

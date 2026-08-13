@@ -92,6 +92,79 @@ export default function DiarioObrasPage() {
 
   const isSupervisor = session?.user && (session.user as any).role === "ADMIN";
 
+  // Identify pending RDO logs for today for the logged-in executor
+  const pendingRdosToday = React.useMemo(() => {
+    if (isSupervisor || !session?.user) return [];
+    
+    const todayStr = new Date().toISOString().split("T")[0];
+    const userId = (session.user as any).id;
+    
+    // Filter activities where current user is responsible and status is not CONCLUIDA
+    const myActivities = activities.filter(act => act.responsavelId === userId && act.status !== "CONCLUIDA");
+    
+    // Find activities that do NOT have a FINALIZADO log entry today
+    return myActivities.filter(act => {
+      const activityLogsToday = logs.filter(log => {
+        const logDateStr = new Date(log.data).toISOString().split("T")[0];
+        return log.atividadeId === act.id && logDateStr === todayStr && log.statusLancamento === "FINALIZADO";
+      });
+      return activityLogsToday.length === 0;
+    });
+  }, [activities, logs, session, isSupervisor]);
+
+  // Calculate RDO and equipment utilization pending logs for supervisor
+  const pendingSupervisorList = React.useMemo(() => {
+    if (!isSupervisor) return [];
+    
+    const todayStr = new Date().toISOString().split("T")[0];
+    
+    // Get all activities not completed
+    const activeActivities = activities.filter(act => act.status !== "CONCLUIDA");
+    
+    return activeActivities.map(act => {
+      // Find logs created for this activity today
+      const logsToday = logs.filter(log => {
+        const logDateStr = new Date(log.data).toISOString().split("T")[0];
+        return log.atividadeId === act.id && logDateStr === todayStr;
+      });
+      
+      const hasFinalized = logsToday.some(log => log.statusLancamento === "FINALIZADO");
+      const hasStarted = logsToday.some(log => log.statusLancamento === "INICIADO");
+      
+      if (hasFinalized) {
+        return null; // Not pending
+      }
+      
+      let status = "NÃO INICIADO";
+      let details = "Nenhum apontamento feito hoje.";
+      let buttonText = "Cobrar Início";
+      let logId = null;
+
+      if (hasStarted) {
+        status = "INICIADO (PENDENTE FECHAMENTO)";
+        const startedLog = logsToday.find(log => log.statusLancamento === "INICIADO");
+        logId = startedLog?.id;
+        details = `Turno iniciado às ${startedLog ? new Date(startedLog.createdAt).toLocaleTimeString("pt-BR", {hour: '2-digit', minute:'2-digit'}) : ""}.`;
+        if (startedLog?.ativoId) {
+          const asset = equipamentos.find(eq => eq.id === startedLog.ativoId);
+          details += ` Usando: ${asset ? `${asset.nome} (${asset.codigo})` : "equipamento"} (H. inicial: ${startedLog.horimetroInicio}).`;
+        }
+        buttonText = "Cobrar Fechamento";
+      }
+
+      return {
+        id: act.id,
+        atividade: act.descricao,
+        projeto: act.projeto?.nome || "Sem Projeto",
+        responsavel: act.responsavel?.name || act.responsavel?.email || "Sem Responsável",
+        status,
+        details,
+        buttonText,
+        logId
+      };
+    }).filter(Boolean) as any[];
+  }, [activities, logs, equipamentos, isSupervisor]);
+
   // Fetch initial data
   const fetchData = async () => {
     setLoading(true);
@@ -449,79 +522,6 @@ export default function DiarioObrasPage() {
       </div>
     );
   }
-
-  // Identify pending RDO logs for today for the logged-in executor
-  const pendingRdosToday = React.useMemo(() => {
-    if (isSupervisor || !session?.user) return [];
-    
-    const todayStr = new Date().toISOString().split("T")[0];
-    const userId = (session.user as any).id;
-    
-    // Filter activities where current user is responsible and status is not CONCLUIDA
-    const myActivities = activities.filter(act => act.responsavelId === userId && act.status !== "CONCLUIDA");
-    
-    // Find activities that do NOT have a FINALIZADO log entry today
-    return myActivities.filter(act => {
-      const activityLogsToday = logs.filter(log => {
-        const logDateStr = new Date(log.data).toISOString().split("T")[0];
-        return log.atividadeId === act.id && logDateStr === todayStr && log.statusLancamento === "FINALIZADO";
-      });
-      return activityLogsToday.length === 0;
-    });
-  }, [activities, logs, session, isSupervisor]);
-
-  // Calculate RDO and equipment utilization pending logs for supervisor
-  const pendingSupervisorList = React.useMemo(() => {
-    if (!isSupervisor) return [];
-    
-    const todayStr = new Date().toISOString().split("T")[0];
-    
-    // Get all activities not completed
-    const activeActivities = activities.filter(act => act.status !== "CONCLUIDA");
-    
-    return activeActivities.map(act => {
-      // Find logs created for this activity today
-      const logsToday = logs.filter(log => {
-        const logDateStr = new Date(log.data).toISOString().split("T")[0];
-        return log.atividadeId === act.id && logDateStr === todayStr;
-      });
-      
-      const hasFinalized = logsToday.some(log => log.statusLancamento === "FINALIZADO");
-      const hasStarted = logsToday.some(log => log.statusLancamento === "INICIADO");
-      
-      if (hasFinalized) {
-        return null; // Not pending
-      }
-      
-      let status = "NÃO INICIADO";
-      let details = "Nenhum apontamento feito hoje.";
-      let buttonText = "Cobrar Início";
-      let logId = null;
-
-      if (hasStarted) {
-        status = "INICIADO (PENDENTE FECHAMENTO)";
-        const startedLog = logsToday.find(log => log.statusLancamento === "INICIADO");
-        logId = startedLog?.id;
-        details = `Turno iniciado às ${startedLog ? new Date(startedLog.createdAt).toLocaleTimeString("pt-BR", {hour: '2-digit', minute:'2-digit'}) : ""}.`;
-        if (startedLog?.ativoId) {
-          const asset = equipamentos.find(eq => eq.id === startedLog.ativoId);
-          details += ` Usando: ${asset ? `${asset.nome} (${asset.codigo})` : "equipamento"} (H. inicial: ${startedLog.horimetroInicio}).`;
-        }
-        buttonText = "Cobrar Fechamento";
-      }
-
-      return {
-        id: act.id,
-        atividade: act.descricao,
-        projeto: act.projeto?.nome || "Sem Projeto",
-        responsavel: act.responsavel?.name || act.responsavel?.email || "Sem Responsável",
-        status,
-        details,
-        buttonText,
-        logId
-      };
-    }).filter(Boolean) as any[];
-  }, [activities, logs, equipamentos, isSupervisor]);
 
   // Filter tasks based on search or project filter
   const filteredActivities = activities.filter(act => {

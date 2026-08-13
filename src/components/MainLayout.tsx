@@ -22,6 +22,7 @@ const NAV_SECTIONS: NavSection[] = [
       { name: 'Atividades', href: '/atividades', icon: ListTodo },
       { name: 'Calendário de Atividades', href: '/cronograma', icon: Calendar },
       { name: 'Nova Atividade', href: '/atividades/nova', icon: PlusCircle },
+      { name: 'Diário de Obras (RDO)', href: '/diario', icon: Activity },
       { name: 'Gestão de Ativos', href: '/ativos', icon: Wrench },
       { name: 'Gestão de Usuários', href: '/admin/usuarios', icon: Users, adminOnly: true },
       { name: 'Config. de Status', href: '/admin/status', icon: Settings, adminOnly: true },
@@ -95,7 +96,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       
       if (role === 'TV' && path !== '/atividades') {
         window.location.href = '/atividades';
-      } else if (role === 'USER') {
+      } else if (role !== 'ADMIN') {
         const allowed = user.allowedRoutes || [];
         if (allowed.length > 0) {
           const isAllowedPath = allowed.some((r: string) => path === r || path.startsWith(r + '/'));

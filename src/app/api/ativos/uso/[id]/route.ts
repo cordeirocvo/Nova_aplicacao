@@ -5,14 +5,14 @@ import { authOptions } from "@/lib/auth";
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const session = await getServerSession(authOptions as any);
+    const session = (await getServerSession(authOptions as any)) as any;
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { id } = await params;
     const body = await req.json();
-    const { horasTrabalhadas, obra, responsavel, observacoes, dataUso } = body;
+    const { horasTrabalhadas, horimetroInicio, horimetroFim, obra, responsavel, observacoes, dataUso, fotoHorimetroInicioUrl, fotoHorimetroFimUrl } = body;
 
     const usageLog = await prisma.historicoUsoAtivo.findUnique({
       where: { id },
@@ -33,11 +33,15 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       where: { id },
       data: {
         horasTrabalhadas: newHours,
+        horimetroInicio: horimetroInicio ? parseFloat(String(horimetroInicio)) : null,
+        horimetroFim: horimetroFim ? parseFloat(String(horimetroFim)) : null,
         custoCalculado: newCost,
         obra,
         responsavel,
         observacoes,
-        dataUso: dataUso ? new Date(dataUso) : undefined
+        dataUso: dataUso ? new Date(dataUso) : undefined,
+        fotoHorimetroInicioUrl,
+        fotoHorimetroFimUrl
       }
     });
 
@@ -58,7 +62,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
 export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const session = await getServerSession(authOptions as any);
+    const session = (await getServerSession(authOptions as any)) as any;
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

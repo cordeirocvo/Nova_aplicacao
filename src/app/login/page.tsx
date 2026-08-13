@@ -22,7 +22,10 @@ export default function LoginPage() {
     if (status === "authenticated" && session && session.user) {
       const user = session.user as any;
       const role = user.role || "USER";
-      const target = role === "TV" ? "/atividades" : (role === "USER" ? "/atividades/nova" : "/dashboard");
+      const allowed = user.allowedRoutes || [];
+      const target = allowed.length > 0 
+        ? allowed[0] 
+        : (role === "TV" ? "/atividades" : (role === "USER" ? "/atividades/nova" : "/dashboard"));
       
       console.log("Sessão ativa detectada, redirecionando para:", target);
       router.replace(target);
@@ -52,7 +55,7 @@ export default function LoginPage() {
       console.log("Login OK, redirecionando...");
       // O useEffect lidará com o redirecionamento baseado no status da sessão que mudará
       // Mas podemos forçar uma atualização do roteador
-      router.push("/dashboard"); // Redirecionamento padrão, o useEffect corrigirá se necessário
+      router.refresh();
     } else {
       setError("Ocorreu um erro inesperado. Tente novamente.");
       setLoading(false);

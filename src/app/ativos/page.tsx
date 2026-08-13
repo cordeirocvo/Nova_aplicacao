@@ -42,17 +42,23 @@ export default function GestaoAtivosPage() {
     horasUso: "0",
     horasManutencaoPreventiva: "",
     responsavel: "",
-    localizacao: ""
+    localizacao: "",
+    tipoPropriedade: "PROPRIO",
+    contratoAluguelUrl: ""
   });
 
   // Hours Logging Form State
   const [selectedAssetForHours, setSelectedAssetForHours] = useState("");
   const [hoursForm, setHoursForm] = useState({
     horasTrabalhadas: "",
+    horimetroInicio: "",
+    horimetroFim: "",
     obra: "",
     responsavel: "",
     observacoes: "",
-    dataUso: new Date().toISOString().split("T")[0]
+    dataUso: new Date().toISOString().split("T")[0],
+    fotoHorimetroInicioUrl: "",
+    fotoHorimetroFimUrl: ""
   });
 
   // Fuel Logging Form State
@@ -80,8 +86,36 @@ export default function GestaoAtivosPage() {
   const [formError, setFormError] = useState("");
   const [formSuccess, setFormSuccess] = useState("");
   const [historyTab, setHistoryTab] = useState<"uso" | "combustivel">("uso");
+  const [obrasSubTab, setObrasSubTab] = useState<"capex" | "horas">("capex");
   const [editingLog, setEditingLog] = useState<any | null>(null);
   const [editingLogType, setEditingLogType] = useState<"uso" | "combustivel" | null>(null);
+  const [editingAsset, setEditingAsset] = useState<any | null>(null);
+  const [uploadingFile, setUploadingFile] = useState(false);
+
+  const handleFileUpload = async (file: File): Promise<string | null> => {
+    setUploadingFile(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData
+      });
+      const data = await res.json();
+      if (res.ok && data.url) {
+        return data.url;
+      } else {
+        alert(data.error || "Erro ao fazer upload do arquivo.");
+        return null;
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Erro ao enviar arquivo.");
+      return null;
+    } finally {
+      setUploadingFile(false);
+    }
+  };
 
   useEffect(() => {
     fetchData();
@@ -141,7 +175,9 @@ export default function GestaoAtivosPage() {
           horasUso: "0",
           horasManutencaoPreventiva: "",
           responsavel: "",
-          localizacao: ""
+          localizacao: "",
+          tipoPropriedade: "PROPRIO",
+          contratoAluguelUrl: ""
         });
         setShowAddForm(false);
         fetchData();
@@ -172,7 +208,17 @@ export default function GestaoAtivosPage() {
     setFormError("");
     setFormSuccess("");
 
-    if (!selectedAssetForHours || !hoursForm.horasTrabalhadas || !hoursForm.obra || !hoursForm.responsavel) {
+    let calculatedHours = hoursForm.horasTrabalhadas;
+    if (hoursForm.horimetroInicio && hoursForm.horimetroFim) {
+      const diff = parseFloat(hoursForm.horimetroFim) - parseFloat(hoursForm.horimetroInicio);
+      if (diff < 0) {
+        setFormError("O horímetro final deve ser maior ou igual ao horímetro inicial.");
+        return;
+      }
+      calculatedHours = diff.toString();
+    }
+
+    if (!selectedAssetForHours || !calculatedHours || !hoursForm.obra || !hoursForm.responsavel) {
       setFormError("Preencha todos os campos obrigatórios.");
       return;
     }
@@ -181,17 +227,24 @@ export default function GestaoAtivosPage() {
       const res = await fetch(`/api/ativos/${selectedAssetForHours}/uso`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(hoursForm)
+        body: JSON.stringify({
+          ...hoursForm,
+          horasTrabalhadas: calculatedHours
+        })
       });
       const data = await res.json();
       if (res.ok) {
         setFormSuccess("Horas de uso registradas com sucesso!");
         setHoursForm({
           horasTrabalhadas: "",
+          horimetroInicio: "",
+          horimetroFim: "",
           obra: "",
           responsavel: "",
           observacoes: "",
-          dataUso: new Date().toISOString().split("T")[0]
+          dataUso: new Date().toISOString().split("T")[0],
+          fotoHorimetroInicioUrl: "",
+          fotoHorimetroFimUrl: ""
         });
         setSelectedAssetForHours("");
         fetchData();
@@ -319,9 +372,19 @@ export default function GestaoAtivosPage() {
         ? `/api/ativos/uso/${editingLog.id}` 
         : `/api/ativos/combustivel/${editingLog.id}`;
 
+      let calculatedHours = editingLog.horasTrabalhadas;
+      if (editingLogType === "uso" && editingLog.horimetroInicio && editingLog.horimetroFim) {
+        const diff = parseFloat(editingLog.horimetroFim) - parseFloat(editingLog.horimetroInicio);
+        if (diff >= 0) {
+          calculatedHours = diff.toString();
+        }
+      }
+
       const bodyPayload = editingLogType === "uso" 
         ? {
-            horasTrabalhadas: editingLog.horasTrabalhadas,
+            horasTrabalhadas: calculatedHours,
+            horimetroInicio: editingLog.horimetroInicio,
+            horimetroFim: editingLog.horimetroFim,
             obra: editingLog.obra,
             responsavel: editingLog.responsavel,
             observacoes: editingLog.observacoes,
@@ -355,6 +418,121 @@ export default function GestaoAtivosPage() {
     } catch (err) {
       setFormError("Erro de conexão.");
     }
+  };
+
+  const handleUpdateAsset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormError("");
+    setFormSuccess("");
+
+    if (!editingAsset) return;
+
+    try {
+      const res = await fetch(`/api/ativos/${editingAsset.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editingAsset)
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setFormSuccess("Configuração do ativo atualizada com sucesso!");
+        setEditingAsset(null);
+        fetchData();
+      } else {
+        setFormError(data.error || "Erro ao atualizar ativo.");
+      }
+    } catch (err) {
+      setFormError("Erro de conexão.");
+    }
+  };
+
+  const getObrasReportData = () => {
+    const reportMap: {
+      [obraName: string]: {
+        obra: string;
+        custoProprio: number;
+        custoAlugado: number;
+        custoCombustivel: number;
+        horasProprio: number;
+        horasAlugado: number;
+        totalCusto: number;
+        maquinas: {
+          [ativoId: string]: {
+            nome: string;
+            codigo: string;
+            tipoPropriedade: string;
+            horas: number;
+            custo: number;
+          }
+        }
+      }
+    } = {};
+
+    ativos.forEach(ativo => {
+      // Group hours usage
+      (ativo.historicoUso || []).forEach((uso: any) => {
+        const obraName = uso.obra || "Geral - Sem Obra";
+        if (!reportMap[obraName]) {
+          reportMap[obraName] = {
+            obra: obraName,
+            custoProprio: 0,
+            custoAlugado: 0,
+            custoCombustivel: 0,
+            horasProprio: 0,
+            horasAlugado: 0,
+            totalCusto: 0,
+            maquinas: {}
+          };
+        }
+
+        const isAlugado = ativo.tipoPropriedade === "ALUGADO";
+        const horas = uso.horasTrabalhadas || 0;
+        const custo = uso.custoCalculado || 0;
+
+        if (isAlugado) {
+          reportMap[obraName].custoAlugado += custo;
+          reportMap[obraName].horasAlugado += horas;
+        } else {
+          reportMap[obraName].custoProprio += custo;
+          reportMap[obraName].horasProprio += horas;
+        }
+        reportMap[obraName].totalCusto += custo;
+
+        if (!reportMap[obraName].maquinas[ativo.id]) {
+          reportMap[obraName].maquinas[ativo.id] = {
+            nome: ativo.nome,
+            codigo: ativo.codigo,
+            tipoPropriedade: ativo.tipoPropriedade || "PROPRIO",
+            horas: 0,
+            custo: 0
+          };
+        }
+        reportMap[obraName].maquinas[ativo.id].horas += horas;
+        reportMap[obraName].maquinas[ativo.id].custo += custo;
+      });
+
+      // Group fuel log
+      (ativo.combustiveis || []).forEach((comb: any) => {
+        const obraName = comb.obra || "Geral - Sem Obra";
+        if (!reportMap[obraName]) {
+          reportMap[obraName] = {
+            obra: obraName,
+            custoProprio: 0,
+            custoAlugado: 0,
+            custoCombustivel: 0,
+            horasProprio: 0,
+            horasAlugado: 0,
+            totalCusto: 0,
+            maquinas: {}
+          };
+        }
+        const custo = comb.custoTotal || 0;
+        reportMap[obraName].custoCombustivel += custo;
+        reportMap[obraName].totalCusto += custo;
+      });
+    });
+
+    return Object.values(reportMap);
   };
 
   const filteredAtivos = ativos.filter(ativo => {
@@ -644,6 +822,58 @@ export default function GestaoAtivosPage() {
                 </>
               )}
 
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Propriedade *</label>
+                <select 
+                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                  value={newAsset.tipoPropriedade}
+                  onChange={e => setNewAsset({...newAsset, tipoPropriedade: e.target.value})}
+                >
+                  <option value="PROPRIO">Próprio</option>
+                  <option value="ALUGADO">Alugado</option>
+                </select>
+              </div>
+
+              {newAsset.tipoPropriedade === "ALUGADO" && (
+                <div className="col-span-1 md:col-span-2">
+                  <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Contrato de Aluguel (PDF/Imagem)</label>
+                  <div className="flex gap-2">
+                    <input 
+                      type="file"
+                      accept=".pdf,image/*"
+                      className="hidden"
+                      id="contrato-file-input"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const url = await handleFileUpload(file);
+                          if (url) {
+                            setNewAsset({...newAsset, contratoAluguelUrl: url});
+                          }
+                        }
+                      }}
+                    />
+                    <label 
+                      htmlFor="contrato-file-input"
+                      className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold cursor-pointer transition-all flex items-center gap-2 border border-slate-200"
+                    >
+                      <FileText className="w-4 h-4 text-slate-500" />
+                      {newAsset.contratoAluguelUrl ? "Alterar Contrato" : "Anexar Contrato"}
+                    </label>
+                    {newAsset.contratoAluguelUrl && (
+                      <a 
+                        href={newAsset.contratoAluguelUrl} 
+                        target="_blank" 
+                        rel="noreferrer"
+                        className="px-4 py-2.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5"
+                      >
+                        Visualizar
+                      </a>
+                    )}
+                  </div>
+                </div>
+              )}
+
               <div className="col-span-1 md:col-span-2 lg:col-span-4 flex justify-end gap-2 pt-2">
                 <button
                   type="button"
@@ -677,14 +907,32 @@ export default function GestaoAtivosPage() {
 
                 return (
                   <div key={ativo.id} className={`bg-white rounded-3xl border border-slate-100 shadow-sm p-6 flex flex-col justify-between hover:shadow-md transition-all relative overflow-hidden ${needsMaintenance ? "border-l-4 border-l-red-500" : ""}`}>
-                    
-                    {/* Header: Name and Category badge */}
                     <div>
                       <div className="flex justify-between items-start">
                         <div>
-                          <span className="text-[9px] font-black uppercase text-[#f15a24] bg-[#f15a24]/10 px-2 py-0.5 rounded-md">
-                            {ativo.categoria === "PESADO" ? "Equipamento Pesado" : "Ferramenta"}
-                          </span>
+                          <div className="flex gap-1.5 items-center flex-wrap">
+                            <span className="text-[9px] font-black uppercase text-[#f15a24] bg-[#f15a24]/10 px-2 py-0.5 rounded-md">
+                              {ativo.categoria === "PESADO" ? "Equipamento Pesado" : "Ferramenta"}
+                            </span>
+                            <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-md ${
+                              ativo.tipoPropriedade === "ALUGADO" 
+                                ? "bg-purple-50 text-purple-700 border border-purple-100" 
+                                : "bg-blue-50 text-blue-700 border border-blue-100"
+                            }`}>
+                              {ativo.tipoPropriedade === "ALUGADO" ? "Alugado" : "Próprio"}
+                            </span>
+                            {ativo.tipoPropriedade === "ALUGADO" && ativo.contratoAluguelUrl && (
+                              <a 
+                                href={ativo.contratoAluguelUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="p-0.5 text-slate-400 hover:text-purple-600 transition-colors"
+                                title="Visualizar Contrato de Aluguel"
+                              >
+                                <FileSpreadsheet className="w-3.5 h-3.5 text-purple-500" />
+                              </a>
+                            )}
+                          </div>
                           <h3 className="text-base font-black text-slate-800 uppercase tracking-tight mt-1">{ativo.nome}</h3>
                           <p className="text-[10px] font-bold text-slate-400 font-mono">{ativo.codigo}</p>
                         </div>
@@ -700,7 +948,7 @@ export default function GestaoAtivosPage() {
                           {ativo.status === "DISPONIVEL" ? "Disponível" : ativo.status === "EM_USO" ? "Em Uso" : "Revisão"}
                         </span>
                       </div>
-
+ 
                       {/* Technical specifications */}
                       <div className="mt-4 pt-4 border-t border-slate-100 space-y-2">
                         {ativo.categoria === "PESADO" ? (
@@ -745,7 +993,7 @@ export default function GestaoAtivosPage() {
                         )}
                       </div>
                     </div>
-
+ 
                     {/* Operational Details Summary & Actions */}
                     <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between gap-2">
                       <div className="flex flex-col">
@@ -756,6 +1004,14 @@ export default function GestaoAtivosPage() {
                       </div>
                       
                       <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setEditingAsset(ativo)}
+                          className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-xl transition-all cursor-pointer"
+                          title="Editar Equipamento"
+                        >
+                          <FileText className="w-4 h-4 text-blue-500" />
+                        </button>
+
                         {ativo.categoria === "PESADO" ? (
                           <button
                             onClick={() => { setSelectedAssetForHours(ativo.id); setActiveTab("horas"); }}
@@ -771,7 +1027,7 @@ export default function GestaoAtivosPage() {
                             <ArrowLeftRight className="w-3 h-3" /> Movimentar
                           </button>
                         )}
-
+ 
                         <button
                           onClick={() => handleDeleteAsset(ativo.id)}
                           className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all cursor-pointer"
@@ -780,7 +1036,6 @@ export default function GestaoAtivosPage() {
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
-
                     </div>
 
                     {/* Warning overlay badge for Maintenance */}
@@ -840,12 +1095,62 @@ export default function GestaoAtivosPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Horímetro Inicial</label>
+                    <input 
+                      type="number"
+                      step="0.1"
+                      placeholder="Ex: 83280"
+                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                      value={hoursForm.horimetroInicio}
+                      onChange={e => {
+                        const val = e.target.value;
+                        const finalVal = hoursForm.horimetroFim;
+                        let calcHrs = hoursForm.horasTrabalhadas;
+                        if (val && finalVal) {
+                          calcHrs = (parseFloat(finalVal) - parseFloat(val)).toString();
+                        }
+                        setHoursForm({
+                          ...hoursForm,
+                          horimetroInicio: val,
+                          horasTrabalhadas: calcHrs
+                        });
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Horímetro Final</label>
+                    <input 
+                      type="number"
+                      step="0.1"
+                      placeholder="Ex: 83288"
+                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                      value={hoursForm.horimetroFim}
+                      onChange={e => {
+                        const val = e.target.value;
+                        const startVal = hoursForm.horimetroInicio;
+                        let calcHrs = hoursForm.horasTrabalhadas;
+                        if (val && startVal) {
+                          calcHrs = (parseFloat(val) - parseFloat(startVal)).toString();
+                        }
+                        setHoursForm({
+                          ...hoursForm,
+                          horimetroFim: val,
+                          horasTrabalhadas: calcHrs
+                        });
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
                     <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Horas Operadas *</label>
                     <input 
                       type="number"
                       step="0.1"
                       required
-                      placeholder="Ex: 8.5"
+                      placeholder="Ex: 8.0"
                       className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
                       value={hoursForm.horasTrabalhadas}
                       onChange={e => setHoursForm({...hoursForm, horasTrabalhadas: e.target.value})}
@@ -890,6 +1195,58 @@ export default function GestaoAtivosPage() {
                     value={hoursForm.responsavel}
                     onChange={e => setHoursForm({...hoursForm, responsavel: e.target.value})}
                   />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Foto Horímetro Início</label>
+                    <input 
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      id="foto-inicio-file"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const url = await handleFileUpload(file);
+                          if (url) {
+                            setHoursForm({...hoursForm, fotoHorimetroInicioUrl: url});
+                          }
+                        }
+                      }}
+                    />
+                    <label 
+                      htmlFor="foto-inicio-file"
+                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[10px] font-black text-slate-600 uppercase cursor-pointer text-center block transition-all hover:bg-slate-100"
+                    >
+                      {hoursForm.fotoHorimetroInicioUrl ? "📸 Alterar Início" : "📷 Foto Início"}
+                    </label>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Foto Horímetro Fim</label>
+                    <input 
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      id="foto-fim-file"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const url = await handleFileUpload(file);
+                          if (url) {
+                            setHoursForm({...hoursForm, fotoHorimetroFimUrl: url});
+                          }
+                        }
+                      }}
+                    />
+                    <label 
+                      htmlFor="foto-fim-file"
+                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[10px] font-black text-slate-600 uppercase cursor-pointer text-center block transition-all hover:bg-slate-100"
+                    >
+                      {hoursForm.fotoHorimetroFimUrl ? "📸 Alterar Fim" : "📷 Foto Fim"}
+                    </label>
+                  </div>
                 </div>
 
                 <div>
@@ -1113,7 +1470,21 @@ export default function GestaoAtivosPage() {
                       <tr key={log.id} className="border-b border-slate-100 hover:bg-slate-50/50">
                         <td className="p-3 text-slate-800 font-bold">{log.ativoNome} <span className="text-[10px] text-slate-400 font-normal">({log.ativoCodigo})</span></td>
                         <td className="p-3 text-slate-600 font-semibold">{log.obra}</td>
-                        <td className="p-3 text-center text-slate-800 font-black">{log.horasTrabalhadas} h</td>
+                        <td className="p-3 text-center">
+                          <div className="flex flex-col items-center">
+                            <span className="text-slate-800 font-black">{log.horasTrabalhadas} h</span>
+                            {(log.fotoHorimetroInicioUrl || log.fotoHorimetroFimUrl) && (
+                              <div className="flex gap-1.5 mt-0.5 justify-center">
+                                {log.fotoHorimetroInicioUrl && (
+                                  <a href={log.fotoHorimetroInicioUrl} target="_blank" rel="noreferrer" className="text-[8px] font-black text-blue-500 hover:underline" title="Ver foto início">Início</a>
+                                )}
+                                {log.fotoHorimetroFimUrl && (
+                                  <a href={log.fotoHorimetroFimUrl} target="_blank" rel="noreferrer" className="text-[8px] font-black text-teal-500 hover:underline" title="Ver foto fim">Fim</a>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </td>
                         <td className="p-3 text-right text-[#f15a24] font-black">
                           {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(log.custoCalculado)}
                         </td>
@@ -1406,55 +1777,199 @@ export default function GestaoAtivosPage() {
 
       {/* ================= COSTS BY PROJECT TAB ================= */}
       {activeTab === "obras" && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in duration-300">
           
-          {/* Main Costs Aggregated Table */}
-          <div className="col-span-1 md:col-span-2 bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
-            <div>
-              <h3 className="text-base font-black text-slate-800 uppercase tracking-tight">Custos Operacionais de Equipamentos por Obra</h3>
-              <p className="text-xs text-slate-500 mt-0.5">Demonstrativo consolidado de despesas com maquinário por canteiro de obras.</p>
-            </div>
+          {/* Main Costs Aggregated Table & Charts */}
+          <div className="col-span-1 lg:col-span-2 bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col justify-between">
+            <div className="space-y-4 w-full">
+              
+              <div className="flex justify-between items-center border-b border-slate-100 pb-3 flex-wrap gap-2">
+                <div>
+                  <h3 className="text-base font-black text-slate-800 uppercase tracking-tight">Relatórios de Custos & CAPEX</h3>
+                  <p className="text-xs text-slate-500 mt-0.5">Visão consolidada de despesas de maquinário e consumo por obra.</p>
+                </div>
+                
+                {/* Obras sub tab selector */}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setObrasSubTab("capex")}
+                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${
+                      obrasSubTab === "capex" 
+                        ? "bg-[#0a192f] text-white font-black" 
+                        : "bg-slate-50 text-slate-400 hover:bg-slate-100 font-bold"
+                    }`}
+                  >
+                    Gráfico CAPEX
+                  </button>
+                  <button
+                    onClick={() => setObrasSubTab("horas")}
+                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${
+                      obrasSubTab === "horas" 
+                        ? "bg-[#0a192f] text-white font-black" 
+                        : "bg-slate-50 text-slate-400 hover:bg-slate-100 font-bold"
+                    }`}
+                  >
+                    Relatório de Horas
+                  </button>
+                </div>
+              </div>
 
-            <div className="mt-6 overflow-x-auto">
-              <table className="w-full border-collapse border border-slate-100 text-xs">
-                <thead>
-                  <tr className="bg-slate-50 text-slate-400 font-bold uppercase text-[9px]">
-                    <th className="p-4 text-left">Nome da Obra / Projeto</th>
-                    <th className="p-4 text-right">Custo Horas de Uso (R$)</th>
-                    <th className="p-4 text-right">Custo Combustível (R$)</th>
-                    <th className="p-4 text-right">Custo Total (R$)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {dashboardData.custosPorObra.map((costGroup: any, idx: number) => (
-                    <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50/50">
-                      <td className="p-4 text-slate-800 font-bold text-sm">{costGroup.obra}</td>
-                      <td className="p-4 text-right text-slate-600 font-semibold">
-                        {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(costGroup.custoHoras || 0)}
-                      </td>
-                      <td className="p-4 text-right text-[#00BFA5] font-semibold">
-                        {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(costGroup.custoCombustivel || 0)}
-                      </td>
-                      <td className="p-4 text-right text-[#f15a24] font-black text-sm">
-                        {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(costGroup.totalCusto)}
-                      </td>
-                    </tr>
-                  ))}
-                  {dashboardData.custosPorObra.length === 0 && (
-                    <tr>
-                      <td colSpan={4} className="p-12 text-center text-slate-400 italic">
-                        Nenhum custo por obra registrado ainda.
-                      </td>
-                    </tr>
+              {obrasSubTab === "capex" ? (
+                <div className="space-y-6">
+                  {getObrasReportData().map((obraData: any, idx: number) => {
+                    const total = (obraData.custoProprio || 0) + (obraData.custoAlugado || 0) + (obraData.custoCombustivel || 0);
+                    const pctProprio = total > 0 ? ((obraData.custoProprio || 0) / total) * 100 : 0;
+                    const pctAlugado = total > 0 ? ((obraData.custoAlugado || 0) / total) * 100 : 0;
+                    const pctCombustivel = total > 0 ? ((obraData.custoCombustivel || 0) / total) * 100 : 0;
+
+                    return (
+                      <div key={idx} className="border border-slate-100 rounded-2xl p-5 bg-slate-50/50 space-y-4">
+                        <div className="flex justify-between items-start flex-wrap gap-2">
+                          <div>
+                            <h4 className="font-black text-slate-800 text-sm uppercase tracking-tight">{obraData.obra}</h4>
+                            <span className="text-[10px] text-slate-400 font-bold">Consolidado Geral de Ativos</span>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-[9px] font-black text-slate-400 uppercase block">Total Geral CAPEX</span>
+                            <span className="text-base font-black text-[#f15a24]">
+                              {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(total)}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Stacked Chart bar */}
+                        <div className="space-y-1.5">
+                          <div className="w-full bg-slate-100 h-7 rounded-xl overflow-hidden flex shadow-inner border border-slate-200/50">
+                            {pctProprio > 0 && (
+                              <div style={{ width: `${pctProprio}%` }} className="bg-[#00BFA5] h-full text-[9px] font-black text-white flex items-center justify-center shadow-sm" title="Ativos Próprios">
+                                {pctProprio.toFixed(0)}%
+                              </div>
+                            )}
+                            {pctAlugado > 0 && (
+                              <div style={{ width: `${pctAlugado}%` }} className="bg-[#8B5CF6] h-full text-[9px] font-black text-white flex items-center justify-center shadow-sm" title="Ativos Alugados">
+                                {pctAlugado.toFixed(0)}%
+                              </div>
+                            )}
+                            {pctCombustivel > 0 && (
+                              <div style={{ width: `${pctCombustivel}%` }} className="bg-[#f15a24] h-full text-[9px] font-black text-white flex items-center justify-center shadow-sm" title="Combustível">
+                                {pctCombustivel.toFixed(0)}%
+                              </div>
+                            )}
+                            {total === 0 && (
+                              <div className="w-full h-full flex items-center justify-center text-[10px] text-slate-400 italic">
+                                Sem despesas logadas
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Legends with costs */}
+                          <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-200/50 text-[10px] font-bold text-slate-500">
+                            <div className="flex flex-col">
+                              <span className="flex items-center gap-1.5 text-slate-600">
+                                <span className="w-2 h-2 rounded-full bg-[#00BFA5] block" /> Horas Próprias
+                              </span>
+                              <span className="text-slate-800 font-black mt-0.5">
+                                {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(obraData.custoProprio || 0)}
+                              </span>
+                            </div>
+                            <div className="flex flex-col border-l border-slate-200 pl-3">
+                              <span className="flex items-center gap-1.5 text-slate-600">
+                                <span className="w-2 h-2 rounded-full bg-[#8B5CF6] block" /> Horas Alugadas
+                              </span>
+                              <span className="text-slate-800 font-black mt-0.5">
+                                {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(obraData.custoAlugado || 0)}
+                              </span>
+                            </div>
+                            <div className="flex flex-col border-l border-slate-200 pl-3">
+                              <span className="flex items-center gap-1.5 text-slate-600">
+                                <span className="w-2 h-2 rounded-full bg-[#f15a24] block" /> Combustível
+                              </span>
+                              <span className="text-slate-800 font-black mt-0.5">
+                                {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(obraData.custoCombustivel || 0)}
+                              </span>
+                            </div>
+                          </div>
+
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {getObrasReportData().length === 0 && (
+                    <div className="p-12 text-center text-slate-400 italic text-xs">
+                      Nenhum custo por obra registrado ainda.
+                    </div>
                   )}
-                </tbody>
-              </table>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {getObrasReportData().map((obraData: any, idx: number) => (
+                    <div key={idx} className="border border-slate-100 rounded-2xl p-5 bg-slate-50/50 space-y-3">
+                      <div className="flex justify-between items-center border-b border-slate-200 pb-2 flex-wrap gap-2">
+                        <div>
+                          <h4 className="font-black text-slate-800 text-sm uppercase tracking-tight">{obraData.obra}</h4>
+                          <span className="text-[9px] text-slate-400 font-bold uppercase">Relatório de Horas de Máquina</span>
+                        </div>
+                        <div className="flex gap-4 text-[10px] font-bold text-slate-500 bg-white px-3 py-1 rounded-xl border border-slate-100">
+                          <span>Horas Próprio: <strong className="text-slate-800">{obraData.horasProprio} h</strong></span>
+                          <span>Horas Alugado: <strong className="text-slate-800 text-purple-700">{obraData.horasAlugado} h</strong></span>
+                        </div>
+                      </div>
+                      
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-xs bg-white rounded-xl border border-slate-100 overflow-hidden">
+                          <thead>
+                            <tr className="bg-slate-50 text-[9px] uppercase font-black text-slate-400 border-b border-slate-100">
+                              <th className="p-3 text-left">Equipamento / Ferramenta</th>
+                              <th className="p-3 text-center">Propriedade</th>
+                              <th className="p-3 text-center">Horas Operadas</th>
+                              <th className="p-3 text-right">Custo Operacional</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {Object.values(obraData.maquinas).map((maq: any, mIdx: number) => (
+                              <tr key={mIdx} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50">
+                                <td className="p-3 font-bold text-slate-700">{maq.nome} <span className="text-[10px] text-slate-400 font-normal">({maq.codigo})</span></td>
+                                <td className="p-3 text-center">
+                                  <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-md ${
+                                    maq.tipoPropriedade === "ALUGADO" 
+                                      ? "bg-purple-50 text-purple-700 border border-purple-100" 
+                                      : "bg-blue-50 text-blue-700 border border-blue-100"
+                                  }`}>
+                                    {maq.tipoPropriedade === "ALUGADO" ? "Alugado" : "Próprio"}
+                                  </span>
+                                </td>
+                                <td className="p-3 text-center font-black text-slate-800">{maq.horas} h</td>
+                                <td className="p-3 text-right font-black text-slate-800">
+                                  {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(maq.custo)}
+                                </td>
+                              </tr>
+                            ))}
+                            {Object.keys(obraData.maquinas).length === 0 && (
+                              <tr>
+                                <td colSpan={4} className="p-6 text-center italic text-slate-400">
+                                  Nenhum equipamento registrou horas nesta obra.
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  ))}
+                  {getObrasReportData().length === 0 && (
+                    <div className="p-12 text-center text-slate-400 italic text-xs">
+                      Nenhum registro de horas por obra encontrado.
+                    </div>
+                  )}
+                </div>
+              )}
+
             </div>
           </div>
 
           {/* Maintenance list panel */}
           <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col justify-between">
-            <div className="space-y-4">
+            <div className="space-y-4 w-full">
               <div>
                 <h3 className="text-base font-black text-slate-800 uppercase tracking-tight text-red-500 flex items-center gap-2">
                   <ShieldAlert className="w-5 h-5" /> Revisões Pendentes
@@ -1517,6 +2032,166 @@ export default function GestaoAtivosPage() {
         </div>
       )}
 
+      {/* ================= MODAL DE EDIÇÃO DE ATIVO ================= */}
+      {editingAsset && (
+        <div className="fixed inset-0 z-50 bg-[#0a192f]/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-md rounded-[2.5rem] border border-slate-100 shadow-2xl p-6 relative animate-in slide-in-from-bottom-8 duration-300">
+            
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <h3 className="text-base font-black text-slate-800 uppercase tracking-tight flex items-center gap-2">
+                  <Wrench className="w-5 h-5 text-[#f15a24]" /> 
+                  Editar Equipamento / Ativo
+                </h3>
+                <p className="text-[10px] text-slate-500 mt-0.5">
+                  Ajuste as definições e propriedade do ativo.
+                </p>
+              </div>
+              <button 
+                type="button"
+                onClick={() => setEditingAsset(null)}
+                className="text-slate-400 hover:text-slate-600 font-black text-lg p-1 cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateAsset} className="space-y-4">
+              
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Nome do Equipamento *</label>
+                <input 
+                  type="text"
+                  required
+                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                  value={editingAsset.nome || ""}
+                  onChange={e => setEditingAsset({...editingAsset, nome: e.target.value})}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Código / Tag *</label>
+                  <input 
+                    type="text"
+                    required
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                    value={editingAsset.codigo || ""}
+                    onChange={e => setEditingAsset({...editingAsset, codigo: e.target.value})}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Categoria *</label>
+                  <select 
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                    value={editingAsset.categoria || ""}
+                    onChange={e => setEditingAsset({...editingAsset, categoria: e.target.value})}
+                  >
+                    <option value="PESADO">Equipamento Pesado</option>
+                    <option value="FERRAMENTA">Ferramenta Manual</option>
+                  </select>
+                </div>
+              </div>
+
+              {editingAsset.categoria === "PESADO" && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Taxa Horária (R$/h)</label>
+                    <input 
+                      type="number"
+                      step="0.01"
+                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                      value={editingAsset.taxaHoraria || ""}
+                      onChange={e => setEditingAsset({...editingAsset, taxaHoraria: e.target.value})}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Horas para Revisão</label>
+                    <input 
+                      type="number"
+                      step="0.1"
+                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                      value={editingAsset.horasManutencaoPreventiva || ""}
+                      onChange={e => setEditingAsset({...editingAsset, horasManutencaoPreventiva: e.target.value})}
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Propriedade *</label>
+                <select 
+                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                  value={editingAsset.tipoPropriedade || "PROPRIO"}
+                  onChange={e => setEditingAsset({...editingAsset, tipoPropriedade: e.target.value})}
+                >
+                  <option value="PROPRIO">Próprio</option>
+                  <option value="ALUGADO">Alugado</option>
+                </select>
+              </div>
+
+              {editingAsset.tipoPropriedade === "ALUGADO" && (
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Contrato de Aluguel</label>
+                  <div className="flex gap-2">
+                    <input 
+                      type="file"
+                      accept=".pdf,image/*"
+                      className="hidden"
+                      id="edit-contrato-file-input"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const url = await handleFileUpload(file);
+                          if (url) {
+                            setEditingAsset({...editingAsset, contratoAluguelUrl: url});
+                          }
+                        }
+                      }}
+                    />
+                    <label 
+                      htmlFor="edit-contrato-file-input"
+                      className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold cursor-pointer transition-all flex items-center gap-2 border border-slate-200 flex-1"
+                    >
+                      <FileText className="w-4 h-4 text-slate-500" />
+                      {editingAsset.contratoAluguelUrl ? "Alterar Contrato" : "Anexar Contrato"}
+                    </label>
+                    {editingAsset.contratoAluguelUrl && (
+                      <a 
+                        href={editingAsset.contratoAluguelUrl} 
+                        target="_blank" 
+                        rel="noreferrer"
+                        className="px-4 py-2.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5"
+                      >
+                        Visualizar
+                      </a>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingAsset(null)}
+                  className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs py-3.5 rounded-xl uppercase tracking-wider transition-all cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 bg-[#f15a24] hover:bg-orange-600 text-white font-black text-xs py-3.5 rounded-xl uppercase tracking-wider transition-all cursor-pointer shadow-md"
+                >
+                  Salvar Alterações
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* ================= MODAL DE EDIÇÃO DE LANÇAMENTO ================= */}
       {editingLog && editingLogType && (
         <div className="fixed inset-0 z-50 bg-[#0a192f]/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
@@ -1549,6 +2224,56 @@ export default function GestaoAtivosPage() {
               {editingLogType === "uso" ? (
                 <>
                   {/* Horas Trabalhadas fields */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Horímetro Inicial</label>
+                      <input 
+                        type="number"
+                        step="0.1"
+                        placeholder="Ex: 83280"
+                        className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                        value={editingLog.horimetroInicio || ""}
+                        onChange={e => {
+                          const val = e.target.value;
+                          const finalVal = editingLog.horimetroFim;
+                          let calcHrs = editingLog.horasTrabalhadas;
+                          if (val && finalVal) {
+                            calcHrs = (parseFloat(finalVal) - parseFloat(val)).toString();
+                          }
+                          setEditingLog({
+                            ...editingLog,
+                            horimetroInicio: val,
+                            horasTrabalhadas: calcHrs
+                          });
+                        }}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Horímetro Final</label>
+                      <input 
+                        type="number"
+                        step="0.1"
+                        placeholder="Ex: 83288"
+                        className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                        value={editingLog.horimetroFim || ""}
+                        onChange={e => {
+                          const val = e.target.value;
+                          const startVal = editingLog.horimetroInicio;
+                          let calcHrs = editingLog.horasTrabalhadas;
+                          if (val && startVal) {
+                            calcHrs = (parseFloat(val) - parseFloat(startVal)).toString();
+                          }
+                          setEditingLog({
+                            ...editingLog,
+                            horimetroFim: val,
+                            horasTrabalhadas: calcHrs
+                          });
+                        }}
+                      />
+                    </div>
+                  </div>
+
                   <div>
                     <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Horas Operadas *</label>
                     <input 
@@ -1570,6 +2295,68 @@ export default function GestaoAtivosPage() {
                       value={editingLog.dataUso || ""}
                       onChange={e => setEditingLog({...editingLog, dataUso: e.target.value})}
                     />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Foto Horímetro Início</label>
+                      <div className="flex gap-2">
+                        <input 
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          id="edit-foto-inicio-file"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              const url = await handleFileUpload(file);
+                              if (url) {
+                                setEditingLog({...editingLog, fotoHorimetroInicioUrl: url});
+                              }
+                            }
+                          }}
+                        />
+                        <label 
+                          htmlFor="edit-foto-inicio-file"
+                          className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-[10px] font-black text-slate-600 uppercase cursor-pointer text-center block flex-1 transition-all hover:bg-slate-100"
+                        >
+                          {editingLog.fotoHorimetroInicioUrl ? "📸 Alterar" : "📷 Início"}
+                        </label>
+                        {editingLog.fotoHorimetroInicioUrl && (
+                          <a href={editingLog.fotoHorimetroInicioUrl} target="_blank" rel="noreferrer" className="px-2 py-2 bg-blue-50 text-blue-700 rounded-xl font-bold text-[10px] flex items-center justify-center">Ver</a>
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Foto Horímetro Fim</label>
+                      <div className="flex gap-2">
+                        <input 
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          id="edit-foto-fim-file"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              const url = await handleFileUpload(file);
+                              if (url) {
+                                setEditingLog({...editingLog, fotoHorimetroFimUrl: url});
+                              }
+                            }
+                          }}
+                        />
+                        <label 
+                          htmlFor="edit-foto-fim-file"
+                          className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-[10px] font-black text-slate-600 uppercase cursor-pointer text-center block flex-1 transition-all hover:bg-slate-100"
+                        >
+                          {editingLog.fotoHorimetroFimUrl ? "📸 Alterar" : "📷 Fim"}
+                        </label>
+                        {editingLog.fotoHorimetroFimUrl && (
+                          <a href={editingLog.fotoHorimetroFimUrl} target="_blank" rel="noreferrer" className="px-2 py-2 bg-blue-50 text-blue-700 rounded-xl font-bold text-[10px] flex items-center justify-center">Ver</a>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </>
               ) : (

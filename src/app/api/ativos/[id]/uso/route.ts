@@ -5,14 +5,14 @@ import { authOptions } from "@/lib/auth";
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const session = await getServerSession(authOptions as any);
+    const session = (await getServerSession(authOptions as any)) as any;
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { id } = await params;
     const body = await req.json();
-    const { horasTrabalhadas, obra, responsavel, observacoes, dataUso } = body;
+    const { horasTrabalhadas, horimetroInicio, horimetroFim, obra, responsavel, observacoes, dataUso, fotoHorimetroInicioUrl, fotoHorimetroFimUrl } = body;
 
     if (!horasTrabalhadas || !obra || !responsavel) {
       return NextResponse.json({ error: "Horas trabalhadas, obra e responsável são obrigatórios." }, { status: 400 });
@@ -34,11 +34,15 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       data: {
         ativoId: id,
         horasTrabalhadas: hours,
+        horimetroInicio: horimetroInicio ? parseFloat(String(horimetroInicio)) : null,
+        horimetroFim: horimetroFim ? parseFloat(String(horimetroFim)) : null,
         custoCalculado: cost,
         obra,
         responsavel,
         observacoes: observacoes || null,
-        dataUso: dataUso ? new Date(dataUso) : new Date()
+        dataUso: dataUso ? new Date(dataUso) : new Date(),
+        fotoHorimetroInicioUrl: fotoHorimetroInicioUrl || null,
+        fotoHorimetroFimUrl: fotoHorimetroFimUrl || null
       }
     });
 

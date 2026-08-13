@@ -46,7 +46,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
     const { id } = await params;
     const body = await req.json();
-    const { nome, codigo, categoria, taxaHoraria, horasUso, horasManutencaoPreventiva, responsavel, localizacao, status } = body;
+    const { nome, codigo, categoria, taxaHoraria, horasUso, horasManutencaoPreventiva, responsavel, localizacao, status, tipoPropriedade, contratoAluguelUrl } = body;
 
     const existing = await prisma.ativo.findUnique({
       where: { id }
@@ -67,7 +67,9 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         horasManutencaoPreventiva: horasManutencaoPreventiva !== undefined ? (horasManutencaoPreventiva ? parseFloat(String(horasManutencaoPreventiva)) : null) : undefined,
         responsavel,
         localizacao,
-        status
+        status,
+        tipoPropriedade,
+        contratoAluguelUrl
       }
     });
 

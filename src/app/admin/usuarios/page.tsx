@@ -11,6 +11,7 @@ const PERMISSION_SECTIONS = [
       { name: 'Atividades', href: '/atividades', desc: 'Acompanhamento do quadro geral de atividades.' },
       { name: 'Cronograma Semanal', href: '/cronograma', desc: 'Visualização da agenda de cronograma semanal.' },
       { name: 'Nova Atividade', href: '/atividades/nova', desc: 'Cadastro de novas atividades no sistema.' },
+      { name: 'Diário de Obras (RDO)', href: '/diario', desc: 'Acesso ao Diário de Obras (RDO) e notas de voz.' },
       { name: 'Gestão de Usuários', href: '/admin/usuarios', desc: 'Gerenciamento de usuários e permissões.' },
       { name: 'Config. de Status', href: '/admin/status', desc: 'Gerenciamento de opções de status do sistema.' },
     ]

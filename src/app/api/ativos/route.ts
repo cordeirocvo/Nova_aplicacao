@@ -45,7 +45,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { nome, codigo, categoria, taxaHoraria, horasUso, horasManutencaoPreventiva, responsavel, localizacao } = body;
+    const { nome, codigo, categoria, taxaHoraria, horasUso, horasManutencaoPreventiva, responsavel, localizacao, tipoPropriedade, contratoAluguelUrl } = body;
 
     if (!nome || !codigo || !categoria) {
       return NextResponse.json({ error: "Nome, código e categoria são obrigatórios." }, { status: 400 });
@@ -69,6 +69,8 @@ export async function POST(req: Request) {
         horasManutencaoPreventiva: horasManutencaoPreventiva ? parseFloat(String(horasManutencaoPreventiva)) : null,
         responsavel: responsavel || null,
         localizacao: localizacao || null,
+        tipoPropriedade: tipoPropriedade || "PROPRIO",
+        contratoAluguelUrl: contratoAluguelUrl || null,
         status: "DISPONIVEL"
       }
     });

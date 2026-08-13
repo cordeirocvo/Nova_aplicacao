@@ -20,7 +20,9 @@ model User {
   canManageCRM      Boolean  @default(false)
   canAccessSIE      Boolean  @default(false)
   allowedRoutes     String[] @default([])
-  leads             Lead[]   @relation("VendedorLeads")
+  leads             Lead[]            @relation("VendedorLeads")
+  atividadesAtribuidas AtividadeDiario[]
+  lancamentosRdo    RdoLancamento[]
 }
 
 model PlanilhaInstalacao {
@@ -580,6 +582,7 @@ model OrcamentoProjeto {
   dataAtualizacao DateTime              @default(now())
   fornecedores    FornecedorOrcamento[]
   etapas          OrcamentoEtapa[]
+  atividadesDiario AtividadeDiario[]
 }
 
 model OrcamentoEtapa {
@@ -808,6 +811,8 @@ model Ativo {
   ultimoCustoHoras           Float                @default(0) // custo acumulado total
   responsavel                String?              // atual portador ou operador
   localizacao                String?              // obra ou sub-obra atual
+  tipoPropriedade            String               @default("PROPRIO") // "PROPRIO" ou "ALUGADO"
+  contratoAluguelUrl         String?              // URL do contrato de aluguel
   createdAt                  DateTime             @default(now())
   updatedAt                  DateTime             @updatedAt
   movimentacoes              MovimentacaoAtivo[]
@@ -828,16 +833,20 @@ model MovimentacaoAtivo {
 }
 
 model HistoricoUsoAtivo {
-  id              String   @id @default(cuid())
-  ativoId         String
-  horasTrabalhadas Float
-  dataUso         DateTime @default(now())
-  custoCalculado  Float
-  obra            String
-  responsavel     String
-  observacoes     String?
-  createdAt       DateTime @default(now())
-  ativo           Ativo    @relation(fields: [ativoId], references: [id], onDelete: Cascade)
+  id                     String   @id @default(cuid())
+  ativoId                String
+  horasTrabalhadas       Float
+  horimetroInicio        Float?
+  horimetroFim           Float?
+  dataUso                DateTime @default(now())
+  custoCalculado         Float
+  obra                   String
+  responsavel            String
+  observacoes            String?
+  fotoHorimetroInicioUrl String?
+  fotoHorimetroFimUrl    String?
+  createdAt              DateTime @default(now())
+  ativo                  Ativo    @relation(fields: [ativoId], references: [id], onDelete: Cascade)
 }
 
 model RegistroCombustivel {
@@ -853,4 +862,36 @@ model RegistroCombustivel {
   observacoes    String?
   createdAt      DateTime @default(now())
   ativo          Ativo    @relation(fields: [ativoId], references: [id], onDelete: Cascade)
+}
+
+model AtividadeDiario {
+  id            String           @id @default(cuid())
+  projetoId     String
+  descricao     String
+  responsavelId String
+  status        String           @default("PLANEJADA") // PLANEJADA, EM_ANDAMENTO, CONCLUIDA
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  
+  projeto       OrcamentoProjeto @relation(fields: [projetoId], references: [id], onDelete: Cascade)
+  responsavel   User             @relation(fields: [responsavelId], references: [id], onDelete: Cascade)
+  lancamentos   RdoLancamento[]
+}
+
+model RdoLancamento {
+  id                    String          @id @default(cuid())
+  atividadeId           String
+  usuarioId             String
+  data                  DateTime        @default(now())
+  descricao             String
+  progresso             Float           @default(0) // 0 to 100
+  fotos                 String[]        @default([])
+  audios                String[]        @default([])
+  comentariosSupervisor String?
+  statusRevisao         String          @default("PENDENTE") // PENDENTE, APROVADO, COM_QUESTIONAMENTOS
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+
+  atividade             AtividadeDiario @relation(fields: [atividadeId], references: [id], onDelete: Cascade)
+  usuario               User            @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
 }

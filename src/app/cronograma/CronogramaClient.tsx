@@ -272,16 +272,20 @@ export default function CronogramaClient({ atividades, manutencoes, diarioAtivid
         color: 'bg-[#F25C27]',
         status: m.status,
       })),
-      ...localDiarioAtividades.map((da: any) => ({
-        id: `diario-${da.id}`,
-        type: 'diario' as const,
-        title: `🚧 [RDO] ${da.projeto?.nome || 'Obra'}: ${da.descricao}`,
-        date: parseDate(da.dataInicio || da.createdAt)!,
-        endDate: da.dataFim ? parseDate(da.dataFim) : null,
-        original: da,
-        color: 'bg-emerald-600',
-        status: da.status,
-      })),
+      ...localDiarioAtividades.map((da: any) => {
+        const parsedStart = parseDate(da.dataInicio || da.createdAt);
+        const parsedEnd = parseDate(da.dataFim);
+        return {
+          id: `diario-${da.id}`,
+          type: 'diario' as const,
+          title: `🚧 [RDO] ${da.projeto?.nome || 'Obra'}: ${da.descricao}`,
+          date: parsedStart && isValid(parsedStart) ? parsedStart : null as any,
+          endDate: parsedEnd && isValid(parsedEnd) ? parsedEnd : null,
+          original: da,
+          color: 'bg-emerald-600',
+          status: da.status,
+        };
+      }),
     ].filter(e => e.date !== null && isValid(e.date));
   }, [localAtividades, localManutencoes, localDiarioAtividades]);
 

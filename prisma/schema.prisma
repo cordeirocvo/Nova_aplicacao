@@ -873,6 +873,8 @@ model AtividadeDiario {
   descricao     String
   responsavelId String
   status        String           @default("PLANEJADA") // PLANEJADA, EM_ANDAMENTO, CONCLUIDA
+  dataInicio    DateTime?
+  dataFim       DateTime?
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
   

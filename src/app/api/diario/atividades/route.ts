@@ -63,7 +63,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { projetoId, descricao, responsavelId, status } = body;
+    const { projetoId, descricao, responsavelId, status, dataInicio, dataFim } = body;
 
     if (!projetoId || !descricao || !responsavelId) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -74,7 +74,9 @@ export async function POST(req: Request) {
         projetoId,
         descricao,
         responsavelId,
-        status: status || "PLANEJADA"
+        status: status || "PLANEJADA",
+        dataInicio: dataInicio ? new Date(dataInicio) : null,
+        dataFim: dataFim ? new Date(dataFim) : null
       },
       include: {
         projeto: true,

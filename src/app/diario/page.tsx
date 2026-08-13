@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { 
   Building, Calendar, Clock, CheckCircle2, User, Mic, Play, 
   Trash2, FileText, Check, X, ShieldAlert, Plus, Search, 
-  Sparkles, BarChart3, Upload, HardHat, Square, AlertCircle, MessageSquare
+  Sparkles, BarChart3, Upload, HardHat, Square, AlertCircle, MessageSquare, Pencil
 } from "lucide-react";
 
 export default function DiarioObrasPage() {
@@ -56,7 +56,9 @@ export default function DiarioObrasPage() {
     projetoId: "",
     descricao: "",
     responsavelId: "",
-    status: "PLANEJADA"
+    status: "PLANEJADA",
+    dataInicio: "",
+    dataFim: ""
   });
 
   const [selectedActivityForLog, setSelectedActivityForLog] = useState<any | null>(null);
@@ -324,7 +326,9 @@ export default function DiarioObrasPage() {
           projetoId: "",
           descricao: "",
           responsavelId: "",
-          status: "PLANEJADA"
+          status: "PLANEJADA",
+          dataInicio: "",
+          dataFim: ""
         });
         setShowAddActivityForm(false);
         fetchData();
@@ -334,6 +338,38 @@ export default function DiarioObrasPage() {
       }
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  // Update Activity (Supervisor only)
+  const handleUpdateActivity = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingActivity) return;
+    setFormError("");
+    setFormSuccess("");
+
+    if (!editingActivity.projetoId || !editingActivity.descricao || !editingActivity.responsavelId) {
+      setFormError("Todos os campos obrigatórios precisam ser preenchidos.");
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/diario/atividades/${editingActivity.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editingActivity)
+      });
+
+      if (res.ok) {
+        setFormSuccess("Atividade atualizada com sucesso!");
+        setEditingActivity(null);
+        fetchData();
+      } else {
+        const data = await res.json();
+        setFormError(data.error || "Erro ao atualizar atividade.");
+      }
+    } catch (err) {
+      setFormError("Erro de conexão.");
     }
   };
 
@@ -349,6 +385,26 @@ export default function DiarioObrasPage() {
       }
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  // Toggle activity status (Executor or Supervisor)
+  const handleToggleActivityCompletion = async (activityId: string, currentStatus: string) => {
+    try {
+      const newStatus = currentStatus === "CONCLUIDA" ? "EM_ANDAMENTO" : "CONCLUIDA";
+      const res = await fetch(`/api/diario/atividades/${activityId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus })
+      });
+      if (res.ok) {
+        fetchData();
+      } else {
+        const data = await res.json();
+        alert(data.error || "Erro ao alterar status da atividade.");
+      }
+    } catch (err) {
+      alert("Erro ao conectar ao servidor.");
     }
   };
 
@@ -685,7 +741,7 @@ export default function DiarioObrasPage() {
           </div>
 
           {/* Sub-tab navigation inside Supervisor panel */}
-          <div className="flex gap-4 border-b border-slate-200 pb-1">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 border-b border-slate-200 pb-1">
             <button
               onClick={() => setObrasSubTab("revisoes")}
               className={`pb-2.5 px-2 text-xs uppercase font-black tracking-wider transition-all relative border-b-2 ${
@@ -900,6 +956,27 @@ export default function DiarioObrasPage() {
                     </select>
                   </div>
 
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Data Início</label>
+                      <input 
+                        type="date"
+                        className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                        value={newActivity.dataInicio}
+                        onChange={e => setNewActivity({...newActivity, dataInicio: e.target.value})}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Data Fim</label>
+                      <input 
+                        type="date"
+                        className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                        value={newActivity.dataFim}
+                        onChange={e => setNewActivity({...newActivity, dataFim: e.target.value})}
+                      />
+                    </div>
+                  </div>
+
                   <button
                     type="submit"
                     className="w-full bg-[#f15a24] hover:bg-orange-600 text-white font-black text-xs py-3.5 rounded-xl uppercase tracking-wider transition-all cursor-pointer shadow-md"
@@ -942,15 +1019,27 @@ export default function DiarioObrasPage() {
                           <td className="p-3 text-slate-600 font-semibold">{act.descricao}</td>
                           <td className="p-3 text-slate-600 font-medium">{act.responsavel?.name || act.responsavel?.email}</td>
                           <td className="p-3 text-center">
-                            <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-md ${
-                              act.status === "CONCLUIDA" 
-                                ? "bg-green-50 text-green-700 border border-green-100" 
-                                : act.status === "EM_ANDAMENTO" 
-                                ? "bg-blue-50 text-blue-700 border border-blue-100" 
-                                : "bg-slate-100 text-slate-600 border border-slate-200"
-                            }`}>
-                              {act.status === "CONCLUIDA" ? "Concluída" : act.status === "EM_ANDAMENTO" ? "Em Andamento" : "Planejada"}
-                            </span>
+                            <div className="flex flex-col items-center gap-1">
+                              <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-md ${
+                                act.status === "CONCLUIDA" 
+                                  ? "bg-green-50 text-green-700 border border-green-100" 
+                                  : act.status === "EM_ANDAMENTO" 
+                                  ? "bg-blue-50 text-blue-700 border border-blue-100" 
+                                  : "bg-slate-100 text-slate-600 border border-slate-200"
+                              }`}>
+                                {act.status === "CONCLUIDA" ? "Concluída" : act.status === "EM_ANDAMENTO" ? "Em Andamento" : "Planejada"}
+                              </span>
+                              {act.status === "CONCLUIDA" && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleActivityCompletion(act.id, act.status)}
+                                  className="text-[8px] font-bold text-red-650 hover:text-red-800 underline bg-transparent border-0 cursor-pointer p-0"
+                                  title="Reverter conclusão desta atividade"
+                                >
+                                  Reverter
+                                </button>
+                              )}
+                            </div>
                           </td>
                           <td className="p-3 text-center">
                             <div className="flex justify-center gap-1.5">
@@ -977,8 +1066,25 @@ export default function DiarioObrasPage() {
                                 <Plus className="w-3.5 h-3.5" />
                               </button>
                               <button
+                                onClick={() => {
+                                  setEditingActivity({
+                                    id: act.id,
+                                    projetoId: act.projetoId,
+                                    descricao: act.descricao,
+                                    responsavelId: act.responsavelId,
+                                    status: act.status,
+                                    dataInicio: act.dataInicio ? new Date(act.dataInicio).toISOString().split("T")[0] : "",
+                                    dataFim: act.dataFim ? new Date(act.dataFim).toISOString().split("T")[0] : ""
+                                  });
+                                }}
+                                className="p-1 text-blue-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all cursor-pointer"
+                                title="Editar Atividade"
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                              </button>
+                              <button
                                 onClick={() => handleDeleteActivity(act.id)}
-                                className="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                className="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all cursor-pointer"
                                 title="Excluir Atividade"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -1047,7 +1153,7 @@ export default function DiarioObrasPage() {
             return (
               <div className="space-y-6 animate-in fade-in duration-300">
                 {/* Internal Reports Selector tabs */}
-                <div className="flex gap-2 bg-slate-100 p-1.5 rounded-2xl max-w-md print:hidden">
+                <div className="flex flex-col sm:flex-row gap-2 bg-slate-100 p-1.5 rounded-2xl max-w-md print:hidden">
                   <button
                     onClick={() => setActiveReportType("geral")}
                     className={`flex-1 py-2 px-3 rounded-xl text-center text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
@@ -1538,63 +1644,78 @@ export default function DiarioObrasPage() {
                         </div>
                       )}
 
-                      <button
-                        onClick={() => {
-                          const todayStr = new Date().toISOString().split("T")[0];
-                          const logHoje = logs.find(l => {
-                            const logDateStr = new Date(l.data).toISOString().split("T")[0];
-                            return l.atividadeId === act.id && logDateStr === todayStr && l.usuarioId === (session?.user as any)?.id;
-                          });
-
-                          setSelectedActivityForLog(act);
-
-                          if (logHoje) {
-                            setActiveLogIdToday(logHoje.id);
-                            setLogForm({
-                              descricao: logHoje.descricao,
-                              progresso: logHoje.progresso.toString(),
-                              fotos: logHoje.fotos || [],
-                              audios: logHoje.audios || [],
-                              data: todayStr,
-                              ativoId: logHoje.ativoId || "",
-                              horimetroInicio: logHoje.horimetroInicio !== null ? logHoje.horimetroInicio.toString() : "",
-                              horimetroFim: logHoje.horimetroFim !== null ? logHoje.horimetroFim.toString() : "",
-                              fotoHorimetroInicioUrl: logHoje.fotoHorimetroInicioUrl || "",
-                              fotoHorimetroFimUrl: logHoje.fotoHorimetroFimUrl || "",
-                              statusLancamento: logHoje.statusLancamento || "FINALIZADO"
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            const todayStr = new Date().toISOString().split("T")[0];
+                            const logHoje = logs.find(l => {
+                              const logDateStr = new Date(l.data).toISOString().split("T")[0];
+                              return l.atividadeId === act.id && logDateStr === todayStr && l.usuarioId === (session?.user as any)?.id;
                             });
-                          } else {
-                            setActiveLogIdToday(null);
-                            setLogForm({
-                              descricao: lastLog ? lastLog.descricao : "",
-                              progresso: lastLog ? lastLog.progresso.toString() : "0",
-                              fotos: [],
-                              audios: [],
-                              data: todayStr,
-                              ativoId: "",
-                              horimetroInicio: "",
-                              horimetroFim: "",
-                              fotoHorimetroInicioUrl: "",
-                              fotoHorimetroFimUrl: "",
-                              statusLancamento: "FINALIZADO"
+
+                            setSelectedActivityForLog(act);
+
+                            if (logHoje) {
+                              setActiveLogIdToday(logHoje.id);
+                              setLogForm({
+                                descricao: logHoje.descricao,
+                                progresso: logHoje.progresso.toString(),
+                                fotos: logHoje.fotos || [],
+                                audios: logHoje.audios || [],
+                                data: todayStr,
+                                ativoId: logHoje.ativoId || "",
+                                horimetroInicio: logHoje.horimetroInicio !== null ? logHoje.horimetroInicio.toString() : "",
+                                horimetroFim: logHoje.horimetroFim !== null ? logHoje.horimetroFim.toString() : "",
+                                fotoHorimetroInicioUrl: logHoje.fotoHorimetroInicioUrl || "",
+                                fotoHorimetroFimUrl: logHoje.fotoHorimetroFimUrl || "",
+                                statusLancamento: logHoje.statusLancamento || "FINALIZADO"
+                              });
+                            } else {
+                              setActiveLogIdToday(null);
+                              setLogForm({
+                                descricao: lastLog ? lastLog.descricao : "",
+                                progresso: lastLog ? lastLog.progresso.toString() : "0",
+                                fotos: [],
+                                audios: [],
+                                data: todayStr,
+                                ativoId: "",
+                                horimetroInicio: "",
+                                horimetroFim: "",
+                                fotoHorimetroInicioUrl: "",
+                                fotoHorimetroFimUrl: "",
+                                statusLancamento: "FINALIZADO"
+                              });
+                            }
+                          }}
+                          className="flex-1 bg-[#f15a24] hover:bg-orange-600 text-white font-black text-[10px] py-2.5 rounded-xl uppercase tracking-wider transition-all cursor-pointer text-center border-0"
+                        >
+                          {(() => {
+                            const todayStr = new Date().toISOString().split("T")[0];
+                            const logHoje = logs.find(l => {
+                              const logDateStr = new Date(l.data).toISOString().split("T")[0];
+                              return l.atividadeId === act.id && logDateStr === todayStr && l.usuarioId === (session?.user as any)?.id;
                             });
-                          }
-                        }}
-                        className="w-full bg-[#f15a24] hover:bg-orange-600 text-white font-black text-[10px] py-2.5 rounded-xl uppercase tracking-wider transition-all cursor-pointer text-center"
-                      >
-                        {(() => {
-                          const todayStr = new Date().toISOString().split("T")[0];
-                          const logHoje = logs.find(l => {
-                            const logDateStr = new Date(l.data).toISOString().split("T")[0];
-                            return l.atividadeId === act.id && logDateStr === todayStr && l.usuarioId === (session?.user as any)?.id;
-                          });
-                          
-                          if (logHoje) {
-                            return logHoje.statusLancamento === "INICIADO" ? "🌅 Finalizar RDO do Dia" : "📝 Editar RDO de Hoje";
-                          }
-                          return lastLog && lastLog.statusRevisao === "COM_QUESTIONAMENTOS" ? "Responder Questionamentos" : "Lançar Progresso Diário";
-                        })()}
-                      </button>
+                            
+                            if (logHoje) {
+                              return logHoje.statusLancamento === "INICIADO" ? "🌅 Finalizar RDO" : "📝 Editar RDO";
+                            }
+                            return lastLog && lastLog.statusRevisao === "COM_QUESTIONAMENTOS" ? "Responder" : "Lançar RDO";
+                          })()}
+                        </button>
+                        
+                        <button
+                          type="button"
+                          onClick={() => handleToggleActivityCompletion(act.id, act.status)}
+                          className={`px-3 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all cursor-pointer border flex items-center justify-center ${
+                            act.status === "CONCLUIDA"
+                              ? "bg-amber-50 text-amber-700 hover:bg-amber-100 border-amber-200"
+                              : "bg-green-500 text-white hover:bg-green-600 border-green-600 shadow-sm shadow-green-100"
+                          }`}
+                          title={act.status === "CONCLUIDA" ? "Reabrir Atividade" : "Concluir Atividade"}
+                        >
+                          {act.status === "CONCLUIDA" ? "Reabrir" : "Concluir"}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );
@@ -1636,6 +1757,25 @@ export default function DiarioObrasPage() {
                   <h4 className="font-bold text-slate-700 uppercase text-xs">{log.atividade?.descricao}</h4>
                   
                   <p className="text-[10px] text-slate-500 leading-relaxed font-semibold italic">"{log.descricao}"</p>
+
+                  {log.ativoId && (() => {
+                    const asset = equipamentos.find(eq => eq.id === log.ativoId);
+                    if (!asset) return null;
+                    const isPesado = asset.categoria === "PESADO";
+                    return (
+                      <div className="text-[9px] bg-slate-100 p-2 rounded-xl border border-slate-200 text-slate-650 flex flex-col gap-0.5 mt-1 text-left leading-none font-bold">
+                        <span>🛠️ {asset.nome} ({asset.codigo})</span>
+                        {isPesado && log.horimetroInicio !== null && (
+                          <div className="flex justify-between items-center text-[8px] font-black text-[#f15a24] uppercase mt-0.5">
+                            <span>⏱️ H: {log.horimetroInicio} - {log.statusLancamento === "INICIADO" ? "Uso" : log.horimetroFim}</span>
+                            {log.statusLancamento === "FINALIZADO" && log.horimetroFim !== null && (
+                              <span className="text-emerald-600 font-extrabold">⌛ {(parseFloat(log.horimetroFim.toString()) - parseFloat(log.horimetroInicio.toString())).toFixed(2)}h</span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                   
                   <div className="flex justify-between text-[10px] font-bold text-slate-400 pt-1 border-t border-slate-200">
                     <span>{new Date(log.data).toLocaleDateString("pt-BR")}</span>
@@ -1703,9 +1843,16 @@ export default function DiarioObrasPage() {
                         <div className="space-y-0.5 text-left leading-normal">
                           <span className="font-bold text-slate-700">{assetLabel}</span>
                           {isPesado && log.horimetroInicio !== null && (
-                            <span className="block text-[9px] text-[#f15a24] font-black uppercase">
-                              ⏱️ H: {log.horimetroInicio} - {log.statusLancamento === "INICIADO" ? "Em uso" : log.horimetroFim}
-                            </span>
+                            <div className="space-y-0.5 mt-0.5 text-left leading-none">
+                              <span className="block text-[9px] text-[#f15a24] font-black uppercase">
+                                ⏱️ H: {log.horimetroInicio} - {log.statusLancamento === "INICIADO" ? "Em uso" : log.horimetroFim}
+                              </span>
+                              {log.statusLancamento === "FINALIZADO" && log.horimetroFim !== null && (
+                                <span className="block text-[9px] text-emerald-600 font-extrabold uppercase">
+                                  ⌛ Trab: {(parseFloat(log.horimetroFim.toString()) - parseFloat(log.horimetroInicio.toString())).toFixed(2)}h
+                                </span>
+                              )}
+                            </div>
                           )}
                         </div>
                       );
@@ -1746,12 +1893,31 @@ export default function DiarioObrasPage() {
                   </td>
                   {isSupervisor && (
                     <td className="p-3 text-center">
-                      <button
-                        onClick={() => handleDeleteLog(log.id)}
-                        className="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      <div className="flex justify-center gap-1.5">
+                        <button
+                          onClick={() => setEditingLog({
+                            id: log.id,
+                            data: log.data ? new Date(log.data).toISOString().split("T")[0] : "",
+                            progresso: log.progresso,
+                            descricao: log.descricao,
+                            ativoId: log.ativoId || "",
+                            horimetroInicio: log.horimetroInicio !== null && log.horimetroInicio !== undefined ? log.horimetroInicio.toString() : "",
+                            horimetroFim: log.horimetroFim !== null && log.horimetroFim !== undefined ? log.horimetroFim.toString() : "",
+                            statusLancamento: log.statusLancamento,
+                          })}
+                          className="p-1 text-blue-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all cursor-pointer"
+                          title="Editar Apontamento"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteLog(log.id)}
+                          className="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all cursor-pointer"
+                          title="Excluir Apontamento"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </td>
                   )}
                 </tr>
@@ -2239,6 +2405,260 @@ export default function DiarioObrasPage() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* ===================== MODAL EDITAR ATIVIDADE (GESTOR) =================== */}
+      {/* ========================================================================= */}
+      {editingActivity && (
+        <div className="fixed inset-0 z-50 bg-[#0a192f]/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-lg rounded-[2.5rem] border border-slate-100 shadow-2xl p-6 relative animate-in slide-in-from-bottom-8 duration-300">
+            
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <h3 className="text-base font-black text-slate-800 uppercase tracking-tight flex items-center gap-2">
+                  <Pencil className="w-5 h-5 text-[#f15a24]" /> 
+                  Editar Atividade de Canteiro
+                </h3>
+                <p className="text-[10px] text-slate-500 mt-0.5">Modifique os parâmetros da tarefa atribuída.</p>
+              </div>
+              <button 
+                type="button"
+                onClick={() => setEditingActivity(null)}
+                className="text-slate-400 hover:text-slate-600 font-black text-lg p-1 cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateActivity} className="space-y-4 text-left">
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Obra / Projeto *</label>
+                <select
+                  required
+                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                  value={editingActivity.projetoId}
+                  onChange={e => setEditingActivity({...editingActivity, projetoId: e.target.value})}
+                >
+                  {ativos.map(p => (
+                    <option key={p.id} value={p.id}>{p.nome}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Descrição da Atividade *</label>
+                <input 
+                  type="text"
+                  required
+                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                  value={editingActivity.descricao}
+                  onChange={e => setEditingActivity({...editingActivity, descricao: e.target.value})}
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Executor Responsável *</label>
+                <select
+                  required
+                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                  value={editingActivity.responsavelId}
+                  onChange={e => setEditingActivity({...editingActivity, responsavelId: e.target.value})}
+                >
+                  {users.map(u => (
+                    <option key={u.id} value={u.id}>{u.name || u.email} ({u.role})</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Data Início</label>
+                  <input 
+                    type="date"
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                    value={editingActivity.dataInicio}
+                    onChange={e => setEditingActivity({...editingActivity, dataInicio: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Data Fim</label>
+                  <input 
+                    type="date"
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                    value={editingActivity.dataFim}
+                    onChange={e => setEditingActivity({...editingActivity, dataFim: e.target.value})}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Status da Atividade *</label>
+                <select
+                  required
+                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                  value={editingActivity.status}
+                  onChange={e => setEditingActivity({...editingActivity, status: e.target.value})}
+                >
+                  <option value="PLANEJADA">Planejada</option>
+                  <option value="EM_ANDAMENTO">Em Andamento</option>
+                  <option value="CONCLUIDA">Concluída</option>
+                </select>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingActivity(null)}
+                  className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs py-3.5 rounded-xl uppercase tracking-wider transition-all cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 bg-[#f15a24] hover:bg-orange-600 text-white font-black text-xs py-3.5 rounded-xl uppercase tracking-wider transition-all cursor-pointer shadow-md"
+                >
+                  Salvar Alterações
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* ======================= MODAL EDITAR RDO (GESTOR) ======================= */}
+      {/* ========================================================================= */}
+      {editingLog && (
+        <div className="fixed inset-0 z-50 bg-[#0a192f]/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-lg rounded-[2.5rem] border border-slate-100 shadow-2xl p-6 relative animate-in slide-in-from-bottom-8 duration-300">
+            
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <h3 className="text-base font-black text-slate-800 uppercase tracking-tight flex items-center gap-2">
+                  <Pencil className="w-5 h-5 text-[#f15a24]" /> 
+                  Editar Lançamento RDO Geral
+                </h3>
+                <p className="text-[10px] text-slate-500 mt-0.5">Modifique os detalhes do apontamento diário e horímetros.</p>
+              </div>
+              <button 
+                type="button"
+                onClick={() => setEditingLog(null)}
+                className="text-slate-400 hover:text-slate-600 font-black text-lg p-1 cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateLog} className="space-y-4 text-left">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Data do Lançamento *</label>
+                  <input 
+                    type="date"
+                    required
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                    value={editingLog.data ? new Date(editingLog.data).toISOString().split("T")[0] : ""}
+                    onChange={e => setEditingLog({...editingLog, data: e.target.value})}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Progresso Declarado (%) *</label>
+                  <input 
+                    type="number"
+                    min="0"
+                    max="100"
+                    required
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                    value={editingLog.progresso}
+                    onChange={e => setEditingLog({...editingLog, progresso: parseFloat(e.target.value) || 0})}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Descrição dos Serviços Executados *</label>
+                <textarea 
+                  required
+                  rows={4}
+                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 outline-none focus:ring-2 focus:ring-[#f15a24] resize-none"
+                  value={editingLog.descricao}
+                  onChange={e => setEditingLog({...editingLog, descricao: e.target.value})}
+                />
+              </div>
+
+              {/* Equipamentos & Horímetro inputs */}
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
+                <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-wide">Vínculo de Equipamento</h4>
+                <div>
+                  <select
+                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none"
+                    value={editingLog.ativoId || ""}
+                    onChange={e => setEditingLog({
+                      ...editingLog,
+                      ativoId: e.target.value || null,
+                      horimetroInicio: "",
+                      horimetroFim: ""
+                    })}
+                  >
+                    <option value="">Nenhum Equipamento</option>
+                    {equipamentos.map(eq => (
+                      <option key={eq.id} value={eq.id}>{eq.nome} ({eq.codigo})</option>
+                    ))}
+                  </select>
+                </div>
+
+                {editingLog.ativoId && (() => {
+                  const asset = equipamentos.find(eq => eq.id === editingLog.ativoId);
+                  if (asset?.categoria !== "PESADO") return null;
+
+                  return (
+                    <div className="grid grid-cols-2 gap-3 pt-2">
+                      <div>
+                        <label className="block text-[9px] font-bold text-slate-400 uppercase mb-1">Horímetro Inicial *</label>
+                        <input 
+                          type="number"
+                          step="any"
+                          required
+                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-850"
+                          value={editingLog.horimetroInicio || ""}
+                          onChange={e => setEditingLog({...editingLog, horimetroInicio: e.target.value})}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[9px] font-bold text-slate-400 uppercase mb-1">Horímetro Final</label>
+                        <input 
+                          type="number"
+                          step="any"
+                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-850"
+                          value={editingLog.horimetroFim || ""}
+                          onChange={e => setEditingLog({...editingLog, horimetroFim: e.target.value})}
+                        />
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingLog(null)}
+                  className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs py-3.5 rounded-xl uppercase tracking-wider transition-all cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 bg-[#f15a24] hover:bg-orange-600 text-white font-black text-xs py-3.5 rounded-xl uppercase tracking-wider transition-all cursor-pointer shadow-md"
+                >
+                  Salvar Alterações
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

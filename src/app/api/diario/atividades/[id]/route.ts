@@ -12,7 +12,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
 
     const { id } = params;
     const body = await req.json();
-    const { projetoId, descricao, responsavelId, status } = body;
+    const { projetoId, descricao, responsavelId, status, dataInicio, dataFim } = body;
 
     const activity = await prisma.atividadeDiario.findUnique({
       where: { id }
@@ -36,6 +36,8 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
       if (descricao !== undefined) updateData.descricao = descricao;
       if (responsavelId !== undefined) updateData.responsavelId = responsavelId;
       if (status !== undefined) updateData.status = status;
+      if (dataInicio !== undefined) updateData.dataInicio = dataInicio ? new Date(dataInicio) : null;
+      if (dataFim !== undefined) updateData.dataFim = dataFim ? new Date(dataFim) : null;
     } else {
       // Executor can only update the status of their task
       if (status !== undefined) updateData.status = status;

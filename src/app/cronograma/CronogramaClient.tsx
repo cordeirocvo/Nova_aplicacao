@@ -27,9 +27,10 @@ import ptBrLocale from '@fullcalendar/core/locales/pt-br';
 
 interface CalendarEvent {
   id: string;
-  type: 'instalacao' | 'manutencao';
+  type: 'instalacao' | 'manutencao' | 'diario';
   title: string;
   date: Date;
+  endDate?: Date | null;
   original: any;
   color: string;
   status?: string;
@@ -82,8 +83,17 @@ async function gerarOSPdf(event: CalendarEvent) {
   doc.setFontSize(10);
 
   const isInst = event.type === 'instalacao';
+  const isDiario = event.type === 'diario';
 
-  const linhas: [string, string][] = isInst ? [
+  const linhas: [string, string][] = isDiario ? [
+    ['Tipo', 'Atividade Diária de Canteiro (RDO)'],
+    ['Obra / Projeto', o.projeto?.nome || '—'],
+    ['Descrição', o.descricao || '—'],
+    ['Responsável', o.responsavel?.name || o.responsavel?.email || '—'],
+    ['Status', event.status || 'PLANEJADA'],
+    ['Data Início', format(event.date, 'dd/MM/yyyy')],
+    ['Data Término', o.dataFim ? format(new Date(o.dataFim), 'dd/MM/yyyy') : '—'],
+  ] : isInst ? [
     ['Tipo', 'Instalação Fotovoltaica'],
     ['Cliente', o.instalacao || '—'],
     ['Solicitação', o.solicitacao || '—'],
@@ -114,7 +124,9 @@ async function gerarOSPdf(event: CalendarEvent) {
   });
 
   // ── Seção: Observações ──
-  const obs = isInst 
+  const obs = isDiario
+    ? ''
+    : isInst 
     ? (o.obsInstalacao || o.observacao || '') 
     : (o.descricao || '');
   if (obs) {
@@ -151,12 +163,12 @@ async function gerarOSPdf(event: CalendarEvent) {
   doc.text('Cordeiro Energia — Documento gerado automaticamente pelo Sistema de Gestão de Atividades', 14, 285);
   doc.text(`Ref. Interna: ${o.id || ''}`, 165, 285);
 
-  doc.save(`OS_${isInst ? 'Instalacao' : 'OM'}_${o.id?.slice(0, 8) || 'doc'}.pdf`);
+  doc.save(`OS_${isDiario ? 'RDO' : isInst ? 'Instalacao' : 'OM'}_${o.id?.slice(0, 8) || 'doc'}.pdf`);
 }
 
 // ─── Componente Principal ────────────────────────────────────────────────────
 
-export default function CronogramaClient({ atividades, manutencoes }: any) {
+export default function CronogramaClient({ atividades, manutencoes, diarioAtividades = [] }: any) {
   const router = useRouter();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
@@ -166,6 +178,7 @@ export default function CronogramaClient({ atividades, manutencoes }: any) {
   // Estado local para atualizações otimistas
   const [localAtividades, setLocalAtividades] = useState(atividades);
   const [localManutencoes, setLocalManutencoes] = useState(manutencoes);
+  const [localDiarioAtividades, setLocalDiarioAtividades] = useState(diarioAtividades);
 
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -200,6 +213,7 @@ export default function CronogramaClient({ atividades, manutencoes }: any) {
 
   useEffect(() => { setLocalAtividades(atividades); }, [atividades]);
   useEffect(() => { setLocalManutencoes(manutencoes); }, [manutencoes]);
+  useEffect(() => { setLocalDiarioAtividades(diarioAtividades); }, [diarioAtividades]);
 
   // Limpar timer no unmount
   useEffect(() => {
@@ -258,15 +272,24 @@ export default function CronogramaClient({ atividades, manutencoes }: any) {
         color: 'bg-[#F25C27]',
         status: m.status,
       })),
+      ...localDiarioAtividades.map((da: any) => ({
+        id: `diario-${da.id}`,
+        type: 'diario' as const,
+        title: `🚧 [RDO] ${da.projeto?.nome || 'Obra'}: ${da.descricao}`,
+        date: parseDate(da.dataInicio || da.createdAt)!,
+        endDate: da.dataFim ? parseDate(da.dataFim) : null,
+        original: da,
+        color: 'bg-emerald-600',
+        status: da.status,
+      })),
     ].filter(e => e.date !== null && isValid(e.date));
-  }, [localAtividades, localManutencoes]);
+  }, [localAtividades, localManutencoes, localDiarioAtividades]);
 
   // Usar ref para evitar closures desatualizadas nos callbacks do FullCalendar
   const eventsRef = useRef(events);
   useEffect(() => {
     eventsRef.current = events;
   }, [events]);
-
   const fullCalendarEvents = useMemo(() => {
     return events.map(e => {
       let colorHex = '#3B82F6'; // default blue-500
@@ -280,12 +303,15 @@ export default function CronogramaClient({ atividades, manutencoes }: any) {
         }
       } else if (e.type === 'manutencao') {
         colorHex = '#F25C27'; // O&M orange
+      } else if (e.type === 'diario') {
+        colorHex = '#059669'; // emerald-600 green
       }
 
       return {
         id: e.id,
         title: e.title,
         start: format(e.date, 'yyyy-MM-dd'),
+        end: e.endDate ? format(addDays(e.endDate, 1), 'yyyy-MM-dd') : undefined,
         backgroundColor: colorHex,
         borderColor: colorHex,
         allDay: true,
@@ -804,7 +830,7 @@ export default function CronogramaClient({ atividades, manutencoes }: any) {
             <div className={`p-8 text-white flex justify-between items-start ${selectedEvent.color}`}>
               <div>
                 <div className="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-black uppercase mb-3 inline-block">
-                  {selectedEvent.type === 'instalacao' ? '📦 Instalação' : '🔧 Manutenção O&M'}
+                  {selectedEvent.type === 'instalacao' ? '📦 Instalação' : selectedEvent.type === 'manutencao' ? '🔧 Manutenção O&M' : '🚧 Diário de Obras (RDO)'}
                 </div>
                 <h2 className="text-2xl font-black leading-tight">{selectedEvent.title}</h2>
                 <p className="opacity-80 font-bold mt-1">
@@ -823,11 +849,13 @@ export default function CronogramaClient({ atividades, manutencoes }: any) {
                   <p className="font-bold text-slate-700">{selectedEvent.status || 'Pendente'}</p>
                 </div>
                 <div className="space-y-1">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Localização</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Localização / Obra</p>
                   <p className="font-bold text-slate-700 truncate">
                     {selectedEvent.type === 'instalacao'
                       ? (selectedEvent.original.cidade || selectedEvent.original.cidadeSheet || '—')
-                      : (selectedEvent.original.usina?.localizacao || '—')}
+                      : selectedEvent.type === 'manutencao'
+                      ? (selectedEvent.original.usina?.localizacao || '—')
+                      : (selectedEvent.original.projeto?.nome || '—')}
                   </p>
                 </div>
               </div>
@@ -918,6 +946,44 @@ export default function CronogramaClient({ atividades, manutencoes }: any) {
                       className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-[#F25C27] hover:bg-[#d44815] text-white rounded-2xl font-black text-sm transition-all shadow-lg shadow-orange-200"
                     >
                       <Hammer className="w-4 h-4" /> Acessar O&M
+                    </Link>
+                  </div>
+                </div>
+              )}
+
+              {selectedEvent.type === 'diario' && (
+                <div className="space-y-4">
+                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 text-slate-800 text-left">
+                    <p className="text-[10px] font-black text-slate-400 uppercase mb-2">Descrição da Atividade</p>
+                    <p className="text-xs font-black uppercase text-slate-700">
+                      {selectedEvent.original.descricao}
+                    </p>
+                    {selectedEvent.original.dataInicio && (
+                      <p className="text-[10px] text-[#059669] font-bold mt-2">
+                        Período: {format(parseDate(selectedEvent.original.dataInicio)!, 'dd/MM/yyyy')} 
+                        {selectedEvent.original.dataFim ? ` até ${format(parseDate(selectedEvent.original.dataFim)!, 'dd/MM/yyyy')}` : ''}
+                      </p>
+                    )}
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-3 text-xs bg-slate-50 p-4 rounded-2xl border border-slate-100 text-slate-800 text-left">
+                    <div>
+                      <p className="font-black text-[9px] text-slate-400 uppercase tracking-wider">Responsável Executor</p>
+                      <p className="font-bold mt-0.5">{selectedEvent.original.responsavel?.name || selectedEvent.original.responsavel?.email || 'Sem executor'}</p>
+                    </div>
+                    <div>
+                      <p className="font-black text-[9px] text-slate-400 uppercase tracking-wider">Obra / Projeto</p>
+                      <p className="font-bold mt-0.5">{selectedEvent.original.projeto?.nome || '—'}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <Link
+                      href="/diario"
+                      prefetch={false}
+                      className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black text-sm transition-all shadow-lg shadow-emerald-200"
+                    >
+                      <FileText className="w-4 h-4" /> Acessar Diário (RDO)
                     </Link>
                   </div>
                 </div>

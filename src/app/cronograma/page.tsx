@@ -11,8 +11,8 @@ export default async function CronogramaPage() {
   const sixMonthsAgo = new Date();
   sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
-  // Buscar atividades e manutenções em paralelo, filtrando históricos concluídos antigos para performance
-  const [atividades, manutencoes] = await Promise.all([
+  // Buscar atividades, manutenções e diários em paralelo, filtrando históricos concluídos antigos para performance
+  const [atividades, manutencoes, diarioAtividades] = await Promise.all([
     prisma.planilhaInstalacao.findMany({
       where: {
         OR: [
@@ -64,6 +64,27 @@ export default async function CronogramaPage() {
           }
         }
       }
+    }),
+    prisma.atividadeDiario.findMany({
+      where: {
+        OR: [
+          { status: { notIn: ["CONCLUIDA"] } },
+          { createdAt: { gte: sixMonthsAgo } }
+        ]
+      },
+      include: {
+        projeto: {
+          select: {
+            nome: true
+          }
+        },
+        responsavel: {
+          select: {
+            name: true,
+            email: true
+          }
+        }
+      }
     })
   ]);
 
@@ -74,13 +95,14 @@ export default async function CronogramaPage() {
           Calendário de Atividades
         </h1>
         <p className="text-sm text-slate-500 font-medium italic">
-          Instalações, Pareceres e Manutenções O&amp;M — arraste para reagendar, duplo clique para gerar OS
+          Instalações, Pareceres, Manutenções O&amp;M e Diário de Obras — arraste para reagendar, duplo clique para gerar OS
         </p>
       </div>
 
       <CronogramaClient 
         atividades={JSON.parse(JSON.stringify(atividades))} 
         manutencoes={JSON.parse(JSON.stringify(manutencoes))} 
+        diarioAtividades={JSON.parse(JSON.stringify(diarioAtividades))}
       />
     </div>
   );

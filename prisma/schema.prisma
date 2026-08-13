@@ -818,6 +818,7 @@ model Ativo {
   movimentacoes              MovimentacaoAtivo[]
   historicoUso               HistoricoUsoAtivo[]
   combustiveis               RegistroCombustivel[]
+  rdoLancamentos             RdoLancamento[]
 }
 
 model MovimentacaoAtivo {
@@ -845,8 +846,10 @@ model HistoricoUsoAtivo {
   observacoes            String?
   fotoHorimetroInicioUrl String?
   fotoHorimetroFimUrl    String?
+  rdoLancamentoId        String?  @unique
   createdAt              DateTime @default(now())
   ativo                  Ativo    @relation(fields: [ativoId], references: [id], onDelete: Cascade)
+  rdoLancamento          RdoLancamento? @relation(fields: [rdoLancamentoId], references: [id], onDelete: SetNull)
 }
 
 model RegistroCombustivel {
@@ -889,9 +892,20 @@ model RdoLancamento {
   audios                String[]        @default([])
   comentariosSupervisor String?
   statusRevisao         String          @default("PENDENTE") // PENDENTE, APROVADO, COM_QUESTIONAMENTOS
+  
+  // Equipments usage fields inside RDO:
+  ativoId                String?
+  horimetroInicio        Float?
+  horimetroFim           Float?
+  fotoHorimetroInicioUrl String?
+  fotoHorimetroFimUrl    String?
+  statusLancamento       String          @default("FINALIZADO") // "INICIADO" ou "FINALIZADO"
+
   createdAt             DateTime        @default(now())
   updatedAt             DateTime        @updatedAt
 
   atividade             AtividadeDiario @relation(fields: [atividadeId], references: [id], onDelete: Cascade)
   usuario               User            @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  ativo                 Ativo?          @relation(fields: [ativoId], references: [id], onDelete: SetNull)
+  usoAtivo              HistoricoUsoAtivo?
 }

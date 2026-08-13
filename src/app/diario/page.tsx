@@ -40,6 +40,7 @@ export default function DiarioObrasPage() {
   const [users, setUsers] = useState<any[]>([]); // To list users for assignments
   const [activities, setActivities] = useState<any[]>([]);
   const [logs, setLogs] = useState<any[]>([]);
+  const [equipamentos, setEquipamentos] = useState<any[]>([]); // Para listar os Ativos da gestão de ativos
   
   // Search and Filter States
   const [selectedObraFilter, setSelectedObraFilter] = useState("");
@@ -64,7 +65,13 @@ export default function DiarioObrasPage() {
     progresso: "0",
     fotos: [] as string[],
     audios: [] as string[],
-    data: new Date().toISOString().split("T")[0]
+    data: new Date().toISOString().split("T")[0],
+    ativoId: "",
+    horimetroInicio: "",
+    horimetroFim: "",
+    fotoHorimetroInicioUrl: "",
+    fotoHorimetroFimUrl: "",
+    statusLancamento: "FINALIZADO" // "INICIADO" ou "FINALIZADO"
   });
 
   const [reviewingLog, setReviewingLog] = useState<any | null>(null);
@@ -72,6 +79,7 @@ export default function DiarioObrasPage() {
 
   const [editingActivity, setEditingActivity] = useState<any | null>(null);
   const [editingLog, setEditingLog] = useState<any | null>(null);
+  const [activeLogIdToday, setActiveLogIdToday] = useState<string | null>(null);
 
   // Audio Recording States
   const [isRecording, setIsRecording] = useState(false);
@@ -115,6 +123,13 @@ export default function DiarioObrasPage() {
         const data = await resLogs.json();
         setLogs(data);
       }
+
+      // 5. Fetch Assets (Equipamentos)
+      const resEquip = await fetch("/api/ativos");
+      if (resEquip.ok) {
+        const data = await resEquip.json();
+        setEquipamentos(data);
+      }
     } catch (err) {
       console.error("Error loading RDO data:", err);
     } finally {
@@ -131,7 +146,11 @@ export default function DiarioObrasPage() {
   // Audio Capture Methods
   const startRecording = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = navigator.mediaDevices && await navigator.mediaDevices.getUserMedia({ audio: true });
+      if (!stream) {
+        alert("Nenhum microfone encontrado.");
+        return;
+      }
       const recorder = new MediaRecorder(stream);
       setMediaRecorder(recorder);
       
@@ -225,9 +244,9 @@ export default function DiarioObrasPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newActivity)
       });
-      const data = await res.json();
+
       if (res.ok) {
-        setFormSuccess("Atividade cadastrada e atribuída com sucesso!");
+        setFormSuccess("Nova atividade atribuída com sucesso!");
         setNewActivity({
           projetoId: "",
           descricao: "",
@@ -237,10 +256,11 @@ export default function DiarioObrasPage() {
         setShowAddActivityForm(false);
         fetchData();
       } else {
-        setFormError(data.error || "Erro ao cadastrar atividade.");
+        const data = await res.json();
+        setFormError(data.error || "Erro ao atribuir atividade.");
       }
     } catch (err) {
-      setFormError("Erro de conexão.");
+      console.error(err);
     }
   };
 
@@ -270,29 +290,62 @@ export default function DiarioObrasPage() {
       return;
     }
 
+    // Validate horímetro ranges if an asset requires it and status is FINALIZADO
+    if (logForm.ativoId) {
+      const selectedAsset = equipamentos.find(eq => eq.id === logForm.ativoId);
+      if (selectedAsset && selectedAsset.categoria === "PESADO") {
+        if (!logForm.horimetroInicio) {
+          setFormError("O horímetro inicial é obrigatório para este equipamento pesado.");
+          return;
+        }
+        if (logForm.statusLancamento === "FINALIZADO") {
+          if (!logForm.horimetroFim) {
+            setFormError("O horímetro final é obrigatório para fechar o turno deste equipamento pesado.");
+            return;
+          }
+          if (parseFloat(logForm.horimetroFim) < parseFloat(logForm.horimetroInicio)) {
+            setFormError("O horímetro final não pode ser menor do que o horímetro inicial.");
+            return;
+          }
+        }
+      }
+    }
+
     try {
       const payload = {
         atividadeId: selectedActivityForLog.id,
         ...logForm
       };
       
-      const res = await fetch("/api/diario/lancamentos", {
-        method: "POST",
+      const url = activeLogIdToday
+        ? `/api/diario/lancamentos/${activeLogIdToday}`
+        : "/api/diario/lancamentos";
+      const method = activeLogIdToday ? "PUT" : "POST";
+
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
 
       const data = await res.json();
       if (res.ok) {
-        setFormSuccess("Lançamento de diário RDO registrado com sucesso!");
+        setFormSuccess(activeLogIdToday ? "Lançamento de diário RDO atualizado com sucesso!" : "Lançamento de diário RDO registrado com sucesso!");
         setLogForm({
           descricao: "",
           progresso: "0",
           fotos: [],
           audios: [],
-          data: new Date().toISOString().split("T")[0]
+          data: new Date().toISOString().split("T")[0],
+          ativoId: "",
+          horimetroInicio: "",
+          horimetroFim: "",
+          fotoHorimetroInicioUrl: "",
+          fotoHorimetroFimUrl: "",
+          statusLancamento: "FINALIZADO"
         });
         setSelectedActivityForLog(null);
+        setActiveLogIdToday(null);
         fetchData();
       } else {
         setFormError(data.error || "Erro ao registrar diário.");
@@ -308,6 +361,27 @@ export default function DiarioObrasPage() {
     if (!editingLog) return;
     setFormError("");
     setFormSuccess("");
+
+    // Validate horímetro ranges on edit
+    if (editingLog.ativoId) {
+      const selectedAsset = equipamentos.find(eq => eq.id === editingLog.ativoId);
+      if (selectedAsset && selectedAsset.categoria === "PESADO") {
+        if (editingLog.horimetroInicio === undefined || editingLog.horimetroInicio === null || editingLog.horimetroInicio === "") {
+          setFormError("O horímetro inicial é obrigatório para este equipamento pesado.");
+          return;
+        }
+        if (editingLog.statusLancamento === "FINALIZADO") {
+          if (editingLog.horimetroFim === undefined || editingLog.horimetroFim === null || editingLog.horimetroFim === "") {
+            setFormError("O horímetro final é obrigatório para fechar o turno deste equipamento pesado.");
+            return;
+          }
+          if (parseFloat(editingLog.horimetroFim) < parseFloat(editingLog.horimetroInicio)) {
+            setFormError("O horímetro final não pode ser menor do que o horímetro inicial.");
+            return;
+          }
+        }
+      }
+    }
 
     try {
       const res = await fetch(`/api/diario/lancamentos/${editingLog.id}`, {
@@ -376,6 +450,79 @@ export default function DiarioObrasPage() {
     );
   }
 
+  // Identify pending RDO logs for today for the logged-in executor
+  const pendingRdosToday = React.useMemo(() => {
+    if (isSupervisor || !session?.user) return [];
+    
+    const todayStr = new Date().toISOString().split("T")[0];
+    const userId = (session.user as any).id;
+    
+    // Filter activities where current user is responsible and status is not CONCLUIDA
+    const myActivities = activities.filter(act => act.responsavelId === userId && act.status !== "CONCLUIDA");
+    
+    // Find activities that do NOT have a FINALIZADO log entry today
+    return myActivities.filter(act => {
+      const activityLogsToday = logs.filter(log => {
+        const logDateStr = new Date(log.data).toISOString().split("T")[0];
+        return log.atividadeId === act.id && logDateStr === todayStr && log.statusLancamento === "FINALIZADO";
+      });
+      return activityLogsToday.length === 0;
+    });
+  }, [activities, logs, session, isSupervisor]);
+
+  // Calculate RDO and equipment utilization pending logs for supervisor
+  const pendingSupervisorList = React.useMemo(() => {
+    if (!isSupervisor) return [];
+    
+    const todayStr = new Date().toISOString().split("T")[0];
+    
+    // Get all activities not completed
+    const activeActivities = activities.filter(act => act.status !== "CONCLUIDA");
+    
+    return activeActivities.map(act => {
+      // Find logs created for this activity today
+      const logsToday = logs.filter(log => {
+        const logDateStr = new Date(log.data).toISOString().split("T")[0];
+        return log.atividadeId === act.id && logDateStr === todayStr;
+      });
+      
+      const hasFinalized = logsToday.some(log => log.statusLancamento === "FINALIZADO");
+      const hasStarted = logsToday.some(log => log.statusLancamento === "INICIADO");
+      
+      if (hasFinalized) {
+        return null; // Not pending
+      }
+      
+      let status = "NÃO INICIADO";
+      let details = "Nenhum apontamento feito hoje.";
+      let buttonText = "Cobrar Início";
+      let logId = null;
+
+      if (hasStarted) {
+        status = "INICIADO (PENDENTE FECHAMENTO)";
+        const startedLog = logsToday.find(log => log.statusLancamento === "INICIADO");
+        logId = startedLog?.id;
+        details = `Turno iniciado às ${startedLog ? new Date(startedLog.createdAt).toLocaleTimeString("pt-BR", {hour: '2-digit', minute:'2-digit'}) : ""}.`;
+        if (startedLog?.ativoId) {
+          const asset = equipamentos.find(eq => eq.id === startedLog.ativoId);
+          details += ` Usando: ${asset ? `${asset.nome} (${asset.codigo})` : "equipamento"} (H. inicial: ${startedLog.horimetroInicio}).`;
+        }
+        buttonText = "Cobrar Fechamento";
+      }
+
+      return {
+        id: act.id,
+        atividade: act.descricao,
+        projeto: act.projeto?.nome || "Sem Projeto",
+        responsavel: act.responsavel?.name || act.responsavel?.email || "Sem Responsável",
+        status,
+        details,
+        buttonText,
+        logId
+      };
+    }).filter(Boolean) as any[];
+  }, [activities, logs, equipamentos, isSupervisor]);
+
   // Filter tasks based on search or project filter
   const filteredActivities = activities.filter(act => {
     const matchesObra = !selectedObraFilter || act.projetoId === selectedObraFilter;
@@ -417,6 +564,70 @@ export default function DiarioObrasPage() {
         }`}>
           <AlertCircle className="w-5 h-5 shrink-0" />
           <div>{formError || formSuccess}</div>
+        </div>
+      )}
+
+      {/* Pending RDOs Operator Alert */}
+      {!isSupervisor && pendingRdosToday.length > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-3xl p-5 flex items-start gap-4 animate-pulse">
+          <ShieldAlert className="w-6 h-6 text-amber-600 shrink-0 mt-0.5" />
+          <div className="flex-1 space-y-1">
+            <h4 className="text-sm font-black text-amber-800 uppercase tracking-tight">
+              ⚠️ RDO PENDENTE PARA HOJE!
+            </h4>
+            <p className="text-xs text-amber-700 font-medium">
+              Você ainda não finalizou o preenchimento do Diário de Obra (RDO) de hoje para as seguintes atividades:
+            </p>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {pendingRdosToday.map(act => (
+                <button
+                  key={act.id}
+                  onClick={() => {
+                    const todayStr = new Date().toISOString().split("T")[0];
+                    const logHoje = logs.find(l => {
+                      const logDateStr = new Date(l.data).toISOString().split("T")[0];
+                      return l.atividadeId === act.id && logDateStr === todayStr && l.usuarioId === (session?.user as any)?.id;
+                    });
+                    setSelectedActivityForLog(act);
+                    if (logHoje) {
+                      setActiveLogIdToday(logHoje.id);
+                      setLogForm({
+                        descricao: logHoje.descricao,
+                        progresso: logHoje.progresso.toString(),
+                        fotos: logHoje.fotos || [],
+                        audios: logHoje.audios || [],
+                        data: todayStr,
+                        ativoId: logHoje.ativoId || "",
+                        horimetroInicio: logHoje.horimetroInicio !== null ? logHoje.horimetroInicio.toString() : "",
+                        horimetroFim: logHoje.horimetroFim !== null ? logHoje.horimetroFim.toString() : "",
+                        fotoHorimetroInicioUrl: logHoje.fotoHorimetroInicioUrl || "",
+                        fotoHorimetroFimUrl: logHoje.fotoHorimetroFimUrl || "",
+                        statusLancamento: logHoje.statusLancamento || "FINALIZADO"
+                      });
+                    } else {
+                      setActiveLogIdToday(null);
+                      setLogForm({
+                        descricao: "",
+                        progresso: "0",
+                        fotos: [],
+                        audios: [],
+                        data: todayStr,
+                        ativoId: "",
+                        horimetroInicio: "",
+                        horimetroFim: "",
+                        fotoHorimetroInicioUrl: "",
+                        fotoHorimetroFimUrl: "",
+                        statusLancamento: "FINALIZADO"
+                      });
+                    }
+                  }}
+                  className="bg-white hover:bg-amber-100 text-amber-800 border border-amber-300 rounded-xl px-3 py-1.5 text-[10px] font-black uppercase transition-all flex items-center gap-1 cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" /> {act.descricao} ({act.projeto?.nome})
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       )}
 
@@ -511,6 +722,74 @@ export default function DiarioObrasPage() {
           {obrasSubTab === "revisoes" && (
             <div className="space-y-6">
               
+              {/* Cobrança de RDO & Equipamentos Pendentes */}
+              <div className="bg-slate-50 border border-slate-200/50 rounded-3xl p-6 space-y-4">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <ShieldAlert className="w-5 h-5 text-[#f15a24]" />
+                    <h3 className="text-xs font-black text-slate-800 uppercase tracking-tight">
+                      Cobrança de Pendências - RDO & Utilização de Equipamentos (Hoje)
+                    </h3>
+                  </div>
+                  <span className="text-[10px] font-black text-[#f15a24] bg-[#f15a24]/10 px-2.5 py-1 rounded-full">
+                    {pendingSupervisorList.length} Pendentes
+                  </span>
+                </div>
+                
+                {pendingSupervisorList.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {pendingSupervisorList.map((item) => (
+                      <div key={item.id} className="bg-white border border-slate-100/80 rounded-2xl p-4 flex flex-col justify-between shadow-sm hover:shadow-md transition-all gap-3">
+                        <div>
+                          <div className="flex justify-between items-start gap-1">
+                            <span className="text-[8px] font-black uppercase text-[#f15a24] bg-[#f15a24]/5 px-2 py-0.5 rounded">
+                              {item.projeto}
+                            </span>
+                            <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded ${
+                              item.status.startsWith("INICIADO") 
+                                ? "bg-amber-50 text-amber-700 border border-amber-100" 
+                                : "bg-red-50 text-red-700 border border-red-100"
+                            }`}>
+                              {item.status}
+                            </span>
+                          </div>
+                          <h4 className="text-xs font-black text-slate-800 uppercase mt-2">{item.atividade}</h4>
+                          <div className="flex items-center gap-1.5 mt-2 text-[10px] text-slate-500 font-medium">
+                            <User className="w-3.5 h-3.5 text-slate-400" />
+                            <span>Executor: <strong className="text-slate-700">{item.responsavel}</strong></span>
+                          </div>
+                          <p className="text-[9px] text-slate-400 font-bold mt-1.5 bg-slate-50 p-2 rounded-lg border border-slate-100/50 leading-relaxed">
+                            {item.details}
+                          </p>
+                        </div>
+                        
+                        <button
+                          onClick={() => {
+                            const message = `Olá ${item.responsavel.split(" ")[0]}, favor preencher e finalizar o apontamento do RDO da atividade '${item.atividade}' (${item.projeto}) referente ao dia de hoje. Abraços!`;
+                            navigator.clipboard.writeText(message);
+                            alert(`Mensagem de cobrança copiada para a área de transferência:\n\n"${message}"`);
+                          }}
+                          className="w-full bg-[#f15a24]/5 hover:bg-[#f15a24]/10 text-[#f15a24] font-black text-[9px] py-2 rounded-xl uppercase tracking-wider transition-colors cursor-pointer border border-[#f15a24]/10"
+                        >
+                          📢 {item.buttonText}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="bg-white p-6 rounded-2xl border border-slate-100 text-center text-[10px] text-slate-400 italic font-medium">
+                    🎉 Excelente! Todos os executores iniciaram e finalizaram seus RDOs hoje.
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2 pt-2">
+                <Building className="w-5 h-5 text-slate-400" />
+                <h3 className="text-xs font-black text-slate-800 uppercase tracking-tight">
+                  Lançamentos aguardando revisão
+                </h3>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {logs.filter(l => l.statusRevisao === "PENDENTE").map((log) => (
                   <div key={log.id} className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 flex flex-col justify-between space-y-4 hover:shadow-md transition-all">
@@ -683,7 +962,13 @@ export default function DiarioObrasPage() {
                                     progresso: String(act.lancamentos?.[0]?.progresso || 0),
                                     fotos: [],
                                     audios: [],
-                                    data: new Date().toISOString().split("T")[0]
+                                    data: new Date().toISOString().split("T")[0],
+                                    ativoId: "",
+                                    horimetroInicio: "",
+                                    horimetroFim: "",
+                                    fotoHorimetroInicioUrl: "",
+                                    fotoHorimetroFimUrl: "",
+                                    statusLancamento: "FINALIZADO"
                                   });
                                 }}
                                 className="p-1 text-[#f15a24] hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-all"
@@ -1255,18 +1540,60 @@ export default function DiarioObrasPage() {
 
                       <button
                         onClick={() => {
-                          setSelectedActivityForLog(act);
-                          setLogForm({
-                            descricao: lastLog ? lastLog.descricao : "",
-                            progresso: lastLog ? lastLog.progresso.toString() : "0",
-                            fotos: [],
-                            audios: [],
-                            data: new Date().toISOString().split("T")[0]
+                          const todayStr = new Date().toISOString().split("T")[0];
+                          const logHoje = logs.find(l => {
+                            const logDateStr = new Date(l.data).toISOString().split("T")[0];
+                            return l.atividadeId === act.id && logDateStr === todayStr && l.usuarioId === (session?.user as any)?.id;
                           });
+
+                          setSelectedActivityForLog(act);
+
+                          if (logHoje) {
+                            setActiveLogIdToday(logHoje.id);
+                            setLogForm({
+                              descricao: logHoje.descricao,
+                              progresso: logHoje.progresso.toString(),
+                              fotos: logHoje.fotos || [],
+                              audios: logHoje.audios || [],
+                              data: todayStr,
+                              ativoId: logHoje.ativoId || "",
+                              horimetroInicio: logHoje.horimetroInicio !== null ? logHoje.horimetroInicio.toString() : "",
+                              horimetroFim: logHoje.horimetroFim !== null ? logHoje.horimetroFim.toString() : "",
+                              fotoHorimetroInicioUrl: logHoje.fotoHorimetroInicioUrl || "",
+                              fotoHorimetroFimUrl: logHoje.fotoHorimetroFimUrl || "",
+                              statusLancamento: logHoje.statusLancamento || "FINALIZADO"
+                            });
+                          } else {
+                            setActiveLogIdToday(null);
+                            setLogForm({
+                              descricao: lastLog ? lastLog.descricao : "",
+                              progresso: lastLog ? lastLog.progresso.toString() : "0",
+                              fotos: [],
+                              audios: [],
+                              data: todayStr,
+                              ativoId: "",
+                              horimetroInicio: "",
+                              horimetroFim: "",
+                              fotoHorimetroInicioUrl: "",
+                              fotoHorimetroFimUrl: "",
+                              statusLancamento: "FINALIZADO"
+                            });
+                          }
                         }}
                         className="w-full bg-[#f15a24] hover:bg-orange-600 text-white font-black text-[10px] py-2.5 rounded-xl uppercase tracking-wider transition-all cursor-pointer text-center"
                       >
-                        {lastLog && lastLog.statusRevisao === "COM_QUESTIONAMENTOS" ? "Responder Questionamentos" : "Lançar Progresso Diário"}
+                        {(() => {
+                          const todayStr = new Date().toISOString().split("T")[0];
+                          const logHoje = logs.find(l => {
+                            const logDateStr = new Date(l.data).toISOString().split("T")[0];
+                            return l.atividadeId === act.id && logDateStr === todayStr && l.usuarioId === (session?.user as any)?.id;
+                          });
+                          
+                          if (logHoje) {
+                            return logHoje.statusLancamento === "INICIADO" ? "🌅 Finalizar RDO do Dia" : "📝 Editar RDO de Hoje";
+                          }
+                          return lastLog && lastLog.statusRevisao === "COM_QUESTIONAMENTOS" ? "Responder Questionamentos" : "Lançar Progresso Diário";
+                        })()}
                       </button>
                     </div>
                   </div>
@@ -1348,6 +1675,7 @@ export default function DiarioObrasPage() {
                 <th className="p-3 text-left">Data</th>
                 <th className="p-3 text-left">Obra / Projeto</th>
                 <th className="p-3 text-left">Atividade</th>
+                <th className="p-3 text-left">Equipamento</th>
                 <th className="p-3 text-left">Preenchido Por</th>
                 <th className="p-3 text-left">Descrição Apontamento</th>
                 <th className="p-3 text-center">Progresso</th>
@@ -1364,6 +1692,25 @@ export default function DiarioObrasPage() {
                   </td>
                   <td className="p-3 font-bold text-slate-800">{log.atividade?.projeto?.nome}</td>
                   <td className="p-3 text-slate-600 font-semibold">{log.atividade?.descricao}</td>
+                  <td className="p-3 text-slate-600 font-semibold">
+                    {(() => {
+                      if (!log.ativoId) return <span className="text-slate-400 italic font-medium">Nenhum</span>;
+                      const asset = equipamentos.find(eq => eq.id === log.ativoId);
+                      const assetLabel = asset ? `${asset.nome} (${asset.codigo})` : "Equipamento";
+                      const isPesado = asset?.categoria === "PESADO";
+                      
+                      return (
+                        <div className="space-y-0.5 text-left leading-normal">
+                          <span className="font-bold text-slate-700">{assetLabel}</span>
+                          {isPesado && log.horimetroInicio !== null && (
+                            <span className="block text-[9px] text-[#f15a24] font-black uppercase">
+                              ⏱️ H: {log.horimetroInicio} - {log.statusLancamento === "INICIADO" ? "Em uso" : log.horimetroFim}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </td>
                   <td className="p-3 text-slate-600 font-medium">{log.usuario?.name || log.usuario?.email}</td>
                   <td className="p-3 text-slate-600 italic font-semibold leading-relaxed max-w-[200px] truncate" title={log.descricao}>
                     {log.descricao}
@@ -1411,7 +1758,7 @@ export default function DiarioObrasPage() {
               ))}
               {logs.length === 0 && (
                 <tr>
-                  <td colSpan={isSupervisor ? 9 : 8} className="p-12 text-center text-slate-400 italic">
+                  <td colSpan={isSupervisor ? 10 : 9} className="p-12 text-center text-slate-400 italic">
                     Nenhum diário de obra lançado até o momento.
                   </td>
                 </tr>
@@ -1604,6 +1951,176 @@ export default function DiarioObrasPage() {
                     ))}
                   </div>
                 </div>
+              </div>
+
+              {/* Utilização de Equipamentos (Opcional) */}
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/60 space-y-3 text-left">
+                <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                  🛠️ Utilização de Equipamento (Gestão de Ativos)
+                </h4>
+                
+                <div>
+                  <label className="block text-[9px] font-bold text-slate-400 uppercase mb-1">Selecionar Equipamento</label>
+                  <select
+                    className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-705 outline-none focus:ring-2 focus:ring-[#f15a24] text-slate-800"
+                    value={logForm.ativoId}
+                    onChange={(e) => {
+                      const id = e.target.value;
+                      setLogForm(prev => ({
+                        ...prev,
+                        ativoId: id,
+                        horimetroInicio: "",
+                        horimetroFim: "",
+                        fotoHorimetroInicioUrl: "",
+                        fotoHorimetroFimUrl: ""
+                      }));
+                    }}
+                  >
+                    <option value="">-- Nenhum Equipamento Utilizado --</option>
+                    {equipamentos.map(eq => (
+                      <option key={eq.id} value={eq.id} className="text-slate-800">
+                        {eq.nome} ({eq.codigo}) - {eq.categoria === "PESADO" ? "Máquina" : "Ferramenta"} [{eq.status}]
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {logForm.ativoId && (
+                  <div className="space-y-3 pt-2 border-t border-slate-200/50">
+                    {/* Status do Turno / RDO */}
+                    <div>
+                      <label className="block text-[9px] font-bold text-slate-400 uppercase mb-1">Status da Utilização Hoje</label>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setLogForm(prev => ({ ...prev, statusLancamento: "INICIADO" }))}
+                          className={`flex-1 py-2 px-3 rounded-xl text-[10px] font-black uppercase transition-all border cursor-pointer ${
+                            logForm.statusLancamento === "INICIADO"
+                              ? "bg-amber-500 border-amber-500 text-white shadow-sm"
+                              : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+                          }`}
+                        >
+                          🌅 Início do Turno
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setLogForm(prev => ({ ...prev, statusLancamento: "FINALIZADO" }))}
+                          className={`flex-1 py-2 px-3 rounded-xl text-[10px] font-black uppercase transition-all border cursor-pointer ${
+                            logForm.statusLancamento === "FINALIZADO"
+                              ? "bg-[#f15a24] border-[#f15a24] text-white shadow-sm"
+                              : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+                          }`}
+                        >
+                          🌇 Fim do Turno
+                        </button>
+                      </div>
+                      <p className="text-[8px] text-slate-400 mt-1 font-semibold">
+                        {logForm.statusLancamento === "INICIADO" 
+                          ? "Registra o início da utilização e marca o ativo como 'EM USO' na gestão."
+                          : "Calcula as horas trabalhadas, registra no histórico de uso e libera o ativo."}
+                      </p>
+                    </div>
+
+                    {/* Mostrar campos de horímetro caso seja Máquina Pesada */}
+                    {(() => {
+                      const selectedAsset = equipamentos.find(eq => eq.id === logForm.ativoId);
+                      const isPesado = selectedAsset?.categoria === "PESADO";
+                      
+                      if (!isPesado) return null;
+
+                      return (
+                        <div className="space-y-3">
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-[9px] font-bold text-slate-400 uppercase mb-1">Horímetro Inicial *</label>
+                              <input
+                                type="number"
+                                step="any"
+                                required
+                                placeholder={`Acumulado: ${selectedAsset.horasUso}h`}
+                                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                                value={logForm.horimetroInicio}
+                                onChange={e => setLogForm(prev => ({ ...prev, horimetroInicio: e.target.value }))}
+                              />
+                            </div>
+                            
+                            {logForm.statusLancamento === "FINALIZADO" && (
+                              <div>
+                                <label className="block text-[9px] font-bold text-slate-400 uppercase mb-1">Horímetro Final *</label>
+                                <input
+                                  type="number"
+                                  step="any"
+                                  required
+                                  placeholder="Ex: 1250.5"
+                                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                                  value={logForm.horimetroFim}
+                                  onChange={e => setLogForm(prev => ({ ...prev, horimetroFim: e.target.value }))}
+                                />
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Foto dos Horímetros */}
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-[9px] font-bold text-slate-400 uppercase mb-1">Foto Horímetro Inicial</label>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                id="rdo-h-inicio-photo"
+                                onChange={async (e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) {
+                                    const url = await handleFileUpload(file);
+                                    if (url) setLogForm(prev => ({ ...prev, fotoHorimetroInicioUrl: url }));
+                                  }
+                                }}
+                              />
+                              <label
+                                htmlFor="rdo-h-inicio-photo"
+                                className="px-3 py-2 bg-white border border-slate-200 text-slate-650 rounded-xl text-[9px] font-black uppercase text-center block cursor-pointer hover:bg-slate-50 transition-all truncate"
+                              >
+                                {logForm.fotoHorimetroInicioUrl ? "📸 Foto Salva" : "📸 Anexar Foto"}
+                              </label>
+                              {logForm.fotoHorimetroInicioUrl && (
+                                <img src={logForm.fotoHorimetroInicioUrl} alt="H. Inicio" className="w-full h-12 object-cover rounded-lg mt-1 border border-slate-200" />
+                              )}
+                            </div>
+
+                            {logForm.statusLancamento === "FINALIZADO" && (
+                              <div>
+                                <label className="block text-[9px] font-bold text-slate-400 uppercase mb-1">Foto Horímetro Final</label>
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  className="hidden"
+                                  id="rdo-h-fim-photo"
+                                  onChange={async (e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                      const url = await handleFileUpload(file);
+                                      if (url) setLogForm(prev => ({ ...prev, fotoHorimetroFimUrl: url }));
+                                    }
+                                  }}
+                                />
+                                <label
+                                  htmlFor="rdo-h-fim-photo"
+                                  className="px-3 py-2 bg-white border border-slate-200 text-slate-650 rounded-xl text-[9px] font-black uppercase text-center block cursor-pointer hover:bg-slate-50 transition-all truncate"
+                                >
+                                  {logForm.fotoHorimetroFimUrl ? "📸 Foto Salva" : "📸 Anexar Foto"}
+                                </label>
+                                {logForm.fotoHorimetroFimUrl && (
+                                  <img src={logForm.fotoHorimetroFimUrl} alt="H. Fim" className="w-full h-12 object-cover rounded-lg mt-1 border border-slate-200" />
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
               </div>
 
               <div className="flex gap-3 pt-2">

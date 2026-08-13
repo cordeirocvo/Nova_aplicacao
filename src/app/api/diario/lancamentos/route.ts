@@ -65,14 +65,30 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { atividadeId, descricao, progresso, fotos, audios, data } = body;
+    const { 
+      atividadeId, 
+      descricao, 
+      progresso, 
+      fotos, 
+      audios, 
+      data,
+      ativoId,
+      horimetroInicio,
+      horimetroFim,
+      fotoHorimetroInicioUrl,
+      fotoHorimetroFimUrl,
+      statusLancamento
+    } = body;
 
     if (!atividadeId || !descricao) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
     const activity = await prisma.atividadeDiario.findUnique({
-      where: { id: atividadeId }
+      where: { id: atividadeId },
+      include: {
+        projeto: true
+      }
     });
 
     if (!activity) {
@@ -97,10 +113,20 @@ export async function POST(req: Request) {
         progresso: parseFloat(progresso || 0),
         fotos: fotos || [],
         audios: audios || [],
-        statusRevisao: "PENDENTE"
+        statusRevisao: "PENDENTE",
+        ativoId: ativoId || null,
+        horimetroInicio: horimetroInicio ? parseFloat(horimetroInicio) : null,
+        horimetroFim: horimetroFim ? parseFloat(horimetroFim) : null,
+        fotoHorimetroInicioUrl: fotoHorimetroInicioUrl || null,
+        fotoHorimetroFimUrl: fotoHorimetroFimUrl || null,
+        statusLancamento: statusLancamento || "FINALIZADO"
       },
       include: {
-        atividade: true
+        atividade: {
+          include: {
+            projeto: true
+          }
+        }
       }
     });
 
@@ -114,6 +140,63 @@ export async function POST(req: Request) {
       where: { id: atividadeId },
       data: { status: newStatus }
     });
+
+    // Manage asset status and usage history logging
+    if (ativoId) {
+      const responsavelNome = session.user.name || session.user.email || "Operador";
+      const obraNome = activity.projeto?.nome || "Obra Geral";
+
+      if (statusLancamento === "FINALIZADO" || !statusLancamento) {
+        const hInicio = horimetroInicio ? parseFloat(horimetroInicio) : 0;
+        const hFim = horimetroFim ? parseFloat(horimetroFim) : 0;
+        const horasTrabalhadas = Math.max(0, hFim - hInicio);
+        
+        const asset = await prisma.ativo.findUnique({
+          where: { id: ativoId }
+        });
+        
+        const custoCalculado = horasTrabalhadas * (asset?.taxaHoraria || 0);
+
+        await prisma.historicoUsoAtivo.create({
+          data: {
+            ativoId,
+            horasTrabalhadas,
+            horimetroInicio: hInicio,
+            horimetroFim: hFim,
+            custoCalculado,
+            obra: obraNome,
+            responsavel: responsavelNome,
+            observacoes: `Apontamento via RDO Diário - Atividade: ${activity.descricao}`,
+            fotoHorimetroInicioUrl: fotoHorimetroInicioUrl || null,
+            fotoHorimetroFimUrl: fotoHorimetroFimUrl || null,
+            rdoLancamentoId: newLog.id,
+            dataUso: logData
+          }
+        });
+
+        // Update Ativo accumulated parameters and set status to DISPONIVEL
+        await prisma.ativo.update({
+          where: { id: ativoId },
+          data: {
+            horasUso: { increment: horasTrabalhadas },
+            ultimoCustoHoras: { increment: custoCalculado },
+            status: "DISPONIVEL",
+            responsavel: null,
+            localizacao: null
+          }
+        });
+      } else if (statusLancamento === "INICIADO") {
+        // If RDO started in the morning, set status of equipment to EM_USO
+        await prisma.ativo.update({
+          where: { id: ativoId },
+          data: {
+            status: "EM_USO",
+            responsavel: responsavelNome,
+            localizacao: obraNome
+          }
+        });
+      }
+    }
 
     return NextResponse.json(newLog, { status: 201 });
   } catch (error: any) {

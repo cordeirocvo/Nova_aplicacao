@@ -108,7 +108,7 @@ async function gerarOSPdf(event: CalendarEvent) {
     ['Tipo', `Manutenção O&M — ${o.tipo || '—'}`],
     ['Usina', o.usina?.nome || '—'],
     ['Localização', o.usina?.localizacao || '—'],
-    ['Responsável', o.responsavel || '—'],
+    ['Responsável', (typeof o.responsavel === 'object' && o.responsavel !== null) ? (o.responsavel.name || o.responsavel.email || '—') : (o.responsavel || '—')],
     ['Status', event.status || 'Agendada'],
     ['Data Prevista', format(event.date, 'dd/MM/yyyy')],
   ];
@@ -799,7 +799,7 @@ export default function CronogramaClient({ atividades, manutencoes, diarioAtivid
                               <div className="leading-tight"><span className="font-extrabold text-slate-500 mr-0.5">Usi:</span><span className="font-bold text-slate-800 break-all">{event.original.usina?.nome || '-'}</span></div>
                               <div className="flex justify-between gap-1 border-t border-slate-150 pt-0.5 mt-0.5 leading-tight">
                                 <div><span className="font-extrabold text-slate-500 mr-0.5">Loc:</span><span className="font-bold text-slate-800">{event.original.usina?.localizacao || '-'}</span></div>
-                                <div><span className="font-extrabold text-slate-500 mr-0.5">Resp:</span><span className="font-bold text-slate-850">{event.original.responsavel || '-'}</span></div>
+                                <div><span className="font-extrabold text-slate-500 mr-0.5">Resp:</span><span className="font-bold text-slate-850">{(typeof event.original.responsavel === 'object' && event.original.responsavel !== null) ? (event.original.responsavel.name || event.original.responsavel.email || '-') : (event.original.responsavel || '-')}</span></div>
                               </div>
                             </div>
                           )}
@@ -1061,7 +1061,7 @@ export default function CronogramaClient({ atividades, manutencoes, diarioAtivid
                     </div>
                     <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Responsável</p>
-                      <p className="font-bold text-slate-800 text-sm mt-0.5">{osModalEvent.original.responsavel || '—'}</p>
+                      <p className="font-bold text-slate-800 text-sm mt-0.5">{(typeof osModalEvent.original.responsavel === 'object' && osModalEvent.original.responsavel !== null) ? (osModalEvent.original.responsavel.name || osModalEvent.original.responsavel.email || '—') : (osModalEvent.original.responsavel || '—')}</p>
                     </div>
                     <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 col-span-2">
                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Descrição</p>
@@ -1283,7 +1283,7 @@ export default function CronogramaClient({ atividades, manutencoes, diarioAtivid
             { label: 'Usina', value: tooltip.event.original.usina?.nome || '—' },
             { label: 'Localização', value: tooltip.event.original.usina?.localizacao || '—' },
             { label: 'Tipo', value: tooltip.event.original.tipo || '—' },
-            { label: 'Responsável', value: tooltip.event.original.responsavel || '—' },
+            { label: 'Responsável', value: (typeof tooltip.event.original.responsavel === 'object' && tooltip.event.original.responsavel !== null) ? (tooltip.event.original.responsavel.name || tooltip.event.original.responsavel.email || '—') : (tooltip.event.original.responsavel || '—') },
             { label: 'Status', value: tooltip.event.status || 'Agendada' },
           ]).map(({ label, value }) => (
             <div key={label} className="flex gap-1.5 text-[10px] leading-tight">

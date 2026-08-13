@@ -1016,7 +1016,19 @@ export default function DiarioObrasPage() {
                       {filteredActivities.map((act) => (
                         <tr key={act.id} className="border-b border-slate-100 hover:bg-slate-50/50">
                           <td className="p-3 font-bold text-slate-800">{act.projeto?.nome}</td>
-                          <td className="p-3 text-slate-600 font-semibold">{act.descricao}</td>
+                          <td className="p-3 text-slate-600 font-semibold">
+                            <div>{act.descricao}</div>
+                            {(act.dataInicio || act.dataFim) && (
+                              <div className="text-[9.5px] text-[#f15a24] font-black uppercase mt-1 flex items-center gap-1">
+                                <span>📅</span>
+                                <span>
+                                  {act.dataInicio ? new Date(act.dataInicio).toLocaleDateString("pt-BR") : "—"} 
+                                  {" até "} 
+                                  {act.dataFim ? new Date(act.dataFim).toLocaleDateString("pt-BR") : "—"}
+                                </span>
+                              </div>
+                            )}
+                          </td>
                           <td className="p-3 text-slate-600 font-medium">{act.responsavel?.name || act.responsavel?.email}</td>
                           <td className="p-3 text-center">
                             <div className="flex flex-col items-center gap-1">
@@ -1624,6 +1636,16 @@ export default function DiarioObrasPage() {
                       </div>
                       
                       <h4 className="text-sm font-black text-slate-800 uppercase">{act.descricao}</h4>
+                      {(act.dataInicio || act.dataFim) && (
+                        <div className="text-[9.5px] text-[#f15a24] font-black uppercase flex items-center gap-1 mt-1">
+                          <span>📅</span>
+                          <span>
+                            {act.dataInicio ? new Date(act.dataInicio).toLocaleDateString("pt-BR") : "—"} 
+                            {" até "} 
+                            {act.dataFim ? new Date(act.dataFim).toLocaleDateString("pt-BR") : "—"}
+                          </span>
+                        </div>
+                      )}
 
                       {/* Display last feedback notes from supervisor */}
                       {lastLog && lastLog.statusRevisao === "COM_QUESTIONAMENTOS" && (

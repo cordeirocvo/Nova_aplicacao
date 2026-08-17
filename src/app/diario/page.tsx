@@ -6,17 +6,28 @@ import { useRouter } from "next/navigation";
 import { 
   Building, Calendar, Clock, CheckCircle2, User, Mic, Play, 
   Trash2, FileText, Check, X, ShieldAlert, Plus, Search, 
-  Sparkles, BarChart3, Upload, HardHat, Square, AlertCircle, MessageSquare, Pencil
+  Sparkles, BarChart3, Upload, HardHat, Square, AlertCircle, MessageSquare, Pencil,
+  Wind, Users, Package, AlertTriangle, FileDown, UserPlus, ChevronDown, ChevronUp, Eye, Printer
 } from "lucide-react";
 
 // Formats a date string/ISO from DB without UTC→local timezone shift
 // (new Date("2026-08-17") parses as UTC midnight → shows 16/08 in UTC-3)
 const fmtDate = (val: string | Date | null | undefined): string => {
   if (!val) return "—";
-  const iso = typeof val === "string" ? val : val.toISOString();
-  const datePart = iso.split("T")[0]; // "2026-08-17"
-  const [y, m, d] = datePart.split("-");
-  return `${d}/${m}/${y}`;
+  if (val instanceof Date) {
+    const y = val.getFullYear();
+    const m = String(val.getMonth() + 1).padStart(2, "0");
+    const d = String(val.getDate()).padStart(2, "0");
+    return `${d}/${m}/${y}`;
+  }
+  const iso = String(val);
+  const datePart = iso.split("T")[0]; // "2026-08-16"
+  const parts = datePart.split("-");
+  if (parts.length === 3) {
+    const [y, m, d] = parts;
+    return `${d}/${m}/${y}`;
+  }
+  return iso;
 };
 
 export default function DiarioObrasPage() {
@@ -102,7 +113,104 @@ export default function DiarioObrasPage() {
   // Upload progress state
   const [uploadingFile, setUploadingFile] = useState(false);
 
-  const isSupervisor = session?.user && (session.user as any).role === "ADMIN";
+  const isSupervisor = session?.user && ((session.user as any).role === "ADMIN" || (session.user as any).role === "SUPERVISOR");
+  const isAdmin = session?.user && (session.user as any).role === "ADMIN";
+
+  // RDO Review & Audit Log States
+  const [selectedRdoForReview, setSelectedRdoForReview] = useState<any>(null);
+  const [reviewAuditLogs, setReviewAuditLogs] = useState<any[]>([]);
+  const [loadingAuditLogs, setLoadingAuditLogs] = useState(false);
+  const [reviewTab, setReviewTab] = useState<"detalhes" | "audit">("detalhes");
+  const [showAdminEditModal, setShowAdminEditModal] = useState(false);
+
+  const openRdoReviewModal = async (logOrRdo: any) => {
+    setSelectedRdoForReview(logOrRdo);
+    setReviewTab("detalhes");
+    setLoadingAuditLogs(true);
+    try {
+      const res = await fetch(`/api/diario/rdo-diario/${logOrRdo.id}/audit`);
+      if (res.ok) {
+        const data = await res.json();
+        setReviewAuditLogs(data);
+      } else {
+        setReviewAuditLogs([]);
+      }
+    } catch (_e) {
+      setReviewAuditLogs([]);
+    } finally {
+      setLoadingAuditLogs(false);
+    }
+  };
+
+  // Helper para dia da semana
+  const getWeekDayName = (dateStr: string) => {
+    if (!dateStr) return "";
+    const parts = dateStr.split("-");
+    if (parts.length !== 3) return "";
+    const dt = new Date(Date.UTC(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]), 12, 0, 0));
+    const days = ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"];
+    return days[dt.getUTCDay()] || "";
+  };
+
+  // ─── RDO Diário Completo (novas seções) ───────────────────────────────────
+  const [quadroTab, setQuadroTab] = useState<"execucao" | "finalizadas">("execucao");
+  const [funcionariosCanteiro, setFuncionariosCanteiro] = useState<any[]>([]);
+  const [rdosDiarios, setRdosDiarios] = useState<any[]>([]);
+  const [rdoDiarioAtivo, setRdoDiarioAtivo] = useState<any | null>(null);
+  const [rdoFormTab, setRdoFormTab] = useState<"progresso" | "atividades_auto" | "clima" | "mao_de_obra" | "materiais" | "ocorrencias">("atividades_auto");
+  const [showFuncionariosManager, setShowFuncionariosManager] = useState(false);
+  const [newFuncionario, setNewFuncionario] = useState({ nome: "", funcao: "", empresa: "PROPRIA", contato: "" });
+  const [exportingPdf, setExportingPdf] = useState<string | null>(null);
+
+  // RDO Diário form sections state
+  const [rdoClimas, setRdoClimas] = useState<Array<{ periodo: string; condicao: string; impacto: string }>>([
+    { periodo: "MANHA", condicao: "ENSOLARADO", impacto: "" },
+    { periodo: "TARDE", condicao: "ENSOLARADO", impacto: "" },
+  ]);
+  const [rdoMaoDeObra, setRdoMaoDeObra] = useState<Array<{
+    funcionarioId: string; nomeAvulso: string; funcao: string; empresa: string;
+    quantidade: number; horasTrab: number; falta: boolean; justFalta: string;
+  }>>([])
+  const [rdoMateriais, setRdoMateriais] = useState<Array<{
+    material: string; quantidade: number; unidade: string; fornecedor: string; notaFiscal: string;
+  }>>([])
+  const [rdoOcorrencias, setRdoOcorrencias] = useState<Array<{
+    tipo: string; descricao: string; impacto: string; medidaTomada: string;
+  }>>([])
+  const [rdoObservacoes, setRdoObservacoes] = useState("");
+  const [showCapexReportModal, setShowCapexReportModal] = useState(false);
+  const [capexLocalObra, setCapexLocalObra] = useState("Canteiro de Obras");
+  const [capexObs, setCapexObs] = useState("");
+
+  const isDateMatch = (logDateRaw: any, targetDateStr: string): boolean => {
+    if (!logDateRaw || !targetDateStr) return false;
+    const isoStr = typeof logDateRaw === "string" ? logDateRaw : logDateRaw.toISOString();
+    if (isoStr.startsWith(targetDateStr) || isoStr.includes(targetDateStr)) return true;
+    
+    const dt = new Date(logDateRaw);
+    if (isNaN(dt.getTime())) return false;
+    
+    const utcDateStr = `${dt.getUTCFullYear()}-${String(dt.getUTCMonth() + 1).padStart(2, "0")}-${String(dt.getUTCDate()).padStart(2, "0")}`;
+    const localDateStr = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
+
+    return utcDateStr === targetDateStr || localDateStr === targetDateStr;
+  };
+
+  // Busca automática de atividades do dia / em andamento para o RDO
+  const atividadesDoDia = React.useMemo(() => {
+    const projId = selectedActivityForLog?.projetoId || selectedActivityForLog?.projeto?.id || selectedObraFilter;
+    if (!projId) return activities.slice(0, 5); // Fallback: primeiras 5 se nenhuma selecionada
+    const targetDateStr = logForm.data || new Date().toISOString().split("T")[0];
+
+    return activities.filter(act => {
+      if (act.projetoId !== projId) return false;
+      const hasLogToday = logs.some(l => {
+        const lDate = new Date(l.data).toISOString().split("T")[0];
+        return l.atividadeId === act.id && lDate === targetDateStr;
+      });
+      return hasLogToday || act.status === "EM_ANDAMENTO" || act.status === "CONCLUIDA";
+    });
+  }, [selectedActivityForLog, selectedObraFilter, logForm.data, activities, logs]);
 
   // Identify pending RDO logs for today for the logged-in executor
   const pendingRdosToday = React.useMemo(() => {
@@ -177,46 +285,30 @@ export default function DiarioObrasPage() {
     }).filter(Boolean) as any[];
   }, [activities, logs, equipamentos, isSupervisor]);
 
-  // Fetch initial data
+  // Fetch initial data concurrently in parallel
   const fetchData = async () => {
     setLoading(true);
     try {
-      // 1. Fetch Obras (OrcamentoProjeto)
-      const resProjects = await fetch("/api/diario/projetos");
-      if (resProjects.ok) {
-        const data = await resProjects.json();
-        setAtivos(data);
-      }
+      const [resProj, resUsers, resAct, resLogs, resEquip, resFuncs, resRdos] = await Promise.all([
+        fetch("/api/diario/projetos"),
+        fetch("/api/users"),
+        fetch("/api/diario/atividades"),
+        fetch("/api/diario/lancamentos"),
+        fetch("/api/ativos"),
+        fetch("/api/diario/funcionarios"),
+        fetch("/api/diario/rdo-diario")
+      ]);
 
-      // 2. Fetch Users
-      const resUsers = await fetch("/api/users");
-      if (resUsers.ok) {
-        const data = await resUsers.json();
-        setUsers(data);
-      }
-
-      // 3. Fetch Activities
-      const resAct = await fetch("/api/diario/atividades");
-      if (resAct.ok) {
-        const data = await resAct.json();
-        setActivities(data);
-      }
-
-      // 4. Fetch Daily Logs
-      const resLogs = await fetch("/api/diario/lancamentos");
-      if (resLogs.ok) {
-        const data = await resLogs.json();
-        setLogs(data);
-      }
-
-      // 5. Fetch Assets (Equipamentos)
-      const resEquip = await fetch("/api/ativos");
-      if (resEquip.ok) {
-        const data = await resEquip.json();
-        setEquipamentos(data);
-      }
+      if (resProj.ok) setAtivos(await resProj.json());
+      if (resUsers.ok) setUsers(await resUsers.json());
+      if (resAct.ok) setActivities(await resAct.json());
+      if (resLogs.ok) setLogs(await resLogs.json());
+      if (resEquip.ok) setEquipamentos(await resEquip.json());
+      if (resFuncs.ok) setFuncionariosCanteiro(await resFuncs.json());
+      if (resRdos.ok) setRdosDiarios(await resRdos.json());
     } catch (err) {
-      console.error("Error loading RDO data:", err);
+      console.error("Error fetching data:", err);
+      setFormError("Erro ao carregar dados do diário de obras.");
     } finally {
       setLoading(false);
     }
@@ -494,6 +586,71 @@ export default function DiarioObrasPage() {
     }
   };
 
+  // ─── Salva RDO Diário Completo ─────────────────────────────────────────────
+  const handleSaveRdoDiario = async (projetoId: string, data: string, status = "RASCUNHO") => {
+    if (!projetoId || !data) return null;
+    try {
+      const payload = { projetoId, data, status, observacoes: rdoObservacoes, climas: rdoClimas, maoDeObra: rdoMaoDeObra, materiais: rdoMateriais, ocorrencias: rdoOcorrencias };
+      const res = await fetch("/api/diario/rdo-diario", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      if (res.ok) {
+        const saved = await res.json();
+        setRdoDiarioAtivo(saved);
+        fetchData();
+        return saved;
+      }
+    } catch (e) { console.error(e); }
+    return null;
+  };
+
+  // Exporta PDF do RDO Diário
+  const handleExportPdf = async (rdoId: string) => {
+    setExportingPdf(rdoId);
+    try {
+      const res = await fetch(`/api/diario/rdo-diario/${rdoId}/pdf`);
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url; a.download = `RDO-${rdoId}.pdf`;
+        a.click(); URL.revokeObjectURL(url);
+      } else { alert("Erro ao gerar PDF."); }
+    } catch { alert("Erro ao gerar PDF."); } finally { setExportingPdf(null); }
+  };
+
+  // CRUD Funcionários de Canteiro
+  const handleCreateFuncionario = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newFuncionario.nome || !newFuncionario.funcao) {
+      alert("Informe o nome e a função do colaborador.");
+      return;
+    }
+    try {
+      const res = await fetch("/api/diario/funcionarios", { 
+        method: "POST", 
+        headers: { "Content-Type": "application/json" }, 
+        body: JSON.stringify(newFuncionario) 
+      });
+      if (res.ok) { 
+        const saved = await res.json();
+        setFuncionariosCanteiro(prev => [...prev, saved]);
+        setNewFuncionario({ nome: "", funcao: "", empresa: "PROPRIA", contato: "" }); 
+        fetchData(); 
+      } else {
+        const err = await res.json();
+        alert(err.error || "Erro ao salvar funcionário.");
+      }
+    } catch (e: any) { 
+      console.error(e); 
+      alert("Erro ao salvar colaborador no canteiro.");
+    }
+  };
+
+  const handleDeleteFuncionario = async (id: string) => {
+    if (!confirm("Desativar este funcionário?")) return;
+    await fetch(`/api/diario/funcionarios/${id}`, { method: "DELETE" });
+    fetchData();
+  };
+
   // Update specific daily log (Supervisor edits or Executor updates)
   const handleUpdateLog = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -612,13 +769,24 @@ export default function DiarioObrasPage() {
             Gestão diária de canteiros, apontamentos técnicos, notas de voz e fotos operacionais.
           </p>
         </div>
-        <div className="flex items-center gap-3 bg-slate-50 px-4 py-2.5 rounded-2xl border border-slate-100">
-          <HardHat className="w-5 h-5 text-slate-500" />
-          <div className="text-left">
-            <span className="text-[10px] text-slate-400 font-bold uppercase block">
-              {isSupervisor ? "Supervisor Engenharia" : "Executor Canteiro"}
-            </span>
-            <span className="text-xs font-black text-slate-800">{session?.user?.name || session?.user?.email}</span>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => {
+              const firstAct = activities[0] || { id: "temp", projeto: ativos[0], descricao: "Apontamento Diário da Obra" };
+              setSelectedActivityForLog(firstAct);
+            }}
+            className="bg-[#f15a24] hover:bg-orange-600 text-white font-black text-xs py-3 px-5 rounded-2xl shadow-md uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2 transform hover:scale-105"
+          >
+            <FileText className="w-4 h-4" /> 📋 Preencher RDO do Dia
+          </button>
+          <div className="flex items-center gap-3 bg-slate-50 px-4 py-2.5 rounded-2xl border border-slate-100">
+            <HardHat className="w-5 h-5 text-slate-500" />
+            <div className="text-left">
+              <span className="text-[10px] text-slate-400 font-bold uppercase block">
+                {isSupervisor ? "Supervisor Engenharia" : "Executor Canteiro"}
+              </span>
+              <span className="text-xs font-black text-slate-800">{session?.user?.name || session?.user?.email}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -994,21 +1162,92 @@ export default function DiarioObrasPage() {
                     Atribuir Atividade
                   </button>
                 </form>
+
+                {/* Equipe de Canteiro (Card expansível) */}
+                <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
+                  <div 
+                    onClick={() => setShowFuncionariosManager(!showFuncionariosManager)}
+                    className="p-5 flex items-center justify-between cursor-pointer hover:bg-slate-50 transition-all select-none"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 bg-blue-50 rounded-xl flex items-center justify-center">
+                        <Users className="w-4 h-4 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="font-black text-slate-800 text-sm">Equipe de Canteiro</p>
+                        <p className="text-[10px] text-slate-500 font-bold">{funcionariosCanteiro.length} funcionário(s) cadastrado(s)</p>
+                      </div>
+                    </div>
+                    <button type="button" className="text-slate-400 cursor-pointer">
+                      {showFuncionariosManager ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </button>
+                  </div>
+                  {showFuncionariosManager && (
+                    <div className="border-t border-slate-100 p-4 space-y-3 animate-in fade-in">
+                      <form onSubmit={handleCreateFuncionario} className="grid grid-cols-2 gap-2">
+                        <input required value={newFuncionario.nome} onChange={e => setNewFuncionario({...newFuncionario, nome: e.target.value})} placeholder="Nome" className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 placeholder:text-slate-400" />
+                        <input required value={newFuncionario.funcao} onChange={e => setNewFuncionario({...newFuncionario, funcao: e.target.value})} placeholder="Função" className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 placeholder:text-slate-400" />
+                        <select value={newFuncionario.empresa} onChange={e => setNewFuncionario({...newFuncionario, empresa: e.target.value})} className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 cursor-pointer">
+                          <option value="PROPRIA">Própria</option>
+                          <option value="TERCEIRO">Terceiro</option>
+                        </select>
+                        <button type="submit" className="bg-[#f15a24] text-white font-black text-xs py-2 rounded-xl uppercase tracking-wider cursor-pointer hover:bg-orange-600 transition-all">+ Adicionar</button>
+                      </form>
+                      <div className="space-y-1 max-h-48 overflow-y-auto">
+                        {funcionariosCanteiro.length === 0 && <p className="text-center text-slate-400 text-xs py-4">Nenhum funcionário cadastrado</p>}
+                        {funcionariosCanteiro.map(f => (
+                          <div key={f.id} className="flex items-center justify-between bg-slate-50 rounded-xl px-3 py-2">
+                            <div>
+                              <span className="text-xs font-bold text-slate-800">{f.nome}</span>
+                              <span className="text-[10px] text-slate-500 ml-2">{f.funcao} · {f.empresa === "PROPRIA" ? "Própria" : "Terceiro"}</span>
+                            </div>
+                            <button type="button" onClick={() => handleDeleteFuncionario(f.id)} className="text-red-400 hover:text-red-600 text-xs cursor-pointer">✕</button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Table/List column */}
               <div className="col-span-1 lg:col-span-2 bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm space-y-4">
-                <div className="flex justify-between items-center border-b border-slate-100 pb-2">
-                  <h3 className="text-base font-black text-slate-800 uppercase tracking-tight">Quadro de Atividades</h3>
-                  <div className="flex gap-2">
-                    <input 
-                      type="text"
-                      placeholder="Buscar atividade..."
-                      className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-700 outline-none"
-                      value={searchQuery}
-                      onChange={e => setSearchQuery(e.target.value)}
-                    />
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-100 pb-3 gap-3">
+                  <div>
+                    <h3 className="text-base font-black text-slate-800 uppercase tracking-tight">Quadro de Atividades</h3>
+                    <div className="flex gap-2 mt-2">
+                      <button
+                        type="button"
+                        onClick={() => setQuadroTab("execucao")}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
+                          quadroTab === "execucao"
+                            ? "bg-[#f15a24] text-white shadow-sm"
+                            : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+                        }`}
+                      >
+                        ⚡ Em Execução ({filteredActivities.filter(a => a.status !== "CONCLUIDA").length})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setQuadroTab("finalizadas")}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
+                          quadroTab === "finalizadas"
+                            ? "bg-emerald-600 text-white shadow-sm"
+                            : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+                        }`}
+                      >
+                        ✅ Finalizadas ({filteredActivities.filter(a => a.status === "CONCLUIDA").length})
+                      </button>
+                    </div>
                   </div>
+
+                  <input 
+                    type="text"
+                    placeholder="Buscar atividade..."
+                    className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 outline-none w-full sm:w-auto"
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                  />
                 </div>
 
                 <div className="overflow-x-auto">
@@ -1019,11 +1258,13 @@ export default function DiarioObrasPage() {
                         <th className="p-3 text-left">Atividade</th>
                         <th className="p-3 text-left">Responsável</th>
                         <th className="p-3 text-center">Status</th>
-                        <th className="p-3 text-center w-[60px]">Ações</th>
+                        <th className="p-3 text-center w-[80px]">Ações</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredActivities.map((act) => (
+                      {filteredActivities
+                        .filter(act => quadroTab === "execucao" ? act.status !== "CONCLUIDA" : act.status === "CONCLUIDA")
+                        .map((act) => (
                         <tr key={act.id} className="border-b border-slate-100 hover:bg-slate-50/50">
                           <td className="p-3 font-bold text-slate-800">{act.projeto?.nome}</td>
                           <td className="p-3 text-slate-600 font-semibold">
@@ -1064,29 +1305,7 @@ export default function DiarioObrasPage() {
                             </div>
                           </td>
                           <td className="p-3 text-center">
-                            <div className="flex justify-center gap-1.5">
-                              <button
-                                onClick={() => {
-                                  setSelectedActivityForLog(act);
-                                  setLogForm({
-                                    descricao: "",
-                                    progresso: String(act.lancamentos?.[0]?.progresso || 0),
-                                    fotos: [],
-                                    audios: [],
-                                    data: new Date().toISOString().split("T")[0],
-                                    ativoId: "",
-                                    horimetroInicio: "",
-                                    horimetroFim: "",
-                                    fotoHorimetroInicioUrl: "",
-                                    fotoHorimetroFimUrl: "",
-                                    statusLancamento: "FINALIZADO"
-                                  });
-                                }}
-                                className="p-1 text-[#f15a24] hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-all"
-                                title="Lançar Relatório Diário de Obra (RDO)"
-                              >
-                                <Plus className="w-3.5 h-3.5" />
-                              </button>
+                            <div className="flex justify-center items-center gap-2">
                               <button
                                 onClick={() => {
                                   setEditingActivity({
@@ -1099,26 +1318,26 @@ export default function DiarioObrasPage() {
                                     dataFim: act.dataFim ? fmtDate(act.dataFim).split("/").reverse().join("-") : ""
                                   });
                                 }}
-                                className="p-1 text-blue-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all cursor-pointer"
+                                className="p-1.5 text-blue-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all cursor-pointer"
                                 title="Editar Atividade"
                               >
-                                <Pencil className="w-3.5 h-3.5" />
+                                <Pencil className="w-4 h-4" />
                               </button>
                               <button
                                 onClick={() => handleDeleteActivity(act.id)}
-                                className="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all cursor-pointer"
+                                className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all cursor-pointer"
                                 title="Excluir Atividade"
                               >
-                                <Trash2 className="w-3.5 h-3.5" />
+                                <Trash2 className="w-4 h-4" />
                               </button>
                             </div>
                           </td>
                         </tr>
                       ))}
-                      {filteredActivities.length === 0 && (
+                      {filteredActivities.filter(act => quadroTab === "execucao" ? act.status !== "CONCLUIDA" : act.status === "CONCLUIDA").length === 0 && (
                         <tr>
                           <td colSpan={5} className="p-12 text-center text-slate-400 italic">
-                            Nenhuma atividade encontrada.
+                            {quadroTab === "execucao" ? "Nenhuma atividade em execução." : "Nenhuma atividade finalizada."}
                           </td>
                         </tr>
                       )}
@@ -1206,52 +1425,65 @@ export default function DiarioObrasPage() {
                 {activeReportType === "geral" && (
                   <div className="space-y-6 animate-in fade-in duration-200">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col justify-between space-y-2">
-                        <span className="text-[10px] text-slate-400 font-black uppercase block">Taxa de Conclusão Geral</span>
+                      
+                      {/* Card 1: Taxa de Conclusão */}
+                      <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col justify-between space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-[10px] text-slate-400 font-black uppercase tracking-wider">Taxa de Conclusão Geral</span>
+                          <span className="text-xs font-bold text-slate-400">{completedActivities} de {totalActivities} concluídas</span>
+                        </div>
                         <div className="flex items-baseline gap-2">
                           <span className="text-3xl font-black text-[#f15a24]">{completionRate}%</span>
-                          <span className="text-xs text-slate-500 font-bold">das atividades</span>
+                          <span className="text-xs text-slate-500 font-bold">progresso global</span>
                         </div>
                         <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-                          <div className="bg-[#f15a24] h-full transition-all duration-500" style={{ width: `${completionRate}%` }} />
+                          <div className="bg-[#f15a24] h-full transition-all duration-500 rounded-full" style={{ width: `${completionRate}%` }} />
                         </div>
                       </div>
 
-                      <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col justify-between space-y-2">
-                        <span className="text-[10px] text-slate-400 font-black uppercase block">Status das Atividades</span>
-                        <div className="flex gap-4 text-xs font-black">
-                          <div className="flex items-center gap-1.5 text-slate-500">
-                            <span className="w-2.5 h-2.5 rounded-full bg-slate-400" /> {plannedActivities} Planejadas
+                      {/* Card 2: Status das Atividades */}
+                      <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col justify-between space-y-3">
+                        <span className="text-[10px] text-slate-400 font-black uppercase tracking-wider">Status das Atividades</span>
+                        <div className="grid grid-cols-3 gap-2 text-xs font-black">
+                          <div className="bg-slate-50 p-2 rounded-xl text-center">
+                            <span className="block text-slate-400 text-[10px]">Planejadas</span>
+                            <span className="text-base text-slate-700 font-black">{plannedActivities}</span>
                           </div>
-                          <div className="flex items-center gap-1.5 text-blue-600">
-                            <span className="w-2.5 h-2.5 rounded-full bg-blue-500" /> {inProgressActivities} Em Andamento
+                          <div className="bg-blue-50 p-2 rounded-xl text-center">
+                            <span className="block text-blue-600 text-[10px]">Em Andamento</span>
+                            <span className="text-base text-blue-700 font-black">{inProgressActivities}</span>
                           </div>
-                          <div className="flex items-center gap-1.5 text-green-600">
-                            <span className="w-2.5 h-2.5 rounded-full bg-green-500" /> {completedActivities} Concluídas
+                          <div className="bg-emerald-50 p-2 rounded-xl text-center">
+                            <span className="block text-emerald-600 text-[10px]">Concluídas</span>
+                            <span className="text-base text-emerald-700 font-black">{completedActivities}</span>
                           </div>
                         </div>
                         <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden flex">
                           <div className="bg-slate-400 h-full" style={{ width: `${totalActivities > 0 ? (plannedActivities / totalActivities) * 100 : 0}%` }} />
                           <div className="bg-blue-500 h-full" style={{ width: `${totalActivities > 0 ? (inProgressActivities / totalActivities) * 100 : 0}%` }} />
-                          <div className="bg-green-500 h-full" style={{ width: `${totalActivities > 0 ? (completedActivities / totalActivities) * 100 : 0}%` }} />
+                          <div className="bg-emerald-500 h-full" style={{ width: `${totalActivities > 0 ? (completedActivities / totalActivities) * 100 : 0}%` }} />
                         </div>
                       </div>
 
-                      <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col justify-between space-y-2">
-                        <span className="text-[10px] text-slate-400 font-black uppercase block">Diários RDO Reportados</span>
-                        <div className="flex justify-between items-center">
-                          <div className="flex items-baseline gap-1">
+                      {/* Card 3: Diários RDO Reportados */}
+                      <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col justify-between space-y-3">
+                        <span className="text-[10px] text-slate-400 font-black uppercase tracking-wider">Diários RDO Reportados</span>
+                        <div className="flex justify-between items-center gap-3">
+                          <div>
                             <span className="text-3xl font-black text-slate-800">{logs.length}</span>
-                            <span className="text-xs text-slate-400 font-bold">apontamentos</span>
+                            <span className="text-xs text-slate-400 font-bold ml-1.5">apontamento(s)</span>
                           </div>
                           <button
+                            type="button"
                             onClick={() => window.print()}
-                            className="bg-[#0a192f] hover:bg-slate-800 text-white font-black text-[9px] uppercase px-4 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-1 print:hidden"
+                            className="bg-[#0a192f] hover:bg-slate-800 text-white font-black text-xs uppercase px-4 py-2.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shadow-sm shrink-0 print:hidden"
                           >
-                            <FileText className="w-3 h-3" /> Imprimir Tudo
+                            <FileText className="w-4 h-4 text-orange-400" /> Imprimir Tudo
                           </button>
                         </div>
+                        <p className="text-[10px] text-slate-400 font-medium">Consolidado histórico de lançamentos das obras.</p>
                       </div>
+
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1326,10 +1558,29 @@ export default function DiarioObrasPage() {
 
                 {/* VIEW 2: DAILY REPORT DOSSIER */}
                 {activeReportType === "diario" && (() => {
-                  const dailyLogs = logs.filter(l => l.data.startsWith(reportDate));
-                  const formattedDate = new Date(reportDate + "T12:00:00").toLocaleDateString("pt-BR", { 
-                    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+                  const directLogs = logs.filter(l => {
+                    const matchesDate = isDateMatch(l.data, reportDate);
+                    if (!selectedObraFilter) return matchesDate;
+                    return matchesDate && l.atividade?.projetoId === selectedObraFilter;
                   });
+
+                  // If no explicit logs exist for selected date, auto-include active project activities
+                  const dailyLogs = directLogs.length > 0 ? directLogs : activities
+                    .filter(act => (!selectedObraFilter || act.projetoId === selectedObraFilter) && (act.status === "EM_ANDAMENTO" || act.status === "CONCLUIDA"))
+                    .map(act => ({
+                      id: `auto-${act.id}`,
+                      atividade: act,
+                      progresso: act.status === "CONCLUIDA" ? 100 : 50,
+                      descricao: `Atividade ${act.status === "CONCLUIDA" ? "concluída" : "em andamento"} no canteiro de obras.`,
+                      usuario: act.responsavel || { name: "Responsável Técnico" },
+                      data: reportDate
+                    }));
+
+                  const formattedDate = reportDate ? (
+                    new Date(reportDate + "T12:00:00Z").toLocaleDateString("pt-BR", { 
+                      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+                    })
+                  ) : "-";
 
                   return (
                     <div className="space-y-6 animate-in fade-in duration-200">
@@ -1344,12 +1595,22 @@ export default function DiarioObrasPage() {
                             onChange={(e) => setReportDate(e.target.value)}
                           />
                         </div>
-                        <button
-                          onClick={() => window.print()}
-                          className="bg-[#f15a24] hover:bg-orange-600 text-white font-black text-xs uppercase px-5 py-3 rounded-2xl transition-all cursor-pointer flex items-center gap-1.5"
-                        >
-                          <FileText className="w-4 h-4" /> Exportar RDO do Dia
-                        </button>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setShowCapexReportModal(true)}
+                            className="bg-[#1E3A8A] hover:bg-blue-900 text-white font-black text-xs uppercase px-5 py-3 rounded-2xl transition-all cursor-pointer flex items-center gap-2 shadow-md"
+                          >
+                            <Eye className="w-4 h-4 text-sky-400" /> Visualizar Relatório
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => window.print()}
+                            className="bg-[#f15a24] hover:bg-orange-600 text-white font-black text-xs uppercase px-5 py-3 rounded-2xl transition-all cursor-pointer flex items-center gap-1.5 shadow-md"
+                          >
+                            <FileText className="w-4 h-4" /> Exportar RDO do Dia
+                          </button>
+                        </div>
                       </div>
 
                       {/* PDF Print Target Container */}
@@ -1830,6 +2091,49 @@ export default function DiarioObrasPage() {
       {/* ========================================================================= */}
       {/* ======================= HISTÓRICO RDO COMPLETO TAB ======================= */}
       {/* ========================================================================= */}
+
+      {/* RDOs Diários Completos */}
+      {rdosDiarios.length > 0 && (
+        <div className="space-y-3">
+          <h3 className="text-sm font-black text-slate-700 uppercase tracking-wide flex items-center gap-2">
+            <FileText className="w-4 h-4 text-[#f15a24]" /> RDOs Diários Completos
+          </h3>
+          {rdosDiarios.slice(0, 10).map((rdo: any) => (
+            <div key={rdo.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xs font-black text-[#f15a24]">RDO-{String(rdo.numeroRdo).padStart(3,"0")}</span>
+                    <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
+                      rdo.status === "APROVADO" ? "bg-emerald-100 text-emerald-700" :
+                      rdo.status === "PENDENTE" ? "bg-amber-100 text-amber-700" :
+                      rdo.status === "RECUSADO" ? "bg-red-100 text-red-700" :
+                      "bg-slate-100 text-slate-600"
+                    }`}>{rdo.status}</span>
+                  </div>
+                  <p className="text-sm font-bold text-slate-800">{rdo.projeto?.nome}</p>
+                  <p className="text-xs text-slate-500">{fmtDate(rdo.data)} · {rdo.responsavel?.name || rdo.responsavel?.email}</p>
+                  <div className="flex gap-3 mt-2 text-[10px] text-slate-500">
+                    {rdo.climas?.length > 0 && <span>🌤 {rdo.climas.length} período(s)</span>}
+                    {rdo.maoDeObra?.length > 0 && <span>👷 {rdo.maoDeObra.reduce((s: number, m: any) => s + m.quantidade, 0)} pessoa(s)</span>}
+                    {rdo.materiais?.length > 0 && <span>📦 {rdo.materiais.length} material(is)</span>}
+                    {rdo.ocorrencias?.length > 0 && <span className="text-orange-500">⚠️ {rdo.ocorrencias.length} ocorrência(s)</span>}
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleExportPdf(rdo.id)}
+                  disabled={exportingPdf === rdo.id}
+                  className="flex-shrink-0 flex items-center gap-1.5 bg-slate-800 hover:bg-slate-900 text-white text-[10px] font-bold px-3 py-2 rounded-xl transition-all cursor-pointer disabled:opacity-50"
+                >
+                  <FileText className="w-3 h-3" />
+                  {exportingPdf === rdo.id ? "Gerando..." : "PDF"}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm space-y-4">
         <div className="flex justify-between items-center border-b border-slate-100 pb-2 flex-wrap gap-2">
           <div>
@@ -1896,15 +2200,20 @@ export default function DiarioObrasPage() {
                   </td>
                   <td className="p-3 text-center font-black text-slate-800">{log.progresso}%</td>
                   <td className="p-3 text-center">
-                    <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-md ${
-                      log.statusRevisao === "APROVADO" 
-                        ? "bg-green-50 text-green-700 border border-green-100" 
-                        : log.statusRevisao === "COM_QUESTIONAMENTOS" 
-                        ? "bg-red-50 text-red-700 border border-red-100" 
-                        : "bg-yellow-50 text-yellow-700 border border-yellow-100"
-                    }`}>
-                      {log.statusRevisao === "APROVADO" ? "Aprovado" : log.statusRevisao === "COM_QUESTIONAMENTOS" ? "Ajustes" : "Pendente"}
-                    </span>
+                    <button
+                      type="button"
+                      onClick={() => openRdoReviewModal(log)}
+                      className={`text-[9px] font-black uppercase px-2.5 py-1 rounded-md transition-all cursor-pointer shadow-sm hover:scale-105 ${
+                        log.statusRevisao === "APROVADO" 
+                          ? "bg-green-50 text-green-700 border border-green-200 hover:bg-green-100" 
+                          : log.statusRevisao === "COM_QUESTIONAMENTOS" 
+                          ? "bg-red-50 text-red-700 border border-red-200 hover:bg-red-100" 
+                          : "bg-yellow-50 text-yellow-700 border border-yellow-200 hover:bg-yellow-100"
+                      }`}
+                      title="Clique para revisar RDO e consultar log de auditoria"
+                    >
+                      🔍 {log.statusRevisao === "APROVADO" ? "Aprovado" : log.statusRevisao === "COM_QUESTIONAMENTOS" ? "Ajustes" : "Pendente (Revisar)"}
+                    </button>
                   </td>
                   <td className="p-3 text-center">
                     <div className="flex justify-center gap-1.5 flex-wrap">
@@ -1970,32 +2279,41 @@ export default function DiarioObrasPage() {
       {/* ===================== MODAL EXECUTOR LANÇAMENTO RDO ===================== */}
       {/* ========================================================================= */}
       {selectedActivityForLog && (
-        <div className="fixed inset-0 z-50 bg-[#0a192f]/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-lg rounded-[2.5rem] border border-slate-100 shadow-2xl p-6 relative animate-in slide-in-from-bottom-8 duration-300">
+        <div className="fixed inset-0 z-50 bg-[#0a192f]/70 backdrop-blur-md flex items-center justify-center p-2 sm:p-6 animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-5xl h-[94vh] rounded-[2rem] border border-slate-100 shadow-2xl flex flex-col overflow-hidden relative animate-in slide-in-from-bottom-6 duration-300">
             
-            <div className="flex justify-between items-start mb-4">
+            {/* Modal Fixed Header */}
+            <div className="flex items-center justify-between p-5 md:p-6 border-b border-slate-100 bg-slate-50/70 shrink-0">
               <div>
-                <span className="text-[9px] font-black uppercase text-[#f15a24] bg-[#f15a24]/10 px-2 py-0.5 rounded-md">
-                  {selectedActivityForLog.projeto?.nome}
-                </span>
-                <h3 className="text-base font-black text-slate-800 uppercase tracking-tight flex items-center gap-2 mt-1">
-                  <HardHat className="w-5 h-5 text-[#f15a24]" /> 
-                  Lançar Diário de Obra (RDO)
-                </h3>
-                <p className="text-[10px] text-slate-500 mt-0.5">
-                  Atividade: {selectedActivityForLog.descricao}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[10px] font-black uppercase text-[#f15a24] bg-[#f15a24]/10 px-2.5 py-1 rounded-lg">
+                    {selectedActivityForLog.projeto?.nome || "Obra"}
+                  </span>
+                  {logForm.data && (
+                    <span className="text-slate-600 bg-slate-200/70 px-2.5 py-1 rounded-lg font-bold text-[10px] flex items-center gap-1">
+                      📅 {fmtDate(logForm.data)} — <strong className="text-[#f15a24]">{getWeekDayName(logForm.data)}</strong>
+                    </span>
+                  )}
+                </div>
+                <h2 className="text-base md:text-lg font-black text-slate-800 uppercase tracking-tight flex items-center gap-2 mt-1.5">
+                  <Building className="w-5 h-5 text-[#f15a24]" /> 
+                  Preenchimento do Relatório Diário de Obra (RDO)
+                </h2>
+                <p className="text-xs text-slate-500 font-medium mt-0.5">
+                  Atividade de referência: <strong className="text-slate-700">{selectedActivityForLog.descricao}</strong>
                 </p>
               </div>
               <button 
                 type="button"
                 onClick={() => setSelectedActivityForLog(null)}
-                className="text-slate-400 hover:text-slate-600 font-black text-lg p-1 cursor-pointer"
+                className="w-9 h-9 bg-slate-100 hover:bg-slate-200 rounded-full flex items-center justify-center text-slate-500 font-bold text-base cursor-pointer transition-all shadow-sm shrink-0"
               >
                 ✕
               </button>
             </div>
 
-            <form onSubmit={handleLogProgress} className="space-y-4">
+            {/* Scrollable Form Body */}
+            <form onSubmit={handleLogProgress} className="flex-1 overflow-y-auto p-5 md:p-8 space-y-6">
               
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -2158,7 +2476,16 @@ export default function DiarioObrasPage() {
                 </h4>
                 
                 <div>
-                  <label className="block text-[9px] font-bold text-slate-400 uppercase mb-1">Selecionar Equipamento</label>
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="block text-[9px] font-bold text-slate-400 uppercase">Selecionar Equipamento</label>
+                    <button
+                      type="button"
+                      onClick={() => router.push("/ativos")}
+                      className="text-[9px] font-black text-[#f15a24] hover:underline flex items-center gap-1 cursor-pointer"
+                    >
+                      + Cadastrar Novo Equipamento
+                    </button>
+                  </div>
                   <select
                     className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-705 outline-none focus:ring-2 focus:ring-[#f15a24] text-slate-800"
                     value={logForm.ativoId}
@@ -2321,23 +2648,304 @@ export default function DiarioObrasPage() {
                 )}
               </div>
 
-              <div className="flex gap-3 pt-2">
+              {/* ─── Tabs do RDO Completo ─────────────────────────────────── */}
+              <div className="border-t border-slate-100 pt-4 mt-2">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center justify-between">
+                  <span>📋 RDO Completo do Dia</span>
+                  {logForm.data && (
+                    <span className="text-[#f15a24] bg-orange-50 px-2 py-0.5 rounded-md font-bold text-[9px]">
+                      {getWeekDayName(logForm.data)}
+                    </span>
+                  )}
+                </p>
+                <div className="flex gap-1 bg-slate-100 rounded-xl p-1 mb-4 overflow-x-auto">
+                  {([
+                    { key: "atividades_auto", label: "⚡ Atividades (Auto)" },
+                    { key: "clima", label: "🌤 Clima" },
+                    { key: "mao_de_obra", label: "👷 Equipe" },
+                    { key: "materiais", label: "📦 Materiais" },
+                    { key: "ocorrencias", label: "⚠️ Ocorrências" },
+                  ] as { key: any; label: string }[]).map(t => (
+                    <button
+                      key={t.key}
+                      type="button"
+                      onClick={() => setRdoFormTab(t.key)}
+                      className={`flex-1 text-[10px] font-bold px-2.5 py-2 rounded-lg whitespace-nowrap transition-all cursor-pointer ${rdoFormTab === t.key ? "bg-white shadow text-[#f15a24]" : "text-slate-500 hover:text-slate-700"}`}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Atividades Automáticas do Dia */}
+                {rdoFormTab === "atividades_auto" && (
+                  <div className="space-y-3 animate-in fade-in duration-200">
+                    <div className="bg-emerald-50/60 border border-emerald-100 rounded-xl p-3">
+                      <p className="text-[10px] font-black text-emerald-800 uppercase tracking-tight flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-emerald-600" /> Atividades Inclusas Automática no RDO
+                      </p>
+                      <p className="text-[10px] text-emerald-700 font-medium mt-0.5">
+                        As atividades abaixo com lançamento no dia ou em andamento serão anexadas ao relatório final.
+                      </p>
+                    </div>
+
+                    {atividadesDoDia.length === 0 ? (
+                      <div className="text-center py-4 text-slate-400 text-xs italic bg-slate-50 rounded-xl">
+                        Nenhuma atividade ativa no canteiro para esta data.
+                      </div>
+                    ) : (
+                      <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                        {atividadesDoDia.map(act => {
+                          const latestLog = act.lancamentos?.[0];
+                          const prog = latestLog ? latestLog.progresso : (act.status === "CONCLUIDA" ? 100 : 0);
+                          return (
+                            <div key={act.id} className="bg-slate-50 rounded-xl p-3 border border-slate-200/70 space-y-1.5">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="font-bold text-xs text-slate-800 truncate">{act.descricao}</span>
+                                <span className={`text-[9px] font-black px-2 py-0.5 rounded-full shrink-0 ${
+                                  act.status === "CONCLUIDA" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
+                                }`}>
+                                  {prog}% {act.status === "CONCLUIDA" ? "Concluída" : "Em andamento"}
+                                </span>
+                              </div>
+                              <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                                <div className="bg-[#f15a24] h-full transition-all duration-300" style={{ width: `${prog}%` }} />
+                              </div>
+                              {latestLog?.descricao && (
+                                <p className="text-[10px] text-slate-500 font-medium italic truncate">
+                                  💬 Relato: "{latestLog.descricao}"
+                                </p>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Clima */}
+                {rdoFormTab === "clima" && (
+                  <div className="space-y-3 animate-in fade-in duration-200">
+                    {rdoClimas.map((c, i) => (
+                      <div key={i} className="bg-slate-50 rounded-xl p-3 space-y-2">
+                        <div className="flex gap-2 items-center">
+                          <span className="text-[10px] font-black text-slate-500 uppercase w-14">
+                            {c.periodo === "MANHA" ? "Manhã" : c.periodo === "TARDE" ? "Tarde" : "Noite"}
+                          </span>
+                          <select
+                            value={c.condicao}
+                            onChange={e => { const n = [...rdoClimas]; n[i].condicao = e.target.value; setRdoClimas(n); }}
+                            className="flex-1 bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs font-medium text-slate-800 cursor-pointer"
+                          >
+                            <option value="ENSOLARADO">☀️ Ensolarado</option>
+                            <option value="PARCIALMENTE_NUBLADO">⛅ Parcialmente Nublado</option>
+                            <option value="NUBLADO">☁️ Nublado</option>
+                            <option value="CHUVOSO">🌧️ Chuvoso</option>
+                          </select>
+                        </div>
+                        <input
+                          type="text"
+                          value={c.impacto}
+                          onChange={e => { const n = [...rdoClimas]; n[i].impacto = e.target.value; setRdoClimas(n); }}
+                          placeholder="Impacto nas atividades (opcional)"
+                          className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-700 placeholder:text-slate-400"
+                        />
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => setRdoClimas([...rdoClimas, { periodo: "NOITE", condicao: "ENSOLARADO", impacto: "" }])}
+                      className="w-full text-[10px] font-bold text-slate-500 border-2 border-dashed border-slate-200 rounded-xl py-2 hover:border-slate-300 transition-all cursor-pointer"
+                    >
+                      + Adicionar período
+                    </button>
+                  </div>
+                )}
+
+                {/* Mão de Obra */}
+                {rdoFormTab === "mao_de_obra" && (
+                  <div className="space-y-3 animate-in fade-in duration-200">
+                    <div className="flex gap-2 mb-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (funcionariosCanteiro.length > 0) {
+                            setRdoMaoDeObra(funcionariosCanteiro.map(f => ({
+                              funcionarioId: f.id,
+                              nomeAvulso: f.nome,
+                              funcao: f.funcao,
+                              empresa: f.empresa,
+                              quantidade: 1,
+                              horasTrab: 8,
+                              falta: false,
+                              justFalta: ""
+                            })));
+                          } else {
+                            // Default preset matching RDO.pdf model:
+                            setRdoMaoDeObra([
+                              { funcionarioId: "", nomeAvulso: "Eletricista", funcao: "Eletricista", empresa: "PROPRIA", quantidade: 2, horasTrab: 8, falta: false, justFalta: "" },
+                              { funcionarioId: "", nomeAvulso: "Montador", funcao: "Montador", empresa: "PROPRIA", quantidade: 6, horasTrab: 8, falta: false, justFalta: "" },
+                              { funcionarioId: "", nomeAvulso: "Servente", funcao: "Servente", empresa: "PROPRIA", quantidade: 2, horasTrab: 8, falta: false, justFalta: "" },
+                              { funcionarioId: "", nomeAvulso: "Ajudante", funcao: "Ajudante", empresa: "TERCEIRO", quantidade: 5, horasTrab: 8, falta: false, justFalta: "" }
+                            ]);
+                          }
+                        }}
+                        className="w-full bg-blue-50 hover:bg-blue-100 text-blue-700 font-black text-[10px] py-2 rounded-xl uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 border border-blue-100"
+                      >
+                        <Sparkles className="w-3.5 h-3.5 text-blue-600" /> ⚡ Carregar Equipe Padrão
+                      </button>
+                    </div>
+
+                    {rdoMaoDeObra.map((m, i) => (
+                      <div key={i} className="bg-slate-50 rounded-xl p-3 space-y-2">
+                        <div className="flex gap-2">
+                          <select
+                            value={m.funcionarioId}
+                            onChange={e => {
+                              const n = [...rdoMaoDeObra];
+                              n[i].funcionarioId = e.target.value;
+                              const f = funcionariosCanteiro.find(f => f.id === e.target.value);
+                              if (f) { n[i].funcao = f.funcao; n[i].empresa = f.empresa; }
+                              setRdoMaoDeObra(n);
+                            }}
+                            className="flex-1 bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs font-medium text-slate-800 cursor-pointer"
+                          >
+                            <option value="">Avulso / Selecione</option>
+                            {funcionariosCanteiro.map(f => <option key={f.id} value={f.id}>{f.nome} — {f.funcao}</option>)}
+                          </select>
+                          <button type="button" onClick={() => { const n = [...rdoMaoDeObra]; n.splice(i, 1); setRdoMaoDeObra(n); }} className="text-red-400 hover:text-red-600 cursor-pointer p-1">✕</button>
+                        </div>
+                        {!m.funcionarioId && (
+                          <input type="text" value={m.nomeAvulso} onChange={e => { const n = [...rdoMaoDeObra]; n[i].nomeAvulso = e.target.value; setRdoMaoDeObra(n); }} placeholder="Nome avulso" className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs" />
+                        )}
+                        <div className="grid grid-cols-3 gap-2">
+                          <div>
+                            <label className="text-[9px] text-slate-400 font-bold uppercase">Qtd</label>
+                            <input type="number" min="1" value={m.quantidade} onChange={e => { const n = [...rdoMaoDeObra]; n[i].quantidade = parseInt(e.target.value) || 1; setRdoMaoDeObra(n); }} className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs" />
+                          </div>
+                          <div>
+                            <label className="text-[9px] text-slate-400 font-bold uppercase">Horas</label>
+                            <input type="number" min="0" step="0.5" value={m.horasTrab} onChange={e => { const n = [...rdoMaoDeObra]; n[i].horasTrab = parseFloat(e.target.value) || 0; setRdoMaoDeObra(n); }} className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs" />
+                          </div>
+                          <div>
+                            <label className="text-[9px] text-slate-400 font-bold uppercase">Empresa</label>
+                            <select value={m.empresa} onChange={e => { const n = [...rdoMaoDeObra]; n[i].empresa = e.target.value; setRdoMaoDeObra(n); }} className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs cursor-pointer">
+                              <option value="PROPRIA">Própria</option>
+                              <option value="TERCEIRO">Terceiro</option>
+                            </select>
+                          </div>
+                        </div>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input type="checkbox" checked={m.falta} onChange={e => { const n = [...rdoMaoDeObra]; n[i].falta = e.target.checked; setRdoMaoDeObra(n); }} className="rounded" />
+                          <span className="text-xs text-slate-600">Falta</span>
+                        </label>
+                      </div>
+                    ))}
+                    <button type="button" onClick={() => setRdoMaoDeObra([...rdoMaoDeObra, { funcionarioId: "", nomeAvulso: "", funcao: "", empresa: "PROPRIA", quantidade: 1, horasTrab: 8, falta: false, justFalta: "" }])} className="w-full text-[10px] font-bold text-slate-500 border-2 border-dashed border-slate-200 rounded-xl py-2 hover:border-slate-300 transition-all cursor-pointer">
+                      + Adicionar funcionário
+                    </button>
+                  </div>
+                )}
+
+                {/* Materiais */}
+                {rdoFormTab === "materiais" && (
+                  <div className="space-y-3 animate-in fade-in duration-200">
+                    {rdoMateriais.map((m, i) => (
+                      <div key={i} className="bg-slate-50 rounded-xl p-3 space-y-2">
+                        <div className="flex gap-2">
+                          <input type="text" value={m.material} onChange={e => { const n = [...rdoMateriais]; n[i].material = e.target.value; setRdoMateriais(n); }} placeholder="Material / descrição" className="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs" />
+                          <button type="button" onClick={() => { const n = [...rdoMateriais]; n.splice(i, 1); setRdoMateriais(n); }} className="text-red-400 hover:text-red-600 cursor-pointer p-1">✕</button>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                          <input type="number" min="0" step="0.01" value={m.quantidade} onChange={e => { const n = [...rdoMateriais]; n[i].quantidade = parseFloat(e.target.value) || 0; setRdoMateriais(n); }} placeholder="Qtd" className="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs" />
+                          <input type="text" value={m.unidade} onChange={e => { const n = [...rdoMateriais]; n[i].unidade = e.target.value; setRdoMateriais(n); }} placeholder="Unidade (un, m, kg)" className="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs" />
+                          <input type="text" value={m.notaFiscal} onChange={e => { const n = [...rdoMateriais]; n[i].notaFiscal = e.target.value; setRdoMateriais(n); }} placeholder="NF" className="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs" />
+                        </div>
+                        <input type="text" value={m.fornecedor} onChange={e => { const n = [...rdoMateriais]; n[i].fornecedor = e.target.value; setRdoMateriais(n); }} placeholder="Fornecedor" className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs" />
+                      </div>
+                    ))}
+                    <button type="button" onClick={() => setRdoMateriais([...rdoMateriais, { material: "", quantidade: 0, unidade: "un", fornecedor: "", notaFiscal: "" }])} className="w-full text-[10px] font-bold text-slate-500 border-2 border-dashed border-slate-200 rounded-xl py-2 hover:border-slate-300 transition-all cursor-pointer">
+                      + Adicionar material
+                    </button>
+                  </div>
+                )}
+
+                {/* Ocorrências */}
+                {rdoFormTab === "ocorrencias" && (
+                  <div className="space-y-3 animate-in fade-in duration-200">
+                    {rdoOcorrencias.map((o, i) => (
+                      <div key={i} className="bg-orange-50 rounded-xl p-3 space-y-2 border border-orange-100">
+                        <div className="flex gap-2">
+                          <select value={o.tipo} onChange={e => { const n = [...rdoOcorrencias]; n[i].tipo = e.target.value; setRdoOcorrencias(n); }} className="flex-1 bg-white border border-orange-200 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-800 cursor-pointer">
+                            <option value="ACIDENTE">🚨 Acidente</option>
+                            <option value="QUASE_ACIDENTE">⚠️ Quase-Acidente</option>
+                            <option value="ATRASO">⏰ Atraso</option>
+                            <option value="PROBLEMA_TECNICO">🔧 Problema Técnico</option>
+                            <option value="FALTA_MATERIAL">📭 Falta de Material</option>
+                            <option value="CLIMA">🌧️ Condição Climática</option>
+                            <option value="OUTRO">📋 Outro</option>
+                          </select>
+                          <button type="button" onClick={() => { const n = [...rdoOcorrencias]; n.splice(i, 1); setRdoOcorrencias(n); }} className="text-red-400 hover:text-red-600 cursor-pointer p-1">✕</button>
+                        </div>
+                        <textarea value={o.descricao} onChange={e => { const n = [...rdoOcorrencias]; n[i].descricao = e.target.value; setRdoOcorrencias(n); }} placeholder="Descrição da ocorrência" rows={2} className="w-full bg-white border border-orange-200 rounded-lg px-3 py-2 text-xs resize-none" />
+                        <input type="text" value={o.impacto} onChange={e => { const n = [...rdoOcorrencias]; n[i].impacto = e.target.value; setRdoOcorrencias(n); }} placeholder="Impacto nas atividades" className="w-full bg-white border border-orange-200 rounded-lg px-3 py-2 text-xs" />
+                        <input type="text" value={o.medidaTomada} onChange={e => { const n = [...rdoOcorrencias]; n[i].medidaTomada = e.target.value; setRdoOcorrencias(n); }} placeholder="Medida tomada" className="w-full bg-white border border-orange-200 rounded-lg px-3 py-2 text-xs" />
+                      </div>
+                    ))}
+                    <button type="button" onClick={() => setRdoOcorrencias([...rdoOcorrencias, { tipo: "ATRASO", descricao: "", impacto: "", medidaTomada: "" }])} className="w-full text-[10px] font-bold text-orange-400 border-2 border-dashed border-orange-200 rounded-xl py-2 hover:border-orange-300 transition-all cursor-pointer">
+                      + Registrar ocorrência
+                    </button>
+                  </div>
+                )}
+
+                {/* Observações gerais */}
+                <div className="mt-3">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Observações Gerais do Dia</label>
+                  <textarea
+                    value={rdoObservacoes}
+                    onChange={e => setRdoObservacoes(e.target.value)}
+                    rows={2}
+                    placeholder="Observações livres sobre o dia de obras..."
+                    className="mt-1 w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 placeholder:text-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-[#f15a24]/30"
+                  />
+                </div>
+              </div>
+
+            </form>
+
+            {/* Modal Fixed Footer Actions Bar */}
+            <div className="p-4 md:p-5 bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
+              <button
+                type="button"
+                onClick={() => setSelectedActivityForLog(null)}
+                className="w-full sm:w-auto px-6 py-3 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 font-bold text-xs rounded-xl uppercase tracking-wider transition-all cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
                 <button
                   type="button"
-                  onClick={() => setSelectedActivityForLog(null)}
-                  className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs py-3.5 rounded-xl uppercase tracking-wider transition-all cursor-pointer"
+                  onClick={async () => {
+                    const projetoId = selectedActivityForLog?.projetoId || selectedActivityForLog?.projeto?.id || selectedObraFilter || (activities.length > 0 ? activities[0].projetoId : null);
+                    if (!projetoId) { alert("Selecione uma obra ou atividade válida para salvar o RDO."); return; }
+                    const saved = await handleSaveRdoDiario(projetoId, logForm.data || new Date().toISOString().split("T")[0], "PENDENTE");
+                    if (saved) { alert("RDO do dia salvo com sucesso! Número: RDO-" + String(saved.numeroRdo).padStart(3,"0")); }
+                  }}
+                  className="w-full sm:w-auto px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl uppercase tracking-wider transition-all cursor-pointer shadow-md flex items-center justify-center gap-2"
                 >
-                  Cancelar
+                  <FileText className="w-4 h-4" /> 💾 Salvar RDO Completo do Dia
                 </button>
                 <button
-                  type="submit"
+                  type="button"
+                  onClick={handleLogProgress}
                   disabled={uploadingFile}
-                  className="flex-1 bg-[#f15a24] hover:bg-orange-600 text-white font-black text-xs py-3.5 rounded-xl uppercase tracking-wider transition-all cursor-pointer shadow-md disabled:opacity-50"
+                  className="w-full sm:w-auto px-6 py-3 bg-[#f15a24] hover:bg-orange-600 text-white font-black text-xs rounded-xl uppercase tracking-wider transition-all cursor-pointer shadow-md disabled:opacity-50 flex items-center justify-center gap-2"
                 >
-                  Salvar Diário RDO
+                  <Check className="w-4 h-4" /> Salvar Apontamento
                 </button>
               </div>
-            </form>
+            </div>
           </div>
         </div>
       )}
@@ -2376,7 +2984,7 @@ export default function DiarioObrasPage() {
                 <span className="text-[9px] text-slate-400 font-black uppercase tracking-wider block">Relato do Canteiro:</span>
                 <p className="text-xs font-semibold text-slate-700 leading-relaxed font-mono">"{reviewingLog.descricao}"</p>
                 <div className="text-[10px] font-bold text-slate-400">
-                  Data: {new Date(reviewingLog.data).toLocaleDateString("pt-BR")} | Progresso Indicado: <strong className="text-slate-700">{reviewingLog.progresso}%</strong>
+                  Data: {fmtDate(reviewingLog.data)} | Progresso Indicado: <strong className="text-slate-700">{reviewingLog.progresso}%</strong>
                 </div>
               </div>
 
@@ -2442,8 +3050,199 @@ export default function DiarioObrasPage() {
       )}
 
       {/* ========================================================================= */}
-      {/* ===================== MODAL EDITAR ATIVIDADE (GESTOR) =================== */}
+      {/* ================= MODAL REVISÃO, EDIÇÃO E AUDITORIA RDO ================= */}
       {/* ========================================================================= */}
+      {selectedRdoForReview && (
+        <div className="fixed inset-0 z-50 bg-[#0a192f]/70 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-3xl rounded-[2.5rem] border border-slate-100 shadow-2xl p-6 md:p-8 relative max-h-[90vh] overflow-y-auto space-y-6 animate-in slide-in-from-bottom-8 duration-300">
+            
+            {/* Modal Header */}
+            <div className="flex justify-between items-start border-b border-slate-100 pb-4">
+              <div>
+                <span className="text-[10px] font-black uppercase text-[#f15a24] bg-orange-100/70 px-2.5 py-1 rounded-lg">
+                  {selectedRdoForReview.atividade?.projeto?.nome || "Obra"}
+                </span>
+                <h2 className="text-lg font-black text-slate-800 uppercase tracking-tight mt-1 flex items-center gap-2">
+                  <ShieldAlert className="w-5 h-5 text-[#f15a24]" />
+                  Revisão e Auditoria de RDO
+                </h2>
+                <p className="text-xs text-slate-500 font-medium">
+                  Apontamento de {fmtDate(selectedRdoForReview.data)} — Preenchido por <strong className="text-slate-700">{selectedRdoForReview.usuario?.name || selectedRdoForReview.usuario?.email || "Colaborador"}</strong>
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedRdoForReview(null)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 font-black text-sm flex items-center justify-center cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex gap-2 bg-slate-100 p-1.5 rounded-2xl">
+              <button
+                type="button"
+                onClick={() => setReviewTab("detalhes")}
+                className={`flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
+                  reviewTab === "detalhes" ? "bg-[#0a192f] text-white shadow" : "text-slate-500 hover:text-slate-800"
+                }`}
+              >
+                📋 Detalhes do RDO
+              </button>
+              <button
+                type="button"
+                onClick={() => setReviewTab("audit")}
+                className={`flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
+                  reviewTab === "audit" ? "bg-[#0a192f] text-white shadow" : "text-slate-500 hover:text-slate-800"
+                }`}
+              >
+                📜 Log de Auditoria ({reviewAuditLogs.length})
+              </button>
+            </div>
+
+            {/* TAB 1: DETALHES */}
+            {reviewTab === "detalhes" && (
+              <div className="space-y-4 text-left text-xs">
+                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-2">
+                  <strong className="text-[10px] font-black uppercase text-slate-400 block">Atividade / Relato do Canteiro:</strong>
+                  <h4 className="font-bold text-slate-800 uppercase">{selectedRdoForReview.atividade?.descricao}</h4>
+                  <p className="text-slate-700 font-medium whitespace-pre-line leading-relaxed">{selectedRdoForReview.descricao}</p>
+                  <div className="flex justify-between items-center pt-2 border-t border-slate-200 text-[10px] font-bold text-slate-500">
+                    <span>Avanço Indicado: <strong className="text-emerald-600 font-black">{selectedRdoForReview.progresso}%</strong></span>
+                    <span>Status de Revisão: <strong className="text-[#f15a24] uppercase">{selectedRdoForReview.statusRevisao || "PENDENTE"}</strong></span>
+                  </div>
+                </div>
+
+                {/* Photos */}
+                {selectedRdoForReview.fotos && selectedRdoForReview.fotos.length > 0 && (
+                  <div>
+                    <strong className="text-[10px] font-black uppercase text-slate-400 block mb-2">📸 Fotos do Canteiro:</strong>
+                    <div className="flex gap-3 overflow-x-auto pb-2">
+                      {selectedRdoForReview.fotos.map((url: string, idx: number) => (
+                        <a key={idx} href={url} target="_blank" rel="noreferrer" className="w-24 h-24 rounded-xl overflow-hidden border border-slate-200 block shrink-0 shadow-sm hover:opacity-90">
+                          <img src={url} alt="Foto RDO" className="object-cover w-full h-full" />
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Voice Audios */}
+                {selectedRdoForReview.audios && selectedRdoForReview.audios.length > 0 && (
+                  <div>
+                    <strong className="text-[10px] font-black uppercase text-slate-400 block mb-2">🎙️ Gravações de Voz:</strong>
+                    <div className="space-y-2">
+                      {selectedRdoForReview.audios.map((url: string, idx: number) => (
+                        <div key={idx} className="flex gap-2 items-center bg-purple-50 p-3 rounded-xl border border-purple-100">
+                          <Mic className="w-4 h-4 text-purple-600 shrink-0" />
+                          <audio controls src={url} className="h-7 w-full" />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Action buttons */}
+                <div className="pt-4 border-t border-slate-200 flex flex-col sm:flex-row gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleReviewLog(selectedRdoForReview.id, false);
+                      setSelectedRdoForReview(null);
+                    }}
+                    className="flex-1 py-3 bg-red-50 hover:bg-red-100 text-red-700 font-bold text-xs rounded-xl uppercase tracking-wider transition-all cursor-pointer border border-red-200 flex items-center justify-center gap-1.5"
+                  >
+                    <X className="w-4 h-4" /> ⚠️ Solicitar Ajustes
+                  </button>
+
+                  {isAdmin && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingLog({
+                          id: selectedRdoForReview.id,
+                          data: selectedRdoForReview.data ? new Date(selectedRdoForReview.data).toISOString().split("T")[0] : "",
+                          progresso: selectedRdoForReview.progresso,
+                          descricao: selectedRdoForReview.descricao,
+                          ativoId: selectedRdoForReview.ativoId || "",
+                          horimetroInicio: selectedRdoForReview.horimetroInicio?.toString() || "",
+                          horimetroFim: selectedRdoForReview.horimetroFim?.toString() || "",
+                          statusLancamento: selectedRdoForReview.statusLancamento,
+                        });
+                        setSelectedRdoForReview(null);
+                      }}
+                      className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs rounded-xl uppercase tracking-wider transition-all cursor-pointer shadow-md flex items-center justify-center gap-1.5"
+                    >
+                      <Pencil className="w-4 h-4" /> ✏️ Editar RDO (Admin)
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleReviewLog(selectedRdoForReview.id, true);
+                      setSelectedRdoForReview(null);
+                    }}
+                    className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl uppercase tracking-wider transition-all cursor-pointer shadow-md flex items-center justify-center gap-1.5"
+                  >
+                    <Check className="w-4 h-4" /> ✅ Aprovar RDO
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 2: AUDIT LOGS */}
+            {reviewTab === "audit" && (
+              <div className="space-y-3 text-left">
+                <p className="text-[10px] text-slate-500 font-medium">Histórico registrado de quem acessou, leu ou modificou este RDO com data e hora exatas.</p>
+                {loadingAuditLogs ? (
+                  <div className="p-8 text-center text-slate-400 animate-pulse text-xs font-bold">Carregando logs de auditoria...</div>
+                ) : reviewAuditLogs.length === 0 ? (
+                  <div className="p-8 text-center text-slate-400 italic text-xs border border-slate-100 rounded-2xl bg-slate-50">
+                    Nenhum acesso prévio registrado no log de auditoria.
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto rounded-2xl border border-slate-200 max-h-[300px] overflow-y-auto">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="bg-slate-100 text-slate-700 text-[9px] font-black uppercase tracking-wider">
+                          <th className="p-3 text-left">Data & Hora</th>
+                          <th className="p-3 text-left">Usuário</th>
+                          <th className="p-3 text-center">Ação</th>
+                          <th className="p-3 text-left">Detalhes</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {reviewAuditLogs.map((logItem: any) => (
+                          <tr key={logItem.id} className="hover:bg-slate-50">
+                            <td className="p-3 font-bold text-slate-700 whitespace-nowrap">
+                              {new Date(logItem.createdAt).toLocaleString("pt-BR")}
+                            </td>
+                            <td className="p-3 font-bold text-slate-800">{logItem.usuarioNome}</td>
+                            <td className="p-3 text-center">
+                              <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-md ${
+                                logItem.acao === "APROVACAO" ? "bg-green-100 text-green-800" :
+                                logItem.acao === "MODIFICACAO" ? "bg-blue-100 text-blue-800" :
+                                logItem.acao === "RECUSA" ? "bg-red-100 text-red-800" :
+                                "bg-slate-100 text-slate-700"
+                              }`}>
+                                {logItem.acao}
+                              </span>
+                            </td>
+                            <td className="p-3 text-slate-600 font-medium">{logItem.detalhes || "-"}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
+
+          </div>
+        </div>
+      )}
       {editingActivity && (
         <div className="fixed inset-0 z-50 bg-[#0a192f]/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="bg-white w-full max-w-lg rounded-[2.5rem] border border-slate-100 shadow-2xl p-6 relative animate-in slide-in-from-bottom-8 duration-300">
@@ -2691,6 +3490,414 @@ export default function DiarioObrasPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* ================= MODAL VISUALIZAR RELATÓRIO CAPEX ====================== */}
+      {/* ========================================================================= */}
+      {showCapexReportModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-2 sm:p-6 animate-in fade-in duration-200 print:p-0 print:bg-white print:static">
+          <div className="bg-white w-full max-w-6xl h-[95vh] rounded-[2rem] border border-slate-100 shadow-2xl flex flex-col md:flex-row overflow-hidden relative print:h-auto print:max-w-none print:shadow-none print:border-none print:rounded-none">
+            
+            {/* Painel Esquerdo: Personalização e Ações (Oculto na impressão) */}
+            <div className="w-full md:w-80 bg-slate-50 p-6 border-r border-slate-200 flex flex-col justify-between shrink-0 space-y-4 print:hidden">
+              <div>
+                <span className="text-[10px] font-black uppercase text-[#f15a24] bg-orange-100/70 px-2.5 py-1 rounded-lg">
+                  Gestão de CAPEX
+                </span>
+                <h3 className="text-base font-black text-slate-800 uppercase tracking-tight mt-2">
+                  Pré-visualização do Relatório
+                </h3>
+                <p className="text-xs text-slate-500 mt-1 font-medium">
+                  Personalize as informações antes da impressão ou exportação em PDF.
+                </p>
+
+                <div className="space-y-3 mt-5">
+                  <div>
+                    <label className="block text-[9px] font-bold text-slate-400 uppercase mb-1">Local da Obra</label>
+                    <input
+                      type="text"
+                      value={capexLocalObra}
+                      onChange={e => setCapexLocalObra(e.target.value)}
+                      placeholder="Ex: Curvelo - MG"
+                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[9px] font-bold text-slate-400 uppercase mb-1">Instruções / Observações</label>
+                    <textarea
+                      rows={3}
+                      value={capexObs}
+                      onChange={e => setCapexObs(e.target.value)}
+                      placeholder="Observações técnicas do relatório de canteiro..."
+                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24] resize-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2 pt-4 border-t border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="w-full py-3.5 bg-[#1E3A8A] hover:bg-blue-900 text-white font-black text-xs rounded-xl uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Printer className="w-4 h-4" /> 🖨️ Confirmar e Imprimir
+                </button>
+
+                {rdosDiarios.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const rdo = rdosDiarios.find(r => isDateMatch(r.data, reportDate));
+                      if (rdo) handleExportPdf(rdo.id);
+                      else alert("Salve o RDO do dia antes de baixar o PDF oficial.");
+                    }}
+                    className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <FileText className="w-4 h-4" /> Baixar PDF Oficial (Server)
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => setShowCapexReportModal(false)}
+                  className="w-full py-2.5 bg-white hover:bg-slate-200 border border-slate-200 text-slate-600 font-bold text-xs rounded-xl uppercase tracking-wider transition-all cursor-pointer"
+                >
+                  Fechar
+                </button>
+              </div>
+            </div>
+
+            {/* Painel Direito: Documento Estilizado Padrão CAPEX */}
+            <div className="flex-1 overflow-y-auto p-6 md:p-10 bg-slate-200/50 print:p-0 print:bg-white">
+              <div id="capex-print-document" className="bg-white p-8 md:p-10 rounded-2xl shadow-xl border border-slate-200 max-w-4xl mx-auto space-y-6 text-slate-800 print:shadow-none print:border-none print:p-0">
+                
+                {/* Header Corporativo Cordeiro Energia / Cordeiro Service */}
+                <div className="border-b-4 border-[#f15a24] pb-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <div className="flex items-center gap-4">
+                    <img src="/logo.png" alt="Cordeiro Energia" className="h-12 object-contain" />
+                    <div>
+                      <h1 className="text-xl font-black text-[#1E3A8A] tracking-tight">
+                        CORDEIRO ENERGIA / CORDEIRO SERVICE
+                      </h1>
+                      <h2 className="text-base font-black text-slate-800 uppercase tracking-tight mt-0.5">
+                        RELATÓRIO DIÁRIO DE OBRA (RDO)
+                      </h2>
+                    </div>
+                  </div>
+                  <div className="text-right space-y-1">
+                    <span className="text-[10px] font-black text-slate-400 uppercase block">Emissão Oficial</span>
+                    <span className="text-sm font-black text-slate-800 block">
+                      {fmtDate(reportDate)} — {getWeekDayName(reportDate)}
+                    </span>
+                    <span className="text-[10px] font-semibold text-slate-500 block">Local: {capexLocalObra}</span>
+                  </div>
+                </div>
+
+                {/* Resumo Executivo / KPIs */}
+                {(() => {
+                  const targetDailyRdo = rdosDiarios.find(r => isDateMatch(r.data, reportDate) && (!selectedObraFilter || r.projetoId === selectedObraFilter));
+                  const directLogs = logs.filter(l => isDateMatch(l.data, reportDate) && (!selectedObraFilter || l.atividade?.projetoId === selectedObraFilter));
+                  const targetLogs = directLogs.length > 0 ? directLogs : activities
+                    .filter(a => (!selectedObraFilter || a.projetoId === selectedObraFilter) && (a.status === "EM_ANDAMENTO" || a.status === "CONCLUIDA"))
+                    .map(a => ({
+                      id: `auto-${a.id}`,
+                      atividade: a,
+                      progresso: a.status === "CONCLUIDA" ? 100 : 50,
+                      descricao: `Atividade ${a.status === "CONCLUIDA" ? "concluída" : "em andamento"} no canteiro de obras.`
+                    }));
+                  const workforceCount = targetDailyRdo?.maoDeObra?.length || funcionariosCanteiro.length;
+                  const avgProgress = targetLogs.length > 0 ? Math.round(targetLogs.reduce((a: number, c: any) => a + (c.progresso || 0), 0) / targetLogs.length) : 0;
+
+                  return (
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-200/60">
+                        <div>
+                          <span className="text-[9px] font-black text-slate-400 uppercase block">Apontamentos no Dia</span>
+                          <span className="text-lg font-black text-[#1E3A8A]">
+                            {targetLogs.length} lançamento(s)
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-[9px] font-black text-slate-400 uppercase block">Mão de Obra Total</span>
+                          <span className="text-lg font-black text-slate-800">
+                            {workforceCount} colaborador(es)
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-[9px] font-black text-slate-400 uppercase block">Avanço Físico Médio</span>
+                          <span className="text-lg font-black text-emerald-600">
+                            {avgProgress}%
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-[9px] font-black text-slate-400 uppercase block">Obra Vinculada</span>
+                          <span className="text-xs font-black text-[#f15a24] truncate block">
+                            {ativos.find(a => a.id === selectedObraFilter)?.nome || targetDailyRdo?.projeto?.nome || "Todas as Obras"}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Condições Climáticas (Clima) */}
+                      {targetDailyRdo?.climas && targetDailyRdo.climas.length > 0 && (
+                        <div className="space-y-2">
+                          <h3 className="text-xs font-black text-[#1E3A8A] uppercase tracking-wider border-b border-slate-200 pb-1 flex items-center gap-1.5">
+                            🌤️ Condições Climáticas do Canteiro
+                          </h3>
+                          <div className="grid grid-cols-3 gap-3">
+                            {targetDailyRdo.climas.map((c: any, idx: number) => (
+                              <div key={idx} className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs">
+                                <span className="text-[9px] font-black uppercase text-slate-400 block">
+                                  {c.periodo === "MANHA" ? "🌅 Manhã" : c.periodo === "TARDE" ? "☀️ Tarde" : "🌙 Noite"}
+                                </span>
+                                <strong className="text-slate-800 uppercase block mt-0.5">{c.condicao}</strong>
+                                {c.impacto && <p className="text-[10px] text-amber-700 font-medium mt-1">Impacto: {c.impacto}</p>}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Tabela Formatada de Atividades (Header Escuro #0F172A + Status Colorido) */}
+                      <div className="space-y-2">
+                        <h3 className="text-xs font-black text-[#1E3A8A] uppercase tracking-wider border-b border-slate-200 pb-1 flex items-center gap-1.5">
+                          📋 Atividades Executadas no Dia (Finalizadas e Em Andamento)
+                        </h3>
+                        <div className="overflow-x-auto rounded-xl border border-slate-200">
+                          <table className="w-full text-xs">
+                            <thead>
+                              <tr className="bg-[#0F172A] text-white text-[9px] font-black uppercase tracking-wider">
+                                <th className="p-3 text-left">Obra</th>
+                                <th className="p-3 text-left">Atividade</th>
+                                <th className="p-3 text-center">Status</th>
+                                <th className="p-3 text-center">Progresso</th>
+                                <th className="p-3 text-left">Relato / Apontamento</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                              {targetLogs.map((log: any) => {
+                                const prog = log.progresso ?? (log.atividade?.status === "CONCLUIDA" ? 100 : 0);
+                                const isFinalized = prog >= 100 || log.atividade?.status === "CONCLUIDA" || log.statusLancamento === "FINALIZADO";
+                                const isPausada = log.atividade?.status === "PAUSADA" || log.atividade?.status === "AGUARDANDO_MATERIAL";
+                                const isImpedimento = log.atividade?.status === "IMPEDIMENTO";
+
+                                return (
+                                  <tr key={log.id} className="hover:bg-slate-50">
+                                    <td className="p-3 font-bold text-slate-800">{log.atividade?.projeto?.nome || "-"}</td>
+                                    <td className="p-3 font-bold text-slate-700">{log.atividade?.descricao}</td>
+                                    <td className="p-3 text-center">
+                                      <span className={`text-[9px] font-black uppercase px-2.5 py-1 rounded-md border ${
+                                        isFinalized
+                                          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                          : isImpedimento
+                                          ? "bg-red-50 text-red-700 border-red-200"
+                                          : isPausada
+                                          ? "bg-amber-50 text-amber-700 border-amber-200"
+                                          : "bg-blue-50 text-blue-700 border-blue-200"
+                                      }`}>
+                                        {isFinalized ? "🟢 Finalizada" : isImpedimento ? "🔴 Impedimento" : isPausada ? "🟡 Paralisada" : "🔵 Em Andamento"}
+                                      </span>
+                                    </td>
+                                    <td className="p-3 text-center font-black text-slate-800">{prog}%</td>
+                                    <td className="p-3 text-slate-600">{log.descricao || "Atividade executada no canteiro."}</td>
+                                  </tr>
+                                );
+                              })}
+                              {targetLogs.length === 0 && (
+                                <tr>
+                                  <td colSpan={5} className="p-8 text-center text-slate-400 italic">
+                                    Nenhum apontamento registrado para {fmtDate(reportDate)}.
+                                  </td>
+                                </tr>
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+
+                      {/* Mão de Obra Registrada */}
+                      {targetDailyRdo?.maoDeObra && targetDailyRdo.maoDeObra.length > 0 && (
+                        <div className="space-y-2">
+                          <h3 className="text-xs font-black text-[#1E3A8A] uppercase tracking-wider border-b border-slate-200 pb-1 flex items-center gap-1.5">
+                            👷 Equipe de Mão de Obra no Dia
+                          </h3>
+                          <div className="overflow-x-auto rounded-xl border border-slate-200">
+                            <table className="w-full text-xs">
+                              <thead>
+                                <tr className="bg-slate-100 text-slate-700 text-[9px] font-black uppercase tracking-wider">
+                                  <th className="p-2.5 text-left">Nome / Colaborador</th>
+                                  <th className="p-2.5 text-left">Função</th>
+                                  <th className="p-2.5 text-center">Empresa</th>
+                                  <th className="p-2.5 text-center">Horas Trab.</th>
+                                  <th className="p-2.5 text-center">Falta</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-100">
+                                {targetDailyRdo.maoDeObra.map((m: any, idx: number) => (
+                                  <tr key={idx} className="hover:bg-slate-50">
+                                    <td className="p-2.5 font-bold text-slate-800">{m.funcionario?.nome || m.nomeAvulso || "-"}</td>
+                                    <td className="p-2.5 text-slate-600">{m.funcao || m.funcionario?.funcao || "-"}</td>
+                                    <td className="p-2.5 text-center text-slate-600">{m.empresa === "PROPRIA" ? "Própria" : "Terceiro"}</td>
+                                    <td className="p-2.5 text-center font-bold text-slate-800">{m.horasTrab || 8}h</td>
+                                    <td className="p-2.5 text-center font-bold">{m.falta ? <span className="text-red-600">Sim</span> : <span className="text-emerald-600">Não</span>}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Equipamentos Utilizados */}
+                      {(() => {
+                        const equipLogs = directLogs.filter(l => l.ativoId || l.ativo);
+                        if (equipLogs.length === 0) return null;
+                        return (
+                          <div className="space-y-2">
+                            <h3 className="text-xs font-black text-[#1E3A8A] uppercase tracking-wider border-b border-slate-200 pb-1 flex items-center gap-1.5">
+                              🛠️ Utilização de Equipamentos no Dia
+                            </h3>
+                            <div className="overflow-x-auto rounded-xl border border-slate-200">
+                              <table className="w-full text-xs">
+                                <thead>
+                                  <tr className="bg-slate-100 text-slate-700 text-[9px] font-black uppercase tracking-wider">
+                                    <th className="p-2.5 text-left">Equipamento</th>
+                                    <th className="p-2.5 text-center">Horímetro Inicial</th>
+                                    <th className="p-2.5 text-center">Horímetro Final</th>
+                                    <th className="p-2.5 text-center">Horas Trabalhadas</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                  {equipLogs.map((l: any, idx: number) => {
+                                    const eq = l.ativo || equipamentos.find(e => e.id === l.ativoId);
+                                    const hIni = l.horimetroInicio ?? "-";
+                                    const hFim = l.horimetroFim ?? "-";
+                                    const hDiff = l.horimetroInicio && l.horimetroFim ? (parseFloat(l.horimetroFim) - parseFloat(l.horimetroInicio)).toFixed(1) + "h" : "-";
+                                    return (
+                                      <tr key={idx} className="hover:bg-slate-50">
+                                        <td className="p-2.5 font-bold text-slate-800">{eq?.nome || "Equipamento"} ({eq?.codigo || "N/A"})</td>
+                                        <td className="p-2.5 text-center font-semibold text-slate-700">{hIni}</td>
+                                        <td className="p-2.5 text-center font-semibold text-slate-700">{hFim}</td>
+                                        <td className="p-2.5 text-center font-black text-emerald-600">{hDiff}</td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        );
+                      })()}
+
+                      {/* Materiais Recebidos */}
+                      {targetDailyRdo?.materiais && targetDailyRdo.materiais.length > 0 && (
+                        <div className="space-y-2">
+                          <h3 className="text-xs font-black text-[#1E3A8A] uppercase tracking-wider border-b border-slate-200 pb-1 flex items-center gap-1.5">
+                            📦 Materiais Recebidos / Utilizados
+                          </h3>
+                          <div className="overflow-x-auto rounded-xl border border-slate-200">
+                            <table className="w-full text-xs">
+                              <thead>
+                                <tr className="bg-slate-100 text-slate-700 text-[9px] font-black uppercase tracking-wider">
+                                  <th className="p-2.5 text-left">Material</th>
+                                  <th className="p-2.5 text-center">Qtd.</th>
+                                  <th className="p-2.5 text-center">Unidade</th>
+                                  <th className="p-2.5 text-left">Fornecedor</th>
+                                  <th className="p-2.5 text-center">Nº Nota Fiscal</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-100">
+                                {targetDailyRdo.materiais.map((mat: any, idx: number) => (
+                                  <tr key={idx} className="hover:bg-slate-50">
+                                    <td className="p-2.5 font-bold text-slate-800">{mat.material}</td>
+                                    <td className="p-2.5 text-center font-bold text-slate-800">{mat.quantidade}</td>
+                                    <td className="p-2.5 text-center text-slate-600">{mat.unidade}</td>
+                                    <td className="p-2.5 text-slate-600">{mat.fornecedor || "-"}</td>
+                                    <td className="p-2.5 text-center font-bold text-slate-800">{mat.notaFiscal || "-"}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Ocorrências & Incidentes */}
+                      {targetDailyRdo?.ocorrencias && targetDailyRdo.ocorrencias.length > 0 && (
+                        <div className="space-y-2">
+                          <h3 className="text-xs font-black text-red-700 uppercase tracking-wider border-b border-red-200 pb-1 flex items-center gap-1.5">
+                            ⚠️ Ocorrências e Paralisações Registradas
+                          </h3>
+                          <div className="space-y-2">
+                            {targetDailyRdo.ocorrencias.map((oc: any, idx: number) => (
+                              <div key={idx} className="bg-red-50/70 border border-red-200 p-3 rounded-xl text-xs space-y-1">
+                                <div className="flex justify-between items-center">
+                                  <strong className="font-black text-red-800 uppercase">{oc.tipo}</strong>
+                                </div>
+                                <p className="text-slate-700 font-medium">{oc.descricao}</p>
+                                {oc.impacto && <p className="text-[10px] text-amber-800 font-bold">Impacto: {oc.impacto}</p>}
+                                {oc.medidaTomada && <p className="text-[10px] text-emerald-800 font-bold">Medida Tomada: {oc.medidaTomada}</p>}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Galeria de Fotos do Canteiro */}
+                      {(() => {
+                        const allPhotos: string[] = [];
+                        directLogs.forEach(l => {
+                          if (Array.isArray(l.fotos)) allPhotos.push(...l.fotos);
+                        });
+                        if (allPhotos.length === 0) return null;
+
+                        return (
+                          <div className="space-y-2">
+                            <h3 className="text-xs font-black text-[#1E3A8A] uppercase tracking-wider border-b border-slate-200 pb-1 flex items-center gap-1.5">
+                              📸 Registros Fotográficos do Canteiro ({allPhotos.length} fotos)
+                            </h3>
+                            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
+                              {allPhotos.map((url: string, idx: number) => (
+                                <a key={idx} href={url} target="_blank" rel="noreferrer" className="aspect-square rounded-xl overflow-hidden border border-slate-200 block shadow-sm hover:opacity-90 transition-opacity">
+                                  <img src={url} alt={`Foto Canteiro ${idx + 1}`} className="w-full h-full object-cover" />
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  );
+                })()}
+
+                {/* Seção de Observações e Assinaturas */}
+                {capexObs && (
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs text-slate-700">
+                    <strong className="text-[10px] font-black uppercase text-slate-400 block mb-1">Observações do Engenheiro:</strong>
+                    <p>{capexObs}</p>
+                  </div>
+                )}
+
+                <div className="pt-10 grid grid-cols-2 gap-8 text-center text-xs font-bold text-slate-600">
+                  <div className="border-t border-slate-300 pt-2">
+                    Responsável Técnico pelo Canteiro
+                  </div>
+                  <div className="border-t border-slate-300 pt-2">
+                    Engenharia & Fiscalização
+                  </div>
+                </div>
+
+                <div className="text-center text-[10px] font-black text-slate-500 uppercase pt-4 border-t border-slate-200">
+                  Cordeiro Energia / Cordeiro Service - Diário de Obras
+                </div>
+
+              </div>
+            </div>
+
           </div>
         </div>
       )}

@@ -101,7 +101,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Forbidden: Not assigned to this activity" }, { status: 403 });
     }
 
-    const logData = new Date(data || Date.now());
+    const parseLocalDate = (dateStr?: string) => {
+      if (!dateStr) return new Date();
+      if (dateStr.includes("T")) return new Date(dateStr);
+      const [y, m, d] = dateStr.split("-").map(Number);
+      return new Date(y, m - 1, d, 12, 0, 0);
+    };
+
+    const logData = parseLocalDate(data);
 
     // Create RDO log entry
     const newLog = await prisma.rdoLancamento.create({

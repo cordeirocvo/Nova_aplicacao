@@ -23,6 +23,7 @@ model User {
   leads             Lead[]            @relation("VendedorLeads")
   atividadesAtribuidas AtividadeDiario[]
   lancamentosRdo    RdoLancamento[]
+  rdosDiarios       RdoDiario[]
 }
 
 model PlanilhaInstalacao {
@@ -583,6 +584,7 @@ model OrcamentoProjeto {
   fornecedores    FornecedorOrcamento[]
   etapas          OrcamentoEtapa[]
   atividadesDiario AtividadeDiario[]
+  rdosDiarios      RdoDiario[]
 }
 
 model OrcamentoEtapa {
@@ -910,4 +912,95 @@ model RdoLancamento {
   usuario               User            @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
   ativo                 Ativo?          @relation(fields: [ativoId], references: [id], onDelete: SetNull)
   usoAtivo              HistoricoUsoAtivo?
+}
+
+// ─── RDO Completo ─────────────────────────────────────────────────────────────
+
+model FuncionarioCanteiro {
+  id        String         @id @default(cuid())
+  nome      String
+  funcao    String
+  empresa   String         @default("PROPRIA") // PROPRIA, TERCEIRO
+  contato   String?
+  ativo     Boolean        @default(true)
+  createdAt DateTime       @default(now())
+  maoDeObra MaoDeObraRdo[]
+}
+
+model RdoDiario {
+  id            String                @id @default(cuid())
+  projetoId     String
+  data          DateTime
+  numeroRdo     Int
+  responsavelId String
+  status        String                @default("RASCUNHO") // RASCUNHO, PENDENTE, APROVADO, RECUSADO
+  observacoes   String?
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+
+  projeto       OrcamentoProjeto      @relation(fields: [projetoId], references: [id], onDelete: Cascade)
+  responsavel   User                  @relation(fields: [responsavelId], references: [id], onDelete: Cascade)
+  climas        ClimaRdo[]
+  maoDeObra     MaoDeObraRdo[]
+  materiais     MaterialRecebidoRdo[]
+  ocorrencias   OcorrenciaRdo[]
+
+  @@unique([projetoId, data])
+}
+
+model ClimaRdo {
+  id       String    @id @default(cuid())
+  rdoId    String
+  periodo  String    // MANHA, TARDE, NOITE
+  condicao String    // ENSOLARADO, NUBLADO, CHUVOSO, PARCIALMENTE_NUBLADO
+  impacto  String?   @default("")
+  rdo      RdoDiario @relation(fields: [rdoId], references: [id], onDelete: Cascade)
+}
+
+model MaoDeObraRdo {
+  id            String               @id @default(cuid())
+  rdoId         String
+  funcionarioId String?
+  nomeAvulso    String?              // para quem não está cadastrado
+  funcao        String?              @default("")
+  empresa       String               @default("PROPRIA")
+  quantidade    Int                  @default(1)
+  horasTrab     Float                @default(8)
+  falta         Boolean              @default(false)
+  justFalta     String?              @default("")
+  rdo           RdoDiario            @relation(fields: [rdoId], references: [id], onDelete: Cascade)
+  funcionario   FuncionarioCanteiro? @relation(fields: [funcionarioId], references: [id], onDelete: SetNull)
+}
+
+model MaterialRecebidoRdo {
+  id         String    @id @default(cuid())
+  rdoId      String
+  material   String
+  quantidade Float
+  unidade    String    @default("un")
+  fornecedor String?   @default("")
+  notaFiscal String?   @default("")
+  rdo        RdoDiario @relation(fields: [rdoId], references: [id], onDelete: Cascade)
+}
+
+model OcorrenciaRdo {
+  id           String    @id @default(cuid())
+  rdoId        String
+  tipo         String    // ACIDENTE, QUASE_ACIDENTE, ATRASO, PROBLEMA_TECNICO, FALTA_MATERIAL, CLIMA, OUTRO
+  descricao    String
+  impacto      String?   @default("")
+  medidaTomada String?   @default("")
+  fotos        String[]  @default([])
+  rdo          RdoDiario @relation(fields: [rdoId], references: [id], onDelete: Cascade)
+}
+
+model RdoAuditLog {
+  id          String   @id @default(cuid())
+  rdoId       String?
+  projetoId   String?
+  usuarioId   String
+  usuarioNome String
+  acao        String   // LEITURA, MODIFICACAO, APROVACAO, RECUSA, CRIACAO
+  detalhes    String?
+  createdAt   DateTime @default(now())
 }

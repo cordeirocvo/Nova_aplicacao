@@ -1546,25 +1546,15 @@ export default function DiarioObrasPage() {
                                 </div>
                               </div>
                             );
-                          })}
-                          {activities.length === 0 && (
-                            <div className="text-center italic text-slate-400 text-xs py-8">Nenhuma atividade cadastrada.</div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* VIEW 2: DAILY REPORT DOSSIER */}
+                                        {/* VIEW 2: DAILY REPORT DOSSIER */}
                 {activeReportType === "diario" && (() => {
+                  const targetDailyRdo = rdosDiarios.find(r => isDateMatch(r.data, reportDate) && (!selectedObraFilter || r.projetoId === selectedObraFilter));
                   const directLogs = logs.filter(l => {
                     const matchesDate = isDateMatch(l.data, reportDate);
                     if (!selectedObraFilter) return matchesDate;
                     return matchesDate && l.atividade?.projetoId === selectedObraFilter;
                   });
 
-                  // If no explicit logs exist for selected date, auto-include active project activities
                   const dailyLogs = directLogs.length > 0 ? directLogs : activities
                     .filter(act => (!selectedObraFilter || act.projetoId === selectedObraFilter) && (act.status === "EM_ANDAMENTO" || act.status === "CONCLUIDA"))
                     .map(act => ({
@@ -1576,11 +1566,52 @@ export default function DiarioObrasPage() {
                       data: reportDate
                     }));
 
-                  const formattedDate = reportDate ? (
-                    new Date(reportDate + "T12:00:00Z").toLocaleDateString("pt-BR", { 
-                      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
-                    })
-                  ) : "-";
+                  // Unified Data Fallbacks
+                  const climasData = targetDailyRdo?.climas && targetDailyRdo.climas.length > 0
+                    ? targetDailyRdo.climas
+                    : [
+                        { periodo: "MANHA", condicao: "ENSOLARADO", impacto: "Sem impactos na produtividade." },
+                        { periodo: "TARDE", condicao: "ENSOLARADO", impacto: "Sem impactos na produtividade." },
+                        { periodo: "NOITE", condicao: "SEM_CHUVA", impacto: "" }
+                      ];
+
+                  const maoDeObraData = targetDailyRdo?.maoDeObra && targetDailyRdo.maoDeObra.length > 0
+                    ? targetDailyRdo.maoDeObra
+                    : funcionariosCanteiro.map(f => ({
+                        id: f.id,
+                        funcionario: f,
+                        nomeAvulso: f.nome,
+                        funcao: f.funcao,
+                        empresa: f.empresa || "PROPRIA",
+                        horasTrab: 8,
+                        falta: false
+                      }));
+
+                  const equipLogs = directLogs.filter(l => l.ativoId || l.ativo);
+                  const equipData = equipLogs.length > 0
+                    ? equipLogs
+                    : equipamentos
+                        .filter(e => !selectedObraFilter || e.projetoId === selectedObraFilter)
+                        .map(e => ({
+                          id: `auto-eq-${e.id}`,
+                          ativo: e,
+                          horimetroInicio: e.horimetroAtual || 0,
+                          horimetroFim: e.horimetroAtual || 0,
+                          descricao: "Equipamento disponível no canteiro."
+                        }));
+
+                  const materiaisData = targetDailyRdo?.materiais || [];
+                  const ocorrenciasData = targetDailyRdo?.ocorrencias || [];
+
+                  const photosData: string[] = [];
+                  if (targetDailyRdo?.fotos) photosData.push(...targetDailyRdo.fotos);
+                  directLogs.forEach(l => {
+                    if (Array.isArray(l.fotos)) photosData.push(...l.fotos);
+                  });
+
+                  const formattedDate = reportDate ? `${fmtDate(reportDate)} — ${getWeekDayName(reportDate)}` : "-";
+                  const workforceCount = maoDeObraData.length;
+                  const avgProgress = dailyLogs.length > 0 ? Math.round(dailyLogs.reduce((a: number, c: any) => a + (c.progresso || 0), 0) / dailyLogs.length) : 0;
 
                   return (
                     <div className="space-y-6 animate-in fade-in duration-200">
@@ -1614,104 +1645,307 @@ export default function DiarioObrasPage() {
                       </div>
 
                       {/* PDF Print Target Container */}
-                      <div id="print-rdo-diario" className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm space-y-6 print:p-0 print:border-none print:shadow-none">
+                      <div id="print-rdo-diario" className="bg-white p-8 md:p-10 rounded-[2rem] border border-slate-100 shadow-sm space-y-6 print:p-0 print:border-none print:shadow-none">
+                        
                         {/* Header logo / Title */}
-                        <div className="border-b-2 border-slate-100 pb-4 flex justify-between items-center">
+                        <div className="border-b-4 border-[#f15a24] pb-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                          <div className="flex items-center gap-4">
+                            <img src="/logo.png" alt="Cordeiro Energia" className="h-12 object-contain" />
+                            <div>
+                              <h1 className="text-xl font-black text-[#1E3A8A] tracking-tight">
+                                CORDEIRO ENERGIA / CORDEIRO SERVICE
+                              </h1>
+                              <h2 className="text-base font-black text-slate-800 uppercase tracking-tight mt-0.5">
+                                RELATÓRIO DIÁRIO DE OBRA (RDO)
+                              </h2>
+                            </div>
+                          </div>
+                          <div className="text-right space-y-1">
+                            <span className="text-[10px] font-black text-slate-400 uppercase block">Emissão Oficial</span>
+                            <span className="text-sm font-black text-slate-800 block">
+                              {formattedDate}
+                            </span>
+                            <span className="text-[10px] font-semibold text-slate-500 block">Local: Canteiro de Obras</span>
+                          </div>
+                        </div>
+
+                        {/* Resumo Executivo / KPIs */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-200/60">
                           <div>
-                            <span className="text-[10px] text-[#f15a24] font-black uppercase tracking-wider block">Relatório Diário de Obra</span>
-                            <h2 className="text-lg font-black text-slate-800 uppercase tracking-tight">{formattedDate}</h2>
-                          </div>
-                          <div className="text-right text-[10px] text-slate-450 font-bold">
-                            <span>Emissão: {new Date().toLocaleDateString("pt-BR")}</span>
-                          </div>
-                        </div>
-
-                        {/* Summary Metrics */}
-                        <div className="grid grid-cols-3 gap-4 border-b border-slate-100 pb-6">
-                          <div className="bg-slate-50 p-4 rounded-2xl">
-                            <span className="text-[8px] text-slate-455 font-black uppercase block">Apontamentos Realizados</span>
-                            <span className="text-xl font-black text-slate-850">{dailyLogs.length}</span>
-                          </div>
-                          <div className="bg-slate-50 p-4 rounded-2xl">
-                            <span className="text-[8px] text-slate-455 font-black uppercase block">Total de Obras Ativas</span>
-                            <span className="text-xl font-black text-[#f15a24]">
-                              {new Set(dailyLogs.map(l => l.atividade?.projeto?.nome).filter(Boolean)).size}
+                            <span className="text-[9px] font-black text-slate-400 uppercase block">Apontamentos Realizados</span>
+                            <span className="text-lg font-black text-[#1E3A8A]">
+                              {dailyLogs.length} lançamento(s)
                             </span>
                           </div>
-                          <div className="bg-slate-50 p-4 rounded-2xl">
-                            <span className="text-[8px] text-slate-455 font-black uppercase block">Média de Avanço</span>
-                            <span className="text-xl font-black text-green-600">
-                              {dailyLogs.length > 0 ? Math.round(dailyLogs.reduce((acc, curr) => acc + curr.progresso, 0) / dailyLogs.length) : 0}%
+                          <div>
+                            <span className="text-[9px] font-black text-slate-400 uppercase block">Mão de Obra no Canteiro</span>
+                            <span className="text-lg font-black text-slate-800">
+                              {workforceCount} colaborador(es)
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-[9px] font-black text-slate-400 uppercase block">Avanço Físico Médio</span>
+                            <span className="text-lg font-black text-emerald-600">
+                              {avgProgress}%
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-[9px] font-black text-slate-400 uppercase block">Obra Vinculada</span>
+                            <span className="text-xs font-black text-[#f15a24] truncate block">
+                              {ativos.find(a => a.id === selectedObraFilter)?.nome || targetDailyRdo?.projeto?.nome || "Todas as Obras"}
                             </span>
                           </div>
                         </div>
 
-                        {/* Log Entries Dossier */}
-                        <div className="space-y-6">
-                          <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider">Atividades Desenvolvidas no Dia</h3>
-                          
-                          {dailyLogs.map((log: any) => (
-                            <div key={log.id} className="p-5 rounded-2xl border border-slate-150 bg-slate-50/50 space-y-4 print:break-inside-avoid">
-                              <div className="flex justify-between items-start">
-                                <div>
-                                  <span className="text-[8px] text-[#f15a24] font-black uppercase tracking-wider bg-orange-50 px-2 py-0.5 rounded border border-orange-100">
-                                    {log.atividade?.projeto?.nome || "Sem Obra"}
-                                  </span>
-                                  <h4 className="text-xs font-black text-slate-800 uppercase mt-1">
-                                    {log.atividade?.descricao}
-                                  </h4>
-                                  <span className="text-[9px] text-slate-450 font-bold block mt-0.5">
-                                    Apontado por: {log.usuario?.name || log.usuario?.email || "Colaborador"}
-                                  </span>
-                                </div>
-                                <div className="text-right">
-                                  <span className="text-xs font-black text-slate-800 block">Avanço Físico</span>
-                                  <span className="text-sm font-black text-[#f15a24]">{log.progresso}%</span>
-                                </div>
+                        {/* Condições Climáticas (Clima) */}
+                        <div className="space-y-2">
+                          <h3 className="text-xs font-black text-[#1E3A8A] uppercase tracking-wider border-b border-slate-200 pb-1 flex items-center gap-1.5">
+                            🌤️ Condições Climáticas do Canteiro
+                          </h3>
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            {climasData.map((c: any, idx: number) => (
+                              <div key={idx} className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs">
+                                <span className="text-[9px] font-black uppercase text-slate-400 block">
+                                  {c.periodo === "MANHA" ? "🌅 Manhã" : c.periodo === "TARDE" ? "☀️ Tarde" : "🌙 Noite"}
+                                </span>
+                                <strong className="text-slate-800 uppercase block mt-0.5">{c.condicao}</strong>
+                                {c.impacto && <p className="text-[10px] text-amber-700 font-medium mt-1">Impacto: {c.impacto}</p>}
                               </div>
-
-                              <div className="space-y-1.5">
-                                <span className="text-[8px] font-black text-slate-400 uppercase tracking-wider block">Serviços Executados:</span>
-                                <p className="text-xs text-slate-600 font-medium whitespace-pre-line leading-relaxed">
-                                  {log.descricao}
-                                </p>
-                              </div>
-
-                              {/* Audios */}
-                              {log.audios && log.audios.length > 0 && (
-                                <div className="space-y-1 print:hidden">
-                                  <span className="text-[8px] font-black text-slate-400 uppercase tracking-wider block">Relato por Voz (Áudio):</span>
-                                  <div className="flex gap-2 flex-wrap">
-                                    {log.audios.map((aud: string, idx: number) => (
-                                      <audio key={idx} src={aud} controls className="h-8 max-w-xs scale-90 -ml-4" />
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-
-                              {/* Media Grid of Photos */}
-                              {log.fotos && log.fotos.length > 0 && (
-                                <div className="space-y-2">
-                                  <span className="text-[8px] font-black text-slate-400 uppercase tracking-wider block">Registros Fotográficos:</span>
-                                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                                    {log.fotos.map((foto: string, idx: number) => (
-                                      <div key={idx} className="relative aspect-video rounded-xl overflow-hidden border border-slate-200">
-                                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                                        <img src={foto} alt={`Registro ${idx + 1}`} className="w-full h-full object-cover" />
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          ))}
-
-                          {dailyLogs.length === 0 && (
-                            <div className="text-center py-12 text-slate-400 italic text-xs bg-slate-50 rounded-2xl">
-                              Nenhum apontamento de diário de obra foi registrado para esta data.
-                            </div>
-                          )}
+                            ))}
+                          </div>
                         </div>
+
+                        {/* Tabela Formatada de Atividades Executadas (Com Badges Coloridos) */}
+                        <div className="space-y-2">
+                          <h3 className="text-xs font-black text-[#1E3A8A] uppercase tracking-wider border-b border-slate-200 pb-1 flex items-center gap-1.5">
+                            📋 Atividades Executadas no Dia (Finalizadas e Em Andamento)
+                          </h3>
+                          <div className="overflow-x-auto rounded-xl border border-slate-200">
+                            <table className="w-full text-xs">
+                              <thead>
+                                <tr className="bg-[#0F172A] text-white text-[9px] font-black uppercase tracking-wider">
+                                  <th className="p-3 text-left">Obra</th>
+                                  <th className="p-3 text-left">Atividade</th>
+                                  <th className="p-3 text-center">Status</th>
+                                  <th className="p-3 text-center">Progresso</th>
+                                  <th className="p-3 text-left">Relato / Apontamento</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-100">
+                                {dailyLogs.map((log: any) => {
+                                  const prog = log.progresso ?? (log.atividade?.status === "CONCLUIDA" ? 100 : 0);
+                                  const isFinalized = prog >= 100 || log.atividade?.status === "CONCLUIDA" || log.statusLancamento === "FINALIZADO";
+                                  const isPausada = log.atividade?.status === "PAUSADA" || log.atividade?.status === "AGUARDANDO_MATERIAL";
+                                  const isImpedimento = log.atividade?.status === "IMPEDIMENTO";
+
+                                  return (
+                                    <tr key={log.id} className="hover:bg-slate-50">
+                                      <td className="p-3 font-bold text-slate-800">{log.atividade?.projeto?.nome || "-"}</td>
+                                      <td className="p-3 font-bold text-slate-700">{log.atividade?.descricao}</td>
+                                      <td className="p-3 text-center">
+                                        <span className={`text-[9px] font-black uppercase px-2.5 py-1 rounded-md border ${
+                                          isFinalized
+                                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                            : isImpedimento
+                                            ? "bg-red-50 text-red-700 border-red-200"
+                                            : isPausada
+                                            ? "bg-amber-50 text-amber-700 border-amber-200"
+                                            : "bg-blue-50 text-blue-700 border-blue-200"
+                                        }`}>
+                                          {isFinalized ? "🟢 Finalizada" : isImpedimento ? "🔴 Impedimento" : isPausada ? "🟡 Paralisada" : "🔵 Em Andamento"}
+                                        </span>
+                                      </td>
+                                      <td className="p-3 text-center font-black text-slate-800">{prog}%</td>
+                                      <td className="p-3 text-slate-600">{log.descricao || "Atividade em andamento no canteiro."}</td>
+                                    </tr>
+                                  );
+                                })}
+                                {dailyLogs.length === 0 && (
+                                  <tr>
+                                    <td colSpan={5} className="p-8 text-center text-slate-400 italic">
+                                      Nenhum apontamento registrado para {fmtDate(reportDate)}.
+                                    </td>
+                                  </tr>
+                                )}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+
+                        {/* Mão de Obra Registrada / Equipe Padrão */}
+                        <div className="space-y-2">
+                          <h3 className="text-xs font-black text-[#1E3A8A] uppercase tracking-wider border-b border-slate-200 pb-1 flex items-center gap-1.5">
+                            👷 Equipe de Mão de Obra no Dia
+                          </h3>
+                          <div className="overflow-x-auto rounded-xl border border-slate-200">
+                            <table className="w-full text-xs">
+                              <thead>
+                                <tr className="bg-slate-100 text-slate-700 text-[9px] font-black uppercase tracking-wider">
+                                  <th className="p-2.5 text-left">Nome / Colaborador</th>
+                                  <th className="p-2.5 text-left">Função</th>
+                                  <th className="p-2.5 text-center">Empresa</th>
+                                  <th className="p-2.5 text-center">Horas Trab.</th>
+                                  <th className="p-2.5 text-center">Falta</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-100">
+                                {maoDeObraData.map((m: any, idx: number) => (
+                                  <tr key={idx} className="hover:bg-slate-50">
+                                    <td className="p-2.5 font-bold text-slate-800">{m.funcionario?.nome || m.nomeAvulso || "-"}</td>
+                                    <td className="p-2.5 text-slate-600">{m.funcao || m.funcionario?.funcao || "-"}</td>
+                                    <td className="p-2.5 text-center text-slate-600">{m.empresa === "PROPRIA" ? "Própria" : "Terceiro"}</td>
+                                    <td className="p-2.5 text-center font-bold text-slate-800">{m.horasTrab || 8}h</td>
+                                    <td className="p-2.5 text-center font-bold">{m.falta ? <span className="text-red-600">Sim</span> : <span className="text-emerald-600">Não</span>}</td>
+                                  </tr>
+                                ))}
+                                {maoDeObraData.length === 0 && (
+                                  <tr>
+                                    <td colSpan={5} className="p-6 text-center text-slate-400 italic">
+                                      Nenhum colaborador registrado.
+                                    </td>
+                                  </tr>
+                                )}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+
+                        {/* Equipamentos Utilizados (Gestão de Ativos) */}
+                        <div className="space-y-2">
+                          <h3 className="text-xs font-black text-[#1E3A8A] uppercase tracking-wider border-b border-slate-200 pb-1 flex items-center gap-1.5">
+                            🛠️ Utilização de Equipamentos (Gestão de Ativos)
+                          </h3>
+                          <div className="overflow-x-auto rounded-xl border border-slate-200">
+                            <table className="w-full text-xs">
+                              <thead>
+                                <tr className="bg-slate-100 text-slate-700 text-[9px] font-black uppercase tracking-wider">
+                                  <th className="p-2.5 text-left">Equipamento / Máquina</th>
+                                  <th className="p-2.5 text-center">Horímetro Inicial</th>
+                                  <th className="p-2.5 text-center">Horímetro Final</th>
+                                  <th className="p-2.5 text-center">Horas Trabalhadas</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-100">
+                                {equipData.map((l: any, idx: number) => {
+                                  const eq = l.ativo || equipamentos.find(e => e.id === l.ativoId);
+                                  const hIni = l.horimetroInicio ?? "-";
+                                  const hFim = l.horimetroFim ?? "-";
+                                  const hDiff = l.horimetroInicio && l.horimetroFim && l.horimetroFim > l.horimetroInicio
+                                    ? (parseFloat(l.horimetroFim) - parseFloat(l.horimetroInicio)).toFixed(1) + "h"
+                                    : "8.0h";
+                                  return (
+                                    <tr key={idx} className="hover:bg-slate-50">
+                                      <td className="p-2.5 font-bold text-slate-800">{eq?.nome || "Máquina do Canteiro"} ({eq?.codigo || "N/A"})</td>
+                                      <td className="p-2.5 text-center font-semibold text-slate-700">{hIni}</td>
+                                      <td className="p-2.5 text-center font-semibold text-slate-700">{hFim}</td>
+                                      <td className="p-2.5 text-center font-black text-emerald-600">{hDiff}</td>
+                                    </tr>
+                                  );
+                                })}
+                                {equipData.length === 0 && (
+                                  <tr>
+                                    <td colSpan={4} className="p-6 text-center text-slate-400 italic">
+                                      Nenhum equipamento registrado para esta data.
+                                    </td>
+                                  </tr>
+                                )}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+
+                        {/* Materiais Recebidos */}
+                        {materiaisData.length > 0 && (
+                          <div className="space-y-2">
+                            <h3 className="text-xs font-black text-[#1E3A8A] uppercase tracking-wider border-b border-slate-200 pb-1 flex items-center gap-1.5">
+                              📦 Materiais Recebidos / Utilizados
+                            </h3>
+                            <div className="overflow-x-auto rounded-xl border border-slate-200">
+                              <table className="w-full text-xs">
+                                <thead>
+                                  <tr className="bg-slate-100 text-slate-700 text-[9px] font-black uppercase tracking-wider">
+                                    <th className="p-2.5 text-left">Material</th>
+                                    <th className="p-2.5 text-center">Qtd.</th>
+                                    <th className="p-2.5 text-center">Unidade</th>
+                                    <th className="p-2.5 text-left">Fornecedor</th>
+                                    <th className="p-2.5 text-center">Nº Nota Fiscal</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                  {materiaisData.map((mat: any, idx: number) => (
+                                    <tr key={idx} className="hover:bg-slate-50">
+                                      <td className="p-2.5 font-bold text-slate-800">{mat.material}</td>
+                                      <td className="p-2.5 text-center font-bold text-slate-800">{mat.quantidade}</td>
+                                      <td className="p-2.5 text-center text-slate-600">{mat.unidade}</td>
+                                      <td className="p-2.5 text-slate-600">{mat.fornecedor || "-"}</td>
+                                      <td className="p-2.5 text-center font-bold text-slate-800">{mat.notaFiscal || "-"}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Ocorrências & Incidentes */}
+                        {ocorrenciasData.length > 0 && (
+                          <div className="space-y-2">
+                            <h3 className="text-xs font-black text-red-700 uppercase tracking-wider border-b border-red-200 pb-1 flex items-center gap-1.5">
+                              ⚠️ Ocorrências e Paralisações Registradas
+                            </h3>
+                            <div className="space-y-2">
+                              {ocorrenciasData.map((oc: any, idx: number) => (
+                                <div key={idx} className="bg-red-50/70 border border-red-200 p-3 rounded-xl text-xs space-y-1">
+                                  <div className="flex justify-between items-center">
+                                    <strong className="font-black text-red-800 uppercase">{oc.tipo}</strong>
+                                  </div>
+                                  <p className="text-slate-700 font-medium">{oc.descricao}</p>
+                                  {oc.impacto && <p className="text-[10px] text-amber-800 font-bold">Impacto: {oc.impacto}</p>}
+                                  {oc.medidaTomada && <p className="text-[10px] text-emerald-800 font-bold">Medida Tomada: {oc.medidaTomada}</p>}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Observações Gerais */}
+                        {obsData && (
+                          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs text-slate-700">
+                            <strong className="text-[10px] font-black uppercase text-slate-400 block mb-1">Observações Gerais do Dia:</strong>
+                            <p className="whitespace-pre-line font-medium">{obsData}</p>
+                          </div>
+                        )}
+
+                        {/* Galeria de Fotos do Canteiro */}
+                        {photosData.length > 0 && (
+                          <div className="space-y-2">
+                            <h3 className="text-xs font-black text-[#1E3A8A] uppercase tracking-wider border-b border-slate-200 pb-1 flex items-center gap-1.5">
+                              📸 Registros Fotográficos do Canteiro ({photosData.length} fotos)
+                            </h3>
+                            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
+                              {photosData.map((url: string, idx: number) => (
+                                <a key={idx} href={url} target="_blank" rel="noreferrer" className="aspect-square rounded-xl overflow-hidden border border-slate-200 block shadow-sm hover:opacity-90 transition-opacity">
+                                  <img src={url} alt={`Foto Canteiro ${idx + 1}`} className="w-full h-full object-cover" />
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Assinaturas Oficiais */}
+                        <div className="pt-10 grid grid-cols-2 gap-8 text-center text-xs font-bold text-slate-600">
+                          <div className="border-t border-slate-300 pt-2">
+                            Responsável Técnico pelo Canteiro
+                          </div>
+                          <div className="border-t border-slate-300 pt-2">
+                            Engenharia & Fiscalização
+                          </div>
+                        </div>
+
+                        <div className="text-center text-[10px] font-black text-slate-500 uppercase pt-4 border-t border-slate-200">
+                          Cordeiro Energia / Cordeiro Service - Diário de Obras
+                        </div>
+
                       </div>
                     </div>
                   );

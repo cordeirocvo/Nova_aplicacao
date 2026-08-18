@@ -79,7 +79,8 @@ export default function DiarioObrasPage() {
     responsavelId: "",
     status: "PLANEJADA",
     dataInicio: "",
-    dataFim: ""
+    dataFim: "",
+    observacao: ""
   });
 
   const [selectedActivityForLog, setSelectedActivityForLog] = useState<any | null>(null);
@@ -299,7 +300,13 @@ export default function DiarioObrasPage() {
         fetch("/api/diario/rdo-diario")
       ]);
 
-      if (resProj.ok) setAtivos(await resProj.json());
+      if (resProj.ok) {
+        const pList = await resProj.json();
+        setAtivos(pList);
+        if (pList.length > 0 && !selectedObraFilter) {
+          setSelectedObraFilter(pList[0].id);
+        }
+      }
       if (resUsers.ok) setUsers(await resUsers.json());
       if (resAct.ok) setActivities(await resAct.json());
       if (resLogs.ok) setLogs(await resLogs.json());
@@ -430,7 +437,8 @@ export default function DiarioObrasPage() {
           responsavelId: "",
           status: "PLANEJADA",
           dataInicio: "",
-          dataFim: ""
+          dataFim: "",
+          observacao: ""
         });
         setShowAddActivityForm(false);
         fetchData();
@@ -769,10 +777,26 @@ export default function DiarioObrasPage() {
             Gestão diária de canteiros, apontamentos técnicos, notas de voz e fotos operacionais.
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          {/* Obra / Usina Selector Dropdown */}
+          <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-200/80 flex items-center gap-2.5 shadow-xs">
+            <Building className="w-4 h-4 text-[#f15a24]" />
+            <span className="text-[10px] font-black uppercase text-slate-500 whitespace-nowrap">Usina / Obra:</span>
+            <select
+              className="px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-black text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24] cursor-pointer"
+              value={selectedObraFilter}
+              onChange={(e) => setSelectedObraFilter(e.target.value)}
+            >
+              <option value="">Todas as Usinas / Obras</option>
+              {ativos.map(a => (
+                <option key={a.id} value={a.id}>{a.nome}</option>
+              ))}
+            </select>
+          </div>
+
           <button
             onClick={() => {
-              const firstAct = activities[0] || { id: "temp", projeto: ativos[0], descricao: "Apontamento Diário da Obra" };
+              const firstAct = activities.find(a => !selectedObraFilter || a.projetoId === selectedObraFilter) || activities[0] || { id: "temp", projeto: ativos[0], descricao: "Apontamento Diário da Obra" };
               setSelectedActivityForLog(firstAct);
             }}
             className="bg-[#f15a24] hover:bg-orange-600 text-white font-black text-xs py-3 px-5 rounded-2xl shadow-md uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2 transform hover:scale-105"
@@ -1153,6 +1177,17 @@ export default function DiarioObrasPage() {
                         onChange={e => setNewActivity({...newActivity, dataFim: e.target.value})}
                       />
                     </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Observações da Atividade</label>
+                    <textarea
+                      rows={2}
+                      placeholder="Observações técnicas ou especificações da tarefa..."
+                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24] resize-none"
+                      value={newActivity.observacao}
+                      onChange={e => setNewActivity({...newActivity, observacao: e.target.value})}
+                    />
                   </div>
 
                   <button
@@ -1768,7 +1803,25 @@ export default function DiarioObrasPage() {
                                         </span>
                                       </td>
                                       <td className="p-3 text-center font-black text-slate-800">{prog}%</td>
-                                      <td className="p-3 text-slate-600">{log.descricao || "Atividade em andamento no canteiro."}</td>
+                                      <td className="p-3 text-slate-600 space-y-1.5">
+                                        <div>
+                                          <strong className="block text-slate-800 font-bold">{log.descricao || "Atividade em andamento no canteiro."}</strong>
+                                          {log.atividade?.observacao && (
+                                            <span className="block text-[10px] text-slate-500 font-medium italic mt-0.5">
+                                              📝 Obs: {log.atividade.observacao}
+                                            </span>
+                                          )}
+                                        </div>
+                                        {log.fotos && log.fotos.length > 0 && (
+                                          <div className="flex gap-1.5 flex-wrap pt-1">
+                                            {log.fotos.map((imgUrl: string, fIdx: number) => (
+                                              <a key={fIdx} href={imgUrl} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-lg overflow-hidden border border-slate-200 block shadow-xs hover:opacity-90 transition-opacity">
+                                                <img src={imgUrl} alt={`Foto ${fIdx+1}`} className="w-full h-full object-cover" />
+                                              </a>
+                                            ))}
+                                          </div>
+                                        )}
+                                      </td>
                                     </tr>
                                   );
                                 })}
@@ -2316,7 +2369,7 @@ export default function DiarioObrasPage() {
                   })()}
                   
                   <div className="flex justify-between text-[10px] font-bold text-slate-400 pt-1 border-t border-slate-200">
-                    <span>{new Date(log.data).toLocaleDateString("pt-BR")}</span>
+                    <span>{fmtDate(log.data)}</span>
                     <span className="text-slate-600">{log.progresso}% progresso</span>
                   </div>
                 </div>
@@ -2409,7 +2462,7 @@ export default function DiarioObrasPage() {
               {logs.map((log) => (
                 <tr key={log.id} className="border-b border-slate-100 hover:bg-slate-50/50">
                   <td className="p-3 text-slate-400 font-bold font-mono whitespace-nowrap">
-                    {new Date(log.data).toLocaleDateString("pt-BR")}
+                    {fmtDate(log.data)}
                   </td>
                   <td className="p-3 font-bold text-slate-800">{log.atividade?.projeto?.nome}</td>
                   <td className="p-3 text-slate-600 font-semibold">{log.atividade?.descricao}</td>
@@ -3582,6 +3635,17 @@ export default function DiarioObrasPage() {
                   <option value="EM_ANDAMENTO">Em Andamento</option>
                   <option value="CONCLUIDA">Concluída</option>
                 </select>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Observações da Atividade</label>
+                <textarea
+                  rows={3}
+                  placeholder="Observações técnicas, especificações ou detalhes da execução..."
+                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24] resize-none"
+                  value={editingActivity.observacao || ""}
+                  onChange={e => setEditingActivity({...editingActivity, observacao: e.target.value})}
+                />
               </div>
 
               <div className="flex gap-3 pt-2">

@@ -92,11 +92,14 @@ function buildPdf(rdo: any, atividadesExecutadasDia: any[] = [], todasAtividades
         const latestLog = act.lancamentos?.[0];
         const prog = latestLog ? latestLog.progresso : (act.status === "CONCLUIDA" ? 100 : 0);
         const logDesc = latestLog?.descricao || "Executado no canteiro.";
+        const obs = act.observacao ? " [Obs: " + act.observacao + "]" : "";
+        const photoCount = latestLog?.fotos?.length ? " (" + latestLog.fotos.length + " foto(s) anexada(s))" : "";
+        const fullRelato = logDesc + obs + photoCount;
         return el(View, { key: i, style: s.tr },
           el(View, { style: [s.tc, { flex: 3 }] }, el(Text, { style: { fontFamily: "Helvetica-Bold" } }, act.descricao)),
           el(View, { style: s.tc }, el(Text, {}, prog + "%")),
           el(View, { style: s.tc }, el(Text, {}, act.status === "CONCLUIDA" ? "Concluiida" : "Em andamento")),
-          el(View, { style: [s.tc, { flex: 3 }] }, el(Text, {}, logDesc)),
+          el(View, { style: [s.tc, { flex: 3 }] }, el(Text, {}, fullRelato)),
         );
       })]
     : null;

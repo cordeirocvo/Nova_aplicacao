@@ -2705,10 +2705,10 @@ export default function DiarioObrasPage() {
                 </div>
                 <h2 className="text-base md:text-lg font-black text-slate-800 uppercase tracking-tight flex items-center gap-2 mt-1.5">
                   <Building className="w-5 h-5 text-[#f15a24]" /> 
-                  Preenchimento do Relatório Diário de Obra (RDO)
+                  Lançamento de Apontamento de Atividade Executada
                 </h2>
                 <p className="text-xs text-slate-500 font-medium mt-0.5">
-                  Atividade de referência: <strong className="text-slate-700">{selectedActivityForLog.descricao}</strong>
+                  Atividade de referência: <strong className="text-slate-700">{selectedActivityForLog.descricao}</strong> — <span className="text-[#f15a24] font-semibold">Este apontamento será consolidado automaticamente no RDO Geral da data.</span>
                 </p>
               </div>
               <button 
@@ -3350,11 +3350,11 @@ export default function DiarioObrasPage() {
                     const projetoId = selectedActivityForLog?.projetoId || selectedActivityForLog?.projeto?.id || selectedObraFilter || (activities.length > 0 ? activities[0].projetoId : null);
                     if (!projetoId) { alert("Selecione uma obra ou atividade válida para salvar o RDO."); return; }
                     const saved = await handleSaveRdoDiario(projetoId, logForm.data || new Date().toISOString().split("T")[0], "PENDENTE");
-                    if (saved) { alert("RDO do dia salvo com sucesso! Número: RDO-" + String(saved.numeroRdo).padStart(3,"0")); }
+                    if (saved) { alert("RDO Geral do dia consolidado e salvo com sucesso! Número: RDO-" + String(saved.numeroRdo).padStart(3,"0")); }
                   }}
-                  className="w-full sm:w-auto px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl uppercase tracking-wider transition-all cursor-pointer shadow-md flex items-center justify-center gap-2"
+                  className="w-full sm:w-auto px-5 py-3 bg-slate-800 hover:bg-slate-900 text-white font-black text-xs rounded-xl uppercase tracking-wider transition-all cursor-pointer shadow-md flex items-center justify-center gap-2"
                 >
-                  <FileText className="w-4 h-4" /> 💾 Salvar RDO Completo do Dia
+                  <FileText className="w-4 h-4 text-emerald-400" /> 📑 Consolidar RDO Geral da Obra
                 </button>
                 <button
                   type="button"
@@ -3362,7 +3362,7 @@ export default function DiarioObrasPage() {
                   disabled={uploadingFile}
                   className="w-full sm:w-auto px-6 py-3 bg-[#f15a24] hover:bg-orange-600 text-white font-black text-xs rounded-xl uppercase tracking-wider transition-all cursor-pointer shadow-md disabled:opacity-50 flex items-center justify-center gap-2"
                 >
-                  <Check className="w-4 h-4" /> Salvar Apontamento
+                  <Check className="w-4 h-4" /> 👷 Salvar Apontamento de Atividade
                 </button>
               </div>
             </div>

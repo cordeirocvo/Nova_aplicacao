@@ -1546,7 +1546,17 @@ export default function DiarioObrasPage() {
                                 </div>
                               </div>
                             );
-                                        {/* VIEW 2: DAILY REPORT DOSSIER */}
+                          })}
+                          {activities.length === 0 && (
+                            <div className="text-center italic text-slate-400 text-xs py-8">Nenhuma atividade cadastrada.</div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* VIEW 2: DAILY REPORT DOSSIER */}
                 {activeReportType === "diario" && (() => {
                   const targetDailyRdo = rdosDiarios.find(r => isDateMatch(r.data, reportDate) && (!selectedObraFilter || r.projetoId === selectedObraFilter));
                   const directLogs = logs.filter(l => {
@@ -1608,6 +1618,8 @@ export default function DiarioObrasPage() {
                   directLogs.forEach(l => {
                     if (Array.isArray(l.fotos)) photosData.push(...l.fotos);
                   });
+
+                  const obsData = targetDailyRdo?.observacoes || (directLogs.length > 0 ? "Serviços executados conforme programação do canteiro." : "");
 
                   const formattedDate = reportDate ? `${fmtDate(reportDate)} — ${getWeekDayName(reportDate)}` : "-";
                   const workforceCount = maoDeObraData.length;
@@ -2088,13 +2100,12 @@ export default function DiarioObrasPage() {
                     </div>
                   );
                 })()}
+                </div>
+              );
+            })()}
 
-              </div>
-            );
-          })()}
-
-        </div>
-      ) : (
+          </div>
+        ) : (
         // =========================================================================
         // ======================== EXECUTOR DASHBOARD VIEW ========================
         // =========================================================================

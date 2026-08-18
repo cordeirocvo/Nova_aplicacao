@@ -180,6 +180,7 @@ export default function DiarioObrasPage() {
     tipo: string; descricao: string; impacto: string; medidaTomada: string;
   }>>([])
   const [rdoObservacoes, setRdoObservacoes] = useState("");
+  const [rdoOutrasAtividades, setRdoOutrasAtividades] = useState("");
   const [showCapexReportModal, setShowCapexReportModal] = useState(false);
   const [capexLocalObra, setCapexLocalObra] = useState("Canteiro de Obras");
   const [capexObs, setCapexObs] = useState("");
@@ -599,7 +600,7 @@ export default function DiarioObrasPage() {
   const handleSaveRdoDiario = async (projetoId: string, data: string, status = "RASCUNHO") => {
     if (!projetoId || !data) return null;
     try {
-      const payload = { projetoId, data, status, observacoes: rdoObservacoes, climas: rdoClimas, maoDeObra: rdoMaoDeObra, materiais: rdoMateriais, ocorrencias: rdoOcorrencias };
+      const payload = { projetoId, data, status, observacoes: rdoObservacoes, outrasAtividades: rdoOutrasAtividades, climas: rdoClimas, maoDeObra: rdoMaoDeObra, materiais: rdoMateriais, ocorrencias: rdoOcorrencias };
       const res = await fetch("/api/diario/rdo-diario", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
       if (res.ok) {
         const saved = await res.json();
@@ -731,6 +732,7 @@ export default function DiarioObrasPage() {
       })) : [],
 
       observacoes: existingRdo?.observacoes || "",
+      outrasAtividades: existingRdo?.outrasAtividades || "",
       fotos: log.fotos || existingRdo?.fotos || []
     });
 
@@ -792,6 +794,7 @@ export default function DiarioObrasPage() {
           projetoId: targetProjId,
           data: editingLog.data,
           observacoes: editingLog.observacoes,
+          outrasAtividades: editingLog.outrasAtividades,
           climas: editingLog.climas,
           maoDeObra: editingLog.maoDeObra,
           materiais: editingLog.materiais,
@@ -2079,6 +2082,16 @@ export default function DiarioObrasPage() {
                           </div>
                         )}
 
+                        {/* Outras Atividades Executadas Não Listadas */}
+                        {targetDailyRdo?.outrasAtividades && (
+                          <div className="bg-orange-50/70 p-4 rounded-xl border border-orange-200 text-xs text-slate-700">
+                            <strong className="text-[10px] font-black uppercase text-[#f15a24] block mb-1">
+                              📌 Outras Atividades Executadas (Serviços Avulsos / Não Listados do Dia):
+                            </strong>
+                            <p className="whitespace-pre-line font-medium text-slate-800">{targetDailyRdo.outrasAtividades}</p>
+                          </div>
+                        )}
+
                         {/* Observações Gerais */}
                         {obsData && (
                           <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs text-slate-700">
@@ -3294,6 +3307,18 @@ export default function DiarioObrasPage() {
                   </div>
                 )}
 
+                {/* Outras Atividades Executadas Não Listadas */}
+                <div className="mt-3">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">📌 Outras Atividades Executadas Não Listadas (Serviços Avulsos / Imprevistos)</label>
+                  <textarea
+                    value={rdoOutrasAtividades}
+                    onChange={e => setRdoOutrasAtividades(e.target.value)}
+                    rows={2}
+                    placeholder="Relate outras atividades imprevistas executadas durante o dia que não constavam no catálogo..."
+                    className="mt-1 w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 placeholder:text-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-[#f15a24]/30"
+                  />
+                </div>
+
                 {/* Observações gerais */}
                 <div className="mt-3">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Observações Gerais do Dia</label>
@@ -4225,17 +4250,30 @@ export default function DiarioObrasPage() {
                 </div>
               )}
 
-              {/* TAB 7: OBSERVAÇÕES GERAIS */}
+              {/* TAB 7: OBSERVAÇÕES GERAIS E OUTRAS ATIVIDADES */}
               {editModalTab === "obs" && (
                 <div className="space-y-4">
-                  <h4 className="text-xs font-black text-[#1E3A8A] uppercase tracking-wider">Observações Gerais do Canteiro</h4>
-                  <textarea
-                    rows={6}
-                    placeholder="Digite observações técnicas gerais, apontamentos da fiscalização ou engenharia..."
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24] resize-none"
-                    value={editingLog.observacoes || ""}
-                    onChange={e => setEditingLog({...editingLog, observacoes: e.target.value})}
-                  />
+                  <div>
+                    <h4 className="text-xs font-black text-[#1E3A8A] uppercase tracking-wider mb-2">📌 Outras Atividades Executadas (Serviços Avulsos / Não Listados)</h4>
+                    <textarea
+                      rows={3}
+                      placeholder="Relate outras atividades imprevistas que surgiram durante o dia e foram relatadas pelos responsáveis..."
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24] resize-none"
+                      value={editingLog.outrasAtividades || ""}
+                      onChange={e => setEditingLog({...editingLog, outrasAtividades: e.target.value})}
+                    />
+                  </div>
+
+                  <div>
+                    <h4 className="text-xs font-black text-[#1E3A8A] uppercase tracking-wider mb-2">Observações Gerais do Canteiro</h4>
+                    <textarea
+                      rows={4}
+                      placeholder="Digite observações técnicas gerais, apontamentos da fiscalização ou engenharia..."
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24] resize-none"
+                      value={editingLog.observacoes || ""}
+                      onChange={e => setEditingLog({...editingLog, observacoes: e.target.value})}
+                    />
+                  </div>
                 </div>
               )}
 

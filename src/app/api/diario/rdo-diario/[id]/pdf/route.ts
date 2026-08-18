@@ -52,9 +52,52 @@ function getWeekDay(d: any): string {
   return days[dt.getUTCDay()] || "";
 }
 
+async function resolveImageToBase64(srcUrl: string): Promise<string | null> {
+  if (!srcUrl) return null;
+  try {
+    if (srcUrl.startsWith("data:image")) return srcUrl;
+
+    if (srcUrl.startsWith("/") || srcUrl.startsWith("uploads/")) {
+      const cleanPath = srcUrl.startsWith("/") ? srcUrl.slice(1) : srcUrl;
+      const localFilePath = path.join(process.cwd(), "public", cleanPath);
+      if (fs.existsSync(localFilePath)) {
+        const fileBuf = fs.readFileSync(localFilePath);
+        const ext = path.extname(localFilePath).toLowerCase().replace(".", "");
+        const mime = ext === "png" ? "image/png" : ext === "svg" ? "image/svg+xml" : "image/jpeg";
+        return `data:${mime};base64,${fileBuf.toString("base64")}`;
+      }
+    }
+
+    if (srcUrl.startsWith("http://") || srcUrl.startsWith("https://")) {
+      if (srcUrl.includes("/uploads/")) {
+        const uploadSegment = srcUrl.substring(srcUrl.indexOf("/uploads/"));
+        const cleanPath = uploadSegment.startsWith("/") ? uploadSegment.slice(1) : uploadSegment;
+        const localFilePath = path.join(process.cwd(), "public", cleanPath);
+        if (fs.existsSync(localFilePath)) {
+          const fileBuf = fs.readFileSync(localFilePath);
+          const ext = path.extname(localFilePath).toLowerCase().replace(".", "");
+          const mime = ext === "png" ? "image/png" : ext === "svg" ? "image/svg+xml" : "image/jpeg";
+          return `data:${mime};base64,${fileBuf.toString("base64")}`;
+        }
+      }
+
+      const res = await fetch(srcUrl);
+      if (res.ok) {
+        const arrayBuf = await res.arrayBuffer();
+        const buf = Buffer.from(arrayBuf);
+        const contentType = res.headers.get("content-type") || "image/jpeg";
+        return `data:${contentType};base64,${buf.toString("base64")}`;
+      }
+    }
+  } catch (err) {
+    console.error("Image resolution error:", srcUrl, err);
+  }
+  return null;
+}
+
 function el(type: any, props: any, ...children: any[]): any { return React.createElement(type, props, ...children); }
 
-function buildPdf(rdo: any, atividadesExecutadasDia: any[] = [], todasAtividadesObra: any[] = [], logoBase64: string = ""): any {
+function buildPdf(rdo: any, atividadesExecutadasDia: any[] = [], todasAtividadesObra: any[] = [], logoBase64: string = "", resolvedPhotoMap: Record<string, string> = {}): any {
   const status = rdo.status || "RASCUNHO";
   const rdoNum = String(rdo.numeroRdo).padStart(3, "0");
   const totalMDO = (rdo.maoDeObra || []).reduce((a: number, m: any) => a + (m.quantidade || 1), 0);
@@ -106,13 +149,17 @@ function buildPdf(rdo: any, atividadesExecutadasDia: any[] = [], todasAtividades
 
         // Photos attached to this activity log
         const photos: string[] = latestLog?.fotos || [];
-        photos.forEach(p => allTodayPhotos.push({ url: p, title: act.descricao }));
+        photos.forEach(p => {
+          const resolvedUrl = resolvedPhotoMap[p] || p;
+          allTodayPhotos.push({ url: resolvedUrl, title: act.descricao });
+        });
 
         const photoGrid = photos.length > 0
           ? el(View, { style: { flexDirection: "row", flexWrap: "wrap", marginTop: 4 } },
-              ...photos.slice(0, 4).map((pUrl: string, pIdx: number) =>
-                el(Image, { key: pIdx, src: pUrl, style: { width: 45, height: 45, borderRadius: 3, marginRight: 4, marginTop: 4, objectFit: "cover" } })
-              )
+              ...photos.slice(0, 4).map((pUrl: string, pIdx: number) => {
+                const imgSrc = resolvedPhotoMap[pUrl] || pUrl;
+                return el(Image, { key: pIdx, src: imgSrc, style: { width: 45, height: 45, borderRadius: 3, marginRight: 4, marginTop: 4, objectFit: "cover" } });
+              })
             )
           : null;
 
@@ -182,6 +229,7 @@ function buildPdf(rdo: any, atividadesExecutadasDia: any[] = [], todasAtividades
 
   return el(Document, { title: "RDO-" + rdoNum + " - " + (rdo.projeto?.nome || ""), author: "Cordeiro Energia" },
     el(Page, { size: "A4", style: s.page },
+      
       // Header Corporativo com Logo
       el(View, { style: s.header },
         logoBase64 ? el(Image, { src: logoBase64, style: s.logo }) : null,
@@ -221,6 +269,11 @@ function buildPdf(rdo: any, atividadesExecutadasDia: any[] = [], todasAtividades
         el(Text, { style: s.stit }, "Atividades Executadas no Dia (" + atividadesExecutadasDia.length + ")"),
         ativRows ? tbl(ativRows) : el(Text, { style: s.nodata }, "Nenhuma atividade teve lançamento ou execução nesta data.")
       ),
+
+      rdo.outrasAtividades ? el(View, { style: s.sec },
+        el(Text, { style: s.stit }, "📌 Outras Atividades Executadas (Serviços Avulsos / Não Listados)"),
+        el(Text, { style: { leading: 1.4 } }, String(rdo.outrasAtividades))
+      ) : null,
 
       el(View, { style: s.sec }, el(Text, { style: s.stit }, "Mão de Obra no Canteiro (" + totalMDO + " pessoas / " + totalH + "h)"), tbl(maoRows)),
       el(View, { style: s.sec }, el(Text, { style: s.stit }, "Materiais Recebidos / Utilizados"), matRows ? tbl(matRows) : el(Text, { style: s.nodata }, "Nenhum material registrado nesta data.")),
@@ -285,7 +338,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       where: { projetoId: rdo.projetoId }
     });
 
-    // 3. Tenta carregar o logo corporativo como base64
+    // 3. Carrega o logo corporativo como base64
     let logoBase64 = "";
     try {
       const logoPath = path.join(process.cwd(), "public", "logo.png");
@@ -297,7 +350,36 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       console.error("Logo load error:", err);
     }
 
-    const rawBuffer = await renderToBuffer(buildPdf(rdo, atividadesExecutadasDia, todasAtividadesObra, logoBase64));
+    // 4. Resolve todas as fotos anexadas para Base64 Data URIs
+    const resolvedPhotoMap: Record<string, string> = {};
+    const photoUrlsToResolve: string[] = [];
+
+    atividadesExecutadasDia.forEach(act => {
+      act.lancamentos?.forEach((l: any) => {
+        if (Array.isArray(l.fotos)) {
+          l.fotos.forEach((pUrl: string) => {
+            if (pUrl && !photoUrlsToResolve.includes(pUrl)) photoUrlsToResolve.push(pUrl);
+          });
+        }
+      });
+    });
+
+    rdo.ocorrencias?.forEach((o: any) => {
+      if (Array.isArray(o.fotos)) {
+        o.fotos.forEach((pUrl: string) => {
+          if (pUrl && !photoUrlsToResolve.includes(pUrl)) photoUrlsToResolve.push(pUrl);
+        });
+      }
+    });
+
+    await Promise.all(
+      photoUrlsToResolve.map(async (url) => {
+        const b64 = await resolveImageToBase64(url);
+        if (b64) resolvedPhotoMap[url] = b64;
+      })
+    );
+
+    const rawBuffer = await renderToBuffer(buildPdf(rdo, atividadesExecutadasDia, todasAtividadesObra, logoBase64, resolvedPhotoMap));
     const buffer = new Uint8Array(rawBuffer);
     const safeName = (rdo.projeto?.nome || "obra").replace(/\s+/g, "-");
     return new Response(buffer, { headers: { "Content-Type": "application/pdf", "Content-Disposition": "attachment; filename=\"RDO-" + String(rdo.numeroRdo).padStart(3,"0") + "-" + safeName + ".pdf\"" } });

@@ -43,7 +43,7 @@ export async function POST(req: Request) {
     const session = (await getServerSession(authOptions as any)) as any;
     if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const body = await req.json();
-    const { projetoId, data, observacoes, status, climas, maoDeObra, materiais, ocorrencias } = body;
+    const { projetoId, data, observacoes, outrasAtividades, status, climas, maoDeObra, materiais, ocorrencias } = body;
     const parseLocalDate = (dateStr?: string) => {
       if (!dateStr) return new Date();
       if (dateStr.includes("T")) return new Date(dateStr);
@@ -69,6 +69,7 @@ export async function POST(req: Request) {
         where: { id: existing.id },
         data: {
           observacoes: observacoes || null,
+          outrasAtividades: outrasAtividades || null,
           status: status || existing.status,
           climas: { create: (climas || []).map((c: any) => ({ periodo: c.periodo, condicao: c.condicao, impacto: c.impacto || "" })) },
           maoDeObra: { create: (maoDeObra || []).map((m: any) => ({ funcionarioId: m.funcionarioId || null, nomeAvulso: m.nomeAvulso || null, funcao: m.funcao || "", empresa: m.empresa || "PROPRIA", quantidade: m.quantidade || 1, horasTrab: m.horasTrab || 8, falta: m.falta || false, justFalta: m.justFalta || "" })) },
@@ -92,6 +93,7 @@ export async function POST(req: Request) {
       data: {
         projetoId, data: dateVal, numeroRdo, responsavelId,
         observacoes: observacoes || null,
+        outrasAtividades: outrasAtividades || null,
         status: status || "RASCUNHO",
         climas: { create: (climas || []).map((c: any) => ({ periodo: c.periodo, condicao: c.condicao, impacto: c.impacto || "" })) },
         maoDeObra: { create: (maoDeObra || []).map((m: any) => ({ funcionarioId: m.funcionarioId || null, nomeAvulso: m.nomeAvulso || null, funcao: m.funcao || "", empresa: m.empresa || "PROPRIA", quantidade: m.quantidade || 1, horasTrab: m.horasTrab || 8, falta: m.falta || false, justFalta: m.justFalta || "" })) },

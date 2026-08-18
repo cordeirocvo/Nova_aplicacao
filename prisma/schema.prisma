@@ -936,6 +936,7 @@ model RdoDiario {
   responsavelId String
   status        String                @default("RASCUNHO") // RASCUNHO, PENDENTE, APROVADO, RECUSADO
   observacoes   String?
+  outrasAtividades String?
   createdAt     DateTime              @default(now())
   updatedAt     DateTime              @updatedAt
 

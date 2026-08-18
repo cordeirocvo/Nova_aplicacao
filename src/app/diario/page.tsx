@@ -103,6 +103,7 @@ export default function DiarioObrasPage() {
 
   const [editingActivity, setEditingActivity] = useState<any | null>(null);
   const [editingLog, setEditingLog] = useState<any | null>(null);
+  const [editModalTab, setEditModalTab] = useState<"dados_gerais" | "clima" | "mao_de_obra" | "equipamentos" | "materiais" | "ocorrencias" | "obs">("dados_gerais");
   const [activeLogIdToday, setActiveLogIdToday] = useState<string | null>(null);
 
   // Audio Recording States
@@ -659,10 +660,91 @@ export default function DiarioObrasPage() {
     fetchData();
   };
 
-  // Update specific daily log (Supervisor edits or Executor updates)
+  // Helper to open full edit modal with all RDO sections (Admin only)
+  const openEditRdoModal = (log: any) => {
+    if (!isAdmin) {
+      alert("Apenas Administradores possuem permissão para editar RDOs salvos.");
+      return;
+    }
+
+    const logDateStr = log.data ? (typeof log.data === "string" ? log.data.split("T")[0] : new Date(log.data).toISOString().split("T")[0]) : reportDate;
+    const logProjId = log.atividade?.projetoId || log.atividade?.projeto?.id || selectedObraFilter || (ativos.length > 0 ? ativos[0].id : "");
+
+    const existingRdo = rdosDiarios.find(r => isDateMatch(r.data, logDateStr) && (!logProjId || r.projetoId === logProjId));
+
+    setEditingLog({
+      id: log.id,
+      data: logDateStr,
+      projetoId: logProjId,
+      atividadeId: log.atividadeId || log.atividade?.id,
+      progresso: log.progresso ?? 0,
+      descricao: log.descricao || "",
+      statusLancamento: log.statusLancamento || "FINALIZADO",
+      ativoId: log.ativoId || "",
+      horimetroInicio: log.horimetroInicio !== null && log.horimetroInicio !== undefined ? log.horimetroInicio.toString() : "",
+      horimetroFim: log.horimetroFim !== null && log.horimetroFim !== undefined ? log.horimetroFim.toString() : "",
+      fotoHorimetroInicioUrl: log.fotoHorimetroInicioUrl || "",
+      fotoHorimetroFimUrl: log.fotoHorimetroFimUrl || "",
+      
+      climas: existingRdo?.climas && existingRdo.climas.length > 0 ? existingRdo.climas.map((c: any) => ({
+        periodo: c.periodo,
+        condicao: c.condicao,
+        impacto: c.impacto || ""
+      })) : [
+        { periodo: "MANHA", condicao: "ENSOLARADO", impacto: "" },
+        { periodo: "TARDE", condicao: "ENSOLARADO", impacto: "" }
+      ],
+
+      maoDeObra: existingRdo?.maoDeObra && existingRdo.maoDeObra.length > 0 ? existingRdo.maoDeObra.map((m: any) => ({
+        funcionarioId: m.funcionarioId || "",
+        nomeAvulso: m.funcionario?.nome || m.nomeAvulso || "",
+        funcao: m.funcao || m.funcionario?.funcao || "",
+        empresa: m.empresa || "PROPRIA",
+        quantidade: m.quantidade || 1,
+        horasTrab: m.horasTrab || 8,
+        falta: m.falta || false,
+        justFalta: m.justFalta || ""
+      })) : funcionariosCanteiro.map(f => ({
+        funcionarioId: f.id,
+        nomeAvulso: f.nome,
+        funcao: f.funcao,
+        empresa: f.empresa || "PROPRIA",
+        quantidade: 1,
+        horasTrab: 8,
+        falta: false,
+        justFalta: ""
+      })),
+
+      materiais: existingRdo?.materiais && existingRdo.materiais.length > 0 ? existingRdo.materiais.map((m: any) => ({
+        material: m.material,
+        quantidade: m.quantidade,
+        unidade: m.unidade || "un",
+        fornecedor: m.fornecedor || "",
+        notaFiscal: m.notaFiscal || ""
+      })) : [],
+
+      ocorrencias: existingRdo?.ocorrencias && existingRdo.ocorrencias.length > 0 ? existingRdo.ocorrencias.map((o: any) => ({
+        tipo: o.tipo,
+        descricao: o.descricao,
+        impacto: o.impacto || "",
+        medidaTomada: o.medidaTomada || ""
+      })) : [],
+
+      observacoes: existingRdo?.observacoes || "",
+      fotos: log.fotos || existingRdo?.fotos || []
+    });
+
+    setEditModalTab("dados_gerais");
+  };
+
+  // Update full RDO record (Admin edits)
   const handleUpdateLog = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingLog) return;
+    if (!isAdmin) {
+      setFormError("Apenas Administradores possuem permissão para editar RDOs.");
+      return;
+    }
     setFormError("");
     setFormSuccess("");
 
@@ -688,21 +770,51 @@ export default function DiarioObrasPage() {
     }
 
     try {
+      // 1. Update launch entry
       const res = await fetch(`/api/diario/lancamentos/${editingLog.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(editingLog)
       });
-      if (res.ok) {
-        setFormSuccess("Lançamento atualizado com sucesso!");
-        setEditingLog(null);
-        fetchData();
-      } else {
+
+      if (!res.ok) {
         const data = await res.json();
-        setFormError(data.error || "Erro ao atualizar.");
+        setFormError(data.error || "Erro ao atualizar apontamento.");
+        return;
       }
+
+      // 2. Upsert full RDO record (clima, mao de obra, materiais, ocorrencias, observacoes)
+      const targetProjId = editingLog.projetoId || selectedObraFilter || (ativos.length > 0 ? ativos[0].id : "");
+      await fetch("/api/diario/rdo-diario", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          projetoId: targetProjId,
+          data: editingLog.data,
+          observacoes: editingLog.observacoes,
+          climas: editingLog.climas,
+          maoDeObra: editingLog.maoDeObra,
+          materiais: editingLog.materiais,
+          ocorrencias: editingLog.ocorrencias,
+          status: "APROVADO"
+        })
+      });
+
+      // 3. Save audit log for audit history
+      await fetch(`/api/diario/rdo-diario/${editingLog.id}/audit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          acao: "MODIFICACAO",
+          detalhes: `Edição completa de RDO efetuada pelo Administrador (${session?.user?.name || session?.user?.email}) em ${new Date().toLocaleString("pt-BR")}`
+        })
+      });
+
+      setFormSuccess("RDO Completo atualizado com sucesso pelo Administrador!");
+      setEditingLog(null);
+      fetchData();
     } catch (err) {
-      setFormError("Erro de conexão.");
+      setFormError("Erro de conexão ao salvar RDO.");
     }
   };
 
@@ -2534,18 +2646,9 @@ export default function DiarioObrasPage() {
                     <td className="p-3 text-center">
                       <div className="flex justify-center gap-1.5">
                         <button
-                          onClick={() => setEditingLog({
-                            id: log.id,
-                            data: log.data ? new Date(log.data).toISOString().split("T")[0] : "",
-                            progresso: log.progresso,
-                            descricao: log.descricao,
-                            ativoId: log.ativoId || "",
-                            horimetroInicio: log.horimetroInicio !== null && log.horimetroInicio !== undefined ? log.horimetroInicio.toString() : "",
-                            horimetroFim: log.horimetroFim !== null && log.horimetroFim !== undefined ? log.horimetroFim.toString() : "",
-                            statusLancamento: log.statusLancamento,
-                          })}
+                          onClick={() => openEditRdoModal(log)}
                           className="p-1 text-blue-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all cursor-pointer"
-                          title="Editar Apontamento"
+                          title="Editar RDO Completo (Admin)"
                         >
                           <Pencil className="w-3.5 h-3.5" />
                         </button>
@@ -3458,16 +3561,7 @@ export default function DiarioObrasPage() {
                     <button
                       type="button"
                       onClick={() => {
-                        setEditingLog({
-                          id: selectedRdoForReview.id,
-                          data: selectedRdoForReview.data ? new Date(selectedRdoForReview.data).toISOString().split("T")[0] : "",
-                          progresso: selectedRdoForReview.progresso,
-                          descricao: selectedRdoForReview.descricao,
-                          ativoId: selectedRdoForReview.ativoId || "",
-                          horimetroInicio: selectedRdoForReview.horimetroInicio?.toString() || "",
-                          horimetroFim: selectedRdoForReview.horimetroFim?.toString() || "",
-                          statusLancamento: selectedRdoForReview.statusLancamento,
-                        });
+                        openEditRdoModal(selectedRdoForReview);
                         setSelectedRdoForReview(null);
                       }}
                       className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs rounded-xl uppercase tracking-wider transition-all cursor-pointer shadow-md flex items-center justify-center gap-1.5"
@@ -3673,117 +3767,485 @@ export default function DiarioObrasPage() {
       {/* ========================================================================= */}
       {editingLog && (
         <div className="fixed inset-0 z-50 bg-[#0a192f]/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-lg rounded-[2.5rem] border border-slate-100 shadow-2xl p-6 relative animate-in slide-in-from-bottom-8 duration-300">
+          <div className="bg-white w-full max-w-4xl rounded-[2.5rem] border border-slate-100 shadow-2xl p-6 sm:p-8 relative max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom-8 duration-300">
             
-            <div className="flex justify-between items-start mb-4">
+            {/* Header */}
+            <div className="flex justify-between items-start border-b border-slate-100 pb-4 mb-4">
               <div>
-                <h3 className="text-base font-black text-slate-800 uppercase tracking-tight flex items-center gap-2">
-                  <Pencil className="w-5 h-5 text-[#f15a24]" /> 
-                  Editar Lançamento RDO Geral
+                <span className="text-[10px] text-[#f15a24] font-black uppercase tracking-wider block">Edição Exclusiva de Administrador</span>
+                <h3 className="text-xl font-black text-slate-800 uppercase tracking-tight flex items-center gap-2 mt-0.5">
+                  <Pencil className="w-6 h-6 text-[#f15a24]" /> 
+                  Editar RDO Completo do Dia
                 </h3>
-                <p className="text-[10px] text-slate-500 mt-0.5">Modifique os detalhes do apontamento diário e horímetros.</p>
+                <p className="text-xs text-slate-500 font-medium mt-1">
+                  Modifique dados gerais, condições climáticas, equipe de mão de obra, equipamentos, materiais, ocorrências e observações gerais.
+                </p>
               </div>
               <button 
                 type="button"
                 onClick={() => setEditingLog(null)}
-                className="text-slate-400 hover:text-slate-600 font-black text-lg p-1 cursor-pointer"
+                className="text-slate-400 hover:text-slate-600 font-black text-xl p-2 cursor-pointer rounded-xl hover:bg-slate-100 transition-all"
               >
                 ✕
               </button>
             </div>
 
-            <form onSubmit={handleUpdateLog} className="space-y-4 text-left">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Data do Lançamento *</label>
-                  <input 
-                    type="date"
-                    required
-                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
-                    value={editingLog.data ? new Date(editingLog.data).toISOString().split("T")[0] : ""}
-                    onChange={e => setEditingLog({...editingLog, data: e.target.value})}
-                  />
-                </div>
+            {/* Navigation Tabs */}
+            <div className="flex flex-wrap gap-2 bg-slate-100 p-1.5 rounded-2xl mb-6">
+              {[
+                { id: "dados_gerais", label: "📋 Dados Gerais" },
+                { id: "clima", label: "🌤️ Clima" },
+                { id: "mao_de_obra", label: "👷 Mão de Obra" },
+                { id: "equipamentos", label: "🛠️ Equipamentos" },
+                { id: "materiais", label: "📦 Materiais" },
+                { id: "ocorrencias", label: "⚠️ Ocorrências" },
+                { id: "obs", label: "📝 Observações" },
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setEditModalTab(tab.id as any)}
+                  className={`py-2 px-3.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
+                    editModalTab === tab.id
+                      ? "bg-[#1E3A8A] text-white shadow-md"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
 
-                <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Progresso Declarado (%) *</label>
-                  <input 
-                    type="number"
-                    min="0"
-                    max="100"
-                    required
-                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
-                    value={editingLog.progresso}
-                    onChange={e => setEditingLog({...editingLog, progresso: parseFloat(e.target.value) || 0})}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Descrição dos Serviços Executados *</label>
-                <textarea 
-                  required
-                  rows={4}
-                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 outline-none focus:ring-2 focus:ring-[#f15a24] resize-none"
-                  value={editingLog.descricao}
-                  onChange={e => setEditingLog({...editingLog, descricao: e.target.value})}
-                />
-              </div>
-
-              {/* Equipamentos & Horímetro inputs */}
-              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
-                <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-wide">Vínculo de Equipamento</h4>
-                <div>
-                  <select
-                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none"
-                    value={editingLog.ativoId || ""}
-                    onChange={e => setEditingLog({
-                      ...editingLog,
-                      ativoId: e.target.value || null,
-                      horimetroInicio: "",
-                      horimetroFim: ""
-                    })}
-                  >
-                    <option value="">Nenhum Equipamento</option>
-                    {equipamentos.map(eq => (
-                      <option key={eq.id} value={eq.id}>{eq.nome} ({eq.codigo})</option>
-                    ))}
-                  </select>
-                </div>
-
-                {editingLog.ativoId && (() => {
-                  const asset = equipamentos.find(eq => eq.id === editingLog.ativoId);
-                  if (asset?.categoria !== "PESADO") return null;
-
-                  return (
-                    <div className="grid grid-cols-2 gap-3 pt-2">
-                      <div>
-                        <label className="block text-[9px] font-bold text-slate-400 uppercase mb-1">Horímetro Inicial *</label>
-                        <input 
-                          type="number"
-                          step="any"
-                          required
-                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-850"
-                          value={editingLog.horimetroInicio || ""}
-                          onChange={e => setEditingLog({...editingLog, horimetroInicio: e.target.value})}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[9px] font-bold text-slate-400 uppercase mb-1">Horímetro Final</label>
-                        <input 
-                          type="number"
-                          step="any"
-                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-850"
-                          value={editingLog.horimetroFim || ""}
-                          onChange={e => setEditingLog({...editingLog, horimetroFim: e.target.value})}
-                        />
-                      </div>
+            <form onSubmit={handleUpdateLog} className="space-y-6 text-left">
+              
+              {/* TAB 1: DADOS GERAIS */}
+              {editModalTab === "dados_gerais" && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Data do Lançamento *</label>
+                      <input 
+                        type="date"
+                        required
+                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                        value={editingLog.data ? (typeof editingLog.data === "string" ? editingLog.data.split("T")[0] : new Date(editingLog.data).toISOString().split("T")[0]) : ""}
+                        onChange={e => setEditingLog({...editingLog, data: e.target.value})}
+                      />
                     </div>
-                  );
-                })()}
-              </div>
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Obra / Usina Vinculada *</label>
+                      <select
+                        required
+                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                        value={editingLog.projetoId || ""}
+                        onChange={e => setEditingLog({...editingLog, projetoId: e.target.value})}
+                      >
+                        {ativos.map(p => (
+                          <option key={p.id} value={p.id}>{p.nome}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Progresso Declarado (%) *</label>
+                      <input 
+                        type="number"
+                        min="0"
+                        max="100"
+                        required
+                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                        value={editingLog.progresso}
+                        onChange={e => setEditingLog({...editingLog, progresso: parseFloat(e.target.value) || 0})}
+                      />
+                    </div>
+                  </div>
 
-              <div className="flex gap-3 pt-2">
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Descrição dos Serviços Executados *</label>
+                    <textarea 
+                      required
+                      rows={4}
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 outline-none focus:ring-2 focus:ring-[#f15a24] resize-none"
+                      value={editingLog.descricao}
+                      onChange={e => setEditingLog({...editingLog, descricao: e.target.value})}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 2: CLIMA */}
+              {editModalTab === "clima" && (
+                <div className="space-y-4">
+                  <h4 className="text-xs font-black text-[#1E3A8A] uppercase tracking-wider">Edição de Condições Climáticas</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {(editingLog.climas || []).map((c: any, idx: number) => (
+                      <div key={idx} className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs font-black uppercase text-slate-700">
+                            {c.periodo === "MANHA" ? "🌅 Período da Manhã" : c.periodo === "TARDE" ? "☀️ Período da Tarde" : "🌙 Período da Noite"}
+                          </span>
+                        </div>
+                        <div>
+                          <label className="block text-[9px] font-black text-slate-400 uppercase mb-1">Condição do Tempo</label>
+                          <select
+                            className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none"
+                            value={c.condicao}
+                            onChange={e => {
+                              const newClimas = [...(editingLog.climas || [])];
+                              newClimas[idx] = { ...newClimas[idx], condicao: e.target.value };
+                              setEditingLog({ ...editingLog, climas: newClimas });
+                            }}
+                          >
+                            <option value="ENSOLARADO">☀️ Ensolarado</option>
+                            <option value="NUBLADO">☁️ Nublado</option>
+                            <option value="CHUVOSO">🌧️ Chuvoso</option>
+                            <option value="IMPRATICAVEL">⛈️ Impraticável (Chuva Forte)</option>
+                            <option value="SEM_CHUVA">🌤️ Sem Chuva</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-[9px] font-black text-slate-400 uppercase mb-1">Registro de Impacto</label>
+                          <input
+                            type="text"
+                            placeholder="Ex: Paralisação de 2 horas devido a chuva..."
+                            className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-700 outline-none"
+                            value={c.impacto || ""}
+                            onChange={e => {
+                              const newClimas = [...(editingLog.climas || [])];
+                              newClimas[idx] = { ...newClimas[idx], impacto: e.target.value };
+                              setEditingLog({ ...editingLog, climas: newClimas });
+                            }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 3: MÃO DE OBRA */}
+              {editModalTab === "mao_de_obra" && (
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h4 className="text-xs font-black text-[#1E3A8A] uppercase tracking-wider">Equipe de Mão de Obra Registrada</h4>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newMao = [...(editingLog.maoDeObra || []), {
+                          funcionarioId: "", nomeAvulso: "Novo Colaborador", funcao: "Operacional", empresa: "PROPRIA", quantidade: 1, horasTrab: 8, falta: false, justFalta: ""
+                        }];
+                        setEditingLog({ ...editingLog, maoDeObra: newMao });
+                      }}
+                      className="bg-[#1E3A8A] text-white font-bold text-[10px] uppercase px-3 py-1.5 rounded-xl cursor-pointer"
+                    >
+                      + Adicionar Colaborador
+                    </button>
+                  </div>
+
+                  <div className="overflow-x-auto rounded-xl border border-slate-200 max-h-[300px]">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="bg-slate-100 text-slate-700 text-[9px] font-black uppercase">
+                          <th className="p-2.5 text-left">Colaborador</th>
+                          <th className="p-2.5 text-left">Função</th>
+                          <th className="p-2.5 text-center">Empresa</th>
+                          <th className="p-2.5 text-center">Horas Trab</th>
+                          <th className="p-2.5 text-center">Falta</th>
+                          <th className="p-2.5 text-center">Remover</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {(editingLog.maoDeObra || []).map((m: any, idx: number) => (
+                          <tr key={idx} className="hover:bg-slate-50">
+                            <td className="p-2.5 font-bold text-slate-800">
+                              <input
+                                type="text"
+                                className="w-full px-2 py-1 border border-slate-200 rounded-lg text-xs font-bold"
+                                value={m.nomeAvulso || m.funcionario?.nome || ""}
+                                onChange={e => {
+                                  const newMao = [...(editingLog.maoDeObra || [])];
+                                  newMao[idx] = { ...newMao[idx], nomeAvulso: e.target.value };
+                                  setEditingLog({ ...editingLog, maoDeObra: newMao });
+                                }}
+                              />
+                            </td>
+                            <td className="p-2.5">
+                              <input
+                                type="text"
+                                className="w-full px-2 py-1 border border-slate-200 rounded-lg text-xs"
+                                value={m.funcao || ""}
+                                onChange={e => {
+                                  const newMao = [...(editingLog.maoDeObra || [])];
+                                  newMao[idx] = { ...newMao[idx], funcao: e.target.value };
+                                  setEditingLog({ ...editingLog, maoDeObra: newMao });
+                                }}
+                              />
+                            </td>
+                            <td className="p-2.5 text-center">
+                              <select
+                                className="px-2 py-1 border border-slate-200 rounded-lg text-xs font-bold"
+                                value={m.empresa}
+                                onChange={e => {
+                                  const newMao = [...(editingLog.maoDeObra || [])];
+                                  newMao[idx] = { ...newMao[idx], empresa: e.target.value };
+                                  setEditingLog({ ...editingLog, maoDeObra: newMao });
+                                }}
+                              >
+                                <option value="PROPRIA">Própria</option>
+                                <option value="TERCEIRO">Terceiro</option>
+                              </select>
+                            </td>
+                            <td className="p-2.5 text-center">
+                              <input
+                                type="number"
+                                className="w-16 px-2 py-1 border border-slate-200 rounded-lg text-xs text-center font-bold"
+                                value={m.horasTrab || 8}
+                                onChange={e => {
+                                  const newMao = [...(editingLog.maoDeObra || [])];
+                                  newMao[idx] = { ...newMao[idx], horasTrab: parseFloat(e.target.value) || 0 };
+                                  setEditingLog({ ...editingLog, maoDeObra: newMao });
+                                }}
+                              />
+                            </td>
+                            <td className="p-2.5 text-center">
+                              <input
+                                type="checkbox"
+                                className="w-4 h-4 cursor-pointer accent-[#f15a24]"
+                                checked={!!m.falta}
+                                onChange={e => {
+                                  const newMao = [...(editingLog.maoDeObra || [])];
+                                  newMao[idx] = { ...newMao[idx], falta: e.target.checked };
+                                  setEditingLog({ ...editingLog, maoDeObra: newMao });
+                                }}
+                              />
+                            </td>
+                            <td className="p-2.5 text-center">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const newMao = (editingLog.maoDeObra || []).filter((_: any, i: number) => i !== idx);
+                                  setEditingLog({ ...editingLog, maoDeObra: newMao });
+                                }}
+                                className="text-red-500 font-bold hover:bg-red-50 p-1 rounded cursor-pointer"
+                              >
+                                ✕
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 4: EQUIPAMENTOS */}
+              {editModalTab === "equipamentos" && (
+                <div className="space-y-4">
+                  <h4 className="text-xs font-black text-[#1E3A8A] uppercase tracking-wider">Vínculo de Equipamento e Horímetros</h4>
+                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-4">
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Equipamento Selecionado</label>
+                      <select
+                        className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none"
+                        value={editingLog.ativoId || ""}
+                        onChange={e => setEditingLog({
+                          ...editingLog,
+                          ativoId: e.target.value || null,
+                          horimetroInicio: "",
+                          horimetroFim: ""
+                        })}
+                      >
+                        <option value="">Nenhum Equipamento Vinculado</option>
+                        {equipamentos.map(eq => (
+                          <option key={eq.id} value={eq.id}>{eq.nome} ({eq.codigo}) - {eq.categoria}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {editingLog.ativoId && (() => {
+                      const asset = equipamentos.find(eq => eq.id === editingLog.ativoId);
+                      const isPesado = asset?.categoria === "PESADO";
+
+                      return (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-200">
+                          <div>
+                            <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                              Horímetro Inicial {isPesado && "*"}
+                            </label>
+                            <input 
+                              type="number"
+                              step="any"
+                              required={isPesado}
+                              className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800"
+                              value={editingLog.horimetroInicio || ""}
+                              onChange={e => setEditingLog({...editingLog, horimetroInicio: e.target.value})}
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Horímetro Final</label>
+                            <input 
+                              type="number"
+                              step="any"
+                              className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800"
+                              value={editingLog.horimetroFim || ""}
+                              onChange={e => setEditingLog({...editingLog, horimetroFim: e.target.value})}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 5: MATERIAIS */}
+              {editModalTab === "materiais" && (
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h4 className="text-xs font-black text-[#1E3A8A] uppercase tracking-wider">Materiais Recebidos ou Utilizados</h4>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newMat = [...(editingLog.materiais || []), { material: "", quantidade: 1, unidade: "un", fornecedor: "", notaFiscal: "" }];
+                        setEditingLog({ ...editingLog, materiais: newMat });
+                      }}
+                      className="bg-[#1E3A8A] text-white font-bold text-[10px] uppercase px-3 py-1.5 rounded-xl cursor-pointer"
+                    >
+                      + Adicionar Material
+                    </button>
+                  </div>
+
+                  <div className="space-y-3">
+                    {(editingLog.materiais || []).map((mat: any, idx: number) => (
+                      <div key={idx} className="bg-slate-50 p-3 rounded-xl border border-slate-200 grid grid-cols-5 gap-2 items-center text-xs">
+                        <input
+                          type="text"
+                          placeholder="Material"
+                          className="col-span-2 px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-bold"
+                          value={mat.material}
+                          onChange={e => {
+                            const newMat = [...(editingLog.materiais || [])];
+                            newMat[idx] = { ...newMat[idx], material: e.target.value };
+                            setEditingLog({ ...editingLog, materiais: newMat });
+                          }}
+                        />
+                        <input
+                          type="number"
+                          placeholder="Qtd"
+                          className="px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs text-center font-bold"
+                          value={mat.quantidade}
+                          onChange={e => {
+                            const newMat = [...(editingLog.materiais || [])];
+                            newMat[idx] = { ...newMat[idx], quantidade: parseFloat(e.target.value) || 0 };
+                            setEditingLog({ ...editingLog, materiais: newMat });
+                          }}
+                        />
+                        <input
+                          type="text"
+                          placeholder="Unidade (un, m, kg)"
+                          className="px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs"
+                          value={mat.unidade}
+                          onChange={e => {
+                            const newMat = [...(editingLog.materiais || [])];
+                            newMat[idx] = { ...newMat[idx], unidade: e.target.value };
+                            setEditingLog({ ...editingLog, materiais: newMat });
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newMat = (editingLog.materiais || []).filter((_: any, i: number) => i !== idx);
+                            setEditingLog({ ...editingLog, materiais: newMat });
+                          }}
+                          className="text-red-500 font-bold hover:bg-red-100 py-1 rounded cursor-pointer text-center"
+                        >
+                          ✕ Excluir
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 6: OCORRÊNCIAS */}
+              {editModalTab === "ocorrencias" && (
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h4 className="text-xs font-black text-red-700 uppercase tracking-wider">Ocorrências e Paralisações</h4>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newOc = [...(editingLog.ocorrencias || []), { tipo: "PARALISACAO", descricao: "", impacto: "", medidaTomada: "" }];
+                        setEditingLog({ ...editingLog, ocorrencias: newOc });
+                      }}
+                      className="bg-red-700 text-white font-bold text-[10px] uppercase px-3 py-1.5 rounded-xl cursor-pointer"
+                    >
+                      + Adicionar Ocorrência
+                    </button>
+                  </div>
+
+                  <div className="space-y-3">
+                    {(editingLog.ocorrencias || []).map((oc: any, idx: number) => (
+                      <div key={idx} className="bg-red-50/60 p-4 rounded-2xl border border-red-200 space-y-2 text-xs">
+                        <div className="flex justify-between items-center">
+                          <select
+                            className="px-2 py-1 bg-white border border-red-200 rounded-lg text-xs font-bold text-red-800"
+                            value={oc.tipo}
+                            onChange={e => {
+                              const newOc = [...(editingLog.ocorrencias || [])];
+                              newOc[idx] = { ...newOc[idx], tipo: e.target.value };
+                              setEditingLog({ ...editingLog, ocorrencias: newOc });
+                            }}
+                          >
+                            <option value="PARALISACAO">⚠️ Paralisação de Obra</option>
+                            <option value="INCIDENTE_SEGURANCA">🚨 Incidente de Segurança</option>
+                            <option value="FALTA_MATERIAL">📦 Falta de Material</option>
+                            <option value="QUEBRA_EQUIPAMENTO">🛠️ Quebra de Equipamento</option>
+                            <option value="OUTRO">📌 Outro</option>
+                          </select>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newOc = (editingLog.ocorrencias || []).filter((_: any, i: number) => i !== idx);
+                              setEditingLog({ ...editingLog, ocorrencias: newOc });
+                            }}
+                            className="text-red-600 font-bold hover:bg-red-100 px-2 py-1 rounded cursor-pointer"
+                          >
+                            ✕ Excluir
+                          </button>
+                        </div>
+                        <input
+                          type="text"
+                          placeholder="Descrição da ocorrência..."
+                          className="w-full px-3 py-1.5 bg-white border border-red-200 rounded-lg text-xs font-medium"
+                          value={oc.descricao}
+                          onChange={e => {
+                            const newOc = [...(editingLog.ocorrencias || [])];
+                            newOc[idx] = { ...newOc[idx], descricao: e.target.value };
+                            setEditingLog({ ...editingLog, ocorrencias: newOc });
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 7: OBSERVAÇÕES GERAIS */}
+              {editModalTab === "obs" && (
+                <div className="space-y-4">
+                  <h4 className="text-xs font-black text-[#1E3A8A] uppercase tracking-wider">Observações Gerais do Canteiro</h4>
+                  <textarea
+                    rows={6}
+                    placeholder="Digite observações técnicas gerais, apontamentos da fiscalização ou engenharia..."
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24] resize-none"
+                    value={editingLog.observacoes || ""}
+                    onChange={e => setEditingLog({...editingLog, observacoes: e.target.value})}
+                  />
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-4 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setEditingLog(null)}
@@ -3795,9 +4257,10 @@ export default function DiarioObrasPage() {
                   type="submit"
                   className="flex-1 bg-[#f15a24] hover:bg-orange-600 text-white font-black text-xs py-3.5 rounded-xl uppercase tracking-wider transition-all cursor-pointer shadow-md"
                 >
-                  Salvar Alterações
+                  💾 Salvar Alterações do RDO
                 </button>
               </div>
+
             </form>
           </div>
         </div>

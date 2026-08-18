@@ -1712,16 +1712,7 @@ export default function DiarioObrasPage() {
                     return matchesDate && l.atividade?.projetoId === selectedObraFilter;
                   });
 
-                  const dailyLogs = directLogs.length > 0 ? directLogs : activities
-                    .filter(act => (!selectedObraFilter || act.projetoId === selectedObraFilter) && (act.status === "EM_ANDAMENTO" || act.status === "CONCLUIDA"))
-                    .map(act => ({
-                      id: `auto-${act.id}`,
-                      atividade: act,
-                      progresso: act.status === "CONCLUIDA" ? 100 : 50,
-                      descricao: `Atividade ${act.status === "CONCLUIDA" ? "concluída" : "em andamento"} no canteiro de obras.`,
-                      usuario: act.responsavel || { name: "Responsável Técnico" },
-                      data: reportDate
-                    }));
+                  const dailyLogs = directLogs;
 
                   // Unified Data Fallbacks
                   const climasData = targetDailyRdo?.climas && targetDailyRdo.climas.length > 0
@@ -1770,7 +1761,10 @@ export default function DiarioObrasPage() {
 
                   const formattedDate = reportDate ? `${fmtDate(reportDate)} — ${getWeekDayName(reportDate)}` : "-";
                   const workforceCount = maoDeObraData.length;
-                  const avgProgress = dailyLogs.length > 0 ? Math.round(dailyLogs.reduce((a: number, c: any) => a + (c.progresso || 0), 0) / dailyLogs.length) : 0;
+                  const projectActivities = activities.filter(a => !selectedObraFilter || a.projetoId === selectedObraFilter);
+                  const totalObraCount = projectActivities.length || 1;
+                  const sumProgressTotal = projectActivities.reduce((acc: number, a: any) => acc + (a.status === "CONCLUIDA" ? 100 : (a.lancamentos?.[0]?.progresso || 0)), 0);
+                  const avgProgress = Math.round(sumProgressTotal / totalObraCount);
 
                   return (
                     <div className="space-y-6 animate-in fade-in duration-200">
@@ -4374,16 +4368,12 @@ export default function DiarioObrasPage() {
                 {(() => {
                   const targetDailyRdo = rdosDiarios.find(r => isDateMatch(r.data, reportDate) && (!selectedObraFilter || r.projetoId === selectedObraFilter));
                   const directLogs = logs.filter(l => isDateMatch(l.data, reportDate) && (!selectedObraFilter || l.atividade?.projetoId === selectedObraFilter));
-                  const targetLogs = directLogs.length > 0 ? directLogs : activities
-                    .filter(a => (!selectedObraFilter || a.projetoId === selectedObraFilter) && (a.status === "EM_ANDAMENTO" || a.status === "CONCLUIDA"))
-                    .map(a => ({
-                      id: `auto-${a.id}`,
-                      atividade: a,
-                      progresso: a.status === "CONCLUIDA" ? 100 : 50,
-                      descricao: `Atividade ${a.status === "CONCLUIDA" ? "concluída" : "em andamento"} no canteiro de obras.`
-                    }));
+                  const targetLogs = directLogs;
                   const workforceCount = targetDailyRdo?.maoDeObra?.length || funcionariosCanteiro.length;
-                  const avgProgress = targetLogs.length > 0 ? Math.round(targetLogs.reduce((a: number, c: any) => a + (c.progresso || 0), 0) / targetLogs.length) : 0;
+                  const projectActivitiesModal = activities.filter(a => !selectedObraFilter || a.projetoId === selectedObraFilter);
+                  const totalObraCountModal = projectActivitiesModal.length || 1;
+                  const sumProgressTotalModal = projectActivitiesModal.reduce((acc: number, a: any) => acc + (a.status === "CONCLUIDA" ? 100 : (a.lancamentos?.[0]?.progresso || 0)), 0);
+                  const avgProgress = Math.round(sumProgressTotalModal / totalObraCountModal);
 
                   return (
                     <div className="space-y-6">

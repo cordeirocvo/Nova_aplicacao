@@ -3,34 +3,37 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import React from "react";
-import { renderToBuffer, Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
+import fs from "fs";
+import path from "path";
+import { renderToBuffer, Document, Page, Text, View, StyleSheet, Image } from "@react-pdf/renderer";
 
 export const dynamic = "force-dynamic";
 
 const s = StyleSheet.create({
-  page:   { padding: 36, fontFamily: "Helvetica", fontSize: 9, color: "#1e293b" } as any,
-  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 15, paddingBottom: 10, borderBottomWidth: 2, borderBottomColor: "#f15a24" } as any,
-  brand:  { fontSize: 16, fontFamily: "Helvetica-Bold", color: "#1e3a8a", marginBottom: 2 } as any,
-  subbrand:{ fontSize: 8, fontFamily: "Helvetica-Bold", color: "#f15a24", letterSpacing: 1.5, marginBottom: 4 } as any,
-  rt:     { fontSize: 11, fontFamily: "Helvetica-Bold", color: "#0f172a", marginBottom: 2 } as any,
-  rs:     { fontSize: 8, color: "#64748b" } as any,
-  badge:  { padding: "4 10", borderRadius: 4, fontSize: 9, fontFamily: "Helvetica-Bold" } as any,
-  
-  // KPI Metrics Box (CAPEX Standard)
-  kpiRow: { flexDirection: "row", gap: 10, marginBottom: 14 } as any,
-  kpiCard:{ flex: 1, backgroundColor: "#f8fafc", borderRadius: 4, padding: "8 10", borderLeftWidth: 3, borderLeftColor: "#1e3a8a" } as any,
-  kpiTitle: { fontSize: 7, fontFamily: "Helvetica-Bold", color: "#64748b" } as any,
-  kpiVal: { fontSize: 12, fontFamily: "Helvetica-Bold", color: "#0f172a", marginTop: 2 } as any,
+  page: { padding: 30, fontFamily: "Helvetica", fontSize: 8.5, color: "#1e293b" } as any,
+  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12, paddingBottom: 8, borderBottomWidth: 3, borderBottomColor: "#f15a24" } as any,
+  logo: { width: 100, height: 35, objectFit: "contain", marginRight: 10 } as any,
+  brand: { fontSize: 13, fontFamily: "Helvetica-Bold", color: "#1e3a8a", marginBottom: 1 } as any,
+  subbrand: { fontSize: 8, fontFamily: "Helvetica-Bold", color: "#f15a24", letterSpacing: 1, marginBottom: 3 } as any,
+  rt: { fontSize: 10, fontFamily: "Helvetica-Bold", color: "#0f172a", marginBottom: 1 } as any,
+  rs: { fontSize: 7.5, color: "#64748b" } as any,
+  badge: { padding: "4 8", borderRadius: 4, fontSize: 8.5, fontFamily: "Helvetica-Bold" } as any,
 
-  sec:    { marginBottom: 14 } as any,
-  stit:   { fontSize: 10, fontFamily: "Helvetica-Bold", color: "#1e3a8a", marginBottom: 5, paddingBottom: 3, borderBottomWidth: 1, borderBottomColor: "#cbd5e1" } as any,
-  tr:     { flexDirection: "row", borderBottomWidth: 1, borderBottomColor: "#e2e8f0" } as any,
-  tc:     { borderRightWidth: 1, borderRightColor: "#e2e8f0", padding: "4 6", flex: 1 } as any,
-  th:     { fontFamily: "Helvetica-Bold", fontSize: 8, color: "#475569", backgroundColor: "#f1f5f9" } as any,
+  // Metric Cards (CAPEX Standard matching Web Foto 02)
+  kpiRow: { flexDirection: "row", gap: 8, marginBottom: 12 } as any,
+  kpiCard: { flex: 1, backgroundColor: "#f8fafc", borderRadius: 4, padding: "6 8", borderLeftWidth: 3, borderLeftColor: "#f15a24" } as any,
+  kpiTitle: { fontSize: 6.5, fontFamily: "Helvetica-Bold", color: "#64748b" } as any,
+  kpiVal: { fontSize: 10.5, fontFamily: "Helvetica-Bold", color: "#0f172a", marginTop: 2 } as any,
+
+  sec: { marginBottom: 12 } as any,
+  stit: { fontSize: 9.5, fontFamily: "Helvetica-Bold", color: "#1e3a8a", marginBottom: 4, paddingBottom: 2, borderBottomWidth: 1, borderBottomColor: "#cbd5e1" } as any,
+  tr: { flexDirection: "row", borderBottomWidth: 1, borderBottomColor: "#e2e8f0", minHeight: 22 } as any,
+  tc: { borderRightWidth: 1, borderRightColor: "#e2e8f0", padding: "4 5", flex: 1 } as any,
+  th: { fontFamily: "Helvetica-Bold", fontSize: 7.5, color: "#ffffff", backgroundColor: "#0f172a" } as any,
   nodata: { color: "#94a3b8", fontFamily: "Helvetica-Oblique", fontSize: 8 } as any,
-  oc:     { backgroundColor: "#fff7ed", borderLeftWidth: 3, borderLeftColor: "#f97316", padding: "6 8", marginBottom: 5 } as any,
-  oct:    { fontFamily: "Helvetica-Bold", fontSize: 8, color: "#c2410c", marginBottom: 2 } as any,
-  foot:   { position: "absolute", bottom: 25, left: 36, right: 36, flexDirection: "row", justifyContent: "space-between", color: "#94a3b8", fontSize: 7, borderTopWidth: 1, borderTopColor: "#e2e8f0", paddingTop: 5 } as any,
+  oc: { backgroundColor: "#fff7ed", borderLeftWidth: 3, borderLeftColor: "#f97316", padding: "5 7", marginBottom: 4 } as any,
+  oct: { fontFamily: "Helvetica-Bold", fontSize: 7.5, color: "#c2410c", marginBottom: 1 } as any,
+  foot: { position: "absolute", bottom: 20, left: 30, right: 30, flexDirection: "row", justifyContent: "space-between", color: "#94a3b8", fontSize: 7, borderTopWidth: 1, borderTopColor: "#e2e8f0", paddingTop: 4 } as any,
 });
 
 const statusColor: Record<string, string> = { RASCUNHO: "#94a3b8", PENDENTE: "#f59e0b", APROVADO: "#22c55e", RECUSADO: "#ef4444" };
@@ -51,83 +54,109 @@ function getWeekDay(d: any): string {
 
 function el(type: any, props: any, ...children: any[]): any { return React.createElement(type, props, ...children); }
 
-function buildPdf(rdo: any, atividadesExecutadasDia: any[] = [], todasAtividadesObra: any[] = []): any {
+function buildPdf(rdo: any, atividadesExecutadasDia: any[] = [], todasAtividadesObra: any[] = [], logoBase64: string = ""): any {
   const status = rdo.status || "RASCUNHO";
   const rdoNum = String(rdo.numeroRdo).padStart(3, "0");
   const totalMDO = (rdo.maoDeObra || []).reduce((a: number, m: any) => a + (m.quantidade || 1), 0);
   const totalH = (rdo.maoDeObra || []).reduce((a: number, m: any) => a + (m.horasTrab || 0) * (m.quantidade || 1), 0);
   const weekDay = getWeekDay(rdo.data);
 
-  // Totais do Projeto (CAPEX)
+  // Totais do Projeto (CAPEX - Contabilização Total da Obra)
   const totalObra = todasAtividadesObra.length || 1;
-  const qtdEmAndamento = todasAtividadesObra.filter((a: any) => a.status === "EM_ANDAMENTO").length;
-  const qtdConcluidas = todasAtividadesObra.filter((a: any) => a.status === "CONCLUIDA").length;
-  const qtdPausadas = todasAtividadesObra.filter((a: any) => a.status === "PAUSADA" || a.status === "AGUARDANDO_MATERIAL").length;
-
-  const pctAndamento = Math.round((qtdEmAndamento / totalObra) * 100);
-  const pctConcluidas = Math.round((qtdConcluidas / totalObra) * 100);
-  const pctPausadas = Math.round((qtdPausadas / totalObra) * 100);
+  const sumProgress = todasAtividadesObra.reduce((acc: number, a: any) => acc + (a.status === "CONCLUIDA" ? 100 : (a.lancamentos?.[0]?.progresso || 0)), 0);
+  const pctMedia = Math.round(sumProgress / totalObra);
 
   const climaEls = rdo.climas?.length > 0
     ? (rdo.climas as any[]).map((c: any, i: number) => el(View, { key: i, style: { flexDirection: "row", marginBottom: 2 } },
-        el(Text, { style: { width: 55, fontFamily: "Helvetica-Bold", color: "#475569" } }, c.periodo === "MANHA" ? "Manha:" : c.periodo === "TARDE" ? "Tarde:" : "Noite:"),
+        el(Text, { style: { width: 50, fontFamily: "Helvetica-Bold", color: "#475569" } }, c.periodo === "MANHA" ? "Manhã:" : c.periodo === "TARDE" ? "Tarde:" : "Noite:"),
         el(Text, {}, String(c.condicao || "").replace("_", " ") + (c.impacto ? " - " + c.impacto : ""))
       ))
-    : [el(Text, { style: s.nodata }, "Nao informado")];
+    : [el(Text, { style: s.nodata }, "Não informado")];
 
   const tbl = (rows: any[] | null) => rows
     ? el(View, { style: { borderTopWidth: 1, borderTopColor: "#cbd5e1", borderLeftWidth: 1, borderLeftColor: "#cbd5e1" } }, ...rows)
-    : el(Text, { style: s.nodata }, "Nao informado");
+    : el(Text, { style: s.nodata }, "Não informado");
 
-  // Tabela de Atividades Estritamente Executadas no Dia
-  const ativHdr = el(View, { key: "ath", style: s.tr },
-    el(View, { style: [s.tc, s.th, { flex: 3 }] }, el(Text, { style: s.th }, "Atividade Executada Hoje")),
-    el(View, { style: [s.tc, s.th] }, el(Text, { style: s.th }, "Progresso")),
-    el(View, { style: [s.tc, s.th] }, el(Text, { style: s.th }, "Status")),
-    el(View, { style: [s.tc, s.th, { flex: 3 }] }, el(Text, { style: s.th }, "Relato Operacional do Dia")),
+  // Header da Tabela com Estilo Escuro #0F172A (Padrão Web Foto 02)
+  const ativHdr = el(View, { key: "ath", style: [s.tr, { backgroundColor: "#0f172a" }] },
+    el(View, { style: [s.tc, s.th, { flex: 2 }] }, el(Text, { style: s.th }, "OBRA")),
+    el(View, { style: [s.tc, s.th, { flex: 3 }] }, el(Text, { style: s.th }, "ATIVIDADE")),
+    el(View, { style: [s.tc, s.th, { flex: 1.5 }] }, el(Text, { style: s.th }, "STATUS")),
+    el(View, { style: [s.tc, s.th, { flex: 1 }] }, el(Text, { style: s.th }, "PROGRESSO")),
+    el(View, { style: [s.tc, s.th, { flex: 4 }] }, el(Text, { style: s.th }, "RELATO / APONTAMENTO")),
   );
+
+  // Collect all photos from all launches today
+  const allTodayPhotos: { url: string; title: string }[] = [];
 
   const ativRows = atividadesExecutadasDia.length > 0
     ? [ativHdr, ...atividadesExecutadasDia.map((act: any, i: number) => {
         const latestLog = act.lancamentos?.[0];
         const prog = latestLog ? latestLog.progresso : (act.status === "CONCLUIDA" ? 100 : 0);
-        const logDesc = latestLog?.descricao || "Executado no canteiro.";
+        const isFinalized = prog >= 100 || act.status === "CONCLUIDA";
+        const isImpedimento = act.status === "IMPEDIMENTO";
+        const isPausada = act.status === "PAUSADA" || act.status === "AGUARDANDO_MATERIAL";
+
+        const statusLabel = isFinalized ? "FINALIZADA" : isImpedimento ? "IMPEDIMENTO" : isPausada ? "PARALISADA" : "EM ANDAMENTO";
+        const statusBg = isFinalized ? "#dcfce7" : isImpedimento ? "#fee2e2" : isPausada ? "#fef3c7" : "#dbeafe";
+        const statusTxt = isFinalized ? "#15803d" : isImpedimento ? "#b91c1c" : isPausada ? "#b45309" : "#1d4ed8";
+
+        const logDesc = latestLog?.descricao || "Atividade executada no canteiro.";
         const obs = act.observacao ? " [Obs: " + act.observacao + "]" : "";
-        const photoCount = latestLog?.fotos?.length ? " (" + latestLog.fotos.length + " foto(s) anexada(s))" : "";
-        const fullRelato = logDesc + obs + photoCount;
+
+        // Photos attached to this activity log
+        const photos: string[] = latestLog?.fotos || [];
+        photos.forEach(p => allTodayPhotos.push({ url: p, title: act.descricao }));
+
+        const photoGrid = photos.length > 0
+          ? el(View, { style: { flexDirection: "row", flexWrap: "wrap", marginTop: 4 } },
+              ...photos.slice(0, 4).map((pUrl: string, pIdx: number) =>
+                el(Image, { key: pIdx, src: pUrl, style: { width: 45, height: 45, borderRadius: 3, marginRight: 4, marginTop: 4, objectFit: "cover" } })
+              )
+            )
+          : null;
+
         return el(View, { key: i, style: s.tr },
+          el(View, { style: [s.tc, { flex: 2 }] }, el(Text, { style: { fontFamily: "Helvetica-Bold" } }, act.projeto?.nome || rdo.projeto?.nome || "-")),
           el(View, { style: [s.tc, { flex: 3 }] }, el(Text, { style: { fontFamily: "Helvetica-Bold" } }, act.descricao)),
-          el(View, { style: s.tc }, el(Text, {}, prog + "%")),
-          el(View, { style: s.tc }, el(Text, {}, act.status === "CONCLUIDA" ? "Concluiida" : "Em andamento")),
-          el(View, { style: [s.tc, { flex: 3 }] }, el(Text, {}, fullRelato)),
+          el(View, { style: [s.tc, { flex: 1.5, alignItems: "center", justifyContent: "center" }] },
+            el(View, { style: { backgroundColor: statusBg, padding: "2 5", borderRadius: 3 } },
+              el(Text, { style: { color: statusTxt, fontSize: 6.5, fontFamily: "Helvetica-Bold" } }, statusLabel)
+            )
+          ),
+          el(View, { style: [s.tc, { flex: 1, textAlign: "center" }] }, el(Text, { style: { fontFamily: "Helvetica-Bold" } }, prog + "%")),
+          el(View, { style: [s.tc, { flex: 4 }] },
+            el(Text, {}, logDesc + obs),
+            photoGrid
+          ),
         );
       })]
     : null;
 
-  const maoHdr = el(View, { key: "mh", style: s.tr },
-    el(View, { style: [s.tc, s.th, { flex: 2 }] }, el(Text, { style: s.th }, "Funcionario")),
-    el(View, { style: [s.tc, s.th] }, el(Text, { style: s.th }, "Funcao")),
-    el(View, { style: [s.tc, s.th] }, el(Text, { style: s.th }, "Empresa")),
-    el(View, { style: [s.tc, s.th] }, el(Text, { style: s.th }, "Qtd")),
-    el(View, { style: [s.tc, s.th] }, el(Text, { style: s.th }, "Horas")),
-    el(View, { style: [s.tc, s.th] }, el(Text, { style: s.th }, "Falta")),
+  const maoHdr = el(View, { key: "mh", style: [s.tr, { backgroundColor: "#0f172a" }] },
+    el(View, { style: [s.tc, s.th, { flex: 2 }] }, el(Text, { style: s.th }, "COLABORADOR")),
+    el(View, { style: [s.tc, s.th] }, el(Text, { style: s.th }, "FUNÇÃO")),
+    el(View, { style: [s.tc, s.th] }, el(Text, { style: s.th }, "EMPRESA")),
+    el(View, { style: [s.tc, s.th] }, el(Text, { style: s.th }, "QTD")),
+    el(View, { style: [s.tc, s.th] }, el(Text, { style: s.th }, "HORAS")),
+    el(View, { style: [s.tc, s.th] }, el(Text, { style: s.th }, "FALTA")),
   );
   const maoRows = rdo.maoDeObra?.length > 0
     ? [maoHdr, ...(rdo.maoDeObra as any[]).map((m: any, i: number) => el(View, { key: i, style: s.tr },
         el(View, { style: [s.tc, { flex: 2 }] }, el(Text, {}, m.funcionario?.nome || m.nomeAvulso || "-")),
         el(View, { style: s.tc }, el(Text, {}, m.funcao || m.funcionario?.funcao || "-")),
-        el(View, { style: s.tc }, el(Text, {}, m.empresa === "PROPRIA" ? "Propria" : "Terceiro")),
+        el(View, { style: s.tc }, el(Text, {}, m.empresa === "PROPRIA" ? "Própria" : "Terceiro")),
         el(View, { style: s.tc }, el(Text, {}, String(m.quantidade))),
         el(View, { style: s.tc }, el(Text, {}, String(m.horasTrab) + "h")),
-        el(View, { style: s.tc }, el(Text, {}, m.falta ? "Sim" : "Nao")),
+        el(View, { style: s.tc }, el(Text, {}, m.falta ? "Sim" : "Não")),
       ))]
     : null;
 
-  const matHdr = el(View, { key: "mth", style: s.tr },
-    el(View, { style: [s.tc, s.th, { flex: 2 }] }, el(Text, { style: s.th }, "Material")),
-    el(View, { style: [s.tc, s.th] }, el(Text, { style: s.th }, "Qtd")),
-    el(View, { style: [s.tc, s.th] }, el(Text, { style: s.th }, "Unidade")),
-    el(View, { style: [s.tc, s.th, { flex: 2 }] }, el(Text, { style: s.th }, "Fornecedor")),
+  const matHdr = el(View, { key: "mth", style: [s.tr, { backgroundColor: "#0f172a" }] },
+    el(View, { style: [s.tc, s.th, { flex: 2 }] }, el(Text, { style: s.th }, "MATERIAL")),
+    el(View, { style: [s.tc, s.th] }, el(Text, { style: s.th }, "QTD")),
+    el(View, { style: [s.tc, s.th] }, el(Text, { style: s.th }, "UNIDADE")),
+    el(View, { style: [s.tc, s.th, { flex: 2 }] }, el(Text, { style: s.th }, "FORNECEDOR")),
     el(View, { style: [s.tc, s.th] }, el(Text, { style: s.th }, "NF")),
   );
   const matRows = rdo.materiais?.length > 0
@@ -153,10 +182,12 @@ function buildPdf(rdo: any, atividadesExecutadasDia: any[] = [], todasAtividades
 
   return el(Document, { title: "RDO-" + rdoNum + " - " + (rdo.projeto?.nome || ""), author: "Cordeiro Energia" },
     el(Page, { size: "A4", style: s.page },
+      // Header Corporativo com Logo
       el(View, { style: s.header },
+        logoBase64 ? el(Image, { src: logoBase64, style: s.logo }) : null,
         el(View, { style: { flex: 1 } },
           el(Text, { style: s.brand }, "CORDEIRO ENERGIA / CORDEIRO SERVICE"),
-          el(Text, { style: s.subbrand }, "DIÁRIO DE OBRAS (RDO)"),
+          el(Text, { style: s.subbrand }, "RELATÓRIO DIÁRIO DE OBRA (RDO)"),
           el(Text, { style: s.rt }, "Relatório Diário de Obra — RDO-" + rdoNum),
           el(Text, { style: s.rs }, "Obra: " + (rdo.projeto?.nome || "-") + " | Data: " + dateFmt(rdo.data) + " (" + weekDay + ")"),
           el(Text, { style: s.rs }, "Responsável Técnico: " + (rdo.responsavel?.name || rdo.responsavel?.email || "-")),
@@ -164,36 +195,50 @@ function buildPdf(rdo: any, atividadesExecutadasDia: any[] = [], todasAtividades
         el(View, { style: [s.badge, { backgroundColor: badgeColor + "22", color: badgeColor }] }, el(Text, {}, status)),
       ),
 
+      // KPI Cards Banner (Foto 02 Standard)
       el(View, { style: s.kpiRow },
         el(View, { style: s.kpiCard },
-          el(Text, { style: s.kpiTitle }, "Executadas Hoje"),
-          el(Text, { style: s.kpiVal }, atividadesExecutadasDia.length + " atividades"),
+          el(Text, { style: s.kpiTitle }, "APONTAMENTOS REALIZADOS"),
+          el(Text, { style: s.kpiVal }, atividadesExecutadasDia.length + " lançamento(s)"),
         ),
         el(View, { style: s.kpiCard },
-          el(Text, { style: s.kpiTitle }, "% Em Andamento"),
-          el(Text, { style: s.kpiVal }, pctAndamento + "% (" + qtdEmAndamento + "/" + totalObra + ")"),
+          el(Text, { style: s.kpiTitle }, "MÃO DE OBRA NO CANTEIRO"),
+          el(Text, { style: s.kpiVal }, totalMDO + " colaborador(es)"),
         ),
         el(View, { style: s.kpiCard },
-          el(Text, { style: s.kpiTitle }, "% Concluídas"),
-          el(Text, { style: s.kpiVal }, pctConcluidas + "% (" + qtdConcluidas + "/" + totalObra + ")"),
+          el(Text, { style: s.kpiTitle }, "AVANÇO FÍSICO MÉDIO"),
+          el(Text, { style: s.kpiVal }, pctMedia + "%"),
         ),
         el(View, { style: s.kpiCard },
-          el(Text, { style: s.kpiTitle }, "% Paralisadas / Mat."),
-          el(Text, { style: s.kpiVal }, pctPausadas + "% (" + qtdPausadas + "/" + totalObra + ")"),
+          el(Text, { style: s.kpiTitle }, "OBRA VINCULADA"),
+          el(Text, { style: [s.kpiVal, { fontSize: 8.5 }] }, rdo.projeto?.nome || "-"),
         ),
       ),
 
-      el(View, { style: s.sec }, el(Text, { style: s.stit }, "Condições Climáticas"), ...climaEls),
+      el(View, { style: s.sec }, el(Text, { style: s.stit }, "Condições Climáticas do Canteiro"), ...climaEls),
 
       el(View, { style: s.sec },
         el(Text, { style: s.stit }, "Atividades Executadas no Dia (" + atividadesExecutadasDia.length + ")"),
         ativRows ? tbl(ativRows) : el(Text, { style: s.nodata }, "Nenhuma atividade teve lançamento ou execução nesta data.")
       ),
 
-      el(View, { style: s.sec }, el(Text, { style: s.stit }, "Mão de Obra (" + totalMDO + " pessoas / " + totalH + "h)"), tbl(maoRows)),
-      el(View, { style: s.sec }, el(Text, { style: s.stit }, "Materiais Recebidos"), matRows ? tbl(matRows) : el(Text, { style: s.nodata }, "Nenhum material registrado nesta data.")),
-      ocEls && ocEls.length > 0 ? el(View, { style: s.sec }, el(Text, { style: s.stit }, "Ocorrências / Incidentes"), ...ocEls) : null,
-      rdo.observacoes ? el(View, { style: s.sec }, el(Text, { style: s.stit }, "Observações Gerais"), el(Text, {}, String(rdo.observacoes))) : null,
+      el(View, { style: s.sec }, el(Text, { style: s.stit }, "Mão de Obra no Canteiro (" + totalMDO + " pessoas / " + totalH + "h)"), tbl(maoRows)),
+      el(View, { style: s.sec }, el(Text, { style: s.stit }, "Materiais Recebidos / Utilizados"), matRows ? tbl(matRows) : el(Text, { style: s.nodata }, "Nenhum material registrado nesta data.")),
+      ocEls && ocEls.length > 0 ? el(View, { style: s.sec }, el(Text, { style: s.stit }, "Ocorrências e Paralisações"), ...ocEls) : null,
+      rdo.observacoes ? el(View, { style: s.sec }, el(Text, { style: s.stit }, "Observações Gerais do Canteiro"), el(Text, {}, String(rdo.observacoes))) : null,
+
+      // Galeria de Evidências Fotográficas do Dia
+      allTodayPhotos.length > 0 ? el(View, { style: s.sec },
+        el(Text, { style: s.stit }, "📸 Evidências Fotográficas do Canteiro (" + allTodayPhotos.length + " foto(s))"),
+        el(View, { style: { flexDirection: "row", flexWrap: "wrap", gap: 6 } },
+          ...allTodayPhotos.map((item, pIdx) =>
+            el(View, { key: pIdx, style: { width: 120, marginBottom: 8 } },
+              el(Image, { src: item.url, style: { width: 120, height: 90, borderRadius: 4, objectFit: "cover" } }),
+              el(Text, { style: { fontSize: 6.5, color: "#64748b", marginTop: 2 } }, item.title)
+            )
+          )
+        )
+      ) : null,
 
       el(View, { style: s.foot, fixed: true },
         el(Text, {}, "Cordeiro Energia / Cordeiro Service - Diário de Obras"),
@@ -240,7 +285,19 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       where: { projetoId: rdo.projetoId }
     });
 
-    const rawBuffer = await renderToBuffer(buildPdf(rdo, atividadesExecutadasDia, todasAtividadesObra));
+    // 3. Tenta carregar o logo corporativo como base64
+    let logoBase64 = "";
+    try {
+      const logoPath = path.join(process.cwd(), "public", "logo.png");
+      if (fs.existsSync(logoPath)) {
+        const fileBuf = fs.readFileSync(logoPath);
+        logoBase64 = `data:image/png;base64,${fileBuf.toString("base64")}`;
+      }
+    } catch (err) {
+      console.error("Logo load error:", err);
+    }
+
+    const rawBuffer = await renderToBuffer(buildPdf(rdo, atividadesExecutadasDia, todasAtividadesObra, logoBase64));
     const buffer = new Uint8Array(rawBuffer);
     const safeName = (rdo.projeto?.nome || "obra").replace(/\s+/g, "-");
     return new Response(buffer, { headers: { "Content-Type": "application/pdf", "Content-Disposition": "attachment; filename=\"RDO-" + String(rdo.numeroRdo).padStart(3,"0") + "-" + safeName + ".pdf\"" } });
@@ -249,4 +306,5 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     return NextResponse.json({ error: e.message || "Internal Server Error" }, { status: 500 });
   }
 }
+
 

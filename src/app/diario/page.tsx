@@ -1408,7 +1408,7 @@ export default function DiarioObrasPage() {
                         <th className="p-3 text-left">Atividade</th>
                         <th className="p-3 text-left">Responsável</th>
                         <th className="p-3 text-center">Status</th>
-                        <th className="p-3 text-center w-[80px]">Ações</th>
+                        <th className="p-3 text-center min-w-[160px]">Ações</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1455,7 +1455,50 @@ export default function DiarioObrasPage() {
                             </div>
                           </td>
                           <td className="p-3 text-center">
-                            <div className="flex justify-center items-center gap-2">
+                            <div className="flex justify-center items-center gap-1.5 flex-wrap">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const todayStr = new Date().toISOString().split("T")[0];
+                                  const todayLog = logs.find(l => l.atividadeId === act.id && isDateMatch(l.data, todayStr));
+                                  setSelectedActivityForLog(act);
+                                  if (todayLog) {
+                                    setActiveLogIdToday(todayLog.id);
+                                    setLogForm({
+                                      descricao: todayLog.descricao || "",
+                                      progresso: (todayLog.progresso || 0).toString(),
+                                      fotos: todayLog.fotos || [],
+                                      audios: todayLog.audios || [],
+                                      data: todayLog.data ? (typeof todayLog.data === "string" ? todayLog.data.split("T")[0] : new Date(todayLog.data).toISOString().split("T")[0]) : todayStr,
+                                      ativoId: todayLog.ativoId || "",
+                                      horimetroInicio: todayLog.horimetroInicio !== null && todayLog.horimetroInicio !== undefined ? todayLog.horimetroInicio.toString() : "",
+                                      horimetroFim: todayLog.horimetroFim !== null && todayLog.horimetroFim !== undefined ? todayLog.horimetroFim.toString() : "",
+                                      fotoHorimetroInicioUrl: todayLog.fotoHorimetroInicioUrl || "",
+                                      fotoHorimetroFimUrl: todayLog.fotoHorimetroFimUrl || "",
+                                      statusLancamento: todayLog.statusLancamento || "FINALIZADO"
+                                    });
+                                  } else {
+                                    setActiveLogIdToday(null);
+                                    setLogForm({
+                                      descricao: "",
+                                      progresso: act.status === "CONCLUIDA" ? "100" : "0",
+                                      fotos: [],
+                                      audios: [],
+                                      data: todayStr,
+                                      ativoId: "",
+                                      horimetroInicio: "",
+                                      horimetroFim: "",
+                                      fotoHorimetroInicioUrl: "",
+                                      fotoHorimetroFimUrl: "",
+                                      statusLancamento: "FINALIZADO"
+                                    });
+                                  }
+                                }}
+                                className="px-2 py-1 bg-[#f15a24] hover:bg-orange-600 text-white font-black text-[9px] rounded-lg transition-all cursor-pointer shadow-xs flex items-center gap-1 uppercase tracking-wider"
+                                title="Preencher apontamento diário com fotos e relato que será inserido no RDO Geral"
+                              >
+                                <FileText className="w-3 h-3" /> Preencher RDO
+                              </button>
                               <button
                                 onClick={() => {
                                   setEditingActivity({
@@ -1468,17 +1511,17 @@ export default function DiarioObrasPage() {
                                     dataFim: act.dataFim ? fmtDate(act.dataFim).split("/").reverse().join("-") : ""
                                   });
                                 }}
-                                className="p-1.5 text-blue-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all cursor-pointer"
+                                className="p-1 text-blue-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all cursor-pointer"
                                 title="Editar Atividade"
                               >
-                                <Pencil className="w-4 h-4" />
+                                <Pencil className="w-3.5 h-3.5" />
                               </button>
                               <button
                                 onClick={() => handleDeleteActivity(act.id)}
-                                className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all cursor-pointer"
+                                className="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all cursor-pointer"
                                 title="Excluir Atividade"
                               >
-                                <Trash2 className="w-4 h-4" />
+                                <Trash2 className="w-3.5 h-3.5" />
                               </button>
                             </div>
                           </td>

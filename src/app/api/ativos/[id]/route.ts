@@ -46,7 +46,24 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
     const { id } = await params;
     const body = await req.json();
-    const { nome, codigo, categoria, taxaHoraria, horasUso, horasManutencaoPreventiva, responsavel, localizacao, status, tipoPropriedade, contratoAluguelUrl } = body;
+    const { 
+      nome, 
+      codigo, 
+      categoria, 
+      taxaHoraria, 
+      tipoCusto,
+      valorCusto,
+      custoDiario,
+      custoSemanal,
+      custoMensal,
+      horasUso, 
+      horasManutencaoPreventiva, 
+      responsavel, 
+      localizacao, 
+      status, 
+      tipoPropriedade, 
+      contratoAluguelUrl 
+    } = body;
 
     const existing = await prisma.ativo.findUnique({
       where: { id }
@@ -56,13 +73,49 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       return NextResponse.json({ error: "Ativo não encontrado." }, { status: 404 });
     }
 
+    let tCusto = tipoCusto !== undefined ? tipoCusto : existing.tipoCusto;
+    let valCustoNum = valorCusto !== undefined && valorCusto !== null && valorCusto !== "" ? parseFloat(String(valorCusto)) : existing.valorCusto;
+    let tHoraria = taxaHoraria !== undefined && taxaHoraria !== null && taxaHoraria !== "" ? parseFloat(String(taxaHoraria)) : existing.taxaHoraria;
+    let cDiario = custoDiario !== undefined && custoDiario !== null && custoDiario !== "" ? parseFloat(String(custoDiario)) : existing.custoDiario;
+    let cSemanal = custoSemanal !== undefined && custoSemanal !== null && custoSemanal !== "" ? parseFloat(String(custoSemanal)) : existing.custoSemanal;
+    let cMensal = custoMensal !== undefined && custoMensal !== null && custoMensal !== "" ? parseFloat(String(custoMensal)) : existing.custoMensal;
+
+    if (valCustoNum !== null && !isNaN(valCustoNum) && valorCusto !== undefined) {
+      if (tCusto === "DIARIO") {
+        cDiario = valCustoNum;
+        cSemanal = valCustoNum * 5;
+        cMensal = valCustoNum * 22;
+        tHoraria = valCustoNum / 8;
+      } else if (tCusto === "SEMANAL") {
+        cSemanal = valCustoNum;
+        cDiario = valCustoNum / 5;
+        cMensal = valCustoNum * 4.4;
+        tHoraria = valCustoNum / 44;
+      } else if (tCusto === "MENSAL") {
+        cMensal = valCustoNum;
+        cSemanal = valCustoNum / 4.4;
+        cDiario = valCustoNum / 22;
+        tHoraria = valCustoNum / 176;
+      } else { // HORARIO
+        tHoraria = valCustoNum;
+        cDiario = valCustoNum * 8;
+        cSemanal = valCustoNum * 44;
+        cMensal = valCustoNum * 176;
+      }
+    }
+
     const updated = await prisma.ativo.update({
       where: { id },
       data: {
         nome,
         codigo,
         categoria,
-        taxaHoraria: taxaHoraria !== undefined ? (taxaHoraria ? parseFloat(String(taxaHoraria)) : null) : undefined,
+        tipoCusto: tCusto,
+        valorCusto: valCustoNum,
+        taxaHoraria: tHoraria,
+        custoDiario: cDiario,
+        custoSemanal: cSemanal,
+        custoMensal: cMensal,
         horasUso: horasUso !== undefined ? parseFloat(String(horasUso)) : undefined,
         horasManutencaoPreventiva: horasManutencaoPreventiva !== undefined ? (horasManutencaoPreventiva ? parseFloat(String(horasManutencaoPreventiva)) : null) : undefined,
         responsavel,

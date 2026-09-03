@@ -808,6 +808,11 @@ model Ativo {
   categoria                  String               // "PESADO" ou "FERRAMENTA"
   status                     String               @default("DISPONIVEL") // "DISPONIVEL", "EM_USO", "MANUTENCAO"
   taxaHoraria                Float?               // R$/h para máquinas pesadas
+  tipoCusto                  String               @default("HORARIO") // "HORARIO", "DIARIO", "SEMANAL", "MENSAL"
+  valorCusto                 Float?               // Custo no período base selecionado
+  custoDiario                Float?               // R$/dia
+  custoSemanal               Float?               // R$/semana
+  custoMensal                Float?               // R$/mês
   horasUso                   Float                @default(0) // acumulado de horas de uso
   horasManutencaoPreventiva  Float?               // X horas para notificar revisão
   ultimoCustoHoras           Float                @default(0) // custo acumulado total

@@ -162,7 +162,24 @@ export async function POST(req: Request) {
           where: { id: ativoId }
         });
         
-        const custoCalculado = horasTrabalhadas * (asset?.taxaHoraria || 0);
+        let custoCalculado = 0;
+        if (asset) {
+          const tipo = asset.tipoCusto || "HORARIO";
+          const taxaH = asset.taxaHoraria || 0;
+          const cDiario = asset.custoDiario || (tipo === "DIARIO" ? asset.valorCusto : null) || (taxaH * 8);
+          const cSemanal = asset.custoSemanal || (tipo === "SEMANAL" ? asset.valorCusto : null) || (taxaH * 44);
+          const cMensal = asset.custoMensal || (tipo === "MENSAL" ? asset.valorCusto : null) || (taxaH * 176);
+
+          if (tipo === "DIARIO") {
+            custoCalculado = horasTrabalhadas > 0 ? (horasTrabalhadas / 8) * cDiario : cDiario;
+          } else if (tipo === "SEMANAL") {
+            custoCalculado = horasTrabalhadas > 0 ? (horasTrabalhadas / 44) * cSemanal : (cSemanal / 5);
+          } else if (tipo === "MENSAL") {
+            custoCalculado = horasTrabalhadas > 0 ? (horasTrabalhadas / 176) * cMensal : (cMensal / 22);
+          } else {
+            custoCalculado = horasTrabalhadas * taxaH;
+          }
+        }
 
         await prisma.historicoUsoAtivo.create({
           data: {

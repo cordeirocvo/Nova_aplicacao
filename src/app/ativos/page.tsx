@@ -38,7 +38,12 @@ export default function GestaoAtivosPage() {
     nome: "",
     codigo: "",
     categoria: "PESADO",
+    tipoCusto: "HORARIO",
+    valorCusto: "",
     taxaHoraria: "",
+    custoDiario: "",
+    custoSemanal: "",
+    custoMensal: "",
     horasUso: "0",
     horasManutencaoPreventiva: "",
     responsavel: "",
@@ -171,7 +176,12 @@ export default function GestaoAtivosPage() {
           nome: "",
           codigo: "",
           categoria: "PESADO",
+          tipoCusto: "HORARIO",
+          valorCusto: "",
           taxaHoraria: "",
+          custoDiario: "",
+          custoSemanal: "",
+          custoMensal: "",
           horasUso: "0",
           horasManutencaoPreventiva: "",
           responsavel: "",
@@ -764,14 +774,100 @@ export default function GestaoAtivosPage() {
               {newAsset.categoria === "PESADO" ? (
                 <>
                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Taxa Horária de Uso (R$/h)</label>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Modalidade de Custo *</label>
+                    <select 
+                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                      value={newAsset.tipoCusto}
+                      onChange={e => {
+                        const newTipo = e.target.value;
+                        const val = parseFloat(newAsset.valorCusto || newAsset.taxaHoraria);
+                        if (!isNaN(val) && val > 0) {
+                          let th = ""; let cd = ""; let cs = ""; let cm = "";
+                          if (newTipo === "DIARIO") { cd = val.toString(); cs = (val * 5).toFixed(2); cm = (val * 22).toFixed(2); th = (val / 8).toFixed(2); }
+                          else if (newTipo === "SEMANAL") { cs = val.toString(); cd = (val / 5).toFixed(2); cm = (val * 4.4).toFixed(2); th = (val / 44).toFixed(2); }
+                          else if (newTipo === "MENSAL") { cm = val.toString(); cs = (val / 4.4).toFixed(2); cd = (val / 22).toFixed(2); th = (val / 176).toFixed(2); }
+                          else { th = val.toString(); cd = (val * 8).toFixed(2); cs = (val * 44).toFixed(2); cm = (val * 176).toFixed(2); }
+                          setNewAsset({...newAsset, tipoCusto: newTipo, taxaHoraria: th, custoDiario: cd, custoSemanal: cs, custoMensal: cm});
+                        } else {
+                          setNewAsset({...newAsset, tipoCusto: newTipo});
+                        }
+                      }}
+                    >
+                      <option value="HORARIO">⏱️ Custo Horário (R$/h)</option>
+                      <option value="DIARIO">☀️ Custo Diário (R$/dia)</option>
+                      <option value="SEMANAL">📅 Custo Semanal (R$/semana)</option>
+                      <option value="MENSAL">🗓️ Custo Mensal (R$/mês)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">
+                      Valor do Custo ({newAsset.tipoCusto === "DIARIO" ? "R$/dia" : newAsset.tipoCusto === "SEMANAL" ? "R$/semana" : newAsset.tipoCusto === "MENSAL" ? "R$/mês" : "R$/h"}) *
+                    </label>
                     <input 
                       type="number"
-                      placeholder="Ex: 150"
-                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
-                      value={newAsset.taxaHoraria}
-                      onChange={e => setNewAsset({...newAsset, taxaHoraria: e.target.value})}
+                      step="any"
+                      placeholder={newAsset.tipoCusto === "DIARIO" ? "Ex: 500 (R$/dia)" : newAsset.tipoCusto === "SEMANAL" ? "Ex: 2500 (R$/sem)" : newAsset.tipoCusto === "MENSAL" ? "Ex: 10000 (R$/mês)" : "Ex: 150 (R$/h)"}
+                      className="w-full px-3 py-2.5 bg-white border border-orange-200 rounded-xl text-xs font-black text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                      value={newAsset.valorCusto}
+                      onChange={e => {
+                        const valStr = e.target.value;
+                        const val = parseFloat(valStr);
+                        if (!isNaN(val) && val > 0) {
+                          let th = ""; let cd = ""; let cs = ""; let cm = "";
+                          if (newAsset.tipoCusto === "DIARIO") { cd = valStr; cs = (val * 5).toFixed(2); cm = (val * 22).toFixed(2); th = (val / 8).toFixed(2); }
+                          else if (newAsset.tipoCusto === "SEMANAL") { cs = valStr; cd = (val / 5).toFixed(2); cm = (val * 4.4).toFixed(2); th = (val / 44).toFixed(2); }
+                          else if (newAsset.tipoCusto === "MENSAL") { cm = valStr; cs = (val / 4.4).toFixed(2); cd = (val / 22).toFixed(2); th = (val / 176).toFixed(2); }
+                          else { th = valStr; cd = (val * 8).toFixed(2); cs = (val * 44).toFixed(2); cm = (val * 176).toFixed(2); }
+                          setNewAsset({...newAsset, valorCusto: valStr, taxaHoraria: th, custoDiario: cd, custoSemanal: cs, custoMensal: cm});
+                        } else {
+                          setNewAsset({...newAsset, valorCusto: valStr});
+                        }
+                      }}
                     />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 col-span-1 md:col-span-2 bg-slate-100/70 p-3 rounded-2xl border border-slate-200/60">
+                    <div>
+                      <label className="block text-[9px] font-bold text-slate-500 uppercase">Taxa Horária (R$/h)</label>
+                      <input 
+                        type="number" step="any"
+                        placeholder="R$/h"
+                        className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700"
+                        value={newAsset.taxaHoraria}
+                        onChange={e => setNewAsset({...newAsset, taxaHoraria: e.target.value})}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[9px] font-bold text-slate-500 uppercase">Custo Diário (R$/dia)</label>
+                      <input 
+                        type="number" step="any"
+                        placeholder="R$/dia"
+                        className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700"
+                        value={newAsset.custoDiario}
+                        onChange={e => setNewAsset({...newAsset, custoDiario: e.target.value})}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[9px] font-bold text-slate-500 uppercase">Custo Semanal (R$/sem)</label>
+                      <input 
+                        type="number" step="any"
+                        placeholder="R$/semana"
+                        className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700"
+                        value={newAsset.custoSemanal}
+                        onChange={e => setNewAsset({...newAsset, custoSemanal: e.target.value})}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[9px] font-bold text-slate-500 uppercase">Custo Mensal (R$/mês)</label>
+                      <input 
+                        type="number" step="any"
+                        placeholder="R$/mês"
+                        className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700"
+                        value={newAsset.custoMensal}
+                        onChange={e => setNewAsset({...newAsset, custoMensal: e.target.value})}
+                      />
+                    </div>
                   </div>
 
                   <div>

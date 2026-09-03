@@ -185,6 +185,81 @@ export default function DiarioObrasPage() {
   const [capexLocalObra, setCapexLocalObra] = useState("Canteiro de Obras");
   const [capexObs, setCapexObs] = useState("");
 
+  // Modal Pop-up state for registering equipment inside RDO
+  const [showNewEquipModal, setShowNewEquipModal] = useState(false);
+  const [submittingNewEquip, setSubmittingNewEquip] = useState(false);
+  const [newEquipModalForm, setNewEquipModalForm] = useState({
+    nome: "",
+    codigo: "",
+    categoria: "PESADO",
+    tipoCusto: "HORARIO",
+    valorCusto: "",
+    taxaHoraria: "",
+    custoDiario: "",
+    custoSemanal: "",
+    custoMensal: "",
+    horasUso: "0",
+    horasManutencaoPreventiva: "",
+    responsavel: "",
+    localizacao: "",
+    tipoPropriedade: "PROPRIO"
+  });
+
+  const handleCreateNewEquipModal = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newEquipModalForm.nome || !newEquipModalForm.codigo) {
+      alert("Nome e Código/Tag do equipamento são obrigatórios.");
+      return;
+    }
+    setSubmittingNewEquip(true);
+    try {
+      const res = await fetch("/api/ativos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newEquipModalForm)
+      });
+      const text = await res.text();
+      let data;
+      try { data = JSON.parse(text); } catch { data = { error: "Erro no servidor ao salvar equipamento." }; }
+
+      if (res.ok && data?.id) {
+        alert(`Equipamento "${data.nome}" cadastrado com sucesso!`);
+        setEquipamentos(prev => [data, ...prev]);
+        setLogForm(prev => ({
+          ...prev,
+          ativoId: data.id,
+          horimetroInicio: "",
+          horimetroFim: "",
+          fotoHorimetroInicioUrl: "",
+          fotoHorimetroFimUrl: ""
+        }));
+        setShowNewEquipModal(false);
+        setNewEquipModalForm({
+          nome: "",
+          codigo: "",
+          categoria: "PESADO",
+          tipoCusto: "HORARIO",
+          valorCusto: "",
+          taxaHoraria: "",
+          custoDiario: "",
+          custoSemanal: "",
+          custoMensal: "",
+          horasUso: "0",
+          horasManutencaoPreventiva: "",
+          responsavel: "",
+          localizacao: "",
+          tipoPropriedade: "PROPRIO"
+        });
+      } else {
+        alert(data?.error || "Erro ao cadastrar equipamento.");
+      }
+    } catch (err: any) {
+      alert("Erro de conexão ao cadastrar equipamento: " + err.message);
+    } finally {
+      setSubmittingNewEquip(false);
+    }
+  };
+
   const isDateMatch = (logDateRaw: any, targetDateStr: string): boolean => {
     if (!logDateRaw || !targetDateStr) return false;
     const isoStr = typeof logDateRaw === "string" ? logDateRaw : logDateRaw.toISOString();
@@ -2931,7 +3006,7 @@ export default function DiarioObrasPage() {
                     <label className="block text-[9px] font-bold text-slate-400 uppercase">Selecionar Equipamento</label>
                     <button
                       type="button"
-                      onClick={() => router.push("/ativos")}
+                      onClick={() => setShowNewEquipModal(true)}
                       className="text-[9px] font-black text-[#f15a24] hover:underline flex items-center gap-1 cursor-pointer"
                     >
                       + Cadastrar Novo Equipamento
@@ -2960,6 +3035,56 @@ export default function DiarioObrasPage() {
                     ))}
                   </select>
                 </div>
+
+                {logForm.ativoId && (() => {
+                  const selectedAsset = equipamentos.find(eq => eq.id === logForm.ativoId);
+                  if (!selectedAsset) return null;
+                  const tipo = selectedAsset.tipoCusto || "HORARIO";
+                  const hIni = parseFloat(logForm.horimetroInicio) || 0;
+                  const hFim = parseFloat(logForm.horimetroFim) || 0;
+                  const horasTrab = Math.max(0, hFim - hIni);
+                  
+                  let valDiario = selectedAsset.custoDiario || (tipo === "DIARIO" ? selectedAsset.valorCusto : null) || ((selectedAsset.taxaHoraria || 0) * 8);
+                  let valSemanal = selectedAsset.custoSemanal || (tipo === "SEMANAL" ? selectedAsset.valorCusto : null) || ((selectedAsset.taxaHoraria || 0) * 44);
+                  let valMensal = selectedAsset.custoMensal || (tipo === "MENSAL" ? selectedAsset.valorCusto : null) || ((selectedAsset.taxaHoraria || 0) * 176);
+                  let valHorario = selectedAsset.taxaHoraria || (tipo === "HORARIO" ? selectedAsset.valorCusto : null) || 0;
+
+                  let custoProporcionalEstimado = 0;
+                  if (tipo === "DIARIO") {
+                    custoProporcionalEstimado = horasTrab > 0 ? (horasTrab / 8) * valDiario : valDiario;
+                  } else if (tipo === "SEMANAL") {
+                    custoProporcionalEstimado = horasTrab > 0 ? (horasTrab / 44) * valSemanal : (valSemanal / 5);
+                  } else if (tipo === "MENSAL") {
+                    custoProporcionalEstimado = horasTrab > 0 ? (horasTrab / 176) * valMensal : (valMensal / 22);
+                  } else {
+                    custoProporcionalEstimado = horasTrab * valHorario;
+                  }
+
+                  return (
+                    <div className="bg-orange-50/80 border border-orange-200 rounded-xl p-3 text-xs space-y-2 my-2">
+                      <div className="flex justify-between items-center flex-wrap gap-2">
+                        <span className="font-bold text-slate-800 flex items-center gap-1.5">
+                          🚜 <strong className="uppercase">{selectedAsset.nome}</strong> ({selectedAsset.codigo})
+                        </span>
+                        <span className="text-[10px] font-black uppercase px-2 py-0.5 bg-orange-100 text-[#f15a24] rounded-md border border-orange-200">
+                          Modalidade: {tipo === "DIARIO" ? "☀️ Diária" : tipo === "SEMANAL" ? "📅 Semanal" : tipo === "MENSAL" ? "🗓️ Mensal" : "⏱️ Horária"}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[9.5px] bg-white p-2 rounded-lg border border-orange-100 font-bold text-slate-700">
+                        <div>Taxa Horária: <span className="text-slate-900">R$ {(valHorario || 0).toFixed(2)}/h</span></div>
+                        <div>Custo Diário: <span className="text-slate-900">R$ {(valDiario || 0).toFixed(2)}/dia</span></div>
+                        <div>Custo Semanal: <span className="text-slate-900">R$ {(valSemanal || 0).toFixed(2)}/sem</span></div>
+                        <div>Custo Mensal: <span className="text-slate-900">R$ {(valMensal || 0).toFixed(2)}/mês</span></div>
+                      </div>
+                      <div className="flex justify-between items-center text-[10.5px] font-black text-slate-800 pt-1 flex-wrap gap-2">
+                        <span>Horas Trabalhadas Hoje: <strong className="text-[#f15a24]">{horasTrab > 0 ? `${horasTrab.toFixed(1)}h` : "1 Turno (8h default)"}</strong></span>
+                        <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                          💰 Custo Proporcional do Dia: <strong>R$ {custoProporcionalEstimado.toFixed(2)}</strong>
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {logForm.ativoId && (
                   <div className="space-y-3 pt-2 border-t border-slate-200/50">
@@ -4741,6 +4866,176 @@ export default function DiarioObrasPage() {
               </div>
             </div>
 
+          </div>
+        </div>
+      )}
+      {/* ========================================================================= */}
+      {/* ============ MODAL POP-UP: CADASTRAR NOVO EQUIPAMENTO (NO RDO) ============ */}
+      {/* ========================================================================= */}
+      {showNewEquipModal && (
+        <div className="fixed inset-0 z-[100] bg-[#0a192f]/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-xl rounded-[2rem] border border-slate-100 shadow-2xl p-6 relative max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom-4 duration-300">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-100 mb-4">
+              <div>
+                <h3 className="text-base font-black text-slate-800 uppercase tracking-tight flex items-center gap-2">
+                  🚜 Cadastrar Novo Equipamento
+                </h3>
+                <p className="text-[11px] text-slate-500 font-medium">
+                  Cadastre o equipamento sem sair do RDO. Os dados já digitados serão preservados.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowNewEquipModal(false)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold flex items-center justify-center cursor-pointer transition-all"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateNewEquipModal} className="space-y-4">
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Nome do Equipamento *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ex: Escavadeira Hidráulica 20T"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                  value={newEquipModalForm.nome}
+                  onChange={e => setNewEquipModalForm({...newEquipModalForm, nome: e.target.value})}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Código / Tag Única *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ex: ESC-001"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                    value={newEquipModalForm.codigo}
+                    onChange={e => setNewEquipModalForm({...newEquipModalForm, codigo: e.target.value})}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Categoria *</label>
+                  <select
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                    value={newEquipModalForm.categoria}
+                    onChange={e => setNewEquipModalForm({...newEquipModalForm, categoria: e.target.value})}
+                  >
+                    <option value="PESADO">Equipamento Pesado</option>
+                    <option value="FERRAMENTA">Ferramenta Manual</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Modalidade de Custo *</label>
+                  <select
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                    value={newEquipModalForm.tipoCusto}
+                    onChange={e => {
+                      const newTipo = e.target.value;
+                      const val = parseFloat(newEquipModalForm.valorCusto);
+                      if (!isNaN(val) && val > 0) {
+                        let th = ""; let cd = ""; let cs = ""; let cm = "";
+                        if (newTipo === "DIARIO") { cd = val.toString(); cs = (val * 5).toFixed(2); cm = (val * 22).toFixed(2); th = (val / 8).toFixed(2); }
+                        else if (newTipo === "SEMANAL") { cs = val.toString(); cd = (val / 5).toFixed(2); cm = (val * 4.4).toFixed(2); th = (val / 44).toFixed(2); }
+                        else if (newTipo === "MENSAL") { cm = val.toString(); cs = (val / 4.4).toFixed(2); cd = (val / 22).toFixed(2); th = (val / 176).toFixed(2); }
+                        else { th = val.toString(); cd = (val * 8).toFixed(2); cs = (val * 44).toFixed(2); cm = (val * 176).toFixed(2); }
+                        setNewEquipModalForm({...newEquipModalForm, tipoCusto: newTipo, taxaHoraria: th, custoDiario: cd, custoSemanal: cs, custoMensal: cm});
+                      } else {
+                        setNewEquipModalForm({...newEquipModalForm, tipoCusto: newTipo});
+                      }
+                    }}
+                  >
+                    <option value="HORARIO">⏱️ Horário (R$/h)</option>
+                    <option value="DIARIO">☀️ Diário (R$/dia)</option>
+                    <option value="SEMANAL">📅 Semanal (R$/sem)</option>
+                    <option value="MENSAL">🗓️ Mensal (R$/mês)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">
+                    Valor ({newEquipModalForm.tipoCusto === "DIARIO" ? "R$/dia" : newEquipModalForm.tipoCusto === "SEMANAL" ? "R$/sem" : newEquipModalForm.tipoCusto === "MENSAL" ? "R$/mês" : "R$/h"}) *
+                  </label>
+                  <input
+                    type="number" step="any"
+                    placeholder="Ex: 500"
+                    className="w-full px-3 py-2 bg-white border border-orange-200 rounded-xl text-xs font-black text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                    value={newEquipModalForm.valorCusto}
+                    onChange={e => {
+                      const valStr = e.target.value;
+                      const val = parseFloat(valStr);
+                      if (!isNaN(val) && val > 0) {
+                        let th = ""; let cd = ""; let cs = ""; let cm = "";
+                        if (newEquipModalForm.tipoCusto === "DIARIO") { cd = valStr; cs = (val * 5).toFixed(2); cm = (val * 22).toFixed(2); th = (val / 8).toFixed(2); }
+                        else if (newEquipModalForm.tipoCusto === "SEMANAL") { cs = valStr; cd = (val / 5).toFixed(2); cm = (val * 4.4).toFixed(2); th = (val / 44).toFixed(2); }
+                        else if (newEquipModalForm.tipoCusto === "MENSAL") { cm = valStr; cs = (val / 4.4).toFixed(2); cd = (val / 22).toFixed(2); th = (val / 176).toFixed(2); }
+                        else { th = valStr; cd = (val * 8).toFixed(2); cs = (val * 44).toFixed(2); cm = (val * 176).toFixed(2); }
+                        setNewEquipModalForm({...newEquipModalForm, valorCusto: valStr, taxaHoraria: th, custoDiario: cd, custoSemanal: cs, custoMensal: cm});
+                      } else {
+                        setNewEquipModalForm({...newEquipModalForm, valorCusto: valStr});
+                      }
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-[9.5px]">
+                <div><span className="font-bold text-slate-500 uppercase">Horário:</span> <strong className="text-slate-800">R$ {newEquipModalForm.taxaHoraria || "0"}/h</strong></div>
+                <div><span className="font-bold text-slate-500 uppercase">Diário:</span> <strong className="text-slate-800">R$ {newEquipModalForm.custoDiario || "0"}/dia</strong></div>
+                <div><span className="font-bold text-slate-500 uppercase">Semanal:</span> <strong className="text-slate-800">R$ {newEquipModalForm.custoSemanal || "0"}/sem</strong></div>
+                <div><span className="font-bold text-slate-500 uppercase">Mensal:</span> <strong className="text-slate-800">R$ {newEquipModalForm.custoMensal || "0"}/mês</strong></div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Propriedade *</label>
+                  <select
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                    value={newEquipModalForm.tipoPropriedade}
+                    onChange={e => setNewEquipModalForm({...newEquipModalForm, tipoPropriedade: e.target.value})}
+                  >
+                    <option value="PROPRIO">Próprio</option>
+                    <option value="ALUGADO">Alugado</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Horas Inicial Uso</label>
+                  <input
+                    type="number"
+                    placeholder="0"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                    value={newEquipModalForm.horasUso}
+                    onChange={e => setNewEquipModalForm({...newEquipModalForm, horasUso: e.target.value})}
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowNewEquipModal(false)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl uppercase tracking-wider cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingNewEquip}
+                  className="px-5 py-2 bg-[#f15a24] hover:bg-orange-600 text-white font-black text-xs rounded-xl uppercase tracking-wider cursor-pointer shadow-md disabled:opacity-50"
+                >
+                  {submittingNewEquip ? "Cadastrando..." : "Confirmar Cadastro"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

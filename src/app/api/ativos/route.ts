@@ -75,13 +75,20 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: `Código de ativo "${codigo}" já cadastrado.` }, { status: 400 });
     }
 
-    let valCustoNum = valorCusto !== undefined && valorCusto !== null && valorCusto !== "" ? parseFloat(String(valorCusto)) : null;
-    let tHoraria = taxaHoraria !== undefined && taxaHoraria !== null && taxaHoraria !== "" ? parseFloat(String(taxaHoraria)) : null;
-    let cDiario = custoDiario !== undefined && custoDiario !== null && custoDiario !== "" ? parseFloat(String(custoDiario)) : null;
-    let cSemanal = custoSemanal !== undefined && custoSemanal !== null && custoSemanal !== "" ? parseFloat(String(custoSemanal)) : null;
-    let cMensal = custoMensal !== undefined && custoMensal !== null && custoMensal !== "" ? parseFloat(String(custoMensal)) : null;
+    function cleanFloat(val: any): number | null {
+      if (val === undefined || val === null || val === "") return null;
+      const str = String(val).replace(/\s/g, "").replace(",", ".").trim();
+      const num = parseFloat(str);
+      return isNaN(num) ? null : num;
+    }
 
-    if (valCustoNum !== null && !isNaN(valCustoNum)) {
+    let valCustoNum = cleanFloat(valorCusto);
+    let tHoraria = cleanFloat(taxaHoraria);
+    let cDiario = cleanFloat(custoDiario);
+    let cSemanal = cleanFloat(custoSemanal);
+    let cMensal = cleanFloat(custoMensal);
+
+    if (valCustoNum !== null) {
       if (tipoCusto === "DIARIO") {
         cDiario = cDiario ?? valCustoNum;
         cSemanal = cSemanal ?? (valCustoNum * 5);
@@ -105,6 +112,9 @@ export async function POST(req: Request) {
       }
     }
 
+    const hUso = cleanFloat(horasUso) ?? 0;
+    const hPrev = cleanFloat(horasManutencaoPreventiva);
+
     const ativo = await prisma.ativo.create({
       data: {
         nome,
@@ -116,8 +126,8 @@ export async function POST(req: Request) {
         custoDiario: cDiario,
         custoSemanal: cSemanal,
         custoMensal: cMensal,
-        horasUso: horasUso ? parseFloat(String(horasUso)) : 0,
-        horasManutencaoPreventiva: horasManutencaoPreventiva ? parseFloat(String(horasManutencaoPreventiva)) : null,
+        horasUso: hUso,
+        horasManutencaoPreventiva: hPrev,
         responsavel: responsavel || null,
         localizacao: localizacao || null,
         tipoPropriedade: tipoPropriedade || "PROPRIO",
@@ -129,6 +139,6 @@ export async function POST(req: Request) {
     return NextResponse.json(ativo);
   } catch (error: any) {
     console.error("Error creating asset:", error);
-    return NextResponse.json({ error: "Internal Server Error", message: error.message }, { status: 500 });
+    return NextResponse.json({ error: error?.message || "Erro ao cadastrar ativo." }, { status: 500 });
   }
 }

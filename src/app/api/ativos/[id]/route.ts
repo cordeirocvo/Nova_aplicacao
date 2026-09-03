@@ -73,14 +73,21 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       return NextResponse.json({ error: "Ativo não encontrado." }, { status: 404 });
     }
 
-    let tCusto = tipoCusto !== undefined ? tipoCusto : existing.tipoCusto;
-    let valCustoNum = valorCusto !== undefined && valorCusto !== null && valorCusto !== "" ? parseFloat(String(valorCusto)) : existing.valorCusto;
-    let tHoraria = taxaHoraria !== undefined && taxaHoraria !== null && taxaHoraria !== "" ? parseFloat(String(taxaHoraria)) : existing.taxaHoraria;
-    let cDiario = custoDiario !== undefined && custoDiario !== null && custoDiario !== "" ? parseFloat(String(custoDiario)) : existing.custoDiario;
-    let cSemanal = custoSemanal !== undefined && custoSemanal !== null && custoSemanal !== "" ? parseFloat(String(custoSemanal)) : existing.custoSemanal;
-    let cMensal = custoMensal !== undefined && custoMensal !== null && custoMensal !== "" ? parseFloat(String(custoMensal)) : existing.custoMensal;
+    function cleanFloat(val: any): number | null {
+      if (val === undefined || val === null || val === "") return null;
+      const str = String(val).replace(/\s/g, "").replace(",", ".").trim();
+      const num = parseFloat(str);
+      return isNaN(num) ? null : num;
+    }
 
-    if (valCustoNum !== null && !isNaN(valCustoNum) && valorCusto !== undefined) {
+    let tCusto = tipoCusto !== undefined ? tipoCusto : existing.tipoCusto;
+    let valCustoNum = valorCusto !== undefined ? cleanFloat(valorCusto) : existing.valorCusto;
+    let tHoraria = taxaHoraria !== undefined ? cleanFloat(taxaHoraria) : existing.taxaHoraria;
+    let cDiario = custoDiario !== undefined ? cleanFloat(custoDiario) : existing.custoDiario;
+    let cSemanal = custoSemanal !== undefined ? cleanFloat(custoSemanal) : existing.custoSemanal;
+    let cMensal = custoMensal !== undefined ? cleanFloat(custoMensal) : existing.custoMensal;
+
+    if (valCustoNum !== null && valorCusto !== undefined) {
       if (tCusto === "DIARIO") {
         cDiario = valCustoNum;
         cSemanal = valCustoNum * 5;
@@ -116,8 +123,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         custoDiario: cDiario,
         custoSemanal: cSemanal,
         custoMensal: cMensal,
-        horasUso: horasUso !== undefined ? parseFloat(String(horasUso)) : undefined,
-        horasManutencaoPreventiva: horasManutencaoPreventiva !== undefined ? (horasManutencaoPreventiva ? parseFloat(String(horasManutencaoPreventiva)) : null) : undefined,
+        horasUso: horasUso !== undefined ? (cleanFloat(horasUso) ?? undefined) : undefined,
+        horasManutencaoPreventiva: horasManutencaoPreventiva !== undefined ? cleanFloat(horasManutencaoPreventiva) : undefined,
         responsavel,
         localizacao,
         status,
@@ -129,7 +136,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     return NextResponse.json(updated);
   } catch (error: any) {
     console.error("Error updating asset:", error);
-    return NextResponse.json({ error: "Internal Server Error", message: error.message }, { status: 500 });
+    return NextResponse.json({ error: error?.message || "Erro ao atualizar ativo." }, { status: 500 });
   }
 }
 

@@ -169,7 +169,10 @@ export default function GestaoAtivosPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newAsset)
       });
-      const data = await res.json();
+      const text = await res.text();
+      let data;
+      try { data = JSON.parse(text); } catch { data = { error: "Erro no servidor ao cadastrar ativo." }; }
+
       if (res.ok) {
         setFormSuccess("Ativo cadastrado com sucesso!");
         setNewAsset({

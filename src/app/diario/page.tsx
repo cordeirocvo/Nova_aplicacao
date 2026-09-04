@@ -198,6 +198,7 @@ export default function DiarioObrasPage() {
     custoDiario: "",
     custoSemanal: "",
     custoMensal: "",
+    possuiHorimetro: true,
     horasUso: "0",
     horasManutencaoPreventiva: "",
     responsavel: "",
@@ -244,6 +245,7 @@ export default function DiarioObrasPage() {
           custoDiario: "",
           custoSemanal: "",
           custoMensal: "",
+          possuiHorimetro: true,
           horasUso: "0",
           horasManutencaoPreventiva: "",
           responsavel: "",
@@ -609,14 +611,15 @@ export default function DiarioObrasPage() {
     // Validate horímetro ranges if an asset requires it and status is FINALIZADO
     if (logForm.ativoId) {
       const selectedAsset = equipamentos.find(eq => eq.id === logForm.ativoId);
-      if (selectedAsset && selectedAsset.categoria === "PESADO") {
+      const temHorimetro = selectedAsset ? (selectedAsset.possuiHorimetro !== false && selectedAsset.categoria === "PESADO") : false;
+      if (selectedAsset && temHorimetro) {
         if (!logForm.horimetroInicio) {
-          setFormError("O horímetro inicial é obrigatório para este equipamento pesado.");
+          setFormError("O horímetro inicial é obrigatório para este equipamento com horímetro.");
           return;
         }
         if (logForm.statusLancamento === "FINALIZADO") {
           if (!logForm.horimetroFim) {
-            setFormError("O horímetro final é obrigatório para fechar o turno deste equipamento pesado.");
+            setFormError("O horímetro final é obrigatório para fechar o turno deste equipamento.");
             return;
           }
           if (parseFloat(logForm.horimetroFim) < parseFloat(logForm.horimetroInicio)) {
@@ -828,14 +831,15 @@ export default function DiarioObrasPage() {
     // Validate horímetro ranges on edit
     if (editingLog.ativoId) {
       const selectedAsset = equipamentos.find(eq => eq.id === editingLog.ativoId);
-      if (selectedAsset && selectedAsset.categoria === "PESADO") {
+      const temHorimetro = selectedAsset ? (selectedAsset.possuiHorimetro !== false && selectedAsset.categoria === "PESADO") : false;
+      if (selectedAsset && temHorimetro) {
         if (editingLog.horimetroInicio === undefined || editingLog.horimetroInicio === null || editingLog.horimetroInicio === "") {
-          setFormError("O horímetro inicial é obrigatório para este equipamento pesado.");
+          setFormError("O horímetro inicial é obrigatório para este equipamento com horímetro.");
           return;
         }
         if (editingLog.statusLancamento === "FINALIZADO") {
           if (editingLog.horimetroFim === undefined || editingLog.horimetroFim === null || editingLog.horimetroFim === "") {
-            setFormError("O horímetro final é obrigatório para fechar o turno deste equipamento pesado.");
+            setFormError("O horímetro final é obrigatório para fechar o turno deste equipamento.");
             return;
           }
           if (parseFloat(editingLog.horimetroFim) < parseFloat(editingLog.horimetroInicio)) {
@@ -3122,12 +3126,20 @@ export default function DiarioObrasPage() {
                       </p>
                     </div>
 
-                    {/* Mostrar campos de horímetro caso seja Máquina Pesada */}
+                    {/* Mostrar campos de horímetro caso seja Máquina Pesada COM Horímetro */}
                     {(() => {
                       const selectedAsset = equipamentos.find(eq => eq.id === logForm.ativoId);
                       const isPesado = selectedAsset?.categoria === "PESADO";
+                      const temHorimetro = selectedAsset ? (selectedAsset.possuiHorimetro !== false && isPesado) : false;
                       
-                      if (!isPesado) return null;
+                      if (!temHorimetro) {
+                        return (
+                          <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 text-[11px] text-slate-600 flex items-center gap-2 font-medium">
+                            <span className="text-base">ℹ️</span>
+                            <span>Equipamento cadastrado <strong>sem horímetro</strong>. Leitura de horas não é obrigatória para este ativo.</span>
+                          </div>
+                        );
+                      }
 
                       return (
                         <div className="space-y-3">
@@ -4994,6 +5006,34 @@ export default function DiarioObrasPage() {
                 <div><span className="font-bold text-slate-500 uppercase">Mensal:</span> <strong className="text-slate-800">R$ {newEquipModalForm.custoMensal || "0"}/mês</strong></div>
               </div>
 
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Possui Horímetro (registro de horas)? *</label>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setNewEquipModalForm({...newEquipModalForm, possuiHorimetro: true})}
+                    className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
+                      newEquipModalForm.possuiHorimetro
+                        ? "bg-emerald-600 border-emerald-600 text-white shadow-sm"
+                        : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+                    }`}
+                  >
+                    ⏱️ SIM (Com Horímetro)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setNewEquipModalForm({...newEquipModalForm, possuiHorimetro: false})}
+                    className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
+                      !newEquipModalForm.possuiHorimetro
+                        ? "bg-slate-700 border-slate-700 text-white shadow-sm"
+                        : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+                    }`}
+                  >
+                    🚫 NÃO (Sem Horímetro)
+                  </button>
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Propriedade *</label>
@@ -5007,16 +5047,25 @@ export default function DiarioObrasPage() {
                   </select>
                 </div>
 
-                <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Horas Inicial Uso</label>
-                  <input
-                    type="number"
-                    placeholder="0"
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
-                    value={newEquipModalForm.horasUso}
-                    onChange={e => setNewEquipModalForm({...newEquipModalForm, horasUso: e.target.value})}
-                  />
-                </div>
+                {newEquipModalForm.possuiHorimetro ? (
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Horas Inicial Uso</label>
+                    <input
+                      type="number"
+                      placeholder="0"
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                      value={newEquipModalForm.horasUso}
+                      onChange={e => setNewEquipModalForm({...newEquipModalForm, horasUso: e.target.value})}
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Status</label>
+                    <div className="px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-500">
+                      Disponível (Sem leitura de horas)
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">

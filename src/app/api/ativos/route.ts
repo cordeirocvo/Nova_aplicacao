@@ -55,6 +55,7 @@ export async function POST(req: Request) {
       custoDiario,
       custoSemanal,
       custoMensal,
+      possuiHorimetro,
       horasUso, 
       horasManutencaoPreventiva, 
       responsavel, 
@@ -62,6 +63,8 @@ export async function POST(req: Request) {
       tipoPropriedade, 
       contratoAluguelUrl 
     } = body;
+
+    const temHorimetro = possuiHorimetro === false || possuiHorimetro === "false" || possuiHorimetro === "nao" || possuiHorimetro === "NÃO" || possuiHorimetro === "NAO" ? false : true;
 
     if (!nome || !codigo || !categoria) {
       return NextResponse.json({ error: "Nome, código e categoria são obrigatórios." }, { status: 400 });
@@ -126,6 +129,7 @@ export async function POST(req: Request) {
         custoDiario: cDiario,
         custoSemanal: cSemanal,
         custoMensal: cMensal,
+        possuiHorimetro: temHorimetro,
         horasUso: hUso,
         horasManutencaoPreventiva: hPrev,
         responsavel: responsavel || null,

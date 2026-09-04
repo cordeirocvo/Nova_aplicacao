@@ -813,6 +813,7 @@ model Ativo {
   custoDiario                Float?               // R$/dia
   custoSemanal               Float?               // R$/semana
   custoMensal                Float?               // R$/mês
+  possuiHorimetro            Boolean              @default(true) // Possui horímetro/leitura de horas?
   horasUso                   Float                @default(0) // acumulado de horas de uso
   horasManutencaoPreventiva  Float?               // X horas para notificar revisão
   ultimoCustoHoras           Float                @default(0) // custo acumulado total

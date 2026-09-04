@@ -44,6 +44,7 @@ export default function GestaoAtivosPage() {
     custoDiario: "",
     custoSemanal: "",
     custoMensal: "",
+    possuiHorimetro: true,
     horasUso: "0",
     horasManutencaoPreventiva: "",
     responsavel: "",
@@ -185,6 +186,7 @@ export default function GestaoAtivosPage() {
           custoDiario: "",
           custoSemanal: "",
           custoMensal: "",
+          possuiHorimetro: true,
           horasUso: "0",
           horasManutencaoPreventiva: "",
           responsavel: "",
@@ -873,27 +875,59 @@ export default function GestaoAtivosPage() {
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Horas Iniciais de Uso</label>
-                    <input 
-                      type="number"
-                      placeholder="Ex: 0"
-                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
-                      value={newAsset.horasUso}
-                      onChange={e => setNewAsset({...newAsset, horasUso: e.target.value})}
-                    />
+                  <div className="col-span-1 md:col-span-2">
+                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Possui Horímetro (registro de horas)? *</label>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setNewAsset({...newAsset, possuiHorimetro: true})}
+                        className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
+                          newAsset.possuiHorimetro
+                            ? "bg-emerald-600 border-emerald-600 text-white shadow-sm"
+                            : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+                        }`}
+                      >
+                        ⏱️ SIM (Com Horímetro)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setNewAsset({...newAsset, possuiHorimetro: false})}
+                        className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
+                          !newAsset.possuiHorimetro
+                            ? "bg-slate-700 border-slate-700 text-white shadow-sm"
+                            : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+                        }`}
+                      >
+                        🚫 NÃO (Sem Horímetro)
+                      </button>
+                    </div>
                   </div>
 
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Horas para Revisão Preventiva</label>
-                    <input 
-                      type="number"
-                      placeholder="Ex: 250"
-                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
-                      value={newAsset.horasManutencaoPreventiva}
-                      onChange={e => setNewAsset({...newAsset, horasManutencaoPreventiva: e.target.value})}
-                    />
-                  </div>
+                  {newAsset.possuiHorimetro && (
+                    <>
+                      <div>
+                        <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Horas Iniciais de Uso</label>
+                        <input 
+                          type="number"
+                          placeholder="Ex: 0"
+                          className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                          value={newAsset.horasUso}
+                          onChange={e => setNewAsset({...newAsset, horasUso: e.target.value})}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Horas para Revisão Preventiva</label>
+                        <input 
+                          type="number"
+                          placeholder="Ex: 250"
+                          className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                          value={newAsset.horasManutencaoPreventiva}
+                          onChange={e => setNewAsset({...newAsset, horasManutencaoPreventiva: e.target.value})}
+                        />
+                      </div>
+                    </>
+                  )}
                 </>
               ) : (
                 <>
@@ -2134,16 +2168,16 @@ export default function GestaoAtivosPage() {
       {/* ================= MODAL DE EDIÇÃO DE ATIVO ================= */}
       {editingAsset && (
         <div className="fixed inset-0 z-50 bg-[#0a192f]/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-md rounded-[2.5rem] border border-slate-100 shadow-2xl p-6 relative animate-in slide-in-from-bottom-8 duration-300">
+          <div className="bg-white w-full max-w-xl rounded-[2.5rem] border border-slate-100 shadow-2xl p-6 relative max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom-8 duration-300">
             
-            <div className="flex justify-between items-start mb-4">
+            <div className="flex justify-between items-start mb-4 border-b border-slate-100 pb-3">
               <div>
                 <h3 className="text-base font-black text-slate-800 uppercase tracking-tight flex items-center gap-2">
                   <Wrench className="w-5 h-5 text-[#f15a24]" /> 
                   Editar Equipamento / Ativo
                 </h3>
                 <p className="text-[10px] text-slate-500 mt-0.5">
-                  Ajuste as definições e propriedade do ativo.
+                  Ajuste todas as definições, custos, horímetro e propriedade do ativo.
                 </p>
               </div>
               <button 
@@ -2158,7 +2192,7 @@ export default function GestaoAtivosPage() {
             <form onSubmit={handleUpdateAsset} className="space-y-4">
               
               <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Nome do Equipamento *</label>
+                <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Nome do Equipamento / Ferramenta *</label>
                 <input 
                   type="text"
                   required
@@ -2184,7 +2218,7 @@ export default function GestaoAtivosPage() {
                   <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Categoria *</label>
                   <select 
                     className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
-                    value={editingAsset.categoria || ""}
+                    value={editingAsset.categoria || "PESADO"}
                     onChange={e => setEditingAsset({...editingAsset, categoria: e.target.value})}
                   >
                     <option value="PESADO">Equipamento Pesado</option>
@@ -2193,24 +2227,120 @@ export default function GestaoAtivosPage() {
                 </div>
               </div>
 
-              {editingAsset.categoria === "PESADO" && (
+              {/* Modalidade de Custo & Valores */}
+              <div className="grid grid-cols-2 gap-4 border-t border-slate-100 pt-3">
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Modalidade de Custo *</label>
+                  <select 
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                    value={editingAsset.tipoCusto || "HORARIO"}
+                    onChange={e => {
+                      const newTipo = e.target.value;
+                      const val = parseFloat(editingAsset.valorCusto || editingAsset.taxaHoraria || 0);
+                      if (!isNaN(val) && val > 0) {
+                        let th = ""; let cd = ""; let cs = ""; let cm = "";
+                        if (newTipo === "DIARIO") { cd = val.toString(); cs = (val * 5).toFixed(2); cm = (val * 22).toFixed(2); th = (val / 8).toFixed(2); }
+                        else if (newTipo === "SEMANAL") { cs = val.toString(); cd = (val / 5).toFixed(2); cm = (val * 4.4).toFixed(2); th = (val / 44).toFixed(2); }
+                        else if (newTipo === "MENSAL") { cm = val.toString(); cs = (val / 4.4).toFixed(2); cd = (val / 22).toFixed(2); th = (val / 176).toFixed(2); }
+                        else { th = val.toString(); cd = (val * 8).toFixed(2); cs = (val * 44).toFixed(2); cm = (val * 176).toFixed(2); }
+                        setEditingAsset({...editingAsset, tipoCusto: newTipo, taxaHoraria: th, custoDiario: cd, custoSemanal: cs, custoMensal: cm});
+                      } else {
+                        setEditingAsset({...editingAsset, tipoCusto: newTipo});
+                      }
+                    }}
+                  >
+                    <option value="HORARIO">⏱️ Custo Horário (R$/h)</option>
+                    <option value="DIARIO">☀️ Custo Diário (R$/dia)</option>
+                    <option value="SEMANAL">📅 Custo Semanal (R$/semana)</option>
+                    <option value="MENSAL">🗓️ Custo Mensal (R$/mês)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">
+                    Valor do Custo (R$) *
+                  </label>
+                  <input 
+                    type="number"
+                    step="any"
+                    placeholder="Ex: 250"
+                    className="w-full px-3 py-2.5 bg-white border border-orange-200 rounded-xl text-xs font-black text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                    value={editingAsset.valorCusto !== undefined && editingAsset.valorCusto !== null ? editingAsset.valorCusto : (editingAsset.taxaHoraria || "")}
+                    onChange={e => {
+                      const valStr = e.target.value;
+                      const val = parseFloat(valStr);
+                      if (!isNaN(val) && val > 0) {
+                        let th = ""; let cd = ""; let cs = ""; let cm = "";
+                        const tipo = editingAsset.tipoCusto || "HORARIO";
+                        if (tipo === "DIARIO") { cd = valStr; cs = (val * 5).toFixed(2); cm = (val * 22).toFixed(2); th = (val / 8).toFixed(2); }
+                        else if (tipo === "SEMANAL") { cs = valStr; cd = (val / 5).toFixed(2); cm = (val * 4.4).toFixed(2); th = (val / 44).toFixed(2); }
+                        else if (tipo === "MENSAL") { cm = valStr; cs = (val / 4.4).toFixed(2); cd = (val / 22).toFixed(2); th = (val / 176).toFixed(2); }
+                        else { th = valStr; cd = (val * 8).toFixed(2); cs = (val * 44).toFixed(2); cm = (val * 176).toFixed(2); }
+                        setEditingAsset({...editingAsset, valorCusto: valStr, taxaHoraria: th, custoDiario: cd, custoSemanal: cs, custoMensal: cm});
+                      } else {
+                        setEditingAsset({...editingAsset, valorCusto: valStr});
+                      }
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Custos Calculados Preview */}
+              <div className="grid grid-cols-4 gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-[9.5px] font-bold text-slate-700">
+                <div>Horária: <span className="text-slate-900 block font-black">R$ {parseFloat(editingAsset.taxaHoraria || 0).toFixed(2)}/h</span></div>
+                <div>Diária: <span className="text-slate-900 block font-black">R$ {parseFloat(editingAsset.custoDiario || 0).toFixed(2)}/dia</span></div>
+                <div>Semanal: <span className="text-slate-900 block font-black">R$ {parseFloat(editingAsset.custoSemanal || 0).toFixed(2)}/sem</span></div>
+                <div>Mensal: <span className="text-slate-900 block font-black">R$ {parseFloat(editingAsset.custoMensal || 0).toFixed(2)}/mês</span></div>
+              </div>
+
+              {/* Toggle Possui Horímetro */}
+              <div className="border-t border-slate-100 pt-3">
+                <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Possui Horímetro (registro de horas)? *</label>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setEditingAsset({...editingAsset, possuiHorimetro: true})}
+                    className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
+                      editingAsset.possuiHorimetro !== false
+                        ? "bg-emerald-600 border-emerald-600 text-white shadow-sm"
+                        : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+                    }`}
+                  >
+                    ⏱️ SIM (Com Horímetro)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditingAsset({...editingAsset, possuiHorimetro: false})}
+                    className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
+                      editingAsset.possuiHorimetro === false
+                        ? "bg-slate-700 border-slate-700 text-white shadow-sm"
+                        : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+                    }`}
+                  >
+                    🚫 NÃO (Sem Horímetro)
+                  </button>
+                </div>
+              </div>
+
+              {/* Horas de Uso & Revisão (se tiver horímetro) */}
+              {editingAsset.possuiHorimetro !== false && (
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Taxa Horária (R$/h)</label>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Horas Acumuladas de Uso</label>
                     <input 
                       type="number"
-                      step="0.01"
+                      step="any"
                       className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
-                      value={editingAsset.taxaHoraria || ""}
-                      onChange={e => setEditingAsset({...editingAsset, taxaHoraria: e.target.value})}
+                      value={editingAsset.horasUso !== undefined ? editingAsset.horasUso : 0}
+                      onChange={e => setEditingAsset({...editingAsset, horasUso: e.target.value})}
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Horas para Revisão</label>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Horas p/ Revisão Preventiva</label>
                     <input 
                       type="number"
-                      step="0.1"
+                      step="any"
                       className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
                       value={editingAsset.horasManutencaoPreventiva || ""}
                       onChange={e => setEditingAsset({...editingAsset, horasManutencaoPreventiva: e.target.value})}
@@ -2219,16 +2349,57 @@ export default function GestaoAtivosPage() {
                 </div>
               )}
 
-              <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Propriedade *</label>
-                <select 
-                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
-                  value={editingAsset.tipoPropriedade || "PROPRIO"}
-                  onChange={e => setEditingAsset({...editingAsset, tipoPropriedade: e.target.value})}
-                >
-                  <option value="PROPRIO">Próprio</option>
-                  <option value="ALUGADO">Alugado</option>
-                </select>
+              {/* Propriedade & Status */}
+              <div className="grid grid-cols-2 gap-4 border-t border-slate-100 pt-3">
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Propriedade *</label>
+                  <select 
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                    value={editingAsset.tipoPropriedade || "PROPRIO"}
+                    onChange={e => setEditingAsset({...editingAsset, tipoPropriedade: e.target.value})}
+                  >
+                    <option value="PROPRIO">Próprio</option>
+                    <option value="ALUGADO">Alugado</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Status Atual</label>
+                  <select 
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                    value={editingAsset.status || "DISPONIVEL"}
+                    onChange={e => setEditingAsset({...editingAsset, status: e.target.value})}
+                  >
+                    <option value="DISPONIVEL">Disponível</option>
+                    <option value="EM_USO">Em Uso</option>
+                    <option value="MANUTENCAO">Em Manutenção</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Responsável & Localização */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Responsável / Operador</label>
+                  <input 
+                    type="text"
+                    placeholder="Ex: João Silva"
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                    value={editingAsset.responsavel || ""}
+                    onChange={e => setEditingAsset({...editingAsset, responsavel: e.target.value})}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Localização / Obra</label>
+                  <input 
+                    type="text"
+                    placeholder="Ex: Obra Usina Itália"
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                    value={editingAsset.localizacao || ""}
+                    onChange={e => setEditingAsset({...editingAsset, localizacao: e.target.value})}
+                  />
+                </div>
               </div>
 
               {editingAsset.tipoPropriedade === "ALUGADO" && (
@@ -2271,7 +2442,7 @@ export default function GestaoAtivosPage() {
                 </div>
               )}
 
-              <div className="flex gap-3 pt-2">
+              <div className="flex gap-3 pt-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setEditingAsset(null)}

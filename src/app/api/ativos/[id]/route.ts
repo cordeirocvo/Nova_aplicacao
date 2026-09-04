@@ -56,6 +56,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       custoDiario,
       custoSemanal,
       custoMensal,
+      possuiHorimetro,
       horasUso, 
       horasManutencaoPreventiva, 
       responsavel, 
@@ -64,6 +65,11 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       tipoPropriedade, 
       contratoAluguelUrl 
     } = body;
+
+    let temHorimetro: boolean | undefined = undefined;
+    if (possuiHorimetro !== undefined) {
+      temHorimetro = possuiHorimetro === false || possuiHorimetro === "false" || possuiHorimetro === "nao" || possuiHorimetro === "NÃO" || possuiHorimetro === "NAO" ? false : true;
+    }
 
     const existing = await prisma.ativo.findUnique({
       where: { id }
@@ -123,6 +129,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         custoDiario: cDiario,
         custoSemanal: cSemanal,
         custoMensal: cMensal,
+        possuiHorimetro: temHorimetro,
         horasUso: horasUso !== undefined ? (cleanFloat(horasUso) ?? undefined) : undefined,
         horasManutencaoPreventiva: horasManutencaoPreventiva !== undefined ? cleanFloat(horasManutencaoPreventiva) : undefined,
         responsavel,

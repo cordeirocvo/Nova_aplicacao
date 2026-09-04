@@ -263,29 +263,29 @@ function buildPdf(rdo: any, atividadesExecutadasDia: any[] = [], todasAtividades
         ),
       ),
 
-      el(View, { style: s.sec }, el(Text, { style: s.stit }, "Condições Climáticas do Canteiro"), ...climaEls),
+      el(View, { style: s.sec, wrap: false }, el(Text, { style: s.stit }, "Condições Climáticas do Canteiro"), ...climaEls),
 
-      el(View, { style: s.sec },
+      el(View, { style: s.sec, wrap: false },
         el(Text, { style: s.stit }, "Atividades Executadas no Dia (" + atividadesExecutadasDia.length + ")"),
         ativRows ? tbl(ativRows) : el(Text, { style: s.nodata }, "Nenhuma atividade teve lançamento ou execução nesta data.")
       ),
 
-      rdo.outrasAtividades ? el(View, { style: s.sec },
+      rdo.outrasAtividades ? el(View, { style: s.sec, wrap: false },
         el(Text, { style: s.stit }, "📌 Outras Atividades Executadas (Serviços Avulsos / Não Listados)"),
         el(Text, { style: { leading: 1.4 } }, String(rdo.outrasAtividades))
       ) : null,
 
-      el(View, { style: s.sec }, el(Text, { style: s.stit }, "Mão de Obra no Canteiro (" + totalMDO + " pessoas / " + totalH + "h)"), tbl(maoRows)),
-      el(View, { style: s.sec }, el(Text, { style: s.stit }, "Materiais Recebidos / Utilizados"), matRows ? tbl(matRows) : el(Text, { style: s.nodata }, "Nenhum material registrado nesta data.")),
-      ocEls && ocEls.length > 0 ? el(View, { style: s.sec }, el(Text, { style: s.stit }, "Ocorrências e Paralisações"), ...ocEls) : null,
-      rdo.observacoes ? el(View, { style: s.sec }, el(Text, { style: s.stit }, "Observações Gerais do Canteiro"), el(Text, {}, String(rdo.observacoes))) : null,
+      el(View, { style: s.sec, wrap: false }, el(Text, { style: s.stit }, "Mão de Obra no Canteiro (" + totalMDO + " pessoas / " + totalH + "h)"), tbl(maoRows)),
+      el(View, { style: s.sec, wrap: false }, el(Text, { style: s.stit }, "Materiais Recebidos / Utilizados"), matRows ? tbl(matRows) : el(Text, { style: s.nodata }, "Nenhum material registrado nesta data.")),
+      ocEls && ocEls.length > 0 ? el(View, { style: s.sec, wrap: false }, el(Text, { style: s.stit }, "Ocorrências e Paralisações"), ...ocEls) : null,
+      rdo.observacoes ? el(View, { style: s.sec, wrap: false }, el(Text, { style: s.stit }, "Observações Gerais do Canteiro"), el(Text, {}, String(rdo.observacoes))) : null,
 
       // Galeria de Evidências Fotográficas do Dia
-      allTodayPhotos.length > 0 ? el(View, { style: s.sec },
+      allTodayPhotos.length > 0 ? el(View, { style: s.sec, wrap: false },
         el(Text, { style: s.stit }, "📸 Evidências Fotográficas do Canteiro (" + allTodayPhotos.length + " foto(s))"),
         el(View, { style: { flexDirection: "row", flexWrap: "wrap", gap: 6 } },
           ...allTodayPhotos.map((item, pIdx) =>
-            el(View, { key: pIdx, style: { width: 120, marginBottom: 8 } },
+            el(View, { key: pIdx, style: { width: 120, marginBottom: 8 }, wrap: false },
               el(Image, { src: item.url, style: { width: 120, height: 90, borderRadius: 4, objectFit: "cover" } }),
               el(Text, { style: { fontSize: 6.5, color: "#64748b", marginTop: 2 } }, item.title)
             )

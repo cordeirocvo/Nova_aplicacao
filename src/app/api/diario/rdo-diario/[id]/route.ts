@@ -46,7 +46,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     const session = (await getServerSession(authOptions as any)) as any;
     if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const { id } = await params;
-    const { observacoes, status, climas, maoDeObra, materiais, ocorrencias } = await req.json();
+    const { observacoes, outrasAtividades, status, climas, maoDeObra, materiais, ocorrencias } = await req.json();
 
     // Verification: only ADMIN or SUPERVISOR can change status to APROVADO or RECUSADO
     const userRole = (session.user as any).role;
@@ -60,6 +60,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       where: { id },
       data: {
         observacoes: observacoes !== undefined ? observacoes : null,
+        outrasAtividades: outrasAtividades !== undefined ? outrasAtividades : null,
         status: status || "RASCUNHO",
         climas: { create: (climas || []).map((c: any) => ({ periodo: c.periodo, condicao: c.condicao, impacto: c.impacto || "" })) },
         maoDeObra: { create: (maoDeObra || []).map((m: any) => ({ funcionarioId: m.funcionarioId || null, nomeAvulso: m.nomeAvulso || null, funcao: m.funcao || "", empresa: m.empresa || "PROPRIA", quantidade: m.quantidade || 1, horasTrab: m.horasTrab || 8, falta: m.falta || false, justFalta: m.justFalta || "" })) },

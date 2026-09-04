@@ -206,6 +206,101 @@ export default function DiarioObrasPage() {
     tipoPropriedade: "PROPRIO"
   });
 
+  const [editingFullRdo, setEditingFullRdo] = useState<any | null>(null);
+  const [submittingFullRdo, setSubmittingFullRdo] = useState(false);
+  const [fullRdoTab, setFullRdoTab] = useState<"geral" | "maoDeObra" | "materiais" | "ocorrencias">("geral");
+
+  const openFullRdoModal = (rdo: any) => {
+    const rdoDateStr = rdo.data ? (typeof rdo.data === "string" ? rdo.data.split("T")[0] : new Date(rdo.data).toISOString().split("T")[0]) : reportDate;
+
+    setEditingFullRdo({
+      id: rdo.id,
+      numeroRdo: rdo.numeroRdo,
+      projetoId: rdo.projetoId,
+      projetoNome: rdo.projeto?.nome || "Obra",
+      data: rdoDateStr,
+      status: rdo.status || "PENDENTE",
+      observacoes: rdo.observacoes || "",
+      outrasAtividades: rdo.outrasAtividades || "",
+      climas: rdo.climas && rdo.climas.length > 0 ? rdo.climas.map((c: any) => ({
+        periodo: c.periodo,
+        condicao: c.condicao,
+        impacto: c.impacto || ""
+      })) : [
+        { periodo: "MANHA", condicao: "ENSOLARADO", impacto: "" },
+        { periodo: "TARDE", condicao: "ENSOLARADO", impacto: "" }
+      ],
+      maoDeObra: rdo.maoDeObra && rdo.maoDeObra.length > 0 ? rdo.maoDeObra.map((m: any) => ({
+        funcionarioId: m.funcionarioId || "",
+        nomeAvulso: m.funcionario?.nome || m.nomeAvulso || "",
+        funcao: m.funcao || m.funcionario?.funcao || "",
+        empresa: m.empresa || "PROPRIA",
+        quantidade: m.quantidade || 1,
+        horasTrab: m.horasTrab || 8,
+        falta: m.falta || false,
+        justFalta: m.justFalta || ""
+      })) : (funcionariosCanteiro || []).map((f: any) => ({
+        funcionarioId: f.id,
+        nomeAvulso: f.nome,
+        funcao: f.funcao,
+        empresa: f.empresa || "PROPRIA",
+        quantidade: 1,
+        horasTrab: 8,
+        falta: false,
+        justFalta: ""
+      })),
+      materiais: rdo.materiais && rdo.materiais.length > 0 ? rdo.materiais.map((m: any) => ({
+        material: m.material,
+        quantidade: m.quantidade,
+        unidade: m.unidade || "un",
+        fornecedor: m.fornecedor || "",
+        notaFiscal: m.notaFiscal || ""
+      })) : [],
+      ocorrencias: rdo.ocorrencias && rdo.ocorrencias.length > 0 ? rdo.ocorrencias.map((o: any) => ({
+        tipo: o.tipo,
+        descricao: o.descricao,
+        impacto: o.impacto || "",
+        medidaTomada: o.medidaTomada || ""
+      })) : []
+    });
+
+    setFullRdoTab("geral");
+  };
+
+  const handleSaveFullRdo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingFullRdo) return;
+    setSubmittingFullRdo(true);
+    try {
+      const res = await fetch(`/api/diario/rdo-diario/${editingFullRdo.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          status: editingFullRdo.status,
+          observacoes: editingFullRdo.observacoes,
+          outrasAtividades: editingFullRdo.outrasAtividades,
+          climas: editingFullRdo.climas,
+          maoDeObra: editingFullRdo.maoDeObra,
+          materiais: editingFullRdo.materiais,
+          ocorrencias: editingFullRdo.ocorrencias
+        })
+      });
+      if (res.ok) {
+        alert(`RDO-${String(editingFullRdo.numeroRdo).padStart(3, "0")} atualizado com sucesso!`);
+        setEditingFullRdo(null);
+        fetchData();
+      } else {
+        const data = await res.json();
+        alert(data.error || "Erro ao salvar alterações no RDO.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Erro ao conectar com o servidor.");
+    } finally {
+      setSubmittingFullRdo(false);
+    }
+  };
+
   const handleCreateNewEquipModal = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newEquipModalForm.nome || !newEquipModalForm.codigo) {
@@ -2659,14 +2754,22 @@ export default function DiarioObrasPage() {
                     {rdo.ocorrencias?.length > 0 && <span className="text-orange-500">⚠️ {rdo.ocorrencias.length} ocorrência(s)</span>}
                   </div>
                 </div>
-                <button
-                  onClick={() => handleExportPdf(rdo.id)}
-                  disabled={exportingPdf === rdo.id}
-                  className="flex-shrink-0 flex items-center gap-1.5 bg-slate-800 hover:bg-slate-900 text-white text-[10px] font-bold px-3 py-2 rounded-xl transition-all cursor-pointer disabled:opacity-50"
-                >
-                  <FileText className="w-3 h-3" />
-                  {exportingPdf === rdo.id ? "Gerando..." : "PDF"}
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => openFullRdoModal(rdo)}
+                    className="flex-shrink-0 flex items-center gap-1.5 bg-orange-50 hover:bg-orange-100 text-[#f15a24] text-[10px] font-bold px-3 py-2 rounded-xl transition-all cursor-pointer border border-orange-200"
+                  >
+                    ✏️ Editar RDO
+                  </button>
+                  <button
+                    onClick={() => handleExportPdf(rdo.id)}
+                    disabled={exportingPdf === rdo.id}
+                    className="flex-shrink-0 flex items-center gap-1.5 bg-slate-800 hover:bg-slate-900 text-white text-[10px] font-bold px-3 py-2 rounded-xl transition-all cursor-pointer disabled:opacity-50"
+                  >
+                    <FileText className="w-3 h-3" />
+                    {exportingPdf === rdo.id ? "Gerando..." : "PDF"}
+                  </button>
+                </div>
               </div>
             </div>
           ))}
@@ -5082,6 +5185,579 @@ export default function DiarioObrasPage() {
                   className="px-5 py-2 bg-[#f15a24] hover:bg-orange-600 text-white font-black text-xs rounded-xl uppercase tracking-wider cursor-pointer shadow-md disabled:opacity-50"
                 >
                   {submittingNewEquip ? "Cadastrando..." : "Confirmar Cadastro"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* ==================== MODAL DE EDIÇÃO DE RDO COMPLETO ==================== */}
+      {/* ========================================================================= */}
+      {editingFullRdo && (
+        <div className="fixed inset-0 z-[100] bg-[#0a192f]/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-4xl rounded-[2.5rem] border border-slate-100 shadow-2xl p-6 relative max-h-[92vh] overflow-y-auto animate-in slide-in-from-bottom-6 duration-300">
+            
+            <div className="flex justify-between items-center pb-4 border-b border-slate-100 mb-4">
+              <div>
+                <h3 className="text-lg font-black text-slate-800 uppercase tracking-tight flex items-center gap-2">
+                  📝 Editar RDO Completo — <span className="text-[#f15a24]">RDO-{String(editingFullRdo.numeroRdo).padStart(3, "0")}</span>
+                </h3>
+                <p className="text-xs text-slate-500 font-medium mt-0.5">
+                  Obra: <strong>{editingFullRdo.projetoNome}</strong> | Data: <strong>{fmtDate(editingFullRdo.data)}</strong>
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingFullRdo(null)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold flex items-center justify-center cursor-pointer transition-all"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Navigation Tabs */}
+            <div className="flex gap-2 border-b border-slate-100 pb-3 mb-4 overflow-x-auto">
+              <button
+                type="button"
+                onClick={() => setFullRdoTab("geral")}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  fullRdoTab === "geral" ? "bg-[#0a192f] text-white shadow-sm" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                }`}
+              >
+                🌤️ Geral & Clima
+              </button>
+              <button
+                type="button"
+                onClick={() => setFullRdoTab("maoDeObra")}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  fullRdoTab === "maoDeObra" ? "bg-[#0a192f] text-white shadow-sm" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                }`}
+              >
+                👷 Mão de Obra ({editingFullRdo.maoDeObra?.length || 0})
+              </button>
+              <button
+                type="button"
+                onClick={() => setFullRdoTab("materiais")}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  fullRdoTab === "materiais" ? "bg-[#0a192f] text-white shadow-sm" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                }`}
+              >
+                📦 Materiais ({editingFullRdo.materiais?.length || 0})
+              </button>
+              <button
+                type="button"
+                onClick={() => setFullRdoTab("ocorrencias")}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  fullRdoTab === "ocorrencias" ? "bg-[#0a192f] text-white shadow-sm" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                }`}
+              >
+                ⚠️ Ocorrências ({editingFullRdo.ocorrencias?.length || 0})
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveFullRdo} className="space-y-4">
+              
+              {/* TAB 1: GERAL & CLIMA */}
+              {fullRdoTab === "geral" && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Status do RDO</label>
+                      <select
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24]"
+                        value={editingFullRdo.status}
+                        onChange={e => setEditingFullRdo({...editingFullRdo, status: e.target.value})}
+                      >
+                        <option value="PENDENTE">🟡 PENDENTE</option>
+                        <option value="APROVADO">🟢 APROVADO</option>
+                        <option value="RECUSADO">🔴 RECUSADO</option>
+                        <option value="RASCUNHO">⚪ RASCUNHO</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Data de Referência</label>
+                      <input
+                        type="text"
+                        disabled
+                        value={fmtDate(editingFullRdo.data)}
+                        className="w-full px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-500 cursor-not-allowed"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Clima por Período */}
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-2">Condições Climáticas</label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {(editingFullRdo.climas || []).map((clima: any, cIdx: number) => (
+                        <div key={cIdx} className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2 text-xs">
+                          <span className="font-bold text-slate-700 uppercase block">
+                            {clima.periodo === "MANHA" ? "🌅 Manhã" : clima.periodo === "TARDE" ? "☀️ Tarde" : "🌙 Noite"}
+                          </span>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <label className="block text-[9px] font-bold text-slate-400 uppercase mb-0.5">Tempo</label>
+                              <select
+                                className="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-800"
+                                value={clima.condicao}
+                                onChange={e => {
+                                  const updatedClimas = [...editingFullRdo.climas];
+                                  updatedClimas[cIdx].condicao = e.target.value;
+                                  setEditingFullRdo({...editingFullRdo, climas: updatedClimas});
+                                }}
+                              >
+                                <option value="ENSOLARADO">Ensolarado</option>
+                                <option value="NUBLADO">Nublado</option>
+                                <option value="CHUVOSO">Chuvoso</option>
+                                <option value="IMPRATICAVEL">Chuva Forte / Impraticável</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-[9px] font-bold text-slate-400 uppercase mb-0.5">Impacto</label>
+                              <input
+                                type="text"
+                                placeholder="Ex: Nenhum / Paralisação 2h"
+                                className="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-800"
+                                value={clima.impacto || ""}
+                                onChange={e => {
+                                  const updatedClimas = [...editingFullRdo.climas];
+                                  updatedClimas[cIdx].impacto = e.target.value;
+                                  setEditingFullRdo({...editingFullRdo, climas: updatedClimas});
+                                }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">📌 Outras Atividades Executadas (Serviços Avulsos / Não Listados)</label>
+                    <textarea
+                      rows={3}
+                      placeholder="Descreva atividades extras executadas no dia..."
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24] resize-none"
+                      value={editingFullRdo.outrasAtividades || ""}
+                      onChange={e => setEditingFullRdo({...editingFullRdo, outrasAtividades: e.target.value})}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Observações Gerais do Canteiro</label>
+                    <textarea
+                      rows={3}
+                      placeholder="Anotações gerais, recados para fiscalização ou engenharia..."
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 outline-none focus:ring-2 focus:ring-[#f15a24] resize-none"
+                      value={editingFullRdo.observacoes || ""}
+                      onChange={e => setEditingFullRdo({...editingFullRdo, observacoes: e.target.value})}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 2: MÃO DE OBRA */}
+              {fullRdoTab === "maoDeObra" && (
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-bold text-slate-600">Equipe de Colaboradores no Canteiro</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newMdo = [...(editingFullRdo.maoDeObra || []), {
+                          funcionarioId: "",
+                          nomeAvulso: "",
+                          funcao: "Ajudante",
+                          empresa: "PROPRIA",
+                          quantidade: 1,
+                          horasTrab: 8,
+                          falta: false,
+                          justFalta: ""
+                        }];
+                        setEditingFullRdo({...editingFullRdo, maoDeObra: newMdo});
+                      }}
+                      className="px-3 py-1.5 bg-slate-800 text-white rounded-lg text-[10px] font-bold cursor-pointer hover:bg-slate-900 transition-all"
+                    >
+                      + Adicionar Colaborador
+                    </button>
+                  </div>
+
+                  <div className="overflow-x-auto border border-slate-100 rounded-xl">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="bg-slate-50 text-[9px] uppercase font-black text-slate-400 border-b border-slate-100">
+                          <th className="p-2 text-left">Colaborador / Nome</th>
+                          <th className="p-2 text-left">Função</th>
+                          <th className="p-2 text-left">Empresa</th>
+                          <th className="p-2 text-center">Qtd</th>
+                          <th className="p-2 text-center">Horas</th>
+                          <th className="p-2 text-center">Falta</th>
+                          <th className="p-2 text-center w-[40px]"></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(editingFullRdo.maoDeObra || []).map((m: any, mIdx: number) => (
+                          <tr key={mIdx} className="border-b border-slate-100 hover:bg-slate-50/50">
+                            <td className="p-2">
+                              <input
+                                type="text"
+                                placeholder="Nome do colaborador"
+                                className="w-full px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-800"
+                                value={m.nomeAvulso || ""}
+                                onChange={e => {
+                                  const updated = [...editingFullRdo.maoDeObra];
+                                  updated[mIdx].nomeAvulso = e.target.value;
+                                  setEditingFullRdo({...editingFullRdo, maoDeObra: updated});
+                                }}
+                              />
+                            </td>
+                            <td className="p-2">
+                              <input
+                                type="text"
+                                placeholder="Função"
+                                className="w-full px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800"
+                                value={m.funcao || ""}
+                                onChange={e => {
+                                  const updated = [...editingFullRdo.maoDeObra];
+                                  updated[mIdx].funcao = e.target.value;
+                                  setEditingFullRdo({...editingFullRdo, maoDeObra: updated});
+                                }}
+                              />
+                            </td>
+                            <td className="p-2">
+                              <select
+                                className="w-full px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800"
+                                value={m.empresa || "PROPRIA"}
+                                onChange={e => {
+                                  const updated = [...editingFullRdo.maoDeObra];
+                                  updated[mIdx].empresa = e.target.value;
+                                  setEditingFullRdo({...editingFullRdo, maoDeObra: updated});
+                                }}
+                              >
+                                <option value="PROPRIA">Própria</option>
+                                <option value="TERCEIRO">Terceiro</option>
+                              </select>
+                            </td>
+                            <td className="p-2 text-center">
+                              <input
+                                type="number"
+                                className="w-12 px-1 py-1 bg-white border border-slate-200 rounded-lg text-xs font-bold text-center text-slate-800"
+                                value={m.quantidade}
+                                onChange={e => {
+                                  const updated = [...editingFullRdo.maoDeObra];
+                                  updated[mIdx].quantidade = parseInt(e.target.value) || 1;
+                                  setEditingFullRdo({...editingFullRdo, maoDeObra: updated});
+                                }}
+                              />
+                            </td>
+                            <td className="p-2 text-center">
+                              <input
+                                type="number"
+                                className="w-14 px-1 py-1 bg-white border border-slate-200 rounded-lg text-xs font-bold text-center text-slate-800"
+                                value={m.horasTrab}
+                                onChange={e => {
+                                  const updated = [...editingFullRdo.maoDeObra];
+                                  updated[mIdx].horasTrab = parseFloat(e.target.value) || 0;
+                                  setEditingFullRdo({...editingFullRdo, maoDeObra: updated});
+                                }}
+                              />
+                            </td>
+                            <td className="p-2 text-center">
+                              <input
+                                type="checkbox"
+                                className="w-4 h-4 cursor-pointer"
+                                checked={m.falta || false}
+                                onChange={e => {
+                                  const updated = [...editingFullRdo.maoDeObra];
+                                  updated[mIdx].falta = e.target.checked;
+                                  setEditingFullRdo({...editingFullRdo, maoDeObra: updated});
+                                }}
+                              />
+                            </td>
+                            <td className="p-2 text-center">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const updated = editingFullRdo.maoDeObra.filter((_: any, i: number) => i !== mIdx);
+                                  setEditingFullRdo({...editingFullRdo, maoDeObra: updated});
+                                }}
+                                className="text-red-500 hover:text-red-700 font-bold cursor-pointer"
+                              >
+                                ✕
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                        {(!editingFullRdo.maoDeObra || editingFullRdo.maoDeObra.length === 0) && (
+                          <tr>
+                            <td colSpan={7} className="p-4 text-center text-slate-400 italic">
+                              Nenhum colaborador adicionado.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 3: MATERIAIS */}
+              {fullRdoTab === "materiais" && (
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-bold text-slate-600">Materiais Recebidos / Utilizados</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newMat = [...(editingFullRdo.materiais || []), {
+                          material: "",
+                          quantidade: 1,
+                          unidade: "un",
+                          fornecedor: "",
+                          notaFiscal: ""
+                        }];
+                        setEditingFullRdo({...editingFullRdo, materiais: newMat});
+                      }}
+                      className="px-3 py-1.5 bg-slate-800 text-white rounded-lg text-[10px] font-bold cursor-pointer hover:bg-slate-900 transition-all"
+                    >
+                      + Adicionar Material
+                    </button>
+                  </div>
+
+                  <div className="overflow-x-auto border border-slate-100 rounded-xl">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="bg-slate-50 text-[9px] uppercase font-black text-slate-400 border-b border-slate-100">
+                          <th className="p-2 text-left">Material</th>
+                          <th className="p-2 text-center">Qtd</th>
+                          <th className="p-2 text-center">Unidade</th>
+                          <th className="p-2 text-left">Fornecedor</th>
+                          <th className="p-2 text-left">Nota Fiscal</th>
+                          <th className="p-2 text-center w-[40px]"></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(editingFullRdo.materiais || []).map((m: any, mIdx: number) => (
+                          <tr key={mIdx} className="border-b border-slate-100 hover:bg-slate-50/50">
+                            <td className="p-2">
+                              <input
+                                type="text"
+                                placeholder="Descrição do material"
+                                className="w-full px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-800"
+                                value={m.material || ""}
+                                onChange={e => {
+                                  const updated = [...editingFullRdo.materiais];
+                                  updated[mIdx].material = e.target.value;
+                                  setEditingFullRdo({...editingFullRdo, materiais: updated});
+                                }}
+                              />
+                            </td>
+                            <td className="p-2 text-center">
+                              <input
+                                type="number"
+                                className="w-16 px-1 py-1 bg-white border border-slate-200 rounded-lg text-xs font-bold text-center text-slate-800"
+                                value={m.quantidade}
+                                onChange={e => {
+                                  const updated = [...editingFullRdo.materiais];
+                                  updated[mIdx].quantidade = parseFloat(e.target.value) || 0;
+                                  setEditingFullRdo({...editingFullRdo, materiais: updated});
+                                }}
+                              />
+                            </td>
+                            <td className="p-2 text-center">
+                              <input
+                                type="text"
+                                placeholder="un, kg, m³..."
+                                className="w-16 px-1 py-1 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-center text-slate-800"
+                                value={m.unidade || "un"}
+                                onChange={e => {
+                                  const updated = [...editingFullRdo.materiais];
+                                  updated[mIdx].unidade = e.target.value;
+                                  setEditingFullRdo({...editingFullRdo, materiais: updated});
+                                }}
+                              />
+                            </td>
+                            <td className="p-2">
+                              <input
+                                type="text"
+                                placeholder="Fornecedor"
+                                className="w-full px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-800"
+                                value={m.fornecedor || ""}
+                                onChange={e => {
+                                  const updated = [...editingFullRdo.materiais];
+                                  updated[mIdx].fornecedor = e.target.value;
+                                  setEditingFullRdo({...editingFullRdo, materiais: updated});
+                                }}
+                              />
+                            </td>
+                            <td className="p-2">
+                              <input
+                                type="text"
+                                placeholder="Nº NF"
+                                className="w-full px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-800"
+                                value={m.notaFiscal || ""}
+                                onChange={e => {
+                                  const updated = [...editingFullRdo.materiais];
+                                  updated[mIdx].notaFiscal = e.target.value;
+                                  setEditingFullRdo({...editingFullRdo, materiais: updated});
+                                }}
+                              />
+                            </td>
+                            <td className="p-2 text-center">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const updated = editingFullRdo.materiais.filter((_: any, i: number) => i !== mIdx);
+                                  setEditingFullRdo({...editingFullRdo, materiais: updated});
+                                }}
+                                className="text-red-500 hover:text-red-700 font-bold cursor-pointer"
+                              >
+                                ✕
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                        {(!editingFullRdo.materiais || editingFullRdo.materiais.length === 0) && (
+                          <tr>
+                            <td colSpan={6} className="p-4 text-center text-slate-400 italic">
+                              Nenhum material adicionado nesta data.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 4: OCORRÊNCIAS */}
+              {fullRdoTab === "ocorrencias" && (
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-bold text-slate-600">Ocorrências / Imprevistos / Paralisações</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newOc = [...(editingFullRdo.ocorrencias || []), {
+                          tipo: "PARALISACAO",
+                          descricao: "",
+                          impacto: "",
+                          medidaTomada: ""
+                        }];
+                        setEditingFullRdo({...editingFullRdo, ocorrencias: newOc});
+                      }}
+                      className="px-3 py-1.5 bg-slate-800 text-white rounded-lg text-[10px] font-bold cursor-pointer hover:bg-slate-900 transition-all"
+                    >
+                      + Adicionar Ocorrência
+                    </button>
+                  </div>
+
+                  <div className="space-y-3">
+                    {(editingFullRdo.ocorrencias || []).map((o: any, oIdx: number) => (
+                      <div key={oIdx} className="bg-orange-50/60 border border-orange-200 rounded-xl p-3 space-y-2 relative">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updated = editingFullRdo.ocorrencias.filter((_: any, i: number) => i !== oIdx);
+                            setEditingFullRdo({...editingFullRdo, ocorrencias: updated});
+                          }}
+                          className="absolute top-2 right-2 text-slate-400 hover:text-red-600 font-bold text-xs cursor-pointer"
+                        >
+                          ✕
+                        </button>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-[9px] font-bold text-slate-500 uppercase mb-0.5">Tipo de Ocorrência</label>
+                            <select
+                              className="w-full px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-800"
+                              value={o.tipo}
+                              onChange={e => {
+                                const updated = [...editingFullRdo.ocorrencias];
+                                updated[oIdx].tipo = e.target.value;
+                                setEditingFullRdo({...editingFullRdo, ocorrencias: updated});
+                              }}
+                            >
+                              <option value="ACIDENTE">🚨 Acidente / Incidente</option>
+                              <option value="PARALISACAO">🛑 Paralisação por Chuva / Clima</option>
+                              <option value="FALTA_ENERGIA">⚡ Falta de Energia / Água</option>
+                              <option value="QUEBRA_EQUIPAMENTO">🚜 Quebra de Equipamento</option>
+                              <option value="OUTROS">📌 Outros</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-[9px] font-bold text-slate-500 uppercase mb-0.5">Descrição Curta</label>
+                            <input
+                              type="text"
+                              placeholder="Descreva o que ocorreu..."
+                              className="w-full px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-800"
+                              value={o.descricao || ""}
+                              onChange={e => {
+                                const updated = [...editingFullRdo.ocorrencias];
+                                updated[oIdx].descricao = e.target.value;
+                                setEditingFullRdo({...editingFullRdo, ocorrencias: updated});
+                              }}
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-[9px] font-bold text-slate-500 uppercase mb-0.5">Impacto Produção</label>
+                            <input
+                              type="text"
+                              placeholder="Ex: Parada de 3h da equipe"
+                              className="w-full px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-800"
+                              value={o.impacto || ""}
+                              onChange={e => {
+                                const updated = [...editingFullRdo.ocorrencias];
+                                updated[oIdx].impacto = e.target.value;
+                                setEditingFullRdo({...editingFullRdo, ocorrencias: updated});
+                              }}
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[9px] font-bold text-slate-500 uppercase mb-0.5">Medida Tomada</label>
+                            <input
+                              type="text"
+                              placeholder="Ex: Equipe remanejada para galpão"
+                              className="w-full px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-800"
+                              value={o.medidaTomada || ""}
+                              onChange={e => {
+                                const updated = [...editingFullRdo.ocorrencias];
+                                updated[oIdx].medidaTomada = e.target.value;
+                                setEditingFullRdo({...editingFullRdo, ocorrencias: updated});
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    {(!editingFullRdo.ocorrencias || editingFullRdo.ocorrencias.length === 0) && (
+                      <div className="p-4 text-center text-slate-400 italic text-xs bg-slate-50 rounded-xl border border-slate-100">
+                        Nenhuma ocorrência registrada neste RDO.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setEditingFullRdo(null)}
+                  className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs py-3 rounded-xl uppercase tracking-wider cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingFullRdo}
+                  className="flex-1 bg-[#f15a24] hover:bg-orange-600 text-white font-black text-xs py-3 rounded-xl uppercase tracking-wider cursor-pointer shadow-md disabled:opacity-50"
+                >
+                  {submittingFullRdo ? "Salvando..." : "💾 Salvar Alterações no RDO"}
                 </button>
               </div>
             </form>

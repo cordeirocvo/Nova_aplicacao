@@ -1019,20 +1019,42 @@ export default function DiarioObrasPage() {
     }
   };
 
-  // Delete log entry
+  // Delete log entry (Histórico RDO Geral)
   const handleDeleteLog = async (id: string) => {
-    if (!confirm("Excluir este lançamento de diário?")) return;
+    if (!confirm("Tem certeza que deseja excluir esta atividade preenchida do dia?")) return;
     try {
       const res = await fetch(`/api/diario/lancamentos/${id}`, { method: "DELETE" });
       if (res.ok) {
+        alert("Atividade preenchida excluída com sucesso!");
         fetchData();
       } else {
-        alert("Erro ao excluir lançamento.");
+        const data = await res.json();
+        alert(data.error || "Erro ao excluir lançamento.");
       }
     } catch (err) {
       console.error(err);
+      alert("Erro de conexão ao excluir lançamento.");
     }
   };
+
+  // Delete full RDO entry (RDOs Diários Completos)
+  const handleDeleteFullRdo = async (id: string) => {
+    if (!confirm("Tem certeza que deseja excluir este RDO Diário Completo?")) return;
+    try {
+      const res = await fetch(`/api/diario/rdo-diario/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        alert("RDO Diário Completo excluído com sucesso!");
+        fetchData();
+      } else {
+        const data = await res.json();
+        alert(data.error || "Erro ao excluir RDO Diário Completo.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Erro de conexão ao excluir RDO.");
+    }
+  };
+
 
   if (sessionStatus === "loading" || loading) {
     return (
@@ -2769,6 +2791,15 @@ export default function DiarioObrasPage() {
                     <FileText className="w-3 h-3" />
                     {exportingPdf === rdo.id ? "Gerando..." : "PDF"}
                   </button>
+                  {isSupervisor && (
+                    <button
+                      onClick={() => handleDeleteFullRdo(rdo.id)}
+                      className="flex-shrink-0 flex items-center gap-1.5 bg-red-50 hover:bg-red-100 text-red-600 text-[10px] font-bold px-3 py-2 rounded-xl transition-all cursor-pointer border border-red-200"
+                      title="Excluir RDO Completo"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

@@ -248,8 +248,9 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
       return NextResponse.json({ error: "Log not found" }, { status: 404 });
     }
 
-    const isSupervisor = (session.user as any).role === "ADMIN";
-    const isAssignedExecutor = log.atividade.responsavelId === (session.user as any).id;
+    const userRole = (session.user as any).role;
+    const isSupervisor = userRole === "ADMIN" || userRole === "SUPERVISOR";
+    const isAssignedExecutor = log.atividade?.responsavelId === (session.user as any).id;
 
     if (!isSupervisor && !isAssignedExecutor) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -279,9 +280,32 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
       where: { id }
     });
 
+    // Recalculate parent activity status based on remaining logs
+    if (log.atividadeId) {
+      const remainingLogs = await prisma.rdoLancamento.findMany({
+        where: { atividadeId: log.atividadeId },
+        orderBy: { createdAt: "desc" }
+      });
+
+      if (remainingLogs.length > 0) {
+        const latestProgress = remainingLogs[0].progresso;
+        const newStatus = latestProgress >= 100 ? "CONCLUIDA" : "EM_ANDAMENTO";
+        await prisma.atividadeDiario.update({
+          where: { id: log.atividadeId },
+          data: { status: newStatus }
+        });
+      } else {
+        await prisma.atividadeDiario.update({
+          where: { id: log.atividadeId },
+          data: { status: "PLANEJADA" }
+        });
+      }
+    }
+
     return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error("Error deleting log:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
+

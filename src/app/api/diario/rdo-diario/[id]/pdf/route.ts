@@ -436,9 +436,9 @@ function buildPdf(rdo: any, atividadesExecutadasDia: any[] = [], todasAtividades
         });
 
         const photoGrid = validPhotosForAct.length > 0
-          ? el(View, { style: { flexDirection: "row", flexWrap: "wrap", marginTop: 4 } },
+          ? el(View, { style: { flexDirection: "row", flexWrap: "wrap", marginTop: 5 } },
               ...validPhotosForAct.slice(0, 4).map((imgSrc: string, pIdx: number) => {
-                return el(Image, { key: pIdx, src: imgSrc, style: { width: 42, height: 42, borderRadius: 3, marginRight: 4, marginTop: 4, objectFit: "cover" } });
+                return el(Image, { key: pIdx, src: imgSrc, style: { width: 65, height: 65, borderRadius: 4, marginRight: 6, marginTop: 4, objectFit: "cover", borderWidth: 1, borderColor: "#cbd5e1" } });
               })
             )
           : null;
@@ -615,14 +615,14 @@ function buildPdf(rdo: any, atividadesExecutadasDia: any[] = [], todasAtividades
         el(View, { style: s.textCard }, el(Text, {}, String(rdo.observacoes)))
       ) : null,
 
-      // Galeria de Evidências Fotográficas (safely render only valid Data URIs/URLs)
+      // Galeria de Evidências Fotográficas com Imagens Grandes em 2 Colunas (264px de largura x 180px de altura)
       allTodayPhotos.length > 0 ? el(View, { style: s.sec, wrap: false },
-        SectionTitle("📸 Evidências Fotográficas do Canteiro (" + allTodayPhotos.length + " foto(s))"),
-        el(View, { style: { flexDirection: "row", flexWrap: "wrap" } },
+        SectionTitle("Evidências Fotográficas do Canteiro (" + allTodayPhotos.length + " foto(s))"),
+        el(View, { style: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" } },
           ...allTodayPhotos.map((item, pIdx) =>
-            el(View, { key: pIdx, style: { width: 125, marginRight: 8, marginBottom: 8 }, wrap: false },
-              el(Image, { src: item.url, style: { width: 125, height: 92, borderRadius: 4, objectFit: "cover", borderWidth: 1, borderColor: "#e2e8f0" } }),
-              el(Text, { style: { fontSize: 6.5, color: "#64748b", marginTop: 3 } }, item.title)
+            el(View, { key: pIdx, style: { width: 264, marginBottom: 12 }, wrap: false },
+              el(Image, { src: item.url, style: { width: 264, height: 180, borderRadius: 5, objectFit: "cover", borderWidth: 1, borderColor: "#cbd5e1" } }),
+              el(Text, { style: { fontSize: 7.5, fontFamily: "Helvetica-Bold", color: "#1e293b", marginTop: 4 } }, item.title)
             )
           )
         )

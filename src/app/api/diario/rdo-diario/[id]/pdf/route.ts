@@ -345,6 +345,10 @@ async function resolveImageToBase64(srcUrl: string): Promise<string | null> {
 
 function el(type: any, props: any, ...children: any[]): any { return React.createElement(type, props, ...children); }
 
+function isValidImgSrc(src: any): boolean {
+  return typeof src === "string" && src.length > 10 && (src.startsWith("data:image/") || src.startsWith("http://") || src.startsWith("https://"));
+}
+
 function SectionTitle(title: string): any {
   return el(View, { style: s.stitContainer },
     el(Text, { style: s.stit }, title)
@@ -420,17 +424,20 @@ function buildPdf(rdo: any, atividadesExecutadasDia: any[] = [], todasAtividades
         const logDesc = latestLog?.descricao || "Atividade executada no canteiro.";
         const obs = act.observacao ? " [Obs: " + act.observacao + "]" : "";
 
-        // Photos attached to this activity log
+        // Photos attached to this activity log (only render valid image sources)
         const photos: string[] = latestLog?.fotos || [];
+        const validPhotosForAct: string[] = [];
         photos.forEach(p => {
-          const resolvedUrl = resolvedPhotoMap[p] || p;
-          allTodayPhotos.push({ url: resolvedUrl, title: act.descricao });
+          const resolvedUrl = resolvedPhotoMap[p];
+          if (isValidImgSrc(resolvedUrl)) {
+            validPhotosForAct.push(resolvedUrl!);
+            allTodayPhotos.push({ url: resolvedUrl!, title: act.descricao });
+          }
         });
 
-        const photoGrid = photos.length > 0
+        const photoGrid = validPhotosForAct.length > 0
           ? el(View, { style: { flexDirection: "row", flexWrap: "wrap", marginTop: 4 } },
-              ...photos.slice(0, 4).map((pUrl: string, pIdx: number) => {
-                const imgSrc = resolvedPhotoMap[pUrl] || pUrl;
+              ...validPhotosForAct.slice(0, 4).map((imgSrc: string, pIdx: number) => {
                 return el(Image, { key: pIdx, src: imgSrc, style: { width: 42, height: 42, borderRadius: 3, marginRight: 4, marginTop: 4, objectFit: "cover" } });
               })
             )
@@ -524,7 +531,7 @@ function buildPdf(rdo: any, atividadesExecutadasDia: any[] = [], todasAtividades
       // Discrete & Prominent Branding Header
       el(View, { style: s.header },
         el(View, { style: s.logoContainer },
-          logoBase64 ? el(Image, { src: logoBase64, style: s.logo }) : null,
+          isValidImgSrc(logoBase64) ? el(Image, { src: logoBase64, style: s.logo }) : null,
         ),
         el(View, { style: s.headerInfo },
           el(Text, { style: s.brandTag }, "CORDEIRO ENERGIA / CORDEIRO SERVICE"),
@@ -602,14 +609,13 @@ function buildPdf(rdo: any, atividadesExecutadasDia: any[] = [], todasAtividades
             )
       ),
 
-
       // Observações Gerais
       rdo.observacoes ? el(View, { style: s.sec, wrap: false },
         SectionTitle("Observações Gerais do Canteiro"),
         el(View, { style: s.textCard }, el(Text, {}, String(rdo.observacoes)))
       ) : null,
 
-      // Galeria de Evidências Fotográficas
+      // Galeria de Evidências Fotográficas (safely render only valid Data URIs/URLs)
       allTodayPhotos.length > 0 ? el(View, { style: s.sec, wrap: false },
         SectionTitle("📸 Evidências Fotográficas do Canteiro (" + allTodayPhotos.length + " foto(s))"),
         el(View, { style: { flexDirection: "row", flexWrap: "wrap" } },
@@ -709,7 +715,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       })
     );
 
-    const rawBuffer = await renderToBuffer(buildPdf(rdo, atividadesExecutadasDia, todasAtividadesObra, logoBase64, resolvedPhotoMap));
+    const pdfDoc = buildPdf(rdo, atividadesExecutadasDia, todasAtividadesObra, logoBase64, resolvedPhotoMap);
+    const rawBuffer = await renderToBuffer(pdfDoc);
     const buffer = new Uint8Array(rawBuffer);
     const safeName = (rdo.projeto?.nome || "obra").replace(/\s+/g, "-");
     return new Response(buffer, { headers: { "Content-Type": "application/pdf", "Content-Disposition": "attachment; filename=\"RDO-" + String(rdo.numeroRdo).padStart(3,"0") + "-" + safeName + ".pdf\"" } });
@@ -718,5 +725,6 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     return NextResponse.json({ error: e.message || "Internal Server Error" }, { status: 500 });
   }
 }
+
 
 

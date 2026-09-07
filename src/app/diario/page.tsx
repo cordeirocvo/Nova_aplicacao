@@ -793,12 +793,25 @@ export default function DiarioObrasPage() {
       if (res.ok) {
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url; a.download = `RDO-${rdoId}.pdf`;
-        a.click(); URL.revokeObjectURL(url);
-      } else { alert("Erro ao gerar PDF."); }
-    } catch { alert("Erro ao gerar PDF."); } finally { setExportingPdf(null); }
+        window.open(url, "_blank");
+      } else {
+        const text = await res.text();
+        let errorMsg = "Erro ao gerar PDF.";
+        try {
+          const parsed = JSON.parse(text);
+          if (parsed.error) errorMsg = parsed.error;
+        } catch {
+          if (text) errorMsg = text;
+        }
+        alert("Erro ao gerar PDF: " + errorMsg);
+      }
+    } catch (err: any) {
+      alert("Erro ao conectar ao servidor para gerar o PDF: " + (err.message || "Erro desconhecido"));
+    } finally {
+      setExportingPdf(null);
+    }
   };
+
 
   // CRUD Funcionários de Canteiro
   const handleCreateFuncionario = async (e: React.FormEvent) => {
@@ -3695,7 +3708,10 @@ export default function DiarioObrasPage() {
                       const projetoId = selectedActivityForLog?.projetoId || selectedActivityForLog?.projeto?.id || selectedObraFilter || (activities.length > 0 ? activities[0].projetoId : null);
                       if (!projetoId) { alert("Selecione uma obra ou atividade válida para salvar o RDO."); return; }
                       const saved = await handleSaveRdoDiario(projetoId, logForm.data || new Date().toISOString().split("T")[0], "PENDENTE");
-                      if (saved) { alert("RDO Geral do dia consolidado e salvo com sucesso! Número: RDO-" + String(saved.numeroRdo).padStart(3,"0")); }
+                      if (saved) {
+                        alert("RDO Geral do dia consolidado e salvo com sucesso! Número: RDO-" + String(saved.numeroRdo).padStart(3,"0"));
+                        setSelectedActivityForLog(null);
+                      }
                     }}
                     title="Salva o apontamento da atividade E consolida todas as informações do canteiro (clima, equipe, materiais e ocorrências) gerando o RDO Diário Completo da obra."
                     className="w-full sm:w-auto px-5 py-3 bg-slate-800 hover:bg-slate-900 text-white font-black text-xs rounded-xl uppercase tracking-wider transition-all cursor-pointer shadow-md flex items-center justify-center gap-2"

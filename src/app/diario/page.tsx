@@ -3573,10 +3573,20 @@ export default function DiarioObrasPage() {
                 {/* Materiais */}
                 {rdoFormTab === "materiais" && (
                   <div className="space-y-3 animate-in fade-in duration-200">
+                    <div className="bg-slate-100/70 p-2 rounded-xl border border-slate-200">
+                      <button
+                        type="button"
+                        onClick={() => setRdoMateriais([{ material: "Nenhum material entregue na obra hoje", quantidade: 0, unidade: "-", fornecedor: "-", notaFiscal: "-" }])}
+                        className="w-full text-xs font-extrabold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-lg py-2 transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
+                      >
+                        📦 Selecionar: Nenhum material entregue na obra hoje
+                      </button>
+                    </div>
+
                     {rdoMateriais.map((m, i) => (
                       <div key={i} className="bg-slate-50 rounded-xl p-3 space-y-2">
                         <div className="flex gap-2">
-                          <input type="text" value={m.material} onChange={e => { const n = [...rdoMateriais]; n[i].material = e.target.value; setRdoMateriais(n); }} placeholder="Material / descrição" className="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs" />
+                          <input type="text" value={m.material} onChange={e => { const n = [...rdoMateriais]; n[i].material = e.target.value; setRdoMateriais(n); }} placeholder="Material / descrição" className="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-semibold" />
                           <button type="button" onClick={() => { const n = [...rdoMateriais]; n.splice(i, 1); setRdoMateriais(n); }} className="text-red-400 hover:text-red-600 cursor-pointer p-1">✕</button>
                         </div>
                         <div className="grid grid-cols-3 gap-2">
@@ -3596,10 +3606,30 @@ export default function DiarioObrasPage() {
                 {/* Ocorrências */}
                 {rdoFormTab === "ocorrencias" && (
                   <div className="space-y-3 animate-in fade-in duration-200">
+                    <div className="bg-emerald-50/80 p-2 rounded-xl border border-emerald-200">
+                      <button
+                        type="button"
+                        onClick={() => setRdoOcorrencias([{ tipo: "NENHUMA", descricao: "Nenhuma ocorrência foi registrada no canteiro de obras nesta data que tenha impactado o andamento dos serviços ou exigido intervenção.", impacto: "Sem impactos na rotina do canteiro", medidaTomada: "Normalidade mantida" }])}
+                        className="w-full text-xs font-extrabold text-emerald-800 bg-white hover:bg-emerald-50 border border-emerald-300 rounded-lg py-2 transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
+                      >
+                        ✅ Selecionar: Nenhuma Ocorrência Registrada Hoje
+                      </button>
+                    </div>
+
                     {rdoOcorrencias.map((o, i) => (
-                      <div key={i} className="bg-orange-50 rounded-xl p-3 space-y-2 border border-orange-100">
+                      <div key={i} className={`rounded-xl p-3 space-y-2 border ${o.tipo === "NENHUMA" ? "bg-emerald-50 border-emerald-200" : "bg-orange-50 border-orange-100"}`}>
                         <div className="flex gap-2">
-                          <select value={o.tipo} onChange={e => { const n = [...rdoOcorrencias]; n[i].tipo = e.target.value; setRdoOcorrencias(n); }} className="flex-1 bg-white border border-orange-200 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-800 cursor-pointer">
+                          <select value={o.tipo} onChange={e => {
+                            const n = [...rdoOcorrencias];
+                            n[i].tipo = e.target.value;
+                            if (e.target.value === "NENHUMA") {
+                              n[i].descricao = "Nenhuma ocorrência foi registrada no canteiro de obras nesta data que tenha impactado o andamento dos serviços ou exigido intervenção.";
+                              n[i].impacto = "Sem impactos na rotina do canteiro";
+                              n[i].medidaTomada = "Normalidade mantida";
+                            }
+                            setRdoOcorrencias(n);
+                          }} className="flex-1 bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-800 cursor-pointer">
+                            <option value="NENHUMA">✅ Nenhuma Ocorrência Registrada</option>
                             <option value="ACIDENTE">🚨 Acidente</option>
                             <option value="QUASE_ACIDENTE">⚠️ Quase-Acidente</option>
                             <option value="ATRASO">⏰ Atraso</option>
@@ -3610,12 +3640,12 @@ export default function DiarioObrasPage() {
                           </select>
                           <button type="button" onClick={() => { const n = [...rdoOcorrencias]; n.splice(i, 1); setRdoOcorrencias(n); }} className="text-red-400 hover:text-red-600 cursor-pointer p-1">✕</button>
                         </div>
-                        <textarea value={o.descricao} onChange={e => { const n = [...rdoOcorrencias]; n[i].descricao = e.target.value; setRdoOcorrencias(n); }} placeholder="Descrição da ocorrência" rows={2} className="w-full bg-white border border-orange-200 rounded-lg px-3 py-2 text-xs resize-none" />
-                        <input type="text" value={o.impacto} onChange={e => { const n = [...rdoOcorrencias]; n[i].impacto = e.target.value; setRdoOcorrencias(n); }} placeholder="Impacto nas atividades" className="w-full bg-white border border-orange-200 rounded-lg px-3 py-2 text-xs" />
-                        <input type="text" value={o.medidaTomada} onChange={e => { const n = [...rdoOcorrencias]; n[i].medidaTomada = e.target.value; setRdoOcorrencias(n); }} placeholder="Medida tomada" className="w-full bg-white border border-orange-200 rounded-lg px-3 py-2 text-xs" />
+                        <textarea value={o.descricao} onChange={e => { const n = [...rdoOcorrencias]; n[i].descricao = e.target.value; setRdoOcorrencias(n); }} placeholder="Descrição da ocorrência" rows={2} className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs resize-none" />
+                        <input type="text" value={o.impacto} onChange={e => { const n = [...rdoOcorrencias]; n[i].impacto = e.target.value; setRdoOcorrencias(n); }} placeholder="Impacto nas atividades" className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs" />
+                        <input type="text" value={o.medidaTomada} onChange={e => { const n = [...rdoOcorrencias]; n[i].medidaTomada = e.target.value; setRdoOcorrencias(n); }} placeholder="Medida tomada" className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs" />
                       </div>
                     ))}
-                    <button type="button" onClick={() => setRdoOcorrencias([...rdoOcorrencias, { tipo: "ATRASO", descricao: "", impacto: "", medidaTomada: "" }])} className="w-full text-[10px] font-bold text-orange-400 border-2 border-dashed border-orange-200 rounded-xl py-2 hover:border-orange-300 transition-all cursor-pointer">
+                    <button type="button" onClick={() => setRdoOcorrencias([...rdoOcorrencias, { tipo: "ATRASO", descricao: "", impacto: "", medidaTomada: "" }])} className="w-full text-[10px] font-bold text-orange-500 border-2 border-dashed border-orange-200 rounded-xl py-2 hover:border-orange-300 transition-all cursor-pointer">
                       + Registrar ocorrência
                     </button>
                   </div>
@@ -3649,36 +3679,43 @@ export default function DiarioObrasPage() {
             </form>
 
             {/* Modal Fixed Footer Actions Bar */}
-            <div className="p-4 md:p-5 bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
-              <button
-                type="button"
-                onClick={() => setSelectedActivityForLog(null)}
-                className="w-full sm:w-auto px-6 py-3 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 font-bold text-xs rounded-xl uppercase tracking-wider transition-all cursor-pointer"
-              >
-                Cancelar
-              </button>
-              <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+            <div className="p-4 md:p-5 bg-slate-50 border-t border-slate-100 flex flex-col items-center justify-between gap-3 shrink-0">
+              <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-3">
                 <button
                   type="button"
-                  onClick={async () => {
-                    const projetoId = selectedActivityForLog?.projetoId || selectedActivityForLog?.projeto?.id || selectedObraFilter || (activities.length > 0 ? activities[0].projetoId : null);
-                    if (!projetoId) { alert("Selecione uma obra ou atividade válida para salvar o RDO."); return; }
-                    const saved = await handleSaveRdoDiario(projetoId, logForm.data || new Date().toISOString().split("T")[0], "PENDENTE");
-                    if (saved) { alert("RDO Geral do dia consolidado e salvo com sucesso! Número: RDO-" + String(saved.numeroRdo).padStart(3,"0")); }
-                  }}
-                  className="w-full sm:w-auto px-5 py-3 bg-slate-800 hover:bg-slate-900 text-white font-black text-xs rounded-xl uppercase tracking-wider transition-all cursor-pointer shadow-md flex items-center justify-center gap-2"
+                  onClick={() => setSelectedActivityForLog(null)}
+                  className="w-full sm:w-auto px-5 py-3 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 font-bold text-xs rounded-xl uppercase tracking-wider transition-all cursor-pointer"
                 >
-                  <FileText className="w-4 h-4 text-emerald-400" /> 📑 Consolidar RDO Geral da Obra
+                  Cancelar
                 </button>
-                <button
-                  type="button"
-                  onClick={handleLogProgress}
-                  disabled={uploadingFile}
-                  className="w-full sm:w-auto px-6 py-3 bg-[#f15a24] hover:bg-orange-600 text-white font-black text-xs rounded-xl uppercase tracking-wider transition-all cursor-pointer shadow-md disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  <Check className="w-4 h-4" /> 👷 Salvar Apontamento de Atividade
-                </button>
+                <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const projetoId = selectedActivityForLog?.projetoId || selectedActivityForLog?.projeto?.id || selectedObraFilter || (activities.length > 0 ? activities[0].projetoId : null);
+                      if (!projetoId) { alert("Selecione uma obra ou atividade válida para salvar o RDO."); return; }
+                      const saved = await handleSaveRdoDiario(projetoId, logForm.data || new Date().toISOString().split("T")[0], "PENDENTE");
+                      if (saved) { alert("RDO Geral do dia consolidado e salvo com sucesso! Número: RDO-" + String(saved.numeroRdo).padStart(3,"0")); }
+                    }}
+                    title="Salva o apontamento da atividade E consolida todas as informações do canteiro (clima, equipe, materiais e ocorrências) gerando o RDO Diário Completo da obra."
+                    className="w-full sm:w-auto px-5 py-3 bg-slate-800 hover:bg-slate-900 text-white font-black text-xs rounded-xl uppercase tracking-wider transition-all cursor-pointer shadow-md flex items-center justify-center gap-2"
+                  >
+                    <FileText className="w-4 h-4 text-emerald-400" /> 📑 Consolidar RDO Geral da Obra
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleLogProgress}
+                    disabled={uploadingFile}
+                    title="Salva apenas o apontamento individual da atividade selecionada (progresso %, fotos, horímetro), sem alterar o RDO consolidado."
+                    className="w-full sm:w-auto px-6 py-3 bg-[#f15a24] hover:bg-orange-600 text-white font-black text-xs rounded-xl uppercase tracking-wider transition-all cursor-pointer shadow-md disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    <Check className="w-4 h-4" /> 👷 Salvar Apontamento de Atividade
+                  </button>
+                </div>
               </div>
+              <p className="text-[10px] text-slate-500 text-center font-medium">
+                💡 <strong className="text-slate-700 font-bold">Salvar Apontamento:</strong> grava apenas o avanço desta atividade. <strong className="text-slate-700 font-bold">Consolidar RDO Geral:</strong> grava a atividade E gera o relatório oficial do dia com clima, equipe e ocorrências.
+              </p>
             </div>
           </div>
         </div>

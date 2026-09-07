@@ -498,12 +498,21 @@ function buildPdf(rdo: any, atividadesExecutadasDia: any[] = [], todasAtividades
     : null;
 
   const ocEls = rdo.ocorrencias?.length > 0
-    ? (rdo.ocorrencias as any[]).map((o: any, i: number) => el(View, { key: i, style: s.oc },
-        el(Text, { style: s.oct }, "⚠️ " + String(o.tipo || "").replace("_", " ")),
-        el(Text, { style: s.ocBody }, String(o.descricao || "")),
-        o.impacto ? el(Text, { style: { marginTop: 2, fontSize: 7, color: "#9a3412" } }, "Impacto: " + o.impacto) : null,
-        o.medidaTomada ? el(Text, { style: { marginTop: 2, fontSize: 7, color: "#166534", fontFamily: "Helvetica-Bold" } }, "Medida Adotada: " + o.medidaTomada) : null,
-      ))
+    ? (rdo.ocorrencias as any[]).map((o: any, i: number) => {
+        const isNenhuma = o.tipo === "NENHUMA" || String(o.descricao || "").toLowerCase().includes("nenhuma ocorrência");
+        if (isNenhuma) {
+          return el(View, { key: i, style: { backgroundColor: "#f0fdf4", borderRadius: 4, borderLeftWidth: 3, borderLeftColor: "#16a34a", borderWidth: 1, borderColor: "#bbf7d0", padding: 6, marginBottom: 4 } },
+            el(Text, { style: { fontFamily: "Helvetica-Bold", fontSize: 7.5, color: "#15803d", marginBottom: 2 } }, "✅ Nenhuma Ocorrência Registrada"),
+            el(Text, { style: { fontSize: 7.5, color: "#166534", leading: 1.3 } }, o.descricao || "Nenhuma ocorrência foi registrada no canteiro de obras nesta data que tenha impactado o andamento dos serviços ou exigido intervenção."),
+          );
+        }
+        return el(View, { key: i, style: s.oc },
+          el(Text, { style: s.oct }, "⚠️ " + String(o.tipo || "").replace("_", " ")),
+          el(Text, { style: s.ocBody }, String(o.descricao || "")),
+          o.impacto ? el(Text, { style: { marginTop: 2, fontSize: 7, color: "#9a3412" } }, "Impacto: " + o.impacto) : null,
+          o.medidaTomada ? el(Text, { style: { marginTop: 2, fontSize: 7, color: "#166534", fontFamily: "Helvetica-Bold" } }, "Medida Adotada: " + o.medidaTomada) : null,
+        );
+      })
     : null;
 
   const badgeColor = statusColor[status] || "#64748b";
@@ -579,14 +588,20 @@ function buildPdf(rdo: any, atividadesExecutadasDia: any[] = [], todasAtividades
         SectionTitle("Materiais Recebidos / Utilizados no Canteiro"),
         matRows
           ? el(View, { style: s.table }, ...matRows)
-          : el(Text, { style: s.nodata }, "Nenhum material registrado nesta data.")
+          : el(Text, { style: s.nodata }, "Nenhum material entregue ou utilizado na obra nesta data.")
       ),
 
       // Ocorrências e Paralisações
-      ocEls && ocEls.length > 0 ? el(View, { style: s.sec, wrap: false },
+      el(View, { style: s.sec, wrap: false },
         SectionTitle("Ocorrências e Paralisações Registradas"),
-        ...ocEls
-      ) : null,
+        ocEls && ocEls.length > 0
+          ? el(View, {}, ...ocEls)
+          : el(View, { style: { backgroundColor: "#f0fdf4", borderRadius: 4, borderLeftWidth: 3, borderLeftColor: "#16a34a", borderWidth: 1, borderColor: "#bbf7d0", padding: 6 } },
+              el(Text, { style: { fontFamily: "Helvetica-Bold", fontSize: 7.5, color: "#15803d", marginBottom: 2 } }, "✅ Nenhuma Ocorrência Registrada"),
+              el(Text, { style: { fontSize: 7.5, color: "#166534" } }, "Nenhuma ocorrência foi registrada no canteiro de obras nesta data que tenha impactado o andamento dos serviços ou exigido intervenção.")
+            )
+      ),
+
 
       // Observações Gerais
       rdo.observacoes ? el(View, { style: s.sec, wrap: false },

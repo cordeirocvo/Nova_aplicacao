@@ -10,33 +10,281 @@ import { renderToBuffer, Document, Page, Text, View, StyleSheet, Image } from "@
 export const dynamic = "force-dynamic";
 
 const s = StyleSheet.create({
-  page: { padding: 30, fontFamily: "Helvetica", fontSize: 8.5, color: "#1e293b" } as any,
-  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12, paddingBottom: 8, borderBottomWidth: 3, borderBottomColor: "#f15a24" } as any,
-  logo: { width: 100, height: 35, objectFit: "contain", marginRight: 10 } as any,
-  brand: { fontSize: 13, fontFamily: "Helvetica-Bold", color: "#1e3a8a", marginBottom: 1 } as any,
-  subbrand: { fontSize: 8, fontFamily: "Helvetica-Bold", color: "#f15a24", letterSpacing: 1, marginBottom: 3 } as any,
-  rt: { fontSize: 10, fontFamily: "Helvetica-Bold", color: "#0f172a", marginBottom: 1 } as any,
-  rs: { fontSize: 7.5, color: "#64748b" } as any,
-  badge: { padding: "4 8", borderRadius: 4, fontSize: 8.5, fontFamily: "Helvetica-Bold" } as any,
+  page: {
+    paddingTop: 24,
+    paddingBottom: 34,
+    paddingHorizontal: 26,
+    fontFamily: "Helvetica",
+    fontSize: 8,
+    color: "#334155",
+    backgroundColor: "#ffffff",
+  } as any,
 
-  // Metric Cards (CAPEX Standard matching Web Foto 02)
-  kpiRow: { flexDirection: "row", gap: 8, marginBottom: 12 } as any,
-  kpiCard: { flex: 1, backgroundColor: "#f8fafc", borderRadius: 4, padding: "6 8", borderLeftWidth: 3, borderLeftColor: "#f15a24" } as any,
-  kpiTitle: { fontSize: 6.5, fontFamily: "Helvetica-Bold", color: "#64748b" } as any,
-  kpiVal: { fontSize: 10.5, fontFamily: "Helvetica-Bold", color: "#0f172a", marginTop: 2 } as any,
+  // Discrete & Modern Header
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
+    paddingBottom: 8,
+    borderBottomWidth: 1.5,
+    borderBottomColor: "#f15a24",
+  } as any,
+  logoContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  } as any,
+  logo: {
+    width: 140,
+    height: 42,
+    objectFit: "contain",
+  } as any,
+  headerInfo: {
+    flex: 1,
+    marginLeft: 12,
+  } as any,
+  brandTag: {
+    fontSize: 6.5,
+    fontFamily: "Helvetica-Bold",
+    color: "#f15a24",
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
+    marginBottom: 1,
+  } as any,
+  rdoTitle: {
+    fontSize: 11,
+    fontFamily: "Helvetica-Bold",
+    color: "#0f172a",
+    marginBottom: 2,
+  } as any,
+  metaText: {
+    fontSize: 7.5,
+    color: "#64748b",
+  } as any,
+  badge: {
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    fontSize: 7.5,
+    fontFamily: "Helvetica-Bold",
+    textAlign: "center",
+  } as any,
 
-  sec: { marginBottom: 12 } as any,
-  stit: { fontSize: 9.5, fontFamily: "Helvetica-Bold", color: "#1e3a8a", marginBottom: 4, paddingBottom: 2, borderBottomWidth: 1, borderBottomColor: "#cbd5e1" } as any,
-  tr: { flexDirection: "row", borderBottomWidth: 1, borderBottomColor: "#e2e8f0", minHeight: 22 } as any,
-  tc: { borderRightWidth: 1, borderRightColor: "#e2e8f0", padding: "4 5", flex: 1 } as any,
-  th: { fontFamily: "Helvetica-Bold", fontSize: 7.5, color: "#ffffff", backgroundColor: "#0f172a" } as any,
-  nodata: { color: "#94a3b8", fontFamily: "Helvetica-Oblique", fontSize: 8 } as any,
-  oc: { backgroundColor: "#fff7ed", borderLeftWidth: 3, borderLeftColor: "#f97316", padding: "5 7", marginBottom: 4 } as any,
-  oct: { fontFamily: "Helvetica-Bold", fontSize: 7.5, color: "#c2410c", marginBottom: 1 } as any,
-  foot: { position: "absolute", bottom: 20, left: 30, right: 30, flexDirection: "row", justifyContent: "space-between", color: "#94a3b8", fontSize: 7, borderTopWidth: 1, borderTopColor: "#e2e8f0", paddingTop: 4 } as any,
+  // KPI Metrics Banner
+  kpiRow: {
+    flexDirection: "row",
+    marginBottom: 10,
+  } as any,
+  kpiCard: {
+    flex: 1,
+    backgroundColor: "#f8fafc",
+    borderRadius: 4,
+    padding: 6,
+    marginRight: 6,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    borderLeftWidth: 3,
+    borderLeftColor: "#f15a24",
+  } as any,
+  kpiCardLast: {
+    flex: 1,
+    backgroundColor: "#f8fafc",
+    borderRadius: 4,
+    padding: 6,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    borderLeftWidth: 3,
+    borderLeftColor: "#0f172a",
+  } as any,
+  kpiTitle: {
+    fontSize: 6,
+    fontFamily: "Helvetica-Bold",
+    color: "#64748b",
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+  } as any,
+  kpiVal: {
+    fontSize: 9,
+    fontFamily: "Helvetica-Bold",
+    color: "#0f172a",
+    marginTop: 2,
+  } as any,
+
+  // Modern Section Styles
+  sec: {
+    marginBottom: 10,
+  } as any,
+  stitContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f8fafc",
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 3,
+    borderLeftWidth: 3,
+    borderLeftColor: "#f15a24",
+    borderWidth: 1,
+    borderColor: "#f1f5f9",
+    marginBottom: 5,
+  } as any,
+  stit: {
+    fontSize: 8.5,
+    fontFamily: "Helvetica-Bold",
+    color: "#0f172a",
+  } as any,
+
+  // Weather Grid Cards
+  weatherGrid: {
+    flexDirection: "row",
+    marginBottom: 4,
+  } as any,
+  weatherCard: {
+    flex: 1,
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    borderRadius: 4,
+    padding: 5,
+    marginRight: 6,
+  } as any,
+  weatherCardLast: {
+    flex: 1,
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    borderRadius: 4,
+    padding: 5,
+  } as any,
+  weatherPeriod: {
+    fontSize: 6.5,
+    fontFamily: "Helvetica-Bold",
+    color: "#f15a24",
+    textTransform: "uppercase",
+    marginBottom: 2,
+  } as any,
+  weatherText: {
+    fontSize: 7.5,
+    color: "#334155",
+    fontFamily: "Helvetica-Bold",
+  } as any,
+  weatherSubText: {
+    fontSize: 6.5,
+    color: "#64748b",
+    marginTop: 1,
+  } as any,
+
+  // Modern Clean Table Formatting
+  table: {
+    borderRadius: 4,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "#cbd5e1",
+  } as any,
+  tr: {
+    flexDirection: "row",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e2e8f0",
+    minHeight: 20,
+    alignItems: "center",
+  } as any,
+  trLast: {
+    flexDirection: "row",
+    minHeight: 20,
+    alignItems: "center",
+  } as any,
+  trEven: {
+    backgroundColor: "#ffffff",
+  } as any,
+  trOdd: {
+    backgroundColor: "#f8fafc",
+  } as any,
+  trHeader: {
+    flexDirection: "row",
+    backgroundColor: "#0f172a",
+    minHeight: 20,
+    alignItems: "center",
+  } as any,
+  th: {
+    fontFamily: "Helvetica-Bold",
+    fontSize: 7,
+    color: "#ffffff",
+    paddingVertical: 3,
+    paddingHorizontal: 5,
+  } as any,
+  tc: {
+    paddingVertical: 3,
+    paddingHorizontal: 5,
+    fontSize: 7.5,
+    color: "#334155",
+    borderRightWidth: 1,
+    borderRightColor: "#f1f5f9",
+  } as any,
+  tcLast: {
+    paddingVertical: 3,
+    paddingHorizontal: 5,
+    fontSize: 7.5,
+    color: "#334155",
+  } as any,
+
+  // Occurrences & Text Callouts
+  oc: {
+    backgroundColor: "#fff7ed",
+    borderRadius: 4,
+    borderLeftWidth: 3,
+    borderLeftColor: "#f97316",
+    borderWidth: 1,
+    borderColor: "#ffedd5",
+    padding: 6,
+    marginBottom: 4,
+  } as any,
+  oct: {
+    fontFamily: "Helvetica-Bold",
+    fontSize: 7.5,
+    color: "#c2410c",
+    marginBottom: 2,
+  } as any,
+  ocBody: {
+    fontSize: 7.5,
+    color: "#431407",
+  } as any,
+
+  textCard: {
+    backgroundColor: "#f8fafc",
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    padding: 6,
+    fontSize: 7.5,
+    color: "#334155",
+    lineHeight: 1.3,
+  } as any,
+
+  nodata: {
+    color: "#94a3b8",
+    fontFamily: "Helvetica-Oblique",
+    fontSize: 7.5,
+    paddingVertical: 4,
+    paddingHorizontal: 2,
+  } as any,
+
+  // Discrete & Sleek Footer
+  foot: {
+    position: "absolute",
+    bottom: 12,
+    left: 26,
+    right: 26,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    color: "#94a3b8",
+    fontSize: 6.5,
+    borderTopWidth: 0.5,
+    borderTopColor: "#e2e8f0",
+    paddingTop: 4,
+  } as any,
 });
 
-const statusColor: Record<string, string> = { RASCUNHO: "#94a3b8", PENDENTE: "#f59e0b", APROVADO: "#22c55e", RECUSADO: "#ef4444" };
+const statusColor: Record<string, string> = { RASCUNHO: "#64748b", PENDENTE: "#d97706", APROVADO: "#16a34a", RECUSADO: "#dc2626" };
+const statusBg: Record<string, string> = { RASCUNHO: "#f1f5f9", PENDENTE: "#fef3c7", APROVADO: "#dcfce7", RECUSADO: "#fee2e2" };
 
 function dateFmt(d: any): string {
   if (!d) return "-";
@@ -97,6 +345,12 @@ async function resolveImageToBase64(srcUrl: string): Promise<string | null> {
 
 function el(type: any, props: any, ...children: any[]): any { return React.createElement(type, props, ...children); }
 
+function SectionTitle(title: string): any {
+  return el(View, { style: s.stitContainer },
+    el(Text, { style: s.stit }, title)
+  );
+}
+
 function buildPdf(rdo: any, atividadesExecutadasDia: any[] = [], todasAtividadesObra: any[] = [], logoBase64: string = "", resolvedPhotoMap: Record<string, string> = {}): any {
   const status = rdo.status || "RASCUNHO";
   const rdoNum = String(rdo.numeroRdo).padStart(3, "0");
@@ -109,24 +363,43 @@ function buildPdf(rdo: any, atividadesExecutadasDia: any[] = [], todasAtividades
   const sumProgress = todasAtividadesObra.reduce((acc: number, a: any) => acc + (a.status === "CONCLUIDA" ? 100 : (a.lancamentos?.[0]?.progresso || 0)), 0);
   const pctMedia = Math.round(sumProgress / totalObra);
 
-  const climaEls = rdo.climas?.length > 0
-    ? (rdo.climas as any[]).map((c: any, i: number) => el(View, { key: i, style: { flexDirection: "row", marginBottom: 2 } },
-        el(Text, { style: { width: 50, fontFamily: "Helvetica-Bold", color: "#475569" } }, c.periodo === "MANHA" ? "Manhã:" : c.periodo === "TARDE" ? "Tarde:" : "Noite:"),
-        el(Text, {}, String(c.condicao || "").replace("_", " ") + (c.impacto ? " - " + c.impacto : ""))
-      ))
-    : [el(Text, { style: s.nodata }, "Não informado")];
+  // Formatting Clima as clean 3-period horizontal cards
+  const climasArr = (rdo.climas as any[]) || [];
+  const climaManha = climasArr.find((c: any) => c.periodo === "MANHA");
+  const climaTarde = climasArr.find((c: any) => c.periodo === "TARDE");
+  const climaNoite = climasArr.find((c: any) => c.periodo === "NOITE");
 
-  const tbl = (rows: any[] | null) => rows
-    ? el(View, { style: { borderTopWidth: 1, borderTopColor: "#cbd5e1", borderLeftWidth: 1, borderLeftColor: "#cbd5e1" } }, ...rows)
-    : el(Text, { style: s.nodata }, "Não informado");
+  const renderClimaCard = (label: string, data: any, isLast: boolean = false) => {
+    const cardStyle = isLast ? s.weatherCardLast : s.weatherCard;
+    if (!data) {
+      return el(View, { style: cardStyle },
+        el(Text, { style: s.weatherPeriod }, label),
+        el(Text, { style: s.nodata }, "Não informado")
+      );
+    }
+    const condStr = String(data.condicao || "").replace("_", " ");
+    return el(View, { style: cardStyle },
+      el(Text, { style: s.weatherPeriod }, label),
+      el(Text, { style: s.weatherText }, condStr),
+      data.impacto ? el(Text, { style: s.weatherSubText }, "Impacto: " + data.impacto) : null
+    );
+  };
 
-  // Header da Tabela com Estilo Escuro #0F172A (Padrão Web Foto 02)
-  const ativHdr = el(View, { key: "ath", style: [s.tr, { backgroundColor: "#0f172a" }] },
-    el(View, { style: [s.tc, s.th, { flex: 2 }] }, el(Text, { style: s.th }, "OBRA")),
-    el(View, { style: [s.tc, s.th, { flex: 3 }] }, el(Text, { style: s.th }, "ATIVIDADE")),
-    el(View, { style: [s.tc, s.th, { flex: 1.5 }] }, el(Text, { style: s.th }, "STATUS")),
-    el(View, { style: [s.tc, s.th, { flex: 1 }] }, el(Text, { style: s.th }, "PROGRESSO")),
-    el(View, { style: [s.tc, s.th, { flex: 4 }] }, el(Text, { style: s.th }, "RELATO / APONTAMENTO")),
+  const climaBlock = climasArr.length > 0
+    ? el(View, { style: s.weatherGrid },
+        renderClimaCard("Manhã", climaManha),
+        renderClimaCard("Tarde", climaTarde),
+        renderClimaCard("Noite", climaNoite, true)
+      )
+    : el(Text, { style: s.nodata }, "Nenhuma condição climática registrada nesta data.");
+
+  // Table Header Atividades (Dark Navy `#0f172a`)
+  const ativHdr = el(View, { key: "ath", style: s.trHeader },
+    el(View, { style: [s.tc, s.th, { flex: 2 }] }, el(Text, { style: s.th }, "OBRA / SUBESTAÇÃO")),
+    el(View, { style: [s.tc, s.th, { flex: 3 }] }, el(Text, { style: s.th }, "ATIVIDADE DA ETAPA")),
+    el(View, { style: [s.tc, s.th, { flex: 1.4, textAlign: "center" }] }, el(Text, { style: s.th }, "STATUS")),
+    el(View, { style: [s.tc, s.th, { flex: 0.9, textAlign: "center" }] }, el(Text, { style: s.th }, "PROG.")),
+    el(View, { style: [s.tcLast, s.th, { flex: 4 }] }, el(Text, { style: s.th }, "RELATO / APONTAMENTO DA EXECUÇÃO")),
   );
 
   // Collect all photos from all launches today
@@ -141,8 +414,8 @@ function buildPdf(rdo: any, atividadesExecutadasDia: any[] = [], todasAtividades
         const isPausada = act.status === "PAUSADA" || act.status === "AGUARDANDO_MATERIAL";
 
         const statusLabel = isFinalized ? "FINALIZADA" : isImpedimento ? "IMPEDIMENTO" : isPausada ? "PARALISADA" : "EM ANDAMENTO";
-        const statusBg = isFinalized ? "#dcfce7" : isImpedimento ? "#fee2e2" : isPausada ? "#fef3c7" : "#dbeafe";
-        const statusTxt = isFinalized ? "#15803d" : isImpedimento ? "#b91c1c" : isPausada ? "#b45309" : "#1d4ed8";
+        const statusBgColor = isFinalized ? "#dcfce7" : isImpedimento ? "#fee2e2" : isPausada ? "#fef3c7" : "#dbeafe";
+        const statusTxtColor = isFinalized ? "#15803d" : isImpedimento ? "#b91c1c" : isPausada ? "#b45309" : "#1d4ed8";
 
         const logDesc = latestLog?.descricao || "Atividade executada no canteiro.";
         const obs = act.observacao ? " [Obs: " + act.observacao + "]" : "";
@@ -158,21 +431,23 @@ function buildPdf(rdo: any, atividadesExecutadasDia: any[] = [], todasAtividades
           ? el(View, { style: { flexDirection: "row", flexWrap: "wrap", marginTop: 4 } },
               ...photos.slice(0, 4).map((pUrl: string, pIdx: number) => {
                 const imgSrc = resolvedPhotoMap[pUrl] || pUrl;
-                return el(Image, { key: pIdx, src: imgSrc, style: { width: 45, height: 45, borderRadius: 3, marginRight: 4, marginTop: 4, objectFit: "cover" } });
+                return el(Image, { key: pIdx, src: imgSrc, style: { width: 42, height: 42, borderRadius: 3, marginRight: 4, marginTop: 4, objectFit: "cover" } });
               })
             )
           : null;
 
-        return el(View, { key: i, style: s.tr },
+        const rowStyle = [i === atividadesExecutadasDia.length - 1 ? s.trLast : s.tr, i % 2 === 0 ? s.trEven : s.trOdd];
+
+        return el(View, { key: i, style: rowStyle },
           el(View, { style: [s.tc, { flex: 2 }] }, el(Text, { style: { fontFamily: "Helvetica-Bold" } }, act.projeto?.nome || rdo.projeto?.nome || "-")),
           el(View, { style: [s.tc, { flex: 3 }] }, el(Text, { style: { fontFamily: "Helvetica-Bold" } }, act.descricao)),
-          el(View, { style: [s.tc, { flex: 1.5, alignItems: "center", justifyContent: "center" }] },
-            el(View, { style: { backgroundColor: statusBg, padding: "2 5", borderRadius: 3 } },
-              el(Text, { style: { color: statusTxt, fontSize: 6.5, fontFamily: "Helvetica-Bold" } }, statusLabel)
+          el(View, { style: [s.tc, { flex: 1.4, alignItems: "center", justifyContent: "center" }] },
+            el(View, { style: { backgroundColor: statusBgColor, paddingVertical: 2, paddingHorizontal: 5, borderRadius: 3 } },
+              el(Text, { style: { color: statusTxtColor, fontSize: 6, fontFamily: "Helvetica-Bold" } }, statusLabel)
             )
           ),
-          el(View, { style: [s.tc, { flex: 1, textAlign: "center" }] }, el(Text, { style: { fontFamily: "Helvetica-Bold" } }, prog + "%")),
-          el(View, { style: [s.tc, { flex: 4 }] },
+          el(View, { style: [s.tc, { flex: 0.9, textAlign: "center" }] }, el(Text, { style: { fontFamily: "Helvetica-Bold", color: "#0f172a" } }, prog + "%")),
+          el(View, { style: [s.tcLast, { flex: 4 }] },
             el(Text, {}, logDesc + obs),
             photoGrid
           ),
@@ -180,122 +455,162 @@ function buildPdf(rdo: any, atividadesExecutadasDia: any[] = [], todasAtividades
       })]
     : null;
 
-  const maoHdr = el(View, { key: "mh", style: [s.tr, { backgroundColor: "#0f172a" }] },
-    el(View, { style: [s.tc, s.th, { flex: 2 }] }, el(Text, { style: s.th }, "COLABORADOR")),
-    el(View, { style: [s.tc, s.th] }, el(Text, { style: s.th }, "FUNÇÃO")),
-    el(View, { style: [s.tc, s.th] }, el(Text, { style: s.th }, "EMPRESA")),
-    el(View, { style: [s.tc, s.th] }, el(Text, { style: s.th }, "QTD")),
-    el(View, { style: [s.tc, s.th] }, el(Text, { style: s.th }, "HORAS")),
-    el(View, { style: [s.tc, s.th] }, el(Text, { style: s.th }, "FALTA")),
+  const maoHdr = el(View, { key: "mh", style: s.trHeader },
+    el(View, { style: [s.tc, s.th, { flex: 2.5 }] }, el(Text, { style: s.th }, "COLABORADOR")),
+    el(View, { style: [s.tc, s.th, { flex: 2 }] }, el(Text, { style: s.th }, "FUNÇÃO")),
+    el(View, { style: [s.tc, s.th, { flex: 1.5 }] }, el(Text, { style: s.th }, "VÍNCULO")),
+    el(View, { style: [s.tc, s.th, { flex: 0.8, textAlign: "center" }] }, el(Text, { style: s.th }, "QTD")),
+    el(View, { style: [s.tc, s.th, { flex: 1, textAlign: "center" }] }, el(Text, { style: s.th }, "HORAS")),
+    el(View, { style: [s.tcLast, s.th, { flex: 0.8, textAlign: "center" }] }, el(Text, { style: s.th }, "FALTA")),
   );
   const maoRows = rdo.maoDeObra?.length > 0
-    ? [maoHdr, ...(rdo.maoDeObra as any[]).map((m: any, i: number) => el(View, { key: i, style: s.tr },
-        el(View, { style: [s.tc, { flex: 2 }] }, el(Text, {}, m.funcionario?.nome || m.nomeAvulso || "-")),
-        el(View, { style: s.tc }, el(Text, {}, m.funcao || m.funcionario?.funcao || "-")),
-        el(View, { style: s.tc }, el(Text, {}, m.empresa === "PROPRIA" ? "Própria" : "Terceiro")),
-        el(View, { style: s.tc }, el(Text, {}, String(m.quantidade))),
-        el(View, { style: s.tc }, el(Text, {}, String(m.horasTrab) + "h")),
-        el(View, { style: s.tc }, el(Text, {}, m.falta ? "Sim" : "Não")),
-      ))]
+    ? [maoHdr, ...(rdo.maoDeObra as any[]).map((m: any, i: number) => {
+        const rowStyle = [i === rdo.maoDeObra.length - 1 ? s.trLast : s.tr, i % 2 === 0 ? s.trEven : s.trOdd];
+        return el(View, { key: i, style: rowStyle },
+          el(View, { style: [s.tc, { flex: 2.5 }] }, el(Text, { style: { fontFamily: "Helvetica-Bold" } }, m.funcionario?.nome || m.nomeAvulso || "-")),
+          el(View, { style: [s.tc, { flex: 2 }] }, el(Text, {}, m.funcao || m.funcionario?.funcao || "-")),
+          el(View, { style: [s.tc, { flex: 1.5 }] }, el(Text, {}, m.empresa === "PROPRIA" ? "Própria" : "Terceiro")),
+          el(View, { style: [s.tc, { flex: 0.8, textAlign: "center" }] }, el(Text, {}, String(m.quantidade))),
+          el(View, { style: [s.tc, { flex: 1, textAlign: "center" }] }, el(Text, {}, String(m.horasTrab) + "h")),
+          el(View, { style: [s.tcLast, { flex: 0.8, textAlign: "center" }] }, el(Text, { style: { color: m.falta ? "#dc2626" : "#16a34a", fontFamily: "Helvetica-Bold" } }, m.falta ? "Sim" : "Não")),
+        );
+      })]
     : null;
 
-  const matHdr = el(View, { key: "mth", style: [s.tr, { backgroundColor: "#0f172a" }] },
-    el(View, { style: [s.tc, s.th, { flex: 2 }] }, el(Text, { style: s.th }, "MATERIAL")),
-    el(View, { style: [s.tc, s.th] }, el(Text, { style: s.th }, "QTD")),
-    el(View, { style: [s.tc, s.th] }, el(Text, { style: s.th }, "UNIDADE")),
-    el(View, { style: [s.tc, s.th, { flex: 2 }] }, el(Text, { style: s.th }, "FORNECEDOR")),
-    el(View, { style: [s.tc, s.th] }, el(Text, { style: s.th }, "NF")),
+  const matHdr = el(View, { key: "mth", style: s.trHeader },
+    el(View, { style: [s.tc, s.th, { flex: 3 }] }, el(Text, { style: s.th }, "MATERIAL / INSUMO")),
+    el(View, { style: [s.tc, s.th, { flex: 0.9, textAlign: "center" }] }, el(Text, { style: s.th }, "QTD")),
+    el(View, { style: [s.tc, s.th, { flex: 1, textAlign: "center" }] }, el(Text, { style: s.th }, "UNIDADE")),
+    el(View, { style: [s.tc, s.th, { flex: 2.5 }] }, el(Text, { style: s.th }, "FORNECEDOR")),
+    el(View, { style: [s.tcLast, s.th, { flex: 1.5 }] }, el(Text, { style: s.th }, "NOTA FISCAL")),
   );
   const matRows = rdo.materiais?.length > 0
-    ? [matHdr, ...(rdo.materiais as any[]).map((m: any, i: number) => el(View, { key: i, style: s.tr },
-        el(View, { style: [s.tc, { flex: 2 }] }, el(Text, {}, String(m.material))),
-        el(View, { style: s.tc }, el(Text, {}, String(m.quantidade))),
-        el(View, { style: s.tc }, el(Text, {}, String(m.unidade))),
-        el(View, { style: [s.tc, { flex: 2 }] }, el(Text, {}, m.fornecedor || "-")),
-        el(View, { style: s.tc }, el(Text, {}, m.notaFiscal || "-")),
-      ))]
+    ? [matHdr, ...(rdo.materiais as any[]).map((m: any, i: number) => {
+        const rowStyle = [i === rdo.materiais.length - 1 ? s.trLast : s.tr, i % 2 === 0 ? s.trEven : s.trOdd];
+        return el(View, { key: i, style: rowStyle },
+          el(View, { style: [s.tc, { flex: 3 }] }, el(Text, { style: { fontFamily: "Helvetica-Bold" } }, String(m.material))),
+          el(View, { style: [s.tc, { flex: 0.9, textAlign: "center" }] }, el(Text, {}, String(m.quantidade))),
+          el(View, { style: [s.tc, { flex: 1, textAlign: "center" }] }, el(Text, {}, String(m.unidade))),
+          el(View, { style: [s.tc, { flex: 2.5 }] }, el(Text, {}, m.fornecedor || "-")),
+          el(View, { style: [s.tcLast, { flex: 1.5 }] }, el(Text, {}, m.notaFiscal || "-")),
+        );
+      })]
     : null;
 
   const ocEls = rdo.ocorrencias?.length > 0
     ? (rdo.ocorrencias as any[]).map((o: any, i: number) => el(View, { key: i, style: s.oc },
-        el(Text, { style: s.oct }, String(o.tipo || "").replace("_", " ")),
-        el(Text, {}, String(o.descricao || "")),
-        o.impacto ? el(Text, { style: { marginTop: 1, color: "#78350f" } }, "Impacto: " + o.impacto) : null,
-        o.medidaTomada ? el(Text, { style: { marginTop: 1, color: "#166534" } }, "Medida: " + o.medidaTomada) : null,
+        el(Text, { style: s.oct }, "⚠️ " + String(o.tipo || "").replace("_", " ")),
+        el(Text, { style: s.ocBody }, String(o.descricao || "")),
+        o.impacto ? el(Text, { style: { marginTop: 2, fontSize: 7, color: "#9a3412" } }, "Impacto: " + o.impacto) : null,
+        o.medidaTomada ? el(Text, { style: { marginTop: 2, fontSize: 7, color: "#166534", fontFamily: "Helvetica-Bold" } }, "Medida Adotada: " + o.medidaTomada) : null,
       ))
     : null;
 
-  const badgeColor = statusColor[status] || "#94a3b8";
+  const badgeColor = statusColor[status] || "#64748b";
+  const badgeBg = statusBg[status] || "#f1f5f9";
 
   return el(Document, { title: "RDO-" + rdoNum + " - " + (rdo.projeto?.nome || ""), author: "Cordeiro Energia" },
     el(Page, { size: "A4", style: s.page },
       
-      // Header Corporativo com Logo
+      // Discrete & Prominent Branding Header
       el(View, { style: s.header },
-        logoBase64 ? el(Image, { src: logoBase64, style: s.logo }) : null,
-        el(View, { style: { flex: 1 } },
-          el(Text, { style: s.brand }, "CORDEIRO ENERGIA / CORDEIRO SERVICE"),
-          el(Text, { style: s.subbrand }, "RELATÓRIO DIÁRIO DE OBRA (RDO)"),
-          el(Text, { style: s.rt }, "Relatório Diário de Obra — RDO-" + rdoNum),
-          el(Text, { style: s.rs }, "Obra: " + (rdo.projeto?.nome || "-") + " | Data: " + dateFmt(rdo.data) + " (" + weekDay + ")"),
-          el(Text, { style: s.rs }, "Responsável Técnico: " + (rdo.responsavel?.name || rdo.responsavel?.email || "-")),
+        el(View, { style: s.logoContainer },
+          logoBase64 ? el(Image, { src: logoBase64, style: s.logo }) : null,
         ),
-        el(View, { style: [s.badge, { backgroundColor: badgeColor + "22", color: badgeColor }] }, el(Text, {}, status)),
+        el(View, { style: s.headerInfo },
+          el(Text, { style: s.brandTag }, "CORDEIRO ENERGIA / CORDEIRO SERVICE"),
+          el(Text, { style: s.rdoTitle }, "Relatório Diário de Obra — RDO-" + rdoNum),
+          el(Text, { style: s.metaText }, "Obra: " + (rdo.projeto?.nome || "-") + " • Data: " + dateFmt(rdo.data) + " (" + weekDay + ")"),
+          el(Text, { style: s.metaText }, "Responsável Técnico: " + (rdo.responsavel?.name || rdo.responsavel?.email || "-")),
+        ),
+        el(View, { style: [s.badge, { backgroundColor: badgeBg, color: badgeColor }] }, el(Text, {}, status)),
       ),
 
-      // KPI Cards Banner (Foto 02 Standard)
+      // KPI Metrics Cards Banner
       el(View, { style: s.kpiRow },
         el(View, { style: s.kpiCard },
-          el(Text, { style: s.kpiTitle }, "APONTAMENTOS REALIZADOS"),
+          el(Text, { style: s.kpiTitle }, "APONTAMENTOS DO DIA"),
           el(Text, { style: s.kpiVal }, atividadesExecutadasDia.length + " lançamento(s)"),
         ),
         el(View, { style: s.kpiCard },
-          el(Text, { style: s.kpiTitle }, "MÃO DE OBRA NO CANTEIRO"),
-          el(Text, { style: s.kpiVal }, totalMDO + " colaborador(es)"),
+          el(Text, { style: s.kpiTitle }, "MÃO DE OBRA ATIVA"),
+          el(Text, { style: s.kpiVal }, totalMDO + " pessoa(s) / " + totalH + "h"),
         ),
         el(View, { style: s.kpiCard },
           el(Text, { style: s.kpiTitle }, "AVANÇO FÍSICO MÉDIO"),
           el(Text, { style: s.kpiVal }, pctMedia + "%"),
         ),
-        el(View, { style: s.kpiCard },
+        el(View, { style: s.kpiCardLast },
           el(Text, { style: s.kpiTitle }, "OBRA VINCULADA"),
-          el(Text, { style: [s.kpiVal, { fontSize: 8.5 }] }, rdo.projeto?.nome || "-"),
+          el(Text, { style: [s.kpiVal, { fontSize: 8 }] }, rdo.projeto?.nome || "-"),
         ),
       ),
 
-      el(View, { style: s.sec, wrap: false }, el(Text, { style: s.stit }, "Condições Climáticas do Canteiro"), ...climaEls),
-
+      // Condições Climáticas
       el(View, { style: s.sec, wrap: false },
-        el(Text, { style: s.stit }, "Atividades Executadas no Dia (" + atividadesExecutadasDia.length + ")"),
-        ativRows ? tbl(ativRows) : el(Text, { style: s.nodata }, "Nenhuma atividade teve lançamento ou execução nesta data.")
+        SectionTitle("Condições Climáticas no Canteiro"),
+        climaBlock
       ),
 
+      // Atividades Executadas no Dia
+      el(View, { style: s.sec, wrap: false },
+        SectionTitle("Atividades Executadas no Dia (" + atividadesExecutadasDia.length + ")"),
+        ativRows
+          ? el(View, { style: s.table }, ...ativRows)
+          : el(Text, { style: s.nodata }, "Nenhuma atividade teve lançamento ou execução nesta data.")
+      ),
+
+      // Outras Atividades Executadas (Serviços Avulsos)
       rdo.outrasAtividades ? el(View, { style: s.sec, wrap: false },
-        el(Text, { style: s.stit }, "📌 Outras Atividades Executadas (Serviços Avulsos / Não Listados)"),
-        el(Text, { style: { leading: 1.4 } }, String(rdo.outrasAtividades))
+        SectionTitle("📌 Outras Atividades Executadas (Serviços Avulsos / Não Listados)"),
+        el(View, { style: s.textCard }, el(Text, {}, String(rdo.outrasAtividades)))
       ) : null,
 
-      el(View, { style: s.sec, wrap: false }, el(Text, { style: s.stit }, "Mão de Obra no Canteiro (" + totalMDO + " pessoas / " + totalH + "h)"), tbl(maoRows)),
-      el(View, { style: s.sec, wrap: false }, el(Text, { style: s.stit }, "Materiais Recebidos / Utilizados"), matRows ? tbl(matRows) : el(Text, { style: s.nodata }, "Nenhum material registrado nesta data.")),
-      ocEls && ocEls.length > 0 ? el(View, { style: s.sec, wrap: false }, el(Text, { style: s.stit }, "Ocorrências e Paralisações"), ...ocEls) : null,
-      rdo.observacoes ? el(View, { style: s.sec, wrap: false }, el(Text, { style: s.stit }, "Observações Gerais do Canteiro"), el(Text, {}, String(rdo.observacoes))) : null,
+      // Mão de Obra no Canteiro
+      el(View, { style: s.sec, wrap: false },
+        SectionTitle("Mão de Obra no Canteiro (" + totalMDO + " pessoas / " + totalH + "h trabalhadas)"),
+        maoRows
+          ? el(View, { style: s.table }, ...maoRows)
+          : el(Text, { style: s.nodata }, "Nenhum colaborador registrado nesta data.")
+      ),
 
-      // Galeria de Evidências Fotográficas do Dia
+      // Materiais Recebidos / Utilizados
+      el(View, { style: s.sec, wrap: false },
+        SectionTitle("Materiais Recebidos / Utilizados no Canteiro"),
+        matRows
+          ? el(View, { style: s.table }, ...matRows)
+          : el(Text, { style: s.nodata }, "Nenhum material registrado nesta data.")
+      ),
+
+      // Ocorrências e Paralisações
+      ocEls && ocEls.length > 0 ? el(View, { style: s.sec, wrap: false },
+        SectionTitle("Ocorrências e Paralisações Registradas"),
+        ...ocEls
+      ) : null,
+
+      // Observações Gerais
+      rdo.observacoes ? el(View, { style: s.sec, wrap: false },
+        SectionTitle("Observações Gerais do Canteiro"),
+        el(View, { style: s.textCard }, el(Text, {}, String(rdo.observacoes)))
+      ) : null,
+
+      // Galeria de Evidências Fotográficas
       allTodayPhotos.length > 0 ? el(View, { style: s.sec, wrap: false },
-        el(Text, { style: s.stit }, "📸 Evidências Fotográficas do Canteiro (" + allTodayPhotos.length + " foto(s))"),
-        el(View, { style: { flexDirection: "row", flexWrap: "wrap", gap: 6 } },
+        SectionTitle("📸 Evidências Fotográficas do Canteiro (" + allTodayPhotos.length + " foto(s))"),
+        el(View, { style: { flexDirection: "row", flexWrap: "wrap" } },
           ...allTodayPhotos.map((item, pIdx) =>
-            el(View, { key: pIdx, style: { width: 120, marginBottom: 8 }, wrap: false },
-              el(Image, { src: item.url, style: { width: 120, height: 90, borderRadius: 4, objectFit: "cover" } }),
-              el(Text, { style: { fontSize: 6.5, color: "#64748b", marginTop: 2 } }, item.title)
+            el(View, { key: pIdx, style: { width: 125, marginRight: 8, marginBottom: 8 }, wrap: false },
+              el(Image, { src: item.url, style: { width: 125, height: 92, borderRadius: 4, objectFit: "cover", borderWidth: 1, borderColor: "#e2e8f0" } }),
+              el(Text, { style: { fontSize: 6.5, color: "#64748b", marginTop: 3 } }, item.title)
             )
           )
         )
       ) : null,
 
+      // Discrete Footer
       el(View, { style: s.foot, fixed: true },
-        el(Text, {}, "Cordeiro Energia / Cordeiro Service - Diário de Obras"),
-        el(Text, {}, "RDO-" + rdoNum + " | Gerado em " + dateFmt(new Date())),
+        el(Text, {}, "Cordeiro Energia / Cordeiro Service — Diário de Obras (SGO)"),
+        el(Text, {}, "RDO-" + rdoNum + " • Emissão: " + dateFmt(new Date())),
         el(Text, { render: ({ pageNumber, totalPages }: any) => "Página " + pageNumber + " de " + totalPages }),
       ),
     )

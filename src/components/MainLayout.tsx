@@ -7,7 +7,7 @@ import { useSession, signOut } from 'next-auth/react';
 import { 
   LayoutDashboard, ListTodo, PlusCircle, Settings, LogOut,
   Menu, X, Zap, Users, Sun, Battery, BarChart, Package,
-  BatteryCharging, ChevronDown, ChevronRight, Calendar, Activity, Wrench
+  BatteryCharging, ChevronDown, ChevronRight, Calendar, Activity, Wrench, Database
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -44,6 +44,7 @@ const NAV_SECTIONS: NavSection[] = [
       { name: 'Dimensionamento BESS (pvlib)', href: '/engenharia/bess-sizing', icon: Battery },
       { name: 'Sistema Fotovoltaico', href: '/engenharia/solar', icon: Sun },
       { name: 'Solar Intelligence (SIE)', href: '/engenharia/solar/monitoramento', icon: Sun, badge: 'IA' },
+      { name: 'Extrator de Telemetria', href: '/engenharia/solar/extrator', icon: Database, badge: 'Planilha' },
       { name: 'Operação & Manutenção', href: '/engenharia/om', icon: Settings },
       { name: 'Equipamentos', href: '/engenharia/equipamentos', icon: Package },
       { name: 'Carregadores VE', href: '/carregamento', icon: BatteryCharging },
@@ -230,7 +231,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                     <div className="space-y-0.5">
                       {section.items.map((item) => {
                         const isActive = pathname === item.href || (item.href !== '/' && pathname?.startsWith(item.href + '/'));
-                        const disabled = !!item.badge && item.badge !== 'IA' && item.badge !== 'NOVO';
+                        const disabled = !!item.badge && !['IA', 'NOVO', 'PLANILHA', 'Planilha'].includes(item.badge);
                         return (
                           <Link
                             key={item.name}

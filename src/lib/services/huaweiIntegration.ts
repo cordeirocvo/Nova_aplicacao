@@ -112,7 +112,7 @@ export class HuaweiIntegration {
   static async listStations(user?: string, pass?: string): Promise<any[]> {
     try {
       const login = await this.login(user, pass);
-      const res = await this.hwRequest('/getStationList', { pageNo: 1 }, login.token, login.cookie);
+      const res = await this.hwRequest('/getStationList', { pageNo: 1, pageSize: 100 }, login.token, login.cookie);
       return res.data?.list || res.data || [];
     } catch (error) {
       console.error("Huawei listStations Error:", error);

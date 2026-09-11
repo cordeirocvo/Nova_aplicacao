@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { HistoricalBackfillService } from "@/lib/services/historicalBackfillService";
 
 export const runtime = 'nodejs';
 
@@ -88,6 +89,12 @@ export async function POST(req: Request) {
     });
 
     console.log("[DEBUG API] Usina criada com sucesso:", usina.id);
+
+    // Dispara a sincronização de 3 anos de histórico em segundo plano
+    HistoricalBackfillService.backfillUsina(usina.id, 3).catch(err => {
+      console.error("[BACKGROUND BACKFILL] Erro no backfill automático de 3 anos:", err);
+    });
+
     return NextResponse.json(usina);
   } catch (error: any) {
     console.error("[CRITICAL API ERROR] Falha ao criar usina:", error);
@@ -127,6 +134,17 @@ export async function PUT(req: Request) {
     const inc = parseNullableNum(data.inclinacao) ?? 10;
     const modeIrr = data.modoIrradiancia || "ESTACAO";
 
+    const currentUsina = await prisma.usina.findUnique({ where: { id } });
+    if (!currentUsina) return NextResponse.json({ error: "Usina não encontrada" }, { status: 404 });
+
+    const finalApiKey = (!data.apiKey || data.apiKey.includes("*"))
+      ? currentUsina.apiKey
+      : data.apiKey;
+
+    const finalApiSecret = (!data.apiSecret || data.apiSecret.includes("*") || data.apiSecret.includes("..."))
+      ? currentUsina.apiSecret
+      : data.apiSecret;
+
     const usina = await prisma.usina.update({
       where: { id },
       data: {
@@ -134,8 +152,8 @@ export async function PUT(req: Request) {
         capacidadeKWp: parseNum(data.capacidadeKWp),
         apiFornecedor: data.apiFornecedor,
         apiId: data.apiId,
-        apiKey: data.apiKey,
-        apiSecret: data.apiSecret,
+        apiKey: finalApiKey,
+        apiSecret: finalApiSecret,
         coefSujidade: parseNum(data.coefSujidade),
         coefTemperatura: parseNum(data.coefTemperatura),
         taxaDegradacao: parseNum(data.taxaDegradacao),

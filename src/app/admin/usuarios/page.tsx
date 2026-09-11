@@ -31,6 +31,7 @@ const PERMISSION_SECTIONS = [
       { name: 'Dimensionamento BESS', href: '/engenharia/bess', desc: 'Estudos de armazenamento de bateria BESS.' },
       { name: 'Sistema Fotovoltaico', href: '/engenharia/solar', desc: 'Dimensionamento de sistemas solares.' },
       { name: 'Solar Intelligence (SIE)', href: '/engenharia/solar/monitoramento', desc: 'Painel de telemetria e insights de IA.' },
+      { name: 'Extrator de Telemetria', href: '/engenharia/solar/extrator', desc: 'Extração e planilha de telemetria de inversores Huawei e Solis.' },
       { name: 'Operação & Manutenção', href: '/engenharia/om', desc: 'Inspeções, preventivas e relatórios.' },
       { name: 'Equipamentos', href: '/engenharia/equipamentos', desc: 'Inventário de equipamentos das usinas.' },
       { name: 'Carregadores VE', href: '/carregamento', desc: 'Dimensionamento de recarga veicular.' },
@@ -97,7 +98,10 @@ export default function UsuariosPage() {
           if (user.canEditBudgets) routes.push('canEditBudgets');
           if (user.canAccessAppLeads) routes.push('/app-vendedor');
           if (user.canManageCRM) routes.push('/crm');
-          if (user.canAccessSIE) routes.push('/engenharia/solar/monitoramento');
+          if (user.canAccessSIE) {
+            routes.push('/engenharia/solar/monitoramento');
+            routes.push('/engenharia/solar/extrator');
+          }
         }
       }
       

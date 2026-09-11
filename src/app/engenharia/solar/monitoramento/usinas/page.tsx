@@ -389,21 +389,80 @@ export default function GestaoUsinasPage() {
                       onChange={e => setDiscoverySearch(e.target.value)}
                     />
                     
-                    <div className="grid grid-cols-1 gap-2 max-h-[180px] overflow-y-auto">
+                    <div className="grid grid-cols-1 gap-2 max-h-[220px] overflow-y-auto pr-1">
                       {discoveredUsinas
                         .filter((d: any) => 
                           (d.nome || "").toLowerCase().includes(discoverySearch.toLowerCase()) ||
                           (d.id || "").toLowerCase().includes(discoverySearch.toLowerCase())
                         )
-                        .map((d: any) => (
-                          <button key={d.id} type="button" onClick={() => setNewUsina({...newUsina, nome: d.nome || `Usina ${d.id}`, capacidadeKWp: d.capacidade || 0, apiId: d.id})} className="flex items-center justify-between p-4 bg-white/5 hover:bg-white/10 rounded-xl text-left transition-all">
-                            <div>
-                              <p className="text-[11px] font-black text-white uppercase">{d.nome || "NOME NÃO IDENTIFICADO"}</p>
-                              <span className="text-[9px] text-slate-500">ID: {d.id} | {d.capacidade} kWp</span>
+                        .map((d: any) => {
+                          const isSelected = newUsina.apiId === d.id;
+                          const rawCap = parseFloat(d.capacidade) || 0;
+                          const capKWp = rawCap > 0 
+                            ? (rawCap < 100 ? Math.round(rawCap * 1000 * 100) / 100 : rawCap)
+                            : 0;
+
+                          return (
+                            <div key={d.id} className={`flex items-center justify-between p-3.5 rounded-xl border transition-all ${isSelected ? 'bg-emerald-950/40 border-emerald-500 text-white shadow-md' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <p className="text-xs font-bold text-white uppercase">{d.nome || "NOME NÃO IDENTIFICADO"}</p>
+                                  {isSelected && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">✓ Selecionada</span>}
+                                </div>
+                                <span className="text-[10px] text-slate-400">ID: {d.id} | {capKWp > 0 ? `${capKWp} kWp` : "Potência não informada"} | {d.localizacao || "Brasil"}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => setNewUsina({
+                                    ...newUsina,
+                                    nome: d.nome || `Usina ${d.id}`,
+                                    capacidadeKWp: capKWp,
+                                    apiId: d.id,
+                                    apiFornecedor: d.fornecedor || newUsina.apiFornecedor || "HUAWEI",
+                                    localizacao: d.localizacao || newUsina.localizacao || ""
+                                  })}
+                                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${isSelected ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40" : "bg-[#F59E0B]/20 text-[#F59E0B] border border-[#F59E0B]/40 hover:bg-[#F59E0B]/30"}`}
+                                >
+                                  {isSelected ? "✓ Preenchido" : "Selecionar"}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    const updated = {
+                                      ...newUsina,
+                                      nome: d.nome || `Usina ${d.id}`,
+                                      capacidadeKWp: capKWp,
+                                      apiId: d.id,
+                                      apiFornecedor: d.fornecedor || newUsina.apiFornecedor || "HUAWEI",
+                                      localizacao: d.localizacao || newUsina.localizacao || ""
+                                    };
+                                    setNewUsina(updated);
+                                    setSaving(true);
+                                    try {
+                                      const res = await fetch("/api/solar/usinas", {
+                                        method: "POST",
+                                        headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify(updated)
+                                      });
+                                      if (res.ok) {
+                                        setIsModalOpen(false);
+                                        fetchData();
+                                      }
+                                    } finally {
+                                      setSaving(false);
+                                    }
+                                  }}
+                                  disabled={saving}
+                                  className="px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-sm disabled:opacity-50"
+                                >
+                                  {saving && isSelected ? <Loader className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
+                                  Cadastrar Agora
+                                </button>
+                              </div>
                             </div>
-                            <Link className="w-4 h-4 text-slate-600" />
-                          </button>
-                        ))
+                          );
+                        })
                       }
                     </div>
                   </div>
@@ -418,7 +477,25 @@ export default function GestaoUsinasPage() {
                       setNewUsina({...newUsina, apiFornecedor: mName, apiKey: m?.userKey || "", apiSecret: m?.secretKey ? "********" : ""});
                     }}>
                       <option value="" className="bg-slate-900">Selecione...</option>
-                      {manufacturers.map(m => <option key={m.id} value={m.name} className="bg-slate-900">{m.name}</option>)}
+                      <option value="HUAWEI" className="bg-slate-900">Huawei FusionSolar</option>
+                      <option value="SOLIS" className="bg-slate-900">SolisCloud</option>
+                      <option value="CANADIAN_SOLAR" className="bg-slate-900">Canadian Solar (CSI Cloud)</option>
+                      <option value="HOYMILES" className="bg-slate-900">Hoymiles (S-Miles Cloud)</option>
+                      <option value="FRONIUS" className="bg-slate-900">Fronius (Solar.web API)</option>
+                      <option value="FOXESS" className="bg-slate-900">FoxESS Cloud</option>
+                      <option value="SOLAX" className="bg-slate-900">SolaX Cloud</option>
+                      <option value="SUNGROW" className="bg-slate-900">Sungrow (iSolarCloud)</option>
+                      <option value="NEP" className="bg-slate-900">NEP (NEPViewer Cloud)</option>
+                      <option value="SMA" className="bg-slate-900">SMA (Sunny Portal)</option>
+                      <option value="DEYE" className="bg-slate-900">Deye / Solarman Cloud</option>
+                      <option value="GROWATT" className="bg-slate-900">Growatt (ShineServer)</option>
+                      <option value="OUTROS" className="bg-slate-900">Outros / API Customizada</option>
+                      {manufacturers.filter(m => ![
+                        "HUAWEI","SOLIS","CANADIAN_SOLAR","HOYMILES","FRONIUS",
+                        "FOXESS","SOLAX","SUNGROW","NEP","SMA","DEYE","GROWATT","OUTROS"
+                      ].includes(m.name)).map(m => (
+                        <option key={m.id} value={m.name} className="bg-slate-900">{m.name}</option>
+                      ))}
                     </select>
                   </div>
                   <div className="space-y-1">
@@ -474,8 +551,23 @@ function UsinaCard({ usina, onUpdate, onEdit, estacaoNome }: { usina: any, onUpd
           {usina.apiFornecedor} | {usina.modoIrradiancia === "SATELITE" ? "🛰️ SATÉLITE" : "📡 ESTAÇÃO"}
         </span>
         <div className="flex items-center gap-2">
-          <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit(); }} className="p-2 text-slate-300 hover:text-cordeiro-orange"><Settings className="w-5 h-5" /></button>
-          <button type="button" onClick={handleDelete} className="p-2 text-slate-300 hover:text-red-500">{isDeleting ? <Loader className="w-5 h-5 animate-spin" /> : <Trash className="w-5 h-5" />}</button>
+          <button 
+            type="button" 
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit(); }} 
+            className="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-600 rounded-xl border border-amber-200 text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all hover:scale-105"
+            title="Editar Configurações da Usina"
+          >
+            <Settings className="w-4 h-4 text-amber-600" />
+            ⚙️ Configurar Usina
+          </button>
+          <button 
+            type="button" 
+            onClick={handleDelete} 
+            className="p-2 bg-red-50 hover:bg-red-100 text-red-500 rounded-xl border border-red-200 text-xs transition-all hover:scale-105"
+            title="Excluir Usina"
+          >
+            {isDeleting ? <Loader className="w-4 h-4 animate-spin" /> : <Trash className="w-4 h-4" />}
+          </button>
         </div>
       </div>
       <h3 className="text-2xl font-black text-slate-800 leading-tight mb-2">{usina.nome}</h3>

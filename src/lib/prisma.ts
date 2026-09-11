@@ -4,16 +4,17 @@ import { Pool } from 'pg'
 
 const globalForPool = globalThis as unknown as { pgPool?: Pool }
 
-const getOrCreatePool = () => {
+export const getOrCreatePool = () => {
   if (globalForPool.pgPool) {
     return globalForPool.pgPool;
   }
 
-  const connectionString = process.env.DATABASE_URL || process.env.DIRECT_URL || "";
+  let connectionString = process.env.DIRECT_URL || process.env.DATABASE_URL || "";
+  const isLocal = connectionString.includes("localhost") || connectionString.includes("127.0.0.1");
 
   const pool = new Pool({
     connectionString,
-    ssl: { rejectUnauthorized: false },
+    ssl: false,
     max: 4,
     idleTimeoutMillis: 10000,
     connectionTimeoutMillis: 30000,

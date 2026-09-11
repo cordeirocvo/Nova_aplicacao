@@ -115,31 +115,53 @@ export class HuaweiSyncService {
               let v = { a: 0, b: 0, c: 0 }, cur = { a: 0, b: 0, c: 0 }, t = 45;
 
               if (usinaInverters.length > 0) {
-                let totalP_DC = 0, totalE_Daily = 0;
+                let totalP_DC = 0, totalP_AC = 0, totalE_Daily = 0;
                 const invIds = usinaInverters.map((i: any) => i.id || i.devId);
                 const usinaDevKpis = allDevKpis.filter((k: any) => invIds.includes(k.devId) || invIds.includes(Number(k.devId)) || invIds.includes(String(k.id)));
                 fs.appendFileSync(logFile, `${usina.nome}: Match de ${usinaDevKpis.length} KPIs de inversores.\n`);
 
                 usinaDevKpis.forEach((k: any, idx: number) => {
                   const map = k.dataItemMap || {};
+                  const invSn = k.sn || k.esn || k.devId || `Inv${idx+1}`;
                   
-                  // Prioriza dia_cap (diário) sobre acumulado total de vida útil
+                  // Upsert no banco de dados para garantir cadastro de todos os inversores da usina
+                  if (invSn) {
+                    prisma.inversor.upsert({
+                      where: { numeroSerie: String(invSn) },
+                      update: { usinaId: usina.id, status: "ONLINE" },
+                      create: {
+                        usinaId: usina.id,
+                        numeroSerie: String(invSn),
+                        modelo: k.devName || k.model || "Inversor Huawei",
+                        potenciaNominalKW: usina.capacidadeKWp > 0 ? usina.capacidadeKWp / usinaInverters.length : 75,
+                        status: "ONLINE"
+                      }
+                    }).catch(() => {});
+                  }
+                  
                   const energyDaily = parseFloat(String(map.day_cap || map.day_power || "0"));
-                  const pDC = parseFloat(String(map.mppt_power ?? map.active_power ?? "0"));
+                  const pAC = parseFloat(String(map.active_power ?? map.a_power ?? "0"));
                   
-                  totalP_DC += pDC;
-                  totalE_Daily += energyDaily;
-                  
-                  fs.appendFileSync(logFile, `  - Inversor ${k.devId}: CC=${pDC}kW, E(Dia)=${energyDaily}kWh\n`);
-                  
-                  const invLabel = k.sn || `Inv${idx+1}`;
+                  let invP_DC = 0;
+                  const invLabel = invSn;
                   for (let i = 1; i <= 24; i++) {
                     const vol = parseFloat(String(map[`pv${i}_u`] || "0"));
                     const amp = parseFloat(String(map[`pv${i}_i`] || "0"));
-                    if (vol > 0) stringsAcc[`${invLabel}_S${i}`] = { V: vol, I: amp };
+                    if (vol > 0) {
+                      stringsAcc[`${invLabel}_S${i}`] = { V: vol, I: amp };
+                      invP_DC += (vol * amp) / 1000;
+                    }
                   }
+                  if (invP_DC <= 0) {
+                    invP_DC = parseFloat(String(map.mppt_power ?? "0"));
+                  }
+
+                  totalP_AC += pAC;
+                  totalP_DC += invP_DC;
+                  totalE_Daily += energyDaily;
                   
-                  // Mapeamento Robusto de Tensão e Corrente CA (Fases A/B/C ou Line AB/BC/CA)
+                  fs.appendFileSync(logFile, `  - Inversor ${invSn}: CA=${pAC}kW, CC=${invP_DC.toFixed(2)}kW, E(Dia)=${energyDaily}kWh\n`);
+                  
                   if (idx === 0) {
                     v = { 
                       a: parseFloat(String(map.ab_u ?? map.u_ab ?? map.a_u ?? map.u_a ?? "0")), 
@@ -155,8 +177,15 @@ export class HuaweiSyncService {
                   }
                 });
 
-                if (totalP_DC > 0) powerFinal = totalP_DC;
-                if (energyKWh <= 0) energyKWh = totalE_Daily;
+                if (totalP_AC > 0) {
+                  powerFinal = totalP_AC;
+                } else if (powerFinal <= 0 && totalP_DC > 0) {
+                  powerFinal = totalP_DC;
+                }
+                
+                if (energyKWh <= 0 && totalE_Daily > 0) {
+                  energyKWh = totalE_Daily;
+                }
               }
 
               fs.appendFileSync(logFile, `[HUAWEI-SYNC] Gravando ${usina.nome}: Potência=${powerFinal.toFixed(2)}kW, Energia Dia=${energyKWh}kWh, Tensão=[${v.a}V, ${v.b}V, ${v.c}V]\n`);
@@ -263,17 +292,26 @@ export class HuaweiSyncService {
                       deviceRecords.forEach((h: any, idx: number) => {
                         const map = h.dataItemMap || {};
                         const energyDaily = parseFloat(String(map.day_cap || map.day_power || "0"));
-                        const pDC = parseFloat(String(map.mppt_power ?? map.active_power ?? "0"));
+                        const pAC = parseFloat(String(map.active_power ?? map.a_power ?? "0"));
                         
-                        pPowerFinal += pDC;
-                        pEnergyKWh += energyDaily;
-                        
+                        let pDC_dev = 0;
                         const invLabel = h.sn || usinaInverters.find((i: any) => i.id === h.devId || i.devId === h.devId)?.sn || `Inv${idx+1}`;
                         for (let i = 1; i <= 24; i++) {
                           const vol = parseFloat(String(map[`pv${i}_u`] || "0"));
                           const amp = parseFloat(String(map[`pv${i}_i`] || "0"));
-                          if (vol > 0) pStringsAcc[`${invLabel}_S${i}`] = { V: vol, I: amp };
+                          if (vol > 0) {
+                            pStringsAcc[`${invLabel}_S${i}`] = { V: vol, I: amp };
+                            pDC_dev += (vol * amp) / 1000;
+                          }
                         }
+                        if (pDC_dev <= 0) {
+                          pDC_dev = parseFloat(String(map.mppt_power ?? "0"));
+                        }
+
+                        // Prioriza Potência Ativa CA (active_power), utilizando CC (mppt_power) apenas como fallback se CA for 0
+                        const itemPower = pAC > 0 ? pAC : pDC_dev;
+                        pPowerFinal += itemPower;
+                        pEnergyKWh += energyDaily;
                         
                         if (idx === 0) {
                           pV = { 

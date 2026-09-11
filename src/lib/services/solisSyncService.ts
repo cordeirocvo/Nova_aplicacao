@@ -55,6 +55,19 @@ export class SolisSyncService {
             const sn = inv.sn || inv.inverterSn;
             if (!sn) continue;
 
+            // Upsert do inversor no banco de dados
+            prisma.inversor.upsert({
+              where: { numeroSerie: String(sn) },
+              update: { usinaId: usina.id, status: "ONLINE" },
+              create: {
+                usinaId: usina.id,
+                numeroSerie: String(sn),
+                modelo: inv.model || inv.inverterModel || "Inversor Solis",
+                potenciaNominalKW: usina.capacidadeKWp > 0 ? usina.capacidadeKWp / inverters.length : 75,
+                status: "ONLINE"
+              }
+            }).catch(() => {});
+
             const detail = await SolisService.getInverterDetailBySn(sn, key, secret);
             if (detail) {
               // Soma potência CC das strings: P = V1*I1 + V2*I2 + ...

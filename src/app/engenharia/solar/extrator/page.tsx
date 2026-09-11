@@ -50,6 +50,7 @@ import {
 import clsx from "clsx";
 import * as XLSX from "xlsx";
 import CardFabricantesConsolidado from "@/components/solar/CardFabricantesConsolidado";
+import GraficoSolisStyle from "@/components/solar/GraficoSolisStyle";
 
 interface TelemetriaItem {
   id: string;
@@ -135,8 +136,8 @@ export default function SolarExtratorPage() {
   const [selectedRow, setSelectedRow] = useState<TelemetriaItem | null>(null);
   const [isTableMaximized, setIsTableMaximized] = useState<boolean>(false);
 
-  // Estados para Agregação e Relatórios Consolidados (Dia / Mês / Ano)
-  const [viewPeriod, setViewPeriod] = useState<"DIA" | "MES" | "ANO">("DIA");
+  // Estados para Agregação e Relatórios Consolidados Estilo Solis (Dia / Mês / Ano / Total)
+  const [viewPeriod, setViewPeriod] = useState<"DIA" | "MES" | "ANO" | "TOTAL">("DIA");
   const [consolidadoData, setConsolidadoData] = useState<any>(null);
   const [loadingConsolidado, setLoadingConsolidado] = useState<boolean>(false);
 
@@ -392,14 +393,18 @@ export default function SolarExtratorPage() {
   const fetchConsolidadoData = useCallback(async () => {
     setLoadingConsolidado(true);
     try {
-      const year = date ? new Date(date).getFullYear() : new Date().getFullYear();
-      const month = date ? new Date(date).getMonth() + 1 : new Date().getMonth() + 1;
+      const parts = (date || "").split("-");
+      const year = parts[0] || new Date().getFullYear().toString();
+      const month = parts[1] || (new Date().getMonth() + 1).toString();
+      const day = parts[2] || new Date().getDate().toString();
 
       const params = new URLSearchParams({
         usinaId: selectedUsina,
         periodo: viewPeriod,
-        ano: year.toString(),
-        mes: month.toString(),
+        date: date,
+        ano: year,
+        mes: month,
+        dia: day,
       });
 
       const res = await fetch(`/api/solar/relatorios/consolidado?${params.toString()}`);
@@ -1298,198 +1303,27 @@ export default function SolarExtratorPage() {
           </div>
         )}
 
-        {/* Conteúdo da Aba 3: Gráficos de Análise e Consolidado Multi-Fabricante */}
+        {/* Conteúdo da Aba 3: Gráficos de Análise e Consolidado Multi-Fabricante Estilo SolisCloud */}
         {activeTab === "graficos" && (
           <div className="space-y-6 pt-2">
-            {/* Seletor de Período (Diário, Mensal, Anual) e Controles de Navegação por Data */}
-            <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-900/90 border border-slate-800 p-4 rounded-2xl shadow-lg">
-              <div className="flex flex-wrap items-center gap-3">
-                <span className="text-xs font-bold text-slate-300">Visualização de Geração:</span>
-                <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
-                  <button
-                    onClick={() => setViewPeriod("DIA")}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                      viewPeriod === "DIA"
-                        ? "bg-[#F59E0B] text-slate-950 shadow-md"
-                        : "text-slate-400 hover:text-white hover:bg-slate-800"
-                    }`}
-                  >
-                    Diário (24h)
-                  </button>
-                  <button
-                    onClick={() => setViewPeriod("MES")}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                      viewPeriod === "MES"
-                        ? "bg-[#F59E0B] text-slate-950 shadow-md"
-                        : "text-slate-400 hover:text-white hover:bg-slate-800"
-                    }`}
-                  >
-                    Mensal (kWh/dia)
-                  </button>
-                  <button
-                    onClick={() => setViewPeriod("ANO")}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                      viewPeriod === "ANO"
-                        ? "bg-[#F59E0B] text-slate-950 shadow-md"
-                        : "text-slate-400 hover:text-white hover:bg-slate-800"
-                    }`}
-                  >
-                    Anual (MWh/mês)
-                  </button>
-                </div>
-              </div>
-
-              {/* Navegador Interativo por Dia / Mês / Ano */}
-              <div className="flex items-center gap-2 bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800">
-                {viewPeriod === "DIA" && (
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => {
-                        const d = new Date(date + "T12:00:00");
-                        d.setDate(d.getDate() - 1);
-                        setDate(d.toISOString().split("T")[0]);
-                      }}
-                      className="px-2 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 flex items-center gap-1 transition-colors"
-                      title="Dia Anterior"
-                    >
-                      <ChevronLeft className="w-3.5 h-3.5 text-[#F59E0B]" />
-                      Anterior
-                    </button>
-
-                    <input
-                      type="date"
-                      value={date}
-                      onChange={(e) => setDate(e.target.value)}
-                      className="bg-slate-900 border border-slate-700 rounded-md px-2 py-1 text-xs text-[#F59E0B] font-bold focus:outline-none focus:border-[#F59E0B]"
-                    />
-
-                    <button
-                      onClick={() => {
-                        const d = new Date(date + "T12:00:00");
-                        d.setDate(d.getDate() + 1);
-                        setDate(d.toISOString().split("T")[0]);
-                      }}
-                      className="px-2 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 flex items-center gap-1 transition-colors"
-                      title="Próximo Dia"
-                    >
-                      Próximo
-                      <ChevronRight className="w-3.5 h-3.5 text-[#F59E0B]" />
-                    </button>
-                  </div>
-                )}
-
-                {viewPeriod === "MES" && (
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => {
-                        const d = new Date(date + "T12:00:00");
-                        d.setMonth(d.getMonth() - 1);
-                        setDate(d.toISOString().split("T")[0]);
-                      }}
-                      className="px-2 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 flex items-center gap-1 transition-colors"
-                      title="Mês Anterior"
-                    >
-                      <ChevronLeft className="w-3.5 h-3.5 text-[#F59E0B]" />
-                      Mês Ant.
-                    </button>
-
-                    <select
-                      value={new Date(date + "T12:00:00").getMonth() + 1}
-                      onChange={(e) => {
-                        const m = parseInt(e.target.value, 10);
-                        const d = new Date(date + "T12:00:00");
-                        d.setMonth(m - 1);
-                        setDate(d.toISOString().split("T")[0]);
-                      }}
-                      className="bg-slate-900 border border-slate-700 rounded-md px-2 py-1 text-xs text-[#F59E0B] font-bold focus:outline-none"
-                    >
-                      {["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"].map((mNome, idx) => (
-                        <option key={idx} value={idx + 1}>
-                          {mNome}
-                        </option>
-                      ))}
-                    </select>
-
-                    <select
-                      value={new Date(date + "T12:00:00").getFullYear()}
-                      onChange={(e) => {
-                        const y = parseInt(e.target.value, 10);
-                        const d = new Date(date + "T12:00:00");
-                        d.setFullYear(y);
-                        setDate(d.toISOString().split("T")[0]);
-                      }}
-                      className="bg-slate-900 border border-slate-700 rounded-md px-2 py-1 text-xs text-[#F59E0B] font-bold focus:outline-none"
-                    >
-                      {[2023, 2024, 2025, 2026, 2027].map((yNum) => (
-                        <option key={yNum} value={yNum}>
-                          {yNum}
-                        </option>
-                      ))}
-                    </select>
-
-                    <button
-                      onClick={() => {
-                        const d = new Date(date + "T12:00:00");
-                        d.setMonth(d.getMonth() + 1);
-                        setDate(d.toISOString().split("T")[0]);
-                      }}
-                      className="px-2 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 flex items-center gap-1 transition-colors"
-                      title="Próximo Mês"
-                    >
-                      Próximo Mês
-                      <ChevronRight className="w-3.5 h-3.5 text-[#F59E0B]" />
-                    </button>
-                  </div>
-                )}
-
-                {viewPeriod === "ANO" && (
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => {
-                        const d = new Date(date + "T12:00:00");
-                        d.setFullYear(d.getFullYear() - 1);
-                        setDate(d.toISOString().split("T")[0]);
-                      }}
-                      className="px-2 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 flex items-center gap-1 transition-colors"
-                      title="Ano Anterior"
-                    >
-                      <ChevronLeft className="w-3.5 h-3.5 text-[#F59E0B]" />
-                      Ano Ant.
-                    </button>
-
-                    <select
-                      value={new Date(date + "T12:00:00").getFullYear()}
-                      onChange={(e) => {
-                        const y = parseInt(e.target.value, 10);
-                        const d = new Date(date + "T12:00:00");
-                        d.setFullYear(y);
-                        setDate(d.toISOString().split("T")[0]);
-                      }}
-                      className="bg-slate-900 border border-slate-700 rounded-md px-2.5 py-1 text-xs text-[#F59E0B] font-bold focus:outline-none"
-                    >
-                      {[2023, 2024, 2025, 2026, 2027].map((yNum) => (
-                        <option key={yNum} value={yNum}>
-                          {yNum}
-                        </option>
-                      ))}
-                    </select>
-
-                    <button
-                      onClick={() => {
-                        const d = new Date(date + "T12:00:00");
-                        d.setFullYear(d.getFullYear() + 1);
-                        setDate(d.toISOString().split("T")[0]);
-                      }}
-                      className="px-2 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 flex items-center gap-1 transition-colors"
-                      title="Próximo Ano"
-                    >
-                      Próximo Ano
-                      <ChevronRight className="w-3.5 h-3.5 text-[#F59E0B]" />
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
+            {/* Gráfico Estilo SolisCloud com Curva 24h, KPIs de Produção Diária, Ganho e Horas Carga Completa */}
+            <GraficoSolisStyle
+              date={date}
+              onDateChange={(newDate) => setDate(newDate)}
+              periodo={viewPeriod}
+              onPeriodoChange={(newPeriodo) => setViewPeriod(newPeriodo)}
+              producaoKWh={consolidadoData?.producaoDiariaKWh ?? dynamicSummary.energiaTotalKWh}
+              producaoOntemKWh={consolidadoData?.producaoOntemKWh ?? 0}
+              comparativoOntemPct={consolidadoData?.comparativoOntemPct ?? 0}
+              ganhoDiarioBRL={consolidadoData?.ganhoDiarioBRL ?? 0}
+              horasCargaCompletaHSP={consolidadoData?.horasCargaCompletaHSP ?? 0}
+              capacidadeTotalKWp={consolidadoData?.capacidadeInstaladaTotalKWp || dynamicSummary.potenciaPicoKW}
+              serieDiaria={consolidadoData?.serieDiaria || []}
+              serieMensal={consolidadoData?.serieMensal || []}
+              serieAnual={consolidadoData?.serieAnual || []}
+              loading={loadingConsolidado}
+              usinaNome={selectedUsina ? usinas.find((u) => u.id === selectedUsina)?.nome : "Todas as Usinas (Consolidado)"}
+            />
 
             {/* Card de Resumo e Composição por Fabricante */}
             <CardFabricantesConsolidado
@@ -1497,94 +1331,6 @@ export default function SolarExtratorPage() {
               capacidadeTotalKWp={consolidadoData?.capacidadeInstaladaTotalKWp || dynamicSummary.potenciaPicoKW}
               periodoStr={viewPeriod === "DIA" ? "do Dia" : viewPeriod === "MES" ? "do Mês" : "do Ano"}
             />
-
-            {/* Renderização Condicional do Gráfico Baseado no Período */}
-            {viewPeriod === "DIA" && (
-              <>
-                <div className="bg-slate-950 border border-slate-800 rounded-xl p-4">
-                  <h3 className="text-sm font-semibold text-slate-200 mb-3 flex items-center gap-2">
-                    <Zap className="w-4 h-4 text-amber-400" /> Curva de Geração de Potência (kW) - {dynamicSummary.scopeLabel}
-                  </h3>
-                  <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={chartData}>
-                        <defs>
-                          <linearGradient id="colorPower" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.4} />
-                            <stop offset="95%" stopColor="#F59E0B" stopOpacity={0} />
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                        <XAxis dataKey="hora" stroke="#64748b" fontSize={11} />
-                        <YAxis stroke="#64748b" fontSize={11} />
-                        <Tooltip contentStyle={{ backgroundColor: "#0f172a", borderColor: "#334155" }} />
-                        <Area type="monotone" dataKey="potenciaCA" stroke="#F59E0B" fillOpacity={1} fill="url(#colorPower)" name="Potência CA (kW)" />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-
-                <div className="bg-slate-950 border border-slate-800 rounded-xl p-4">
-                  <h3 className="text-sm font-semibold text-slate-200 mb-3 flex items-center gap-2">
-                    <Activity className="w-4 h-4 text-sky-400" /> Curva de Tensões CA por Fase (V)
-                  </h3>
-                  <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={chartData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                        <XAxis dataKey="hora" stroke="#64748b" fontSize={11} />
-                        <YAxis stroke="#64748b" fontSize={11} domain={["auto", "auto"]} />
-                        <Tooltip contentStyle={{ backgroundColor: "#0f172a", borderColor: "#334155" }} />
-                        <Legend />
-                        <Line type="monotone" dataKey="tensaoA" stroke="#38bdf8" name="Tensão Fase A (V)" dot={false} />
-                        <Line type="monotone" dataKey="tensaoB" stroke="#818cf8" name="Tensão Fase B (V)" dot={false} />
-                        <Line type="monotone" dataKey="tensaoC" stroke="#c084fc" name="Tensão Fase C (V)" dot={false} />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-              </>
-            )}
-
-            {viewPeriod === "MES" && (
-              <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-3">
-                <h3 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 text-emerald-400" /> Geração Diária Acumulada no Mês (kWh/dia) - Consolidado
-                </h3>
-                <div className="h-72">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={consolidadoData?.serieMensal || []}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                      <XAxis dataKey="dia" stroke="#64748b" fontSize={11} />
-                      <YAxis stroke="#64748b" fontSize={11} />
-                      <Tooltip contentStyle={{ backgroundColor: "#0f172a", borderColor: "#334155" }} />
-                      <Bar dataKey="totalKWh" fill="#10B981" radius={[4, 4, 0, 0]} name="Energia Acumulada (kWh)" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            )}
-
-            {viewPeriod === "ANO" && (
-              <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-3">
-                <h3 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 text-amber-400" /> Geração Mensal no Ano (MWh/mês) - Ano Atual vs Ano Anterior
-                </h3>
-                <div className="h-72">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={consolidadoData?.serieAnual || []}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                      <XAxis dataKey="mes" stroke="#64748b" fontSize={11} />
-                      <YAxis stroke="#64748b" fontSize={11} />
-                      <Tooltip contentStyle={{ backgroundColor: "#0f172a", borderColor: "#334155" }} />
-                      <Legend />
-                      <Bar dataKey="geracaoMWh" fill="#F59E0B" radius={[4, 4, 0, 0]} name="Ano Atual (MWh)" />
-                      <Bar dataKey="geracaoAnoAnteriorMWh" fill="#475569" radius={[4, 4, 0, 0]} name="Ano Anterior (MWh)" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            )}
           </div>
         )}
       </div>

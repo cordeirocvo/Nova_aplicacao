@@ -4,6 +4,44 @@ import { prisma } from "@/lib/prisma";
 export const runtime = "nodejs";
 
 /**
+ * Helper to get date boundaries in Brazil Timezone (America/Sao_Paulo: UTC-3)
+ */
+function getBrazilDateBoundaries(ano: number, mes: number, dia: number) {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const startDay = new Date(`${ano}-${pad(mes)}-${pad(dia)}T00:00:00-03:00`);
+  const endDay = new Date(`${ano}-${pad(mes)}-${pad(dia)}T23:59:59.999-03:00`);
+  return { startDay, endDay };
+}
+
+/**
+ * Calculate energy (kWh) from telemetry records for a given plant
+ */
+function calculateUsinaEnergyKWh(records: Array<{ energiaAcumuladaKWh: number; potenciaAtivaKW: number; timestamp: Date }>): number {
+  if (!records || records.length === 0) return 0;
+
+  // Método 1: Diferença entre max e min da energia acumulada no dia
+  const energias = records.map((r) => r.energiaAcumuladaKWh || 0).filter((v) => v > 0);
+  if (energias.length > 0) {
+    const max = Math.max(...energias);
+    const min = Math.min(...energias);
+    const delta = max - min;
+    if (delta > 0) return delta;
+    if (max > 0) return max;
+  }
+
+  // Método 2: Integração trapezoidal aproximada da potência ativa (kWh = kW * horas)
+  let totalKWh = 0;
+  for (let i = 1; i < records.length; i++) {
+    const dtHours = (new Date(records[i].timestamp).getTime() - new Date(records[i - 1].timestamp).getTime()) / (1000 * 3600);
+    if (dtHours > 0 && dtHours <= 1) { // ignora gaps de mais de 1 hora
+      const avgKW = ((records[i].potenciaAtivaKW || 0) + (records[i - 1].potenciaAtivaKW || 0)) / 2;
+      totalKWh += avgKW * dtHours;
+    }
+  }
+  return totalKWh;
+}
+
+/**
  * API para Relatório e Gráficos Consolidados Multi-Fabricante (Huawei, Solis, Hoymiles, Canadian, etc.)
  */
 export async function GET(req: NextRequest) {
@@ -11,18 +49,20 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const usinaId = searchParams.get("usinaId") || "";
     const periodo = (searchParams.get("periodo") || "DIA").toUpperCase();
-    const dateParam = searchParams.get("date"); // Ex: "2026-08-10"
+    const dateParam = searchParams.get("date"); // Ex: "2026-09-11"
 
     const now = new Date();
-    const anoDefault = dateParam ? parseInt(dateParam.split("-")[0], 10) : now.getFullYear();
-    const mesDefault = dateParam ? parseInt(dateParam.split("-")[1], 10) : now.getMonth() + 1;
-    const diaDefault = dateParam ? parseInt(dateParam.split("-")[2], 10) : now.getDate();
+    // Default data no fuso de Brasília
+    const nowBRL = new Date(now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
+    const anoDefault = dateParam ? parseInt(dateParam.split("-")[0], 10) : nowBRL.getFullYear();
+    const mesDefault = dateParam ? parseInt(dateParam.split("-")[1], 10) : nowBRL.getMonth() + 1;
+    const diaDefault = dateParam ? parseInt(dateParam.split("-")[2], 10) : nowBRL.getDate();
 
     const ano = parseInt(searchParams.get("ano") || anoDefault.toString(), 10);
     const mes = parseInt(searchParams.get("mes") || mesDefault.toString(), 10);
     const dia = parseInt(searchParams.get("dia") || diaDefault.toString(), 10);
 
-    // 1. Filtrar usinas e inversores
+    // 1. Filtrar usinas
     const usinasWhere: any = {};
     if (usinaId) usinasWhere.id = usinaId;
 
@@ -41,142 +81,176 @@ export async function GET(req: NextRequest) {
     let serieAnual: any[] = [];
     let distribuicaoFabricante: Record<string, number> = {};
 
-    // 2. Agregação Diária (Curva de Geração em intervalos de 15min/5min para o dia selecionado)
-    if (periodo === "DIA" || periodo === "TUDO") {
-      const targetDateStr = `${ano}-${String(mes).padStart(2, "0")}-${String(dia).padStart(2, "0")}`;
-      const startDay = new Date(`${targetDateStr}T00:00:00-03:00`);
-      const endDay = new Date(`${targetDateStr}T23:59:59-03:00`);
+    // 2. Agregação Diária (Curva de Geração em intervalos para o dia selecionado)
+    const { startDay, endDay } = getBrazilDateBoundaries(ano, mes, dia);
 
-      const telemetriasDia = await prisma.telemetria.findMany({
+    // Buscar telemetria real do dia selecionado
+    const telemetriasDia = await prisma.telemetria.findMany({
+      where: {
+        usinaId: { in: usinaIds },
+        timestamp: { gte: startDay, lte: endDay },
+      },
+      include: {
+        usina: { select: { apiFornecedor: true, nome: true } },
+      },
+      orderBy: { timestamp: "asc" },
+    });
+
+    // Agrupamento por horário (HH:MM) para o gráfico diário
+    if (telemetriasDia.length > 0) {
+      const porHoraMap = new Map<string, { hora: string; potenciaTotalKW: number; tensaoA: number; tensaoB: number; tensaoC: number; porFornecedor: Record<string, number> }>();
+
+      telemetriasDia.forEach((t) => {
+        const horaStr = new Date(t.timestamp).toLocaleTimeString("pt-BR", {
+          timeZone: "America/Sao_Paulo",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+
+        const fornecedor = t.usina?.apiFornecedor || "OUTROS";
+        const potencia = Math.max(0, t.potenciaAtivaKW || 0);
+
+        if (!porHoraMap.has(horaStr)) {
+          porHoraMap.set(horaStr, {
+            hora: horaStr,
+            potenciaTotalKW: 0,
+            tensaoA: t.tensaoCA_A || 220,
+            tensaoB: t.tensaoCA_B || 220,
+            tensaoC: t.tensaoCA_C || 220,
+            porFornecedor: {},
+          });
+        }
+
+        const point = porHoraMap.get(horaStr)!;
+        point.potenciaTotalKW = parseFloat((point.potenciaTotalKW + potencia).toFixed(2));
+        point.porFornecedor[fornecedor] = parseFloat(((point.porFornecedor[fornecedor] || 0) + potencia).toFixed(2));
+
+        if (t.tensaoCA_A) point.tensaoA = t.tensaoCA_A;
+        if (t.tensaoCA_B) point.tensaoB = t.tensaoCA_B;
+        if (t.tensaoCA_C) point.tensaoC = t.tensaoCA_C;
+      });
+
+      serieDiaria = Array.from(porHoraMap.values());
+    } else {
+      // Se não há dados reais para o dia, a série diária fica vazia (sem curva sintética falsa)
+      serieDiaria = [];
+    }
+
+    // Cálculo da Produção Real do Dia (kWh) por usina
+    let producaoDiariaTotalKWh = 0;
+    usinas.forEach((u) => {
+      const telemUsina = telemetriasDia.filter((t) => t.usinaId === u.id);
+      const energiaKWh = calculateUsinaEnergyKWh(telemUsina);
+      producaoDiariaTotalKWh += energiaKWh;
+
+      const f = u.apiFornecedor || "OUTROS";
+      distribuicaoFabricante[f] = (distribuicaoFabricante[f] || 0) + energiaKWh;
+    });
+
+    // Buscar telemetria de ontem para comparação percentual (Solis Style KPI)
+    const startYesterday = new Date(startDay.getTime() - 24 * 3600 * 1000);
+    const endYesterday = new Date(endDay.getTime() - 24 * 3600 * 1000);
+
+    const telemetriasOntem = await prisma.telemetria.findMany({
+      where: {
+        usinaId: { in: usinaIds },
+        timestamp: { gte: startYesterday, lte: endYesterday },
+      },
+      select: {
+        usinaId: true,
+        energiaAcumuladaKWh: true,
+        potenciaAtivaKW: true,
+        timestamp: true,
+      },
+      orderBy: { timestamp: "asc" },
+    });
+
+    let producaoOntemTotalKWh = 0;
+    usinas.forEach((u) => {
+      const telemUsinaOntem = telemetriasOntem.filter((t) => t.usinaId === u.id);
+      producaoOntemTotalKWh += calculateUsinaEnergyKWh(telemUsinaOntem);
+    });
+
+    const diffOntem = producaoDiariaTotalKWh - producaoOntemTotalKWh;
+    const comparativoOntemPct = producaoOntemTotalKWh > 0
+      ? parseFloat(((diffOntem / producaoOntemTotalKWh) * 100).toFixed(2))
+      : 0;
+
+    // Tarifa média de R$ 0,90 / kWh para Ganho Diário (Solis Style)
+    const tarifaKWh = 0.90;
+    const ganhoDiarioBRL = parseFloat((producaoDiariaTotalKWh * tarifaKWh).toFixed(2));
+
+    // Horas Carga Completa Diárias (HSP = kWh / kWp)
+    const horasCargaCompletaHSP = capTotalKWp > 0
+      ? parseFloat((producaoDiariaTotalKWh / capTotalKWp).toFixed(2))
+      : 0;
+
+    // 3. Agregação Mensal (Dias do Mês)
+    if (periodo === "MES" || periodo === "TUDO" || periodo === "DIA") {
+      const pad = (n: number) => String(n).padStart(2, "0");
+      const daysInMonth = new Date(ano, mes, 0).getDate();
+      const firstDayMonth = new Date(`${ano}-${pad(mes)}-01T00:00:00-03:00`);
+      const lastDayMonth = new Date(`${ano}-${pad(mes)}-${pad(daysInMonth)}T23:59:59.999-03:00`);
+
+      const telemetriasMes = await prisma.telemetria.findMany({
         where: {
           usinaId: { in: usinaIds },
-          timestamp: { gte: startDay, lte: endDay },
+          timestamp: { gte: firstDayMonth, lte: lastDayMonth },
         },
-        include: {
-          usina: { select: { apiFornecedor: true, nome: true } },
+        select: {
+          usinaId: true,
+          timestamp: true,
+          energiaAcumuladaKWh: true,
+          potenciaAtivaKW: true,
+          usina: { select: { apiFornecedor: true } },
         },
         orderBy: { timestamp: "asc" },
       });
 
-      // Se houverem leituras suficientes na telemetria, agrupa por horário (HH:MM)
-      if (telemetriasDia.length >= 5) {
-        const porHoraMap = new Map<string, { hora: string; potenciaTotalKW: number; tensaoA: number; tensaoB: number; tensaoC: number; porFornecedor: Record<string, number> }>();
-
-        telemetriasDia.forEach((t) => {
-          const horaStr = new Date(t.timestamp).toLocaleTimeString("pt-BR", {
-            timeZone: "America/Sao_Paulo",
-            hour: "2-digit",
-            minute: "2-digit",
-          });
-
-          const fornecedor = t.usina?.apiFornecedor || "OUTROS";
-          const potencia = t.potenciaAtivaKW || 0;
-
-          if (!porHoraMap.has(horaStr)) {
-            porHoraMap.set(horaStr, {
-              hora: horaStr,
-              potenciaTotalKW: 0,
-              tensaoA: t.tensaoCA_A || 220,
-              tensaoB: t.tensaoCA_B || 220,
-              tensaoC: t.tensaoCA_C || 220,
-              porFornecedor: {},
-            });
-          }
-
-          const point = porHoraMap.get(horaStr)!;
-          point.potenciaTotalKW += potencia;
-          point.porFornecedor[fornecedor] = (point.porFornecedor[fornecedor] || 0) + potencia;
-
-          distribuicaoFabricante[fornecedor] = (distribuicaoFabricante[fornecedor] || 0) + (t.energiaAcumuladaKWh || 0);
-        });
-
-        serieDiaria = Array.from(porHoraMap.values());
-      } else {
-        // Se para a data selecionada houver poucas leituras brutas (dias históricos), buscar MetricaDiariaUsina e gerar a curva parabólica de 15min
-        const metricasDia = await prisma.metricaDiariaUsina.findMany({
-          where: {
-            usinaId: { in: usinaIds },
-            data: { gte: startDay, lte: endDay },
-          },
-        });
-
-        const energiaTotalDiaKWh = metricasDia.reduce((acc, m) => acc + (m.energiaRealKWh || 0), 0) || (capTotalKWp * 4.4);
-        const potPicoEstimadaKW = (energiaTotalDiaKWh / 5.2);
-
-        // Sintetizar curva das 06:00 às 18:30 em passos de 15 min (51 pontos)
-        for (let minutes = 360; minutes <= 1110; minutes += 15) {
-          const h = Math.floor(minutes / 60);
-          const m = minutes % 60;
-          const horaStr = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
-
-          const normTime = (minutes - 360) / 750; // 0 a 1
-          const powerFactor = Math.pow(Math.sin(Math.PI * normTime), 1.8);
-          const potKW = parseFloat((potPicoEstimadaKW * powerFactor).toFixed(2));
-
-          const porFornecedor: Record<string, number> = {};
-          usinas.forEach(u => {
-            const f = u.apiFornecedor || "OUTROS";
-            const ratio = (u.capacidadeKWp || 1) / capTotalKWp;
-            porFornecedor[f] = parseFloat((potKW * ratio).toFixed(2));
-            distribuicaoFabricante[f] = (distribuicaoFabricante[f] || 0) + (energiaTotalDiaKWh * ratio);
-          });
-
-          serieDiaria.push({
-            hora: horaStr,
-            potenciaTotalKW: potKW,
-            tensaoA: 220,
-            tensaoB: 220,
-            tensaoC: 220,
-            porFornecedor,
-          });
-        }
-      }
-    }
-
-    // 3. Agregação Mensal (Geração Diária Acumulada no Mês em kWh/dia)
-    if (periodo === "MES" || periodo === "TUDO" || periodo === "DIA") {
-      const daysInMonth = new Date(ano, mes, 0).getDate();
-      const firstDayMonth = new Date(Date.UTC(ano, mes - 1, 1, 0, 0, 0));
-      const lastDayMonth = new Date(Date.UTC(ano, mes - 1, daysInMonth, 23, 59, 59));
-
-      const metricasMes = await prisma.metricaDiariaUsina.findMany({
-        where: {
-          usinaId: { in: usinaIds },
-          data: { gte: firstDayMonth, lte: lastDayMonth },
-        },
-        include: {
-          usina: { select: { apiFornecedor: true } },
-        },
-        orderBy: { data: "asc" },
-      });
-
-      // Inicializar todos os dias do mês de 01 a daysInMonth
-      const porDiaMap = new Map<string, { dia: string; totalKWh: number; porFornecedor: Record<string, number> }>();
+      // Inicializar mapa de todos os dias do mês de 01 a daysInMonth
+      const porDiaMap = new Map<number, { dia: string; diaNumero: number; totalKWh: number; porFornecedor: Record<string, number> }>();
       for (let d = 1; d <= daysInMonth; d++) {
-        const diaStr = `${String(d).padStart(2, "0")}/${String(mes).padStart(2, "0")}`;
-        porDiaMap.set(diaStr, {
+        const diaStr = `${pad(d)}/${pad(mes)}`;
+        porDiaMap.set(d, {
           dia: diaStr,
+          diaNumero: d,
           totalKWh: 0,
           porFornecedor: {},
         });
       }
 
-      // Preencher com métricas reais por dia
-      metricasMes.forEach((m) => {
-        const dObj = new Date(m.data);
-        const dayNum = dObj.getUTCDate();
-        const diaStr = `${String(dayNum).padStart(2, "0")}/${String(mes).padStart(2, "0")}`;
+      // Agrupar telemetrias por dia do mês no fuso de Brasília
+      const telemPorDiaUsina = new Map<string, Array<{ energiaAcumuladaKWh: number; potenciaAtivaKW: number; timestamp: Date; fornecedor: string }>>();
 
-        if (porDiaMap.has(diaStr)) {
-          const item = porDiaMap.get(diaStr)!;
-          const fornecedor = m.usina?.apiFornecedor || "OUTROS";
-          const valKWh = m.energiaRealKWh || 0;
+      telemetriasMes.forEach((t) => {
+        const dStr = new Date(t.timestamp).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" }); // YYYY-MM-DD
+        const dayNum = parseInt(dStr.split("-")[2], 10);
+        const key = `${dayNum}_${t.usinaId}`;
 
-          item.totalKWh = parseFloat((item.totalKWh + valKWh).toFixed(2));
-          item.porFornecedor[fornecedor] = parseFloat(((item.porFornecedor[fornecedor] || 0) + valKWh).toFixed(2));
+        if (!telemPorDiaUsina.has(key)) {
+          telemPorDiaUsina.set(key, []);
+        }
+        telemPorDiaUsina.get(key)!.push({
+          energiaAcumuladaKWh: t.energiaAcumuladaKWh,
+          potenciaAtivaKW: t.potenciaAtivaKW,
+          timestamp: t.timestamp,
+          fornecedor: t.usina?.apiFornecedor || "OUTROS",
+        });
+      });
+
+      // Calcular energia real para cada dia
+      telemPorDiaUsina.forEach((records, key) => {
+        const dayNum = parseInt(key.split("_")[0], 10);
+        const fornecedor = records[0]?.fornecedor || "OUTROS";
+        const energiaKWh = calculateUsinaEnergyKWh(records);
+
+        if (porDiaMap.has(dayNum)) {
+          const item = porDiaMap.get(dayNum)!;
+          item.totalKWh = parseFloat((item.totalKWh + energiaKWh).toFixed(2));
+          item.porFornecedor[fornecedor] = parseFloat(((item.porFornecedor[fornecedor] || 0) + energiaKWh).toFixed(2));
 
           if (periodo === "MES") {
-            distribuicaoFabricante[fornecedor] = (distribuicaoFabricante[fornecedor] || 0) + valKWh;
+            distribuicaoFabricante[fornecedor] = (distribuicaoFabricante[fornecedor] || 0) + energiaKWh;
           }
         }
       });
@@ -184,48 +258,103 @@ export async function GET(req: NextRequest) {
       serieMensal = Array.from(porDiaMap.values());
     }
 
-    // 4. Agregação Anual (Comparativo Mês a Mês em MWh para o ano selecionado vs ano anterior)
+    // 4. Agregação Anual (Comparativo Mês a Mês em MWh)
     if (periodo === "ANO" || periodo === "TUDO") {
-      const startYear = new Date(Date.UTC(ano - 1, 0, 1, 0, 0, 0));
-      const endYear = new Date(Date.UTC(ano, 11, 31, 23, 59, 59));
+      const pad = (n: number) => String(n).padStart(2, "0");
+      const firstDayCurYear = new Date(`${ano}-01-01T00:00:00-03:00`);
+      const lastDayCurYear = new Date(`${ano}-12-31T23:59:59.999-03:00`);
 
-      const metricasAnuais = await prisma.metricaDiariaUsina.findMany({
-        where: {
-          usinaId: { in: usinaIds },
-          data: { gte: startYear, lte: endYear },
-        },
-        include: {
-          usina: { select: { apiFornecedor: true } },
-        },
-      });
+      const firstDayPrevYear = new Date(`${ano - 1}-01-01T00:00:00-03:00`);
+      const lastDayPrevYear = new Date(`${ano - 1}-12-31T23:59:59.999-03:00`);
+
+      const [telemCurYear, telemPrevYear] = await Promise.all([
+        prisma.telemetria.findMany({
+          where: {
+            usinaId: { in: usinaIds },
+            timestamp: { gte: firstDayCurYear, lte: lastDayCurYear },
+          },
+          select: {
+            usinaId: true,
+            timestamp: true,
+            energiaAcumuladaKWh: true,
+            potenciaAtivaKW: true,
+            usina: { select: { apiFornecedor: true } },
+          },
+          orderBy: { timestamp: "asc" },
+        }),
+        prisma.telemetria.findMany({
+          where: {
+            usinaId: { in: usinaIds },
+            timestamp: { gte: firstDayPrevYear, lte: lastDayPrevYear },
+          },
+          select: {
+            usinaId: true,
+            timestamp: true,
+            energiaAcumuladaKWh: true,
+            potenciaAtivaKW: true,
+          },
+          orderBy: { timestamp: "asc" },
+        }),
+      ]);
 
       const mesesNome = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
       const geracaoPorMesAtual = new Array(12).fill(0);
       const geracaoPorMesAnterior = new Array(12).fill(0);
 
-      metricasAnuais.forEach((m) => {
-        const dObj = new Date(m.data);
-        const y = dObj.getUTCFullYear();
-        const mIdx = dObj.getUTCMonth();
-        const valMWh = (m.energiaRealKWh || 0) / 1000;
+      // Agrupar ano atual
+      const curGroup = new Map<string, Array<{ energiaAcumuladaKWh: number; potenciaAtivaKW: number; timestamp: Date; fornecedor: string }>>();
+      telemCurYear.forEach((t) => {
+        const dStr = new Date(t.timestamp).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+        const mIdx = parseInt(dStr.split("-")[1], 10) - 1;
+        const dNum = parseInt(dStr.split("-")[2], 10);
+        const key = `${mIdx}_${dNum}_${t.usinaId}`;
+        if (!curGroup.has(key)) curGroup.set(key, []);
+        curGroup.get(key)!.push({
+          energiaAcumuladaKWh: t.energiaAcumuladaKWh,
+          potenciaAtivaKW: t.potenciaAtivaKW,
+          timestamp: t.timestamp,
+          fornecedor: t.usina?.apiFornecedor || "OUTROS",
+        });
+      });
 
-        if (y === ano) {
-          geracaoPorMesAtual[mIdx] += valMWh;
-          const f = m.usina?.apiFornecedor || "OUTROS";
-          distribuicaoFabricante[f] = (distribuicaoFabricante[f] || 0) + (m.energiaRealKWh || 0);
-        } else if (y === ano - 1) {
-          geracaoPorMesAnterior[mIdx] += valMWh;
+      curGroup.forEach((records, key) => {
+        const mIdx = parseInt(key.split("_")[0], 10);
+        const energiaKWh = calculateUsinaEnergyKWh(records);
+        geracaoPorMesAtual[mIdx] += energiaKWh / 1000; // MWh
+
+        const fornecedor = records[0]?.fornecedor || "OUTROS";
+        if (periodo === "ANO") {
+          distribuicaoFabricante[fornecedor] = (distribuicaoFabricante[fornecedor] || 0) + energiaKWh;
         }
       });
 
-      serieAnual = mesesNome.map((mNome, idx) => {
-        return {
-          mes: mNome,
-          mesNumero: idx + 1,
-          geracaoMWh: parseFloat(geracaoPorMesAtual[idx].toFixed(2)),
-          geracaoAnoAnteriorMWh: parseFloat(geracaoPorMesAnterior[idx].toFixed(2)),
-        };
+      // Agrupar ano anterior
+      const prevGroup = new Map<string, Array<{ energiaAcumuladaKWh: number; potenciaAtivaKW: number; timestamp: Date }>>();
+      telemPrevYear.forEach((t) => {
+        const dStr = new Date(t.timestamp).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+        const mIdx = parseInt(dStr.split("-")[1], 10) - 1;
+        const dNum = parseInt(dStr.split("-")[2], 10);
+        const key = `${mIdx}_${dNum}_${t.usinaId}`;
+        if (!prevGroup.has(key)) prevGroup.set(key, []);
+        prevGroup.get(key)!.push({
+          energiaAcumuladaKWh: t.energiaAcumuladaKWh,
+          potenciaAtivaKW: t.potenciaAtivaKW,
+          timestamp: t.timestamp,
+        });
       });
+
+      prevGroup.forEach((records, key) => {
+        const mIdx = parseInt(key.split("_")[0], 10);
+        const energiaKWh = calculateUsinaEnergyKWh(records);
+        geracaoPorMesAnterior[mIdx] += energiaKWh / 1000; // MWh
+      });
+
+      serieAnual = mesesNome.map((mNome, idx) => ({
+        mes: mNome,
+        mesNumero: idx + 1,
+        geracaoMWh: parseFloat(geracaoPorMesAtual[idx].toFixed(2)),
+        geracaoAnoAnteriorMWh: parseFloat(geracaoPorMesAnterior[idx].toFixed(2)),
+      }));
     }
 
     // Calcular percentuais por fabricante
@@ -242,6 +371,12 @@ export async function GET(req: NextRequest) {
       capacidadeInstaladaTotalKWp: capTotalKWp,
       participacaoFabricantes,
       metaData: { ano, mes, dia },
+      // Solis Style KPIs
+      producaoDiariaKWh: parseFloat(producaoDiariaTotalKWh.toFixed(2)),
+      producaoOntemKWh: parseFloat(producaoOntemTotalKWh.toFixed(2)),
+      comparativoOntemPct,
+      ganhoDiarioBRL,
+      horasCargaCompletaHSP,
       serieDiaria,
       serieMensal,
       serieAnual,

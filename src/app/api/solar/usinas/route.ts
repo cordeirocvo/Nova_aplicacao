@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { HistoricalBackfillService } from "@/lib/services/historicalBackfillService";
 
 export const runtime = 'nodejs';
 
@@ -89,12 +88,6 @@ export async function POST(req: Request) {
     });
 
     console.log("[DEBUG API] Usina criada com sucesso:", usina.id);
-
-    // Dispara a sincronização de 3 anos de histórico em segundo plano
-    HistoricalBackfillService.backfillUsina(usina.id, 3).catch(err => {
-      console.error("[BACKGROUND BACKFILL] Erro no backfill automático de 3 anos:", err);
-    });
-
     return NextResponse.json(usina);
   } catch (error: any) {
     console.error("[CRITICAL API ERROR] Falha ao criar usina:", error);

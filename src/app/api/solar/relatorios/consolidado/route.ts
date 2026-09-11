@@ -25,6 +25,8 @@ function calculateUsinaEnergyKWh(records: Array<{ energiaAcumuladaKWh: number; p
     const max = Math.max(...energias);
     const min = Math.min(...energias);
     const delta = max - min;
+    // Em telemetrias de inversores onde a energia zera à meia-noite, max representa a geração do dia
+    if (delta > 0.5 * max) return max;
     if (delta > 0) return delta;
     if (max > 0) return max;
   }
@@ -96,9 +98,9 @@ export async function GET(req: NextRequest) {
       orderBy: { timestamp: "asc" },
     });
 
-    // Agrupamento por horário (HH:MM) para o gráfico diário
+    // Agrupamento por horário (HH:MM) desduplicando leituras da mesma usina no mesmo minuto
     if (telemetriasDia.length > 0) {
-      const porHoraMap = new Map<string, { hora: string; potenciaTotalKW: number; tensaoA: number; tensaoB: number; tensaoC: number; porFornecedor: Record<string, number> }>();
+      const porHoraUsinaMap = new Map<string, Map<string, { potencia: number; fornecedor: string; tensaoA: number; tensaoB: number; tensaoC: number }>>();
 
       telemetriasDia.forEach((t) => {
         const horaStr = new Date(t.timestamp).toLocaleTimeString("pt-BR", {
@@ -110,29 +112,49 @@ export async function GET(req: NextRequest) {
         const fornecedor = t.usina?.apiFornecedor || "OUTROS";
         const potencia = Math.max(0, t.potenciaAtivaKW || 0);
 
-        if (!porHoraMap.has(horaStr)) {
-          porHoraMap.set(horaStr, {
-            hora: horaStr,
-            potenciaTotalKW: 0,
+        if (!porHoraUsinaMap.has(horaStr)) {
+          porHoraUsinaMap.set(horaStr, new Map());
+        }
+
+        const usinaMap = porHoraUsinaMap.get(horaStr)!;
+        // Se houver mais de uma leitura para a mesma usina no mesmo horário, seleciona a de maior precisão/potência
+        if (!usinaMap.has(t.usinaId) || usinaMap.get(t.usinaId)!.potencia < potencia) {
+          usinaMap.set(t.usinaId, {
+            potencia,
+            fornecedor,
             tensaoA: t.tensaoCA_A || 220,
             tensaoB: t.tensaoCA_B || 220,
             tensaoC: t.tensaoCA_C || 220,
-            porFornecedor: {},
           });
         }
-
-        const point = porHoraMap.get(horaStr)!;
-        point.potenciaTotalKW = parseFloat((point.potenciaTotalKW + potencia).toFixed(2));
-        point.porFornecedor[fornecedor] = parseFloat(((point.porFornecedor[fornecedor] || 0) + potencia).toFixed(2));
-
-        if (t.tensaoCA_A) point.tensaoA = t.tensaoCA_A;
-        if (t.tensaoCA_B) point.tensaoB = t.tensaoCA_B;
-        if (t.tensaoCA_C) point.tensaoC = t.tensaoCA_C;
       });
 
-      serieDiaria = Array.from(porHoraMap.values());
+      const porHoraArray: any[] = [];
+      porHoraUsinaMap.forEach((usinaMap, horaStr) => {
+        let potenciaTotal = 0;
+        let vA = 0, vB = 0, vC = 0;
+        const porFornecedor: Record<string, number> = {};
+
+        usinaMap.forEach((data) => {
+          potenciaTotal += data.potencia;
+          porFornecedor[data.fornecedor] = (porFornecedor[data.fornecedor] || 0) + data.potencia;
+          if (data.tensaoA > 0) vA = data.tensaoA;
+          if (data.tensaoB > 0) vB = data.tensaoB;
+          if (data.tensaoC > 0) vC = data.tensaoC;
+        });
+
+        porHoraArray.push({
+          hora: horaStr,
+          potenciaTotalKW: parseFloat(potenciaTotal.toFixed(2)),
+          tensaoA: vA || 220,
+          tensaoB: vB || 220,
+          tensaoC: vC || 220,
+          porFornecedor,
+        });
+      });
+
+      serieDiaria = porHoraArray.sort((a, b) => a.hora.localeCompare(b.hora));
     } else {
-      // Se não há dados reais para o dia, a série diária fica vazia (sem curva sintética falsa)
       serieDiaria = [];
     }
 
@@ -260,7 +282,6 @@ export async function GET(req: NextRequest) {
 
     // 4. Agregação Anual (Comparativo Mês a Mês em MWh)
     if (periodo === "ANO" || periodo === "TUDO") {
-      const pad = (n: number) => String(n).padStart(2, "0");
       const firstDayCurYear = new Date(`${ano}-01-01T00:00:00-03:00`);
       const lastDayCurYear = new Date(`${ano}-12-31T23:59:59.999-03:00`);
 

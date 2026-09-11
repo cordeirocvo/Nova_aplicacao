@@ -65,38 +65,31 @@ export class HuaweiSyncService {
             fs.appendFileSync(logFile, `Retornados ${allDevKpis.length} KPIs de dispositivos.\n`);
           }
 
-          // 4. Lote de KPIs históricos dos dispositivos (sincronização delta inteligente)
+          // 4. Lote de KPIs históricos dos dispositivos (sincronização dos últimos 3 dias para histórico contínuo)
           let allDevHistory: any[] = [];
           if (inverters.length > 0) {
             const allDevIds = inverters.map((i: any) => i.id || i.devId).filter(Boolean).join(",");
-            let startTime = Date.now() - 24 * 60 * 60 * 1000;
-            const endTime = Date.now();
+            const now = Date.now();
+            const daysToSync: { start: number; end: number; label: string }[] = [];
 
-            const lastTelemetries = await Promise.all(
-              group.map(u => 
-                prisma.telemetria.findFirst({
-                  where: { usinaId: u.id },
-                  orderBy: { timestamp: "desc" },
-                  select: { timestamp: true }
-                })
-              )
-            );
-            const validTimes = lastTelemetries.filter(Boolean).map(t => t!.timestamp.getTime());
-            if (validTimes.length === group.length) {
-              const minLastTime = Math.min(...validTimes);
-              startTime = Math.max(minLastTime, Date.now() - 24 * 60 * 60 * 1000);
+            for (let d = 2; d >= 0; d--) {
+              const targetDay = new Date(now - d * 24 * 3600 * 1000);
+              const dateStr = targetDay.toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+              const startMs = new Date(`${dateStr}T00:00:00-03:00`).getTime();
+              const endMs = d === 0 ? now : new Date(`${dateStr}T23:59:59.999-03:00`).getTime();
+              daysToSync.push({ start: startMs, end: endMs, label: dateStr });
             }
 
-            // Se o intervalo de delta for menor que 5 minutos, podemos pular a chamada de histórico
-            if (endTime - startTime < 5 * 60 * 1000) {
-              fs.appendFileSync(logFile, `[HUAWEI-SYNC] Delta recente detectado (${Math.round((endTime - startTime)/1000)}s). Pulando consulta histórica para evitar sobrecarga.\n`);
-            } else {
-              fs.appendFileSync(logFile, `Consultando KPIs históricos delta para ${inverters.length} inversores a partir de ${new Date(startTime).toLocaleString("pt-BR", {timeZone: "America/Sao_Paulo"})}...\n`);
+            for (const day of daysToSync) {
               try {
-                allDevHistory = await HuaweiIntegration.getDeviceHistoryData(allDevIds, startTime, endTime, login.token, login.cookie);
-                fs.appendFileSync(logFile, `Retornados ${allDevHistory.length} registros de KPIs históricos de dispositivos.\n`);
+                fs.appendFileSync(logFile, `Consultando KPIs históricos para ${day.label}...\n`);
+                const devHist = await HuaweiIntegration.getDeviceHistoryData(allDevIds, day.start, day.end, login.token, login.cookie);
+                if (devHist && Array.isArray(devHist) && devHist.length > 0) {
+                  allDevHistory.push(...devHist);
+                  fs.appendFileSync(logFile, `Retornados ${devHist.length} registros para ${day.label}.\n`);
+                }
               } catch (hErr) {
-                fs.appendFileSync(logFile, `Erro ao buscar KPIs históricos: ${hErr}\n`);
+                fs.appendFileSync(logFile, `Erro ao buscar KPIs históricos para ${day.label}: ${hErr}\n`);
               }
             }
           }

@@ -284,11 +284,20 @@ export default function GraficoSolisStyle({
             </span>
           </div>
 
-          <div className="flex items-baseline gap-1">
+          <div className="flex items-baseline gap-1.5 flex-wrap">
             <span className="text-2xl font-black text-white font-mono tracking-tight">
-              {formatNumberBR(producaoKWh, 1)}
+              {producaoKWh >= 1000
+                ? formatNumberBR(producaoKWh / 1000, 2)
+                : formatNumberBR(producaoKWh, 1)}
             </span>
-            <span className="text-xs font-bold text-slate-400 font-mono">kWh</span>
+            <span className="text-xs font-bold text-slate-400 font-mono">
+              {producaoKWh >= 1000 ? "MWh" : "kWh"}
+            </span>
+            {producaoKWh >= 1000 && (
+              <span className="text-[11px] font-semibold text-slate-400 font-mono">
+                ({formatNumberBR(producaoKWh, 1)} kWh)
+              </span>
+            )}
           </div>
 
           <div className="flex items-center gap-1.5 text-xs">
@@ -431,7 +440,9 @@ export default function GraficoSolisStyle({
                                 Potência:
                               </span>
                               <span className="font-extrabold text-[#ff7a00]">
-                                {formatNumberBR(data.potenciaTotalKW, 2)} kW
+                                {data.potenciaTotalKW >= 1000
+                                  ? `${formatNumberBR(data.potenciaTotalKW / 1000, 2)} MW (${formatNumberBR(data.potenciaTotalKW, 1)} kW)`
+                                  : `${formatNumberBR(data.potenciaTotalKW, 2)} kW`}
                               </span>
                             </div>
                             {data.porFornecedor && Object.keys(data.porFornecedor).length > 1 && (

@@ -163,6 +163,7 @@ export default function DiarioObrasPage() {
   const [showFuncionariosManager, setShowFuncionariosManager] = useState(false);
   const [newFuncionario, setNewFuncionario] = useState({ nome: "", funcao: "", empresa: "PROPRIA", contato: "" });
   const [exportingPdf, setExportingPdf] = useState<string | null>(null);
+  const [exportingLancamentoPdf, setExportingLancamentoPdf] = useState<string | null>(null);
 
   // RDO Diário form sections state
   const [rdoClimas, setRdoClimas] = useState<Array<{ periodo: string; condicao: string; impacto: string }>>([
@@ -809,6 +810,33 @@ export default function DiarioObrasPage() {
       alert("Erro ao conectar ao servidor para gerar o PDF: " + (err.message || "Erro desconhecido"));
     } finally {
       setExportingPdf(null);
+    }
+  };
+
+  // Exporta PDF de um Apontamento de Atividade Individual
+  const handleExportLancamentoPdf = async (logId: string) => {
+    setExportingLancamentoPdf(logId);
+    try {
+      const res = await fetch(`/api/diario/lancamentos/${logId}/pdf`);
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        window.open(url, "_blank");
+      } else {
+        const text = await res.text();
+        let errorMsg = "Erro ao gerar PDF da atividade.";
+        try {
+          const parsed = JSON.parse(text);
+          if (parsed.error) errorMsg = parsed.error;
+        } catch {
+          if (text) errorMsg = text;
+        }
+        alert("Erro ao gerar PDF da atividade: " + errorMsg);
+      }
+    } catch (err: any) {
+      alert("Erro ao conectar ao servidor para gerar o PDF: " + (err.message || "Erro desconhecido"));
+    } finally {
+      setExportingLancamentoPdf(null);
     }
   };
 
@@ -2137,6 +2165,7 @@ export default function DiarioObrasPage() {
                                   <th className="p-3 text-center">Status</th>
                                   <th className="p-3 text-center">Progresso</th>
                                   <th className="p-3 text-left">Relato / Apontamento</th>
+                                  <th className="p-3 text-center">Relatório</th>
                                 </tr>
                               </thead>
                               <tbody className="divide-y divide-slate-100">
@@ -2182,6 +2211,18 @@ export default function DiarioObrasPage() {
                                             ))}
                                           </div>
                                         )}
+                                      </td>
+                                      <td className="p-3 text-center">
+                                        <button
+                                          type="button"
+                                          onClick={() => handleExportLancamentoPdf(log.id)}
+                                          disabled={exportingLancamentoPdf === log.id}
+                                          className="px-2.5 py-1.5 bg-[#0f172a] hover:bg-[#f15a24] text-white text-[10px] font-bold rounded-lg inline-flex items-center gap-1 shadow-xs transition-colors cursor-pointer disabled:opacity-50 whitespace-nowrap"
+                                          title="Gerar PDF da Atividade Executada"
+                                        >
+                                          <FileText className="w-3 h-3" />
+                                          {exportingLancamentoPdf === log.id ? "Gerando..." : "PDF Atividade"}
+                                        </button>
                                       </td>
                                     </tr>
                                   );
@@ -2739,9 +2780,18 @@ export default function DiarioObrasPage() {
                     );
                   })()}
                   
-                  <div className="flex justify-between text-[10px] font-bold text-slate-400 pt-1 border-t border-slate-200">
-                    <span>{fmtDate(log.data)}</span>
-                    <span className="text-slate-600">{log.progresso}% progresso</span>
+                  <div className="flex justify-between items-center text-[10px] font-bold text-slate-400 pt-2 border-t border-slate-200">
+                    <span>{fmtDate(log.data)} • <span className="text-slate-700">{log.progresso}% progresso</span></span>
+                    <button
+                      type="button"
+                      onClick={() => handleExportLancamentoPdf(log.id)}
+                      disabled={exportingLancamentoPdf === log.id}
+                      className="bg-[#0f172a] hover:bg-[#f15a24] text-white text-[9px] font-bold px-2 py-1 rounded-md transition-colors flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                      title="Gerar PDF desta atividade executada"
+                    >
+                      <FileText className="w-2.5 h-2.5" />
+                      {exportingLancamentoPdf === log.id ? "..." : "PDF Atividade"}
+                    </button>
                   </div>
                 </div>
               ))}
@@ -2902,7 +2952,17 @@ export default function DiarioObrasPage() {
                     </button>
                   </td>
                   <td className="p-3 text-center">
-                    <div className="flex justify-center gap-1.5 flex-wrap">
+                    <div className="flex justify-center items-center gap-1.5 flex-wrap">
+                      <button
+                        type="button"
+                        onClick={() => handleExportLancamentoPdf(log.id)}
+                        disabled={exportingLancamentoPdf === log.id}
+                        className="text-[9px] bg-[#0f172a] hover:bg-[#f15a24] text-white px-2 py-1 rounded-md font-extrabold flex items-center gap-1 transition-colors cursor-pointer shadow-2xs disabled:opacity-50 whitespace-nowrap"
+                        title="Gerar PDF deste Apontamento de Atividade"
+                      >
+                        <FileText className="w-2.5 h-2.5" />
+                        {exportingLancamentoPdf === log.id ? "..." : "PDF"}
+                      </button>
                       {log.fotos.map((url: string, fIdx: number) => (
                         <a key={fIdx} href={url} target="_blank" rel="noreferrer" className="text-[9px] bg-blue-50 text-blue-700 hover:bg-blue-100 px-1.5 py-0.5 rounded font-black">
                           📸 Foto {fIdx + 1}
@@ -2913,14 +2973,20 @@ export default function DiarioObrasPage() {
                           <Mic className="w-2.5 h-2.5" /> Voz {aIdx + 1}
                         </a>
                       ))}
-                      {log.fotos.length === 0 && log.audios.length === 0 && (
-                        <span className="text-slate-400 italic text-[10px]">Sem anexos</span>
-                      )}
                     </div>
                   </td>
                   {isSupervisor && (
                     <td className="p-3 text-center sticky right-0 bg-white border-l border-slate-100 z-10 shadow-sm">
                       <div className="flex items-center justify-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => handleExportLancamentoPdf(log.id)}
+                          disabled={exportingLancamentoPdf === log.id}
+                          className="p-1.5 text-slate-700 bg-slate-100 hover:bg-[#f15a24] hover:text-white rounded-lg transition-all cursor-pointer border border-slate-300 shadow-2xs disabled:opacity-50"
+                          title="Gerar PDF da Atividade Executada"
+                        >
+                          <FileText className="w-3.5 h-3.5" />
+                        </button>
                         <button
                           onClick={() => openEditRdoModal(log)}
                           className="p-1.5 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-all cursor-pointer border border-blue-200"
@@ -4843,6 +4909,7 @@ export default function DiarioObrasPage() {
                                 <th className="p-3 text-center">Status</th>
                                 <th className="p-3 text-center">Progresso</th>
                                 <th className="p-3 text-left">Relato / Apontamento</th>
+                                <th className="p-3 text-center">Relatório</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
@@ -4871,12 +4938,24 @@ export default function DiarioObrasPage() {
                                     </td>
                                     <td className="p-3 text-center font-black text-slate-800">{prog}%</td>
                                     <td className="p-3 text-slate-600">{log.descricao || "Atividade executada no canteiro."}</td>
+                                    <td className="p-3 text-center">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleExportLancamentoPdf(log.id)}
+                                        disabled={exportingLancamentoPdf === log.id}
+                                        className="px-2.5 py-1.5 bg-[#0f172a] hover:bg-[#f15a24] text-white text-[10px] font-bold rounded-lg inline-flex items-center gap-1 shadow-xs transition-colors cursor-pointer disabled:opacity-50 whitespace-nowrap"
+                                        title="Gerar PDF desta atividade executada no dia"
+                                      >
+                                        <FileText className="w-3 h-3" />
+                                        {exportingLancamentoPdf === log.id ? "Gerando..." : "PDF Atividade"}
+                                      </button>
+                                    </td>
                                   </tr>
                                 );
                               })}
                               {targetLogs.length === 0 && (
                                 <tr>
-                                  <td colSpan={5} className="p-8 text-center text-slate-400 italic">
+                                  <td colSpan={6} className="p-8 text-center text-slate-400 italic">
                                     Nenhum apontamento registrado para {fmtDate(reportDate)}.
                                   </td>
                                 </tr>

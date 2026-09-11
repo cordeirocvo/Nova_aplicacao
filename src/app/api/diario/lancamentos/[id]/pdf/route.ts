@@ -9,425 +9,648 @@ import { renderToBuffer, Document, Page, Text, View, StyleSheet, Image } from "@
 
 export const dynamic = "force-dynamic";
 
+// ─── Cores Cordeiro ──────────────────────────────────────────────────────────
+const ORANGE = "#f15a24";
+const NAVY   = "#0f172a";
+const SLATE  = "#334155";
+const LIGHT  = "#f8fafc";
+const BORDER = "#e2e8f0";
+
 const s = StyleSheet.create({
   page: {
-    paddingTop: 24,
-    paddingBottom: 34,
-    paddingHorizontal: 26,
+    paddingTop: 0,
+    paddingBottom: 36,
+    paddingHorizontal: 0,
     fontFamily: "Helvetica",
     fontSize: 8,
-    color: "#334155",
+    color: SLATE,
     backgroundColor: "#ffffff",
   } as any,
 
-  // Discrete & Modern Header
-  header: {
+  // ── Topo colorido ──────────────────────────────────────────────────────────
+  topBar: {
+    backgroundColor: NAVY,
+    paddingHorizontal: 28,
+    paddingTop: 18,
+    paddingBottom: 18,
     flexDirection: "row",
+    alignItems: "center",
     justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 10,
-    paddingBottom: 8,
-    borderBottomWidth: 1.5,
-    borderBottomColor: "#f15a24",
+    marginBottom: 0,
   } as any,
-  logoContainer: {
+  topLeft: {
     flexDirection: "row",
     alignItems: "center",
+    flex: 1,
   } as any,
   logo: {
-    width: 140,
-    height: 42,
+    width: 100,
+    height: 30,
     objectFit: "contain",
   } as any,
-  headerInfo: {
-    flex: 1,
-    marginLeft: 12,
+  logoSep: {
+    width: 1,
+    height: 28,
+    backgroundColor: "#475569",
+    marginHorizontal: 14,
   } as any,
-  brandTag: {
-    fontSize: 6.5,
+  topTexts: {
+    flexDirection: "column",
+  } as any,
+  topLabel: {
+    fontSize: 6,
     fontFamily: "Helvetica-Bold",
-    color: "#f15a24",
-    letterSpacing: 0.8,
+    color: "#94a3b8",
     textTransform: "uppercase",
-    marginBottom: 1,
-  } as any,
-  rdoTitle: {
-    fontSize: 11,
-    fontFamily: "Helvetica-Bold",
-    color: "#0f172a",
+    letterSpacing: 0.8,
     marginBottom: 2,
   } as any,
-  metaText: {
-    fontSize: 7.5,
-    color: "#64748b",
-  } as any,
-  badge: {
-    paddingVertical: 3,
-    paddingHorizontal: 8,
-    borderRadius: 8,
-    fontSize: 7.5,
+  topTitle: {
+    fontSize: 13,
     fontFamily: "Helvetica-Bold",
-    textAlign: "center",
+    color: "#ffffff",
+  } as any,
+  topRight: {
+    flexDirection: "column",
+    alignItems: "flex-end",
+  } as any,
+  statusPill: {
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    marginBottom: 4,
+  } as any,
+  statusText: {
+    fontSize: 7,
+    fontFamily: "Helvetica-Bold",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  } as any,
+  topMeta: {
+    fontSize: 6.5,
+    color: "#94a3b8",
+    textAlign: "right",
   } as any,
 
-  // KPI Metrics Banner
-  kpiRow: {
+  // ── Faixa laranja fina ────────────────────────────────────────────────────
+  accentBar: {
+    height: 4,
+    backgroundColor: ORANGE,
+    marginBottom: 0,
+  } as any,
+
+  // ── KPI Cards ─────────────────────────────────────────────────────────────
+  kpiStrip: {
     flexDirection: "row",
-    marginBottom: 10,
+    paddingHorizontal: 28,
+    paddingVertical: 12,
+    backgroundColor: "#f1f5f9",
+    borderBottomWidth: 1,
+    borderBottomColor: BORDER,
+    marginBottom: 16,
   } as any,
   kpiCard: {
     flex: 1,
-    backgroundColor: "#f8fafc",
-    borderRadius: 4,
-    padding: 6,
-    marginRight: 6,
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-    borderLeftWidth: 3,
-    borderLeftColor: "#f15a24",
+    flexDirection: "column",
+    paddingRight: 12,
+    borderRightWidth: 1,
+    borderRightColor: "#cbd5e1",
+    marginRight: 12,
   } as any,
   kpiCardLast: {
     flex: 1,
-    backgroundColor: "#f8fafc",
-    borderRadius: 4,
-    padding: 6,
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-    borderLeftWidth: 3,
-    borderLeftColor: "#0f172a",
+    flexDirection: "column",
   } as any,
-  kpiTitle: {
+  kpiLabel: {
     fontSize: 6,
     fontFamily: "Helvetica-Bold",
-    color: "#64748b",
+    color: "#94a3b8",
     textTransform: "uppercase",
-    letterSpacing: 0.4,
+    letterSpacing: 0.5,
+    marginBottom: 2,
   } as any,
-  kpiVal: {
-    fontSize: 8.5,
+  kpiValue: {
+    fontSize: 9,
     fontFamily: "Helvetica-Bold",
-    color: "#0f172a",
-    marginTop: 2,
+    color: NAVY,
+  } as any,
+  kpiValueAccent: {
+    fontSize: 9,
+    fontFamily: "Helvetica-Bold",
+    color: ORANGE,
   } as any,
 
-  // Modern Section Styles
-  sec: {
-    marginBottom: 10,
+  // ── Content ────────────────────────────────────────────────────────────────
+  content: {
+    paddingHorizontal: 28,
   } as any,
-  stitContainer: {
+
+  section: {
+    marginBottom: 14,
+  } as any,
+
+  sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f8fafc",
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 3,
-    borderLeftWidth: 3,
-    borderLeftColor: "#f15a24",
-    borderWidth: 1,
-    borderColor: "#f1f5f9",
-    marginBottom: 5,
+    marginBottom: 7,
+    paddingBottom: 4,
+    borderBottomWidth: 1.5,
+    borderBottomColor: ORANGE,
   } as any,
-  stit: {
-    fontSize: 8.5,
-    fontFamily: "Helvetica-Bold",
-    color: "#0f172a",
+  sectionAccent: {
+    width: 3,
+    height: 12,
+    backgroundColor: ORANGE,
+    borderRadius: 2,
+    marginRight: 6,
   } as any,
-
-  // Content Cards
-  textCard: {
-    backgroundColor: "#ffffff",
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: "#cbd5e1",
-    padding: 8,
+  sectionTitle: {
     fontSize: 8,
-    color: "#1e293b",
-    lineHeight: 1.4,
+    fontFamily: "Helvetica-Bold",
+    color: NAVY,
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
   } as any,
 
-  infoBox: {
-    backgroundColor: "#f8fafc",
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-    padding: 6,
-    marginBottom: 6,
-  } as any,
-
-  row: {
+  // ── Campos ─────────────────────────────────────────────────────────────────
+  fieldRow: {
     flexDirection: "row",
-    marginBottom: 4,
+    marginBottom: 5,
+    alignItems: "flex-start",
   } as any,
   fieldLabel: {
+    fontSize: 7,
     fontFamily: "Helvetica-Bold",
-    fontSize: 7.5,
-    color: "#475569",
-    width: 130,
+    color: "#64748b",
+    width: 110,
+    paddingTop: 0.5,
   } as any,
   fieldValue: {
     fontSize: 7.5,
-    color: "#0f172a",
+    color: NAVY,
     flex: 1,
+    fontFamily: "Helvetica",
+  } as any,
+  fieldValueBold: {
+    fontSize: 7.5,
+    color: NAVY,
+    flex: 1,
+    fontFamily: "Helvetica-Bold",
   } as any,
 
-  // Discrete & Sleek Footer
-  foot: {
+  // ── Caixa de texto ─────────────────────────────────────────────────────────
+  textBox: {
+    backgroundColor: LIGHT,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: BORDER,
+    borderLeftWidth: 3,
+    borderLeftColor: ORANGE,
+    padding: 9,
+    fontSize: 8,
+    color: SLATE,
+    lineHeight: 1.5,
+  } as any,
+
+  // ── Equipamento ────────────────────────────────────────────────────────────
+  eqpBox: {
+    backgroundColor: "#fffbf7",
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: "#fed7aa",
+    padding: 8,
+    marginBottom: 6,
+  } as any,
+  eqpRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 3,
+  } as any,
+  eqpBadge: {
+    backgroundColor: "#ffedd5",
+    borderRadius: 3,
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+    marginRight: 8,
+  } as any,
+  eqpBadgeText: {
+    fontSize: 6.5,
+    fontFamily: "Helvetica-Bold",
+    color: "#c2410c",
+    textTransform: "uppercase",
+  } as any,
+  eqpName: {
+    fontSize: 8,
+    fontFamily: "Helvetica-Bold",
+    color: NAVY,
+    flex: 1,
+  } as any,
+  horimetroRow: {
+    flexDirection: "row",
+    backgroundColor: "#fff7ed",
+    borderRadius: 3,
+    padding: 5,
+    marginTop: 4,
+  } as any,
+  hItem: {
+    flex: 1,
+    alignItems: "center",
+  } as any,
+  hSep: {
+    width: 1,
+    backgroundColor: "#fed7aa",
+    marginHorizontal: 8,
+  } as any,
+  hLabel: {
+    fontSize: 6,
+    fontFamily: "Helvetica-Bold",
+    color: "#94a3b8",
+    textTransform: "uppercase",
+    marginBottom: 2,
+  } as any,
+  hValue: {
+    fontSize: 9,
+    fontFamily: "Helvetica-Bold",
+    color: "#c2410c",
+  } as any,
+  hTotal: {
+    fontSize: 7.5,
+    fontFamily: "Helvetica-Bold",
+    color: "#15803d",
+  } as any,
+
+  // ── Comentário Supervisor ──────────────────────────────────────────────────
+  commentBox: {
+    backgroundColor: "#fffbeb",
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: "#fcd34d",
+    borderLeftWidth: 3,
+    borderLeftColor: "#d97706",
+    padding: 8,
+    fontSize: 8,
+    color: "#92400e",
+    lineHeight: 1.4,
+  } as any,
+
+  // ── Foto Grid (2 colunas grandes) ─────────────────────────────────────────
+  photoGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+  } as any,
+  photoItem: {
+    width: 258,
+    height: 175,
+    borderRadius: 5,
+    objectFit: "cover",
+    borderWidth: 1,
+    borderColor: BORDER,
+  } as any,
+
+  // ── Fotos Horímetro ────────────────────────────────────────────────────────
+  hPhotoRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 8,
+  } as any,
+  hPhotoBlock: {
+    flexDirection: "column",
+  } as any,
+  hPhotoLabel: {
+    fontSize: 6.5,
+    fontFamily: "Helvetica-Bold",
+    color: "#64748b",
+    marginBottom: 3,
+    textTransform: "uppercase",
+  } as any,
+  hPhoto: {
+    width: 118,
+    height: 82,
+    borderRadius: 4,
+    objectFit: "cover",
+    borderWidth: 1,
+    borderColor: BORDER,
+  } as any,
+
+  // ── Contexto do Canteiro ───────────────────────────────────────────────────
+  contextRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 3,
+  } as any,
+  contextChip: {
+    backgroundColor: LIGHT,
+    borderRadius: 3,
+    borderWidth: 1,
+    borderColor: BORDER,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+  } as any,
+  contextChipText: {
+    fontSize: 7,
+    color: SLATE,
+  } as any,
+
+  // ── Rodapé ─────────────────────────────────────────────────────────────────
+  footer: {
     position: "absolute",
     bottom: 12,
-    left: 26,
-    right: 26,
+    left: 28,
+    right: 28,
     flexDirection: "row",
     justifyContent: "space-between",
-    color: "#94a3b8",
-    fontSize: 6.5,
+    alignItems: "center",
     borderTopWidth: 0.5,
     borderTopColor: "#e2e8f0",
-    paddingTop: 4,
+    paddingTop: 5,
+  } as any,
+  footerLeft: {
+    fontSize: 6.5,
+    color: "#94a3b8",
+  } as any,
+  footerRight: {
+    fontSize: 6.5,
+    color: "#94a3b8",
   } as any,
 });
 
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 function dateFmt(d: any): string {
   if (!d) return "-";
   const iso = typeof d === "string" ? d : (d as Date).toISOString();
-  const parts = iso.split("T")[0].split("-");
-  return parts[2] + "/" + parts[1] + "/" + parts[0];
+  const [y, m, day] = iso.split("T")[0].split("-");
+  return `${day}/${m}/${y}`;
 }
 
 function getWeekDay(d: any): string {
+  const days = ["Domingo","Segunda-feira","Terça-feira","Quarta-feira","Quinta-feira","Sexta-feira","Sábado"];
   if (!d) return "";
-  const days = ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"];
-  const dt = new Date(d);
-  return days[dt.getUTCDay()] || "";
+  return days[new Date(d).getUTCDay()] || "";
 }
 
 async function resolveImageToBase64(srcUrl: string): Promise<string | null> {
   if (!srcUrl) return null;
   try {
     if (srcUrl.startsWith("data:image")) return srcUrl;
-
     if (srcUrl.startsWith("/") || srcUrl.startsWith("uploads/")) {
-      const cleanPath = srcUrl.startsWith("/") ? srcUrl.slice(1) : srcUrl;
-      const localFilePath = path.join(process.cwd(), "public", cleanPath);
-      if (fs.existsSync(localFilePath)) {
-        const fileBuf = fs.readFileSync(localFilePath);
-        const ext = path.extname(localFilePath).toLowerCase().replace(".", "");
+      const clean = srcUrl.startsWith("/") ? srcUrl.slice(1) : srcUrl;
+      const local = path.join(process.cwd(), "public", clean);
+      if (fs.existsSync(local)) {
+        const buf = fs.readFileSync(local);
+        const ext = path.extname(local).toLowerCase().replace(".", "");
         const mime = ext === "png" ? "image/png" : ext === "svg" ? "image/svg+xml" : "image/jpeg";
-        return `data:${mime};base64,${fileBuf.toString("base64")}`;
+        return `data:${mime};base64,${buf.toString("base64")}`;
       }
     }
-
     if (srcUrl.startsWith("http://") || srcUrl.startsWith("https://")) {
       if (srcUrl.includes("/uploads/")) {
-        const uploadSegment = srcUrl.substring(srcUrl.indexOf("/uploads/"));
-        const cleanPath = uploadSegment.startsWith("/") ? uploadSegment.slice(1) : uploadSegment;
-        const localFilePath = path.join(process.cwd(), "public", cleanPath);
-        if (fs.existsSync(localFilePath)) {
-          const fileBuf = fs.readFileSync(localFilePath);
-          const ext = path.extname(localFilePath).toLowerCase().replace(".", "");
+        const seg = srcUrl.substring(srcUrl.indexOf("/uploads/")).slice(1);
+        const local = path.join(process.cwd(), "public", seg);
+        if (fs.existsSync(local)) {
+          const buf = fs.readFileSync(local);
+          const ext = path.extname(local).toLowerCase().replace(".", "");
           const mime = ext === "png" ? "image/png" : ext === "svg" ? "image/svg+xml" : "image/jpeg";
-          return `data:${mime};base64,${fileBuf.toString("base64")}`;
+          return `data:${mime};base64,${buf.toString("base64")}`;
         }
       }
-
-      const res = await fetch(srcUrl);
-      if (res.ok) {
-        const arrayBuf = await res.arrayBuffer();
-        const buf = Buffer.from(arrayBuf);
-        const contentType = res.headers.get("content-type") || "image/jpeg";
-        return `data:${contentType};base64,${buf.toString("base64")}`;
+      const r = await fetch(srcUrl);
+      if (r.ok) {
+        const ab = await r.arrayBuffer();
+        const ct = r.headers.get("content-type") || "image/jpeg";
+        return `data:${ct};base64,${Buffer.from(ab).toString("base64")}`;
       }
     }
-  } catch (err) {
-    console.error("Image resolution error:", srcUrl, err);
-  }
+  } catch (e) { console.error("resolveImg err:", srcUrl, e); }
   return null;
 }
 
-function el(type: any, props: any, ...children: any[]): any { return React.createElement(type, props, ...children); }
-
-function isValidImgSrc(src: any): boolean {
-  return typeof src === "string" && src.length > 10 && (src.startsWith("data:image/") || src.startsWith("http://") || src.startsWith("https://"));
+function el(type: any, props: any, ...children: any[]): any {
+  return React.createElement(type, props, ...children);
+}
+function isValid(src: any): boolean {
+  return typeof src === "string" && src.length > 10 &&
+    (src.startsWith("data:image/") || src.startsWith("http://") || src.startsWith("https://"));
 }
 
-function SectionTitle(title: string): any {
-  return el(View, { style: s.stitContainer },
-    el(Text, { style: s.stit }, title)
-  );
-}
-
-function buildLancamentoPdf(
+// ─── Builder PDF ─────────────────────────────────────────────────────────────
+function buildPdf(
   log: any,
-  logoBase64: string = "",
-  resolvedPhotoMap: Record<string, string> = {},
-  rdoDiario: any = null
+  logoB64: string,
+  photos: Record<string, string>,
+  rdoDiario: any
 ): any {
-  const ativ = log.atividade || {};
-  const proj = ativ.projeto || {};
-  const user = log.usuario || {};
-  const ativo = log.ativo || {};
+  const ativ  = log.atividade || {};
+  const proj  = ativ.projeto   || {};
+  const user  = log.usuario    || {};
+  const ativo = log.ativo      || {};
 
-  const dateStr = dateFmt(log.data);
-  const weekDay = getWeekDay(log.data);
-  const progPct = Math.round(log.progresso || 0);
+  const dateStr  = dateFmt(log.data);
+  const weekDay  = getWeekDay(log.data);
+  const progPct  = Math.round(log.progresso || 0);
+  const concluida = progPct >= 100 || ativ.status === "CONCLUIDA";
+  const statusLabel = concluida ? "CONCLUÍDA" : "EM ANDAMENTO";
+  const statusBg    = concluida ? "#dcfce7" : "#dbeafe";
+  const statusTxt   = concluida ? "#15803d" : "#1d4ed8";
 
-  const isConcluida = progPct >= 100 || ativ.status === "CONCLUIDA";
-  const statusLabel = isConcluida ? "CONCLUÍDA" : "EM ANDAMENTO";
-  const statusBg = isConcluida ? "#dcfce7" : "#dbeafe";
-  const statusTxt = isConcluida ? "#15803d" : "#1d4ed8";
+  const revisao    = log.statusRevisao || "PENDENTE";
+  const revisaoBg  = revisao === "APROVADO" ? "#dcfce7" : revisao === "COM_QUESTIONAMENTOS" ? "#fee2e2" : "#fef3c7";
+  const revisaoTxt = revisao === "APROVADO" ? "#15803d" : revisao === "COM_QUESTIONAMENTOS" ? "#b91c1c" : "#b45309";
+  const revisaoLabel = revisao === "APROVADO" ? "Aprovado" : revisao === "COM_QUESTIONAMENTOS" ? "Com Ajustes" : "Pendente";
 
-  const statusRevisao = log.statusRevisao || "PENDENTE";
-  const revisaoBg = statusRevisao === "APROVADO" ? "#dcfce7" : statusRevisao === "COM_QUESTIONAMENTOS" ? "#fee2e2" : "#fef3c7";
-  const revisaoTxt = statusRevisao === "APROVADO" ? "#15803d" : statusRevisao === "COM_QUESTIONAMENTOS" ? "#b91c1c" : "#b45309";
+  // Valid photos
+  const validPhotos = (log.fotos || [])
+    .map((u: string) => photos[u])
+    .filter((u: any) => isValid(u));
 
-  // Collect valid photos
-  const validPhotos: string[] = [];
-  (log.fotos || []).forEach((urlStr: string) => {
-    const resolved = resolvedPhotoMap[urlStr];
-    if (isValidImgSrc(resolved)) {
-      validPhotos.push(resolved!);
-    }
-  });
+  const hInicioSrc = photos[log.fotoHorimetroInicioUrl];
+  const hFimSrc    = photos[log.fotoHorimetroFimUrl];
 
-  // Collect horimetro photos
-  const resolvedHInicio = resolvedPhotoMap[log.fotoHorimetroInicioUrl];
-  const resolvedHFim = resolvedPhotoMap[log.fotoHorimetroFimUrl];
+  const hI = log.horimetroInicio ?? null;
+  const hF = log.horimetroFim ?? null;
+  const hTrab = (hI !== null && hF !== null && hF >= hI) ? (hF - hI).toFixed(1) : null;
 
-  // Calculate hours worked on equipment
-  const hInicio = log.horimetroInicio ?? null;
-  const hFim = log.horimetroFim ?? null;
-  const horasEqp = (hInicio !== null && hFim !== null && hFim >= hInicio) ? (hFim - hInicio).toFixed(1) : null;
+  const apontador = user.name || user.email || ativ.responsavel?.name || "Operador";
 
   return el(Document, {},
     el(Page, { size: "A4", style: s.page },
-      // Discrete Header
-      el(View, { style: s.header },
-        el(View, { style: s.logoContainer },
-          logoBase64 ? el(Image, { src: logoBase64, style: s.logo }) : null,
-          el(View, { style: s.headerInfo },
-            el(Text, { style: s.brandTag }, "CORDEIRO ENERGIA • GESTÃO DE OBRAS"),
-            el(Text, { style: s.rdoTitle }, "RELATÓRIO DE APONTAMENTO DE ATIVIDADE"),
-            el(Text, { style: s.metaText }, `Data: ${dateStr} (${weekDay}) • Obra: ${proj.nome || "Obra Geral"}`)
+
+      // ── TOPO ESCURO ──────────────────────────────────────────────────────
+      el(View, { style: s.topBar },
+        // Esquerda: logo + divisor + textos
+        el(View, { style: s.topLeft },
+          logoB64 ? el(Image, { src: logoB64, style: s.logo }) : null,
+          el(View, { style: s.logoSep }),
+          el(View, { style: s.topTexts },
+            el(Text, { style: s.topLabel }, "Gestão de Obras • Cordeiro Energia"),
+            el(Text, { style: s.topTitle }, "Relatório de Apontamento")
           )
         ),
-        el(View, { style: [s.badge, { backgroundColor: revisaoBg }] },
-          el(Text, { style: { color: revisaoTxt } }, `STATUS: ${statusRevisao.replace("_", " ")}`)
+        // Direita: status + data
+        el(View, { style: s.topRight },
+          el(View, { style: [s.statusPill, { backgroundColor: revisaoBg }] },
+            el(Text, { style: [s.statusText, { color: revisaoTxt }] }, revisaoLabel)
+          ),
+          el(Text, { style: s.topMeta }, dateStr + " • " + weekDay)
         )
       ),
 
-      // KPI Cards Banner
-      el(View, { style: s.kpiRow },
+      // ── FAIXA LARANJA ─────────────────────────────────────────────────────
+      el(View, { style: s.accentBar }),
+
+      // ── KPI STRIP ─────────────────────────────────────────────────────────
+      el(View, { style: s.kpiStrip },
         el(View, { style: s.kpiCard },
-          el(Text, { style: s.kpiTitle }, "OBRA / SUBESTAÇÃO"),
-          el(Text, { style: s.kpiVal }, proj.nome || "Não informada")
+          el(Text, { style: s.kpiLabel }, "Obra / Subestação"),
+          el(Text, { style: s.kpiValue }, proj.nome || "—")
         ),
         el(View, { style: s.kpiCard },
-          el(Text, { style: s.kpiTitle }, "EXECUTOR / APONTADOR"),
-          el(Text, { style: s.kpiVal }, user.name || user.email || ativ.responsavel?.name || "Operador")
+          el(Text, { style: s.kpiLabel }, "Executor / Apontador"),
+          el(Text, { style: s.kpiValue }, apontador)
         ),
         el(View, { style: s.kpiCard },
-          el(Text, { style: s.kpiTitle }, "PROGRESSO ATUAL"),
-          el(Text, { style: [s.kpiVal, { color: statusTxt }] }, `${progPct}% (${statusLabel})`)
+          el(Text, { style: s.kpiLabel }, "Progresso Atual"),
+          el(Text, { style: concluida ? s.kpiValue : s.kpiValueAccent }, `${progPct}%  ${statusLabel}`)
         ),
         el(View, { style: s.kpiCardLast },
-          el(Text, { style: s.kpiTitle }, "DATA DO APONTAMENTO"),
-          el(Text, { style: s.kpiVal }, dateStr)
+          el(Text, { style: s.kpiLabel }, "Data do Apontamento"),
+          el(Text, { style: s.kpiValue }, dateStr)
         )
       ),
 
-      // Detalhamento da Atividade
-      el(View, { style: s.sec },
-        SectionTitle("DETALHAMENTO DA ATIVIDADE EXECUTADA"),
-        el(View, { style: s.infoBox },
-          el(View, { style: s.row },
-            el(Text, { style: s.fieldLabel }, "Atividade de Referência:"),
-            el(Text, { style: [s.fieldValue, { fontFamily: "Helvetica-Bold" }] }, ativ.descricao || "Atividade de Canteiro")
+      // ── CONTEÚDO ─────────────────────────────────────────────────────────
+      el(View, { style: s.content },
+
+        // ── 1. Detalhamento da Atividade ───────────────────────────────────
+        el(View, { style: s.section },
+          el(View, { style: s.sectionHeader },
+            el(View, { style: s.sectionAccent }),
+            el(Text, { style: s.sectionTitle }, "Detalhamento da Atividade Executada")
           ),
-          ativ.observacao ? el(View, { style: s.row },
-            el(Text, { style: s.fieldLabel }, "Instrução / Observação:"),
+          el(View, { style: s.fieldRow },
+            el(Text, { style: s.fieldLabel }, "Atividade:"),
+            el(Text, { style: s.fieldValueBold }, ativ.descricao || "—")
+          ),
+          ativ.observacao ? el(View, { style: s.fieldRow },
+            el(Text, { style: s.fieldLabel }, "Instrução / Obs:"),
             el(Text, { style: s.fieldValue }, ativ.observacao)
-          ) : null
-        ),
-        el(Text, { style: { fontSize: 7, fontFamily: "Helvetica-Bold", color: "#64748b", textTransform: "uppercase", marginBottom: 3 } }, "RELATO DETALHADO DO DIA:"),
-        el(View, { style: s.textCard },
-          el(Text, {}, log.descricao || "Sem relato descritivo informado para esta atividade.")
-        )
-      ),
-
-      // Comentários do Supervisor (se houver)
-      log.comentariosSupervisor ? el(View, { style: s.sec },
-        SectionTitle("COMENTÁRIOS DA SUPERVISÃO / AUDITORIA"),
-        el(View, { style: [s.textCard, { backgroundColor: "#fffbebf5", borderColor: "#fcd34d" }] },
-          el(Text, { style: { color: "#92400e", fontFamily: "Helvetica-Bold" } }, log.comentariosSupervisor)
-        )
-      ) : null,
-
-      // Equipamento e Horímetro (se houver)
-      (ativo.nome || log.ativoId || hInicio !== null) ? el(View, { style: s.sec },
-        SectionTitle("UTILIZAÇÃO DE EQUIPAMENTO / ATIVO NO DIA"),
-        el(View, { style: s.infoBox },
-          el(View, { style: s.row },
-            el(Text, { style: s.fieldLabel }, "Equipamento / Maquinário:"),
-            el(Text, { style: [s.fieldValue, { fontFamily: "Helvetica-Bold" }] }, `${ativo.nome || "Equipamento de Canteiro"} ${ativo.codigo ? `[${ativo.codigo}]` : ""}`)
-          ),
-          (hInicio !== null || hFim !== null) ? el(View, { style: s.row },
-            el(Text, { style: s.fieldLabel }, "Horímetro Inicial / Final:"),
-            el(Text, { style: s.fieldValue }, `${hInicio ?? "-"} h  ➡️  ${hFim ?? "-"} h ${horasEqp ? `(${horasEqp} h trabalhadas)` : ""}`)
-          ) : null
-        ),
-        // Photos of Horimeter
-        (isValidImgSrc(resolvedHInicio) || isValidImgSrc(resolvedHFim)) ? el(View, { style: { flexDirection: "row", marginTop: 4 } },
-          isValidImgSrc(resolvedHInicio) ? el(View, { style: { marginRight: 10 } },
-            el(Text, { style: { fontSize: 6.5, fontFamily: "Helvetica-Bold", color: "#64748b", marginBottom: 2 } }, "HORÍMETRO INICIAL:"),
-            el(Image, { src: resolvedHInicio, style: { width: 120, height: 85, borderRadius: 4, objectFit: "cover", borderWidth: 1, borderColor: "#cbd5e1" } })
           ) : null,
-          isValidImgSrc(resolvedHFim) ? el(View, {},
-            el(Text, { style: { fontSize: 6.5, fontFamily: "Helvetica-Bold", color: "#64748b", marginBottom: 2 } }, "HORÍMETRO FINAL:"),
-            el(Image, { src: resolvedHFim, style: { width: 120, height: 85, borderRadius: 4, objectFit: "cover", borderWidth: 1, borderColor: "#cbd5e1" } })
+          el(View, { style: s.fieldRow },
+            el(Text, { style: s.fieldLabel }, "Progresso Acumulado:"),
+            el(Text, { style: [s.fieldValueBold, { color: concluida ? "#15803d" : ORANGE }] }, `${progPct}% — ${statusLabel}`)
+          ),
+          el(Text, { style: { fontSize: 6.5, fontFamily: "Helvetica-Bold", color: "#64748b", textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 4 } }, "Relato do Dia:"),
+          el(View, { style: s.textBox },
+            el(Text, {}, log.descricao || "Sem relato informado para esta atividade.")
+          )
+        ),
+
+        // ── 2. Comentário do Supervisor ────────────────────────────────────
+        log.comentariosSupervisor ? el(View, { style: s.section },
+          el(View, { style: s.sectionHeader },
+            el(View, { style: s.sectionAccent }),
+            el(Text, { style: s.sectionTitle }, "Comentário da Supervisão")
+          ),
+          el(View, { style: s.commentBox },
+            el(Text, {}, log.comentariosSupervisor)
+          )
+        ) : null,
+
+        // ── 3. Equipamento / Horímetro ─────────────────────────────────────
+        (ativo.nome || log.ativoId || hI !== null) ? el(View, { style: s.section },
+          el(View, { style: s.sectionHeader },
+            el(View, { style: s.sectionAccent }),
+            el(Text, { style: s.sectionTitle }, "Equipamento / Horímetro")
+          ),
+          el(View, { style: s.eqpBox },
+            el(View, { style: s.eqpRow },
+              el(View, { style: s.eqpBadge },
+                el(Text, { style: s.eqpBadgeText }, "Maquinário")
+              ),
+              el(Text, { style: s.eqpName }, `${ativo.nome || "Equipamento de Canteiro"}${ativo.codigo ? `  [${ativo.codigo}]` : ""}`)
+            ),
+            (hI !== null || hF !== null) ? el(View, { style: s.horimetroRow },
+              el(View, { style: s.hItem },
+                el(Text, { style: s.hLabel }, "Horímetro Inicial"),
+                el(Text, { style: s.hValue }, `${hI ?? "—"} h`)
+              ),
+              el(View, { style: s.hSep }),
+              el(View, { style: s.hItem },
+                el(Text, { style: s.hLabel }, "Horímetro Final"),
+                el(Text, { style: s.hValue }, `${hF ?? "—"} h`)
+              ),
+              hTrab ? [
+                el(View, { key: "sep2", style: s.hSep }),
+                el(View, { key: "total", style: s.hItem },
+                  el(Text, { style: s.hLabel }, "Total Trabalhado"),
+                  el(Text, { style: s.hTotal }, `${hTrab} h`)
+                )
+              ] : null
+            ) : null
+          ),
+          // Fotos Horímetro
+          (isValid(hInicioSrc) || isValid(hFimSrc)) ? el(View, { style: s.hPhotoRow },
+            isValid(hInicioSrc) ? el(View, { style: s.hPhotoBlock },
+              el(Text, { style: s.hPhotoLabel }, "Foto Horímetro Inicial"),
+              el(Image, { src: hInicioSrc, style: s.hPhoto })
+            ) : null,
+            isValid(hFimSrc) ? el(View, { style: s.hPhotoBlock },
+              el(Text, { style: s.hPhotoLabel }, "Foto Horímetro Final"),
+              el(Image, { src: hFimSrc, style: s.hPhoto })
+            ) : null
+          ) : null
+        ) : null,
+
+        // ── 4. Evidências Fotográficas ─────────────────────────────────────
+        validPhotos.length > 0 ? el(View, { style: s.section },
+          el(View, { style: s.sectionHeader },
+            el(View, { style: s.sectionAccent }),
+            el(Text, { style: s.sectionTitle }, `Evidências Fotográficas  (${validPhotos.length} foto${validPhotos.length > 1 ? "s" : ""})`)
+          ),
+          el(View, { style: s.photoGrid },
+            ...validPhotos.map((src: string, i: number) =>
+              el(Image, { key: i, src, style: s.photoItem })
+            )
+          )
+        ) : null,
+
+        // ── 5. Contexto do Canteiro ────────────────────────────────────────
+        rdoDiario ? el(View, { style: s.section },
+          el(View, { style: s.sectionHeader },
+            el(View, { style: s.sectionAccent }),
+            el(Text, { style: s.sectionTitle }, "Contexto do Canteiro na Data")
+          ),
+          rdoDiario.climas && rdoDiario.climas.length > 0 ? el(View, { style: s.fieldRow },
+            el(Text, { style: s.fieldLabel }, "Condições Climáticas:"),
+            el(Text, { style: s.fieldValue }, rdoDiario.climas.map((c: any) =>
+              `${c.periodo === "MANHA" ? "Manhã" : c.periodo === "TARDE" ? "Tarde" : "Noite"}: ${c.condicao}`
+            ).join("  |  "))
+          ) : null,
+          rdoDiario.maoDeObra && rdoDiario.maoDeObra.length > 0 ? el(View, { style: s.fieldRow },
+            el(Text, { style: s.fieldLabel }, "Mão de Obra Presente:"),
+            el(Text, { style: s.fieldValue }, `${rdoDiario.maoDeObra.reduce((acc: number, m: any) => acc + (m.quantidade || 1), 0)} colaborador(es)`)
           ) : null
         ) : null
-      ) : null,
 
-      // Evidências Fotográficas do Apontamento (Large 2-column Grid)
-      validPhotos.length > 0 ? el(View, { style: s.sec },
-        SectionTitle(`EVIDÊNCIAS FOTOGRÁFICAS DA ATIVIDADE (${validPhotos.length} foto(s))`),
-        el(View, { style: { flexDirection: "row", flexWrap: "wrap" } },
-          ...validPhotos.map((imgSrc: string, pIdx: number) => {
-            const isRightCol = pIdx % 2 === 1;
-            return el(View, { key: pIdx, style: { width: 264, height: 180, marginBottom: 8, marginRight: isRightCol ? 0 : 8 } },
-              el(Image, { src: imgSrc, style: { width: "100%", height: "100%", borderRadius: 5, objectFit: "cover", borderWidth: 1, borderColor: "#cbd5e1" } })
-            );
-          })
-        )
-      ) : null,
+      ), // fim content
 
-      // Contexto do Canteiro (Clima / Equipe se disponível do RDO Geral do dia)
-      rdoDiario ? el(View, { style: s.sec },
-        SectionTitle("CONTEXTO GERAL DO CANTEIRO NA DATA"),
-        el(View, { style: s.infoBox },
-          rdoDiario.climas && rdoDiario.climas.length > 0 ? el(View, { style: s.row },
-            el(Text, { style: s.fieldLabel }, "Condições Climáticas:"),
-            el(Text, { style: s.fieldValue }, rdoDiario.climas.map((c: any) => `${c.periodo}: ${c.condicao}`).join(" | "))
-          ) : null,
-          rdoDiario.maoDeObra && rdoDiario.maoDeObra.length > 0 ? el(View, { style: s.row },
-            el(Text, { style: s.fieldLabel }, "Mão de Obra Presente:"),
-            el(Text, { style: s.fieldValue }, `${rdoDiario.maoDeObra.reduce((acc: number, m: any) => acc + (m.quantidade || 1), 0)} colaborador(es) no canteiro`)
-          ) : null
-        )
-      ) : null,
-
-      // Sleek Footer
-      el(View, { style: s.foot, fixed: true },
-        el(Text, {}, `Cordeiro Energia • Relatório de Apontamento de Atividade • Apontador: ${user.name || user.email || "Operador"}`),
-        el(Text, { render: ({ pageNumber, totalPages }: any) => `Página ${pageNumber} de ${totalPages}` })
+      // ── RODAPÉ ─────────────────────────────────────────────────────────────
+      el(View, { style: s.footer, fixed: true },
+        el(Text, { style: s.footerLeft }, `Cordeiro Energia  •  Apontador: ${apontador}  •  ${proj.nome || ""}`),
+        el(Text, {
+          style: s.footerRight,
+          render: ({ pageNumber, totalPages }: any) => `Pág. ${pageNumber} / ${totalPages}`
+        })
       )
     )
   );
 }
 
+// ─── GET handler ─────────────────────────────────────────────────────────────
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = (await getServerSession(authOptions as any)) as any;
-    if (!session || !session.user) {
+    if (!session?.user) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 
@@ -436,91 +659,66 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     const log = await prisma.rdoLancamento.findUnique({
       where: { id },
       include: {
-        usuario: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          }
-        },
-        atividade: {
-          include: {
-            projeto: true,
-            responsavel: true,
-          }
-        },
-        ativo: true
+        usuario: { select: { id: true, name: true, email: true } },
+        atividade: { include: { projeto: true, responsavel: true } },
+        ativo: true,
       }
     });
 
     if (!log) {
-      return NextResponse.json({ error: "Apontamento de atividade não encontrado." }, { status: 404 });
+      return NextResponse.json({ error: "Apontamento não encontrado." }, { status: 404 });
     }
 
-    // Try to find matching RdoDiario for the same project and date
+    // Busca RdoDiario da mesma data/projeto
     let rdoDiario = null;
     if (log.atividade?.projetoId && log.data) {
-      const dateStart = new Date(log.data);
-      dateStart.setUTCHours(0, 0, 0, 0);
-      const dateEnd = new Date(log.data);
-      dateEnd.setUTCHours(23, 59, 59, 999);
-
+      const d0 = new Date(log.data); d0.setUTCHours(0, 0, 0, 0);
+      const d1 = new Date(log.data); d1.setUTCHours(23, 59, 59, 999);
       rdoDiario = await prisma.rdoDiario.findFirst({
-        where: {
-          projetoId: log.atividade.projetoId,
-          data: {
-            gte: dateStart,
-            lte: dateEnd,
-          }
-        },
-        include: {
-          climas: true,
-          maoDeObra: true,
-        }
+        where: { projetoId: log.atividade.projetoId, data: { gte: d0, lte: d1 } },
+        include: { climas: true, maoDeObra: true }
       });
     }
 
-    // Load Cordeiro Logo
-    let logoBase64 = "";
+    // Logo
+    let logoB64 = "";
     const logoPath = path.join(process.cwd(), "public", "logo.png");
     if (fs.existsSync(logoPath)) {
-      const logoBuf = fs.readFileSync(logoPath);
-      logoBase64 = `data:image/png;base64,${logoBuf.toString("base64")}`;
+      logoB64 = `data:image/png;base64,${fs.readFileSync(logoPath).toString("base64")}`;
     }
 
-    // Resolve all photos
-    const resolvedPhotoMap: Record<string, string> = {};
-    const photoUrlsToResolve: string[] = [...(log.fotos || [])];
-    if (log.fotoHorimetroInicioUrl) photoUrlsToResolve.push(log.fotoHorimetroInicioUrl);
-    if (log.fotoHorimetroFimUrl) photoUrlsToResolve.push(log.fotoHorimetroFimUrl);
-
-    for (const urlStr of photoUrlsToResolve) {
-      if (urlStr && !resolvedPhotoMap[urlStr]) {
-        const b64 = await resolveImageToBase64(urlStr);
-        if (b64) resolvedPhotoMap[urlStr] = b64;
+    // Resolve fotos
+    const resolvedPhotos: Record<string, string> = {};
+    const urls: string[] = [...(log.fotos || [])];
+    if (log.fotoHorimetroInicioUrl) urls.push(log.fotoHorimetroInicioUrl);
+    if (log.fotoHorimetroFimUrl)    urls.push(log.fotoHorimetroFimUrl);
+    for (const u of urls) {
+      if (u && !resolvedPhotos[u]) {
+        const b64 = await resolveImageToBase64(u);
+        if (b64) resolvedPhotos[u] = b64;
       }
     }
 
-    // Build PDF
-    const pdfDoc = buildLancamentoPdf(log, logoBase64, resolvedPhotoMap, rdoDiario);
-    const rawBuffer = await renderToBuffer(pdfDoc);
-    const pdfBuffer = new Uint8Array(rawBuffer);
+    // Gera PDF
+    const doc = buildPdf(log, logoB64, resolvedPhotos, rdoDiario);
+    const raw = await renderToBuffer(doc);
+    const buf = new Uint8Array(raw);
 
-    const safeDesc = (log.atividade?.descricao || "Atividade").replace(/[^a-zA-Z0-9-_]/g, "_").slice(0, 30);
+    const safeDesc = (log.atividade?.descricao || "Atividade").replace(/[^a-zA-Z0-9\-_]/g, "_").slice(0, 30);
     const safeDate = dateFmt(log.data).replace(/\//g, "-");
     const fileName = `Apontamento_${safeDate}_${safeDesc}.pdf`;
 
-    return new Response(pdfBuffer, {
+    return new Response(buf, {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `inline; filename="${fileName}"`,
         "Cache-Control": "no-store, max-age=0",
-      },
+      }
     });
-  } catch (error: any) {
-    console.error("Erro ao gerar PDF do apontamento:", error);
+  } catch (err: any) {
+    console.error("[PDF ATIVIDADE ERROR]", err);
     return NextResponse.json(
-      { error: "Falha ao gerar o PDF do apontamento: " + (error.message || "Erro desconhecido") },
+      { error: "Falha ao gerar PDF: " + (err.message || "Erro desconhecido") },
       { status: 500 }
     );
   }

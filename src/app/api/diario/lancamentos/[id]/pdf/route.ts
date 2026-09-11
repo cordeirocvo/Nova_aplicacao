@@ -503,13 +503,14 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
 
     // Build PDF
     const pdfDoc = buildLancamentoPdf(log, logoBase64, resolvedPhotoMap, rdoDiario);
-    const pdfBuffer = await renderToBuffer(pdfDoc);
+    const rawBuffer = await renderToBuffer(pdfDoc);
+    const pdfBuffer = new Uint8Array(rawBuffer);
 
     const safeDesc = (log.atividade?.descricao || "Atividade").replace(/[^a-zA-Z0-9-_]/g, "_").slice(0, 30);
     const safeDate = dateFmt(log.data).replace(/\//g, "-");
     const fileName = `Apontamento_${safeDate}_${safeDesc}.pdf`;
 
-    return new NextResponse(pdfBuffer, {
+    return new Response(pdfBuffer, {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `inline; filename="${fileName}"`,

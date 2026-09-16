@@ -169,6 +169,23 @@ export async function GET(req: NextRequest) {
       distribuicaoFabricante[f] = (distribuicaoFabricante[f] || 0) + energiaKWh;
     });
 
+    // Se a telemetria pontual não tiver energia do dia, buscar na MetricaDiariaUsina (sincronizada da Huawei/Solis)
+    if (producaoDiariaTotalKWh === 0) {
+      const metricasDia = await prisma.metricaDiariaUsina.findMany({
+        where: {
+          usinaId: { in: usinaIds },
+          data: { gte: startDay, lte: endDay }
+        },
+        include: { usina: { select: { apiFornecedor: true } } }
+      });
+      metricasDia.forEach(m => {
+        const e = m.energiaRealKWh || 0;
+        producaoDiariaTotalKWh += e;
+        const f = m.usina?.apiFornecedor || "OUTROS";
+        distribuicaoFabricante[f] = (distribuicaoFabricante[f] || 0) + e;
+      });
+    }
+
     // Buscar telemetria de ontem para comparação percentual (Solis Style KPI)
     const startYesterday = new Date(startDay.getTime() - 24 * 3600 * 1000);
     const endYesterday = new Date(endDay.getTime() - 24 * 3600 * 1000);
@@ -192,6 +209,18 @@ export async function GET(req: NextRequest) {
       const telemUsinaOntem = telemetriasOntem.filter((t) => t.usinaId === u.id);
       producaoOntemTotalKWh += calculateUsinaEnergyKWh(telemUsinaOntem);
     });
+
+    if (producaoOntemTotalKWh === 0) {
+      const metricasOntem = await prisma.metricaDiariaUsina.findMany({
+        where: {
+          usinaId: { in: usinaIds },
+          data: { gte: startYesterday, lte: endYesterday }
+        }
+      });
+      metricasOntem.forEach(m => {
+        producaoOntemTotalKWh += (m.energiaRealKWh || 0);
+      });
+    }
 
     const diffOntem = producaoDiariaTotalKWh - producaoOntemTotalKWh;
     const comparativoOntemPct = producaoOntemTotalKWh > 0
@@ -277,6 +306,33 @@ export async function GET(req: NextRequest) {
         }
       });
 
+      // Fallback para MetricaDiariaUsina para dias que não tenham telemetria calculada
+      const metricasMes = await prisma.metricaDiariaUsina.findMany({
+        where: {
+          usinaId: { in: usinaIds },
+          data: { gte: firstDayMonth, lte: lastDayMonth },
+        },
+        include: { usina: { select: { apiFornecedor: true } } }
+      });
+
+      metricasMes.forEach((m) => {
+        const dStr = new Date(m.data).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+        const dayNum = parseInt(dStr.split("-")[2], 10);
+        const fornecedor = m.usina?.apiFornecedor || "OUTROS";
+        const energiaKWh = m.energiaRealKWh || 0;
+
+        if (porDiaMap.has(dayNum)) {
+          const item = porDiaMap.get(dayNum)!;
+          if (item.totalKWh === 0 && energiaKWh > 0) {
+            item.totalKWh = parseFloat(energiaKWh.toFixed(2));
+            item.porFornecedor[fornecedor] = parseFloat(((item.porFornecedor[fornecedor] || 0) + energiaKWh).toFixed(2));
+            if (periodo === "MES") {
+              distribuicaoFabricante[fornecedor] = (distribuicaoFabricante[fornecedor] || 0) + energiaKWh;
+            }
+          }
+        }
+      });
+
       serieMensal = Array.from(porDiaMap.values());
     }
 
@@ -288,7 +344,7 @@ export async function GET(req: NextRequest) {
       const firstDayPrevYear = new Date(`${ano - 1}-01-01T00:00:00-03:00`);
       const lastDayPrevYear = new Date(`${ano - 1}-12-31T23:59:59.999-03:00`);
 
-      const [telemCurYear, telemPrevYear] = await Promise.all([
+      const [telemCurYear, telemPrevYear, metricasCurYear, metricasPrevYear] = await Promise.all([
         prisma.telemetria.findMany({
           where: {
             usinaId: { in: usinaIds },
@@ -315,6 +371,19 @@ export async function GET(req: NextRequest) {
             potenciaAtivaKW: true,
           },
           orderBy: { timestamp: "asc" },
+        }),
+        prisma.metricaDiariaUsina.findMany({
+          where: {
+            usinaId: { in: usinaIds },
+            data: { gte: firstDayCurYear, lte: lastDayCurYear },
+          },
+          include: { usina: { select: { apiFornecedor: true } } }
+        }),
+        prisma.metricaDiariaUsina.findMany({
+          where: {
+            usinaId: { in: usinaIds },
+            data: { gte: firstDayPrevYear, lte: lastDayPrevYear },
+          },
         }),
       ]);
 
@@ -346,6 +415,21 @@ export async function GET(req: NextRequest) {
         const fornecedor = records[0]?.fornecedor || "OUTROS";
         if (periodo === "ANO") {
           distribuicaoFabricante[fornecedor] = (distribuicaoFabricante[fornecedor] || 0) + energiaKWh;
+        }
+      });
+
+      // Integrar MetricaDiariaUsina para meses onde a telemetria não calculou energia
+      metricasCurYear.forEach((m) => {
+        const dStr = new Date(m.data).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+        const mIdx = parseInt(dStr.split("-")[1], 10) - 1;
+        const fornecedor = m.usina?.apiFornecedor || "OUTROS";
+        const energiaMWh = (m.energiaRealKWh || 0) / 1000;
+
+        if (geracaoPorMesAtual[mIdx] === 0 && energiaMWh > 0) {
+          geracaoPorMesAtual[mIdx] += energiaMWh;
+          if (periodo === "ANO") {
+            distribuicaoFabricante[fornecedor] = (distribuicaoFabricante[fornecedor] || 0) + m.energiaRealKWh;
+          }
         }
       });
 

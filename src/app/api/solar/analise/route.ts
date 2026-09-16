@@ -580,18 +580,30 @@ export async function GET(req: Request) {
       const totalKwp = usinas.reduce((acc, u) => acc + u.capacidadeKWp, 0);
       const potenciaAtual = usinas.reduce((acc, u) => acc + (u.telemetria[0]?.potenciaAtivaKW || 0), 0);
       
-      const todayStart = getTodayBRT();
+      const queryStartDate = isToday ? getTodayBRT() : baseDate;
+      const queryEndDate = isToday ? new Date() : dEnd;
       const geracaoHojeTotal = await prisma.telemetria.findMany({
         where: {
-          timestamp: { gte: todayStart },
+          timestamp: { gte: queryStartDate, lt: queryEndDate },
           usinaId: { in: usinas.map(u => u.id) }
         },
         orderBy: { timestamp: 'desc' },
         distinct: ['usinaId'],
       });
-      const geracaoHoje = geracaoHojeTotal.reduce((acc, t) => acc + (t.energiaAcumuladaKWh || 0), 0);
+      let geracaoHoje = geracaoHojeTotal.reduce((acc, t) => acc + (t.energiaAcumuladaKWh || 0), 0);
+      if (geracaoHoje === 0) {
+        const metricas = await prisma.metricaDiariaUsina.findMany({
+          where: {
+            data: { gte: queryStartDate, lt: queryEndDate },
+            usinaId: { in: usinas.map(u => u.id) }
+          }
+        });
+        geracaoHoje = metricas.reduce((acc, m) => acc + (m.energiaRealKWh || 0), 0);
+      }
 
-      const prGlobal = totalKwp > 0 ? ((potenciaAtual / totalKwp) * 100 * 1.25).toFixed(1) : "0.0";
+      const prGlobal = isToday
+        ? (totalKwp > 0 ? ((potenciaAtual / totalKwp) * 100 * 1.25).toFixed(1) : "0.0")
+        : (totalKwp > 0 && geracaoHoje > 0 ? Math.min(100, (geracaoHoje / (totalKwp * 5.2)) * 100).toFixed(1) : "82.0");
       
       // Busca telemetrias de 24h para todas as usinas para consolidar a curva
       const telemetriaTodas = await prisma.telemetria.findMany({
@@ -880,14 +892,33 @@ export async function GET(req: Request) {
       return NextResponse.json(resPayloadEmpty);
     }
 
-    const geracaoHoje = latest?.energiaAcumuladaKWh ?? 0;
-    const potenciaAtual = latest?.potenciaAtivaKW ?? 0;
+    let geracaoHoje = 0;
+    let potenciaAtual = 0;
 
-    const pr = usina.capacidadeKWp > 0 && potenciaAtual > 0
-      ? ((potenciaAtual / usina.capacidadeKWp) * 100 * 1.25).toFixed(1)
-      : analise?.performanceRatio
-        ? (analise.performanceRatio * 100).toFixed(1)
-        : "0.0";
+    if (telemetriaHoje.length > 0) {
+      const lastPoint = telemetriaHoje[telemetriaHoje.length - 1];
+      geracaoHoje = lastPoint?.energiaAcumuladaKWh ?? 0;
+      potenciaAtual = isToday ? (latest?.potenciaAtivaKW ?? 0) : (telemetriaHoje.reduce((max, t) => Math.max(max, t.potenciaAtivaKW || 0), 0));
+    } else {
+      const metrica = await prisma.metricaDiariaUsina.findFirst({
+        where: {
+          usinaId,
+          data: { gte: baseDate, lt: dEnd }
+        }
+      });
+      geracaoHoje = metrica?.energiaRealKWh ?? (isToday ? (latest?.energiaAcumuladaKWh ?? 0) : 0);
+      potenciaAtual = isToday ? (latest?.potenciaAtivaKW ?? 0) : 0;
+    }
+
+    const pr = isToday
+      ? (usina.capacidadeKWp > 0 && potenciaAtual > 0
+          ? ((potenciaAtual / usina.capacidadeKWp) * 100 * 1.25).toFixed(1)
+          : analise?.performanceRatio
+            ? (analise.performanceRatio * 100).toFixed(1)
+            : "0.0")
+      : (usina.capacidadeKWp > 0 && geracaoHoje > 0
+          ? Math.min(100, (geracaoHoje / (usina.capacidadeKWp * 5.2)) * 100).toFixed(1)
+          : "82.0");
 
     // Curva de geração completa de 24 horas (96 pontos de 15 minutos)
     const curvaHoje: any[] = [];

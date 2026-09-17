@@ -31,10 +31,33 @@ def run_simulation(config):
         df_meteo['timestamp'] = pd.to_datetime(df_meteo['timestamp']).dt.tz_convert(tz)
         df_meteo = df_meteo.set_index('timestamp').reindex(times, method='nearest', tolerance='10min')
 
-        poa_series = df_meteo['poa'].fillna(0)
-        temp_amb = df_meteo['tempAmbiente'].fillna(25.0)
-        temp_mod = df_meteo['tempModulos']
-        wind_speed = df_meteo['velocidadeVento'].fillna(1.5)
+        ghi_meas = df_meteo['ghi'].fillna(0) if 'ghi' in df_meteo else pd.Series(0.0, index=times)
+        poa_meas = df_meteo['poa'].fillna(0) if 'poa' in df_meteo else pd.Series(0.0, index=times)
+
+        # Se GHI medido pela torre for significativo (> 100 W/m²), transpor para o plano dos módulos
+        if ghi_meas.max() > 100.0:
+            dni_dhi = pvlib.irradiance.erbs(ghi_meas, solpos['zenith'], times)
+            poa_transp = pvlib.irradiance.get_total_irradiance(
+                surface_tilt=tilt,
+                surface_azimuth=azimuth,
+                solar_zenith=solpos['zenith'],
+                solar_azimuth=solpos['azimuth'],
+                dni=dni_dhi['dni'].fillna(0),
+                ghi=ghi_meas,
+                dhi=dni_dhi['dhi'].fillna(0)
+            )['poa_global'].fillna(0)
+
+            # Se POA medido for consistente (> 65% do transposto), usar medição; senão usar transposição da torre
+            if poa_meas.max() > 0.65 * poa_transp.max():
+                poa_series = poa_meas
+            else:
+                poa_series = poa_transp
+        else:
+            poa_series = poa_meas
+
+        temp_amb = df_meteo['tempAmbiente'].fillna(25.0) if 'tempAmbiente' in df_meteo else pd.Series(25.0, index=times)
+        temp_mod = df_meteo['tempModulos'] if 'tempModulos' in df_meteo else None
+        wind_speed = df_meteo['velocidadeVento'].fillna(1.5) if 'velocidadeVento' in df_meteo else pd.Series(1.5, index=times)
     else:
         # Clear-Sky Ineichen se não houver dados da estação
         cs = location.get_clearsky(times, model='ineichen')

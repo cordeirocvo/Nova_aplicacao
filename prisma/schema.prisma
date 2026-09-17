@@ -698,14 +698,44 @@ model Usina {
 }
 
 model EstacaoSolarimetrica {
-  id            String   @id @default(cuid())
+  id            String              @id @default(cuid())
   nome          String
-  apiFornecedor String   @default("ISOFEN")
+  apiFornecedor String              @default("SIGMA") // "SIGMA", "ISOFEN", "PRESCINTO"
   apiId         String
+  apiKey        String?
+  apiSecret     String?
   localizacao   String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  modoColeta    String?             @default("EXCEL") // "EXCEL", "API", "FTP", "GATEWAY"
+  host          String?
+  porta         Int?
+  usuario       String?
+  senha         String?
+  diretorio     String?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
   usinas        Usina[]
+  telemetrias   TelemetriaEstacao[]
+}
+
+model TelemetriaEstacao {
+  id              String               @id @default(cuid())
+  estacaoId       String
+  timestamp       DateTime
+  ghi             Float?               // Irradiância Global Horizontal (W/m²)
+  poa             Float?               // Irradiância no Plano dos Módulos (W/m²)
+  tempAmbiente    Float?               // Temperatura Ambiente (°C)
+  tempModulos     Float?               // Temperatura dos Módulos (°C)
+  velocidadeVento Float?               // Velocidade do Vento (m/s)
+  direcaoVento    Float?               // Direção do Vento (graus)
+  umidadeRelativa Float?               // Umidade Relativa (%)
+  pressao         Float?               // Pressão Atmosférica (hPa)
+  chuvaAcumulada  Float?               // Chuva Acumulada (mm)
+  indiceSujidade  Float?               // Índice de Sujidade (%)
+  createdAt       DateTime             @default(now())
+  estacao         EstacaoSolarimetrica @relation(fields: [estacaoId], references: [id], onDelete: Cascade)
+
+  @@unique([estacaoId, timestamp])
+  @@index([estacaoId, timestamp])
 }
 
 model Inversor {

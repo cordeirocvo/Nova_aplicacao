@@ -31,6 +31,7 @@ const PERMISSION_SECTIONS = [
       { name: 'Dimensionamento BESS', href: '/engenharia/bess', desc: 'Estudos de armazenamento de bateria BESS.' },
       { name: 'Sistema Fotovoltaico', href: '/engenharia/solar', desc: 'Dimensionamento de sistemas solares.' },
       { name: 'Solar Intelligence (SIE)', href: '/engenharia/solar/monitoramento', desc: 'Painel de telemetria e insights de IA.' },
+      { name: 'Análise Preditiva (pvlib)', href: '/engenharia/solar/preditiva', desc: 'Digital Twin pvlib, cascata de perdas Prescinto e Estação Sigma.' },
       { name: 'Extrator de Telemetria', href: '/engenharia/solar/extrator', desc: 'Extração e planilha de telemetria de inversores Huawei e Solis.' },
       { name: 'Operação & Manutenção', href: '/engenharia/om', desc: 'Inspeções, preventivas e relatórios.' },
       { name: 'Equipamentos', href: '/engenharia/equipamentos', desc: 'Inventário de equipamentos das usinas.' },

@@ -101,7 +101,11 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       } else if (role !== 'ADMIN') {
         const allowed = user.allowedRoutes || [];
         if (allowed.length > 0) {
-          const isAllowedPath = allowed.some((r: string) => path === r || path.startsWith(r + '/'));
+          const isAllowedPath = allowed.some((r: string) => 
+            path === r || 
+            path.startsWith(r + '/') ||
+            (path.startsWith('/engenharia/solar') && (r === '/engenharia/solar' || r === '/engenharia/solar/monitoramento'))
+          );
           if (!isAllowedPath && path !== '/login' && path !== '/') {
             window.location.href = allowed[0];
           }
@@ -143,6 +147,11 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
         // Se o usuário possuir allowedRoutes configuradas, usamos estritamente essa lista:
         if (userObj.allowedRoutes && userObj.allowedRoutes.length > 0) {
+          if (item.href === '/engenharia/solar/preditiva') {
+            return userObj.allowedRoutes.includes('/engenharia/solar/preditiva') ||
+                   userObj.allowedRoutes.includes('/engenharia/solar') ||
+                   userObj.allowedRoutes.includes('/engenharia/solar/monitoramento');
+          }
           return userObj.allowedRoutes.includes(item.href);
         }
 

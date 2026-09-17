@@ -437,6 +437,13 @@ function SolarContent() {
         >
           <Battery className="w-4 h-4 text-[#00BFA5]" /> 2. Simulação Dinâmica de BESS (Operação 24h)
         </button>
+
+        <button
+          onClick={() => router.push('/engenharia/solar/preditiva')}
+          className="flex items-center gap-2 px-6 py-3 font-bold text-sm transition-all border-b-2 border-transparent text-amber-600 hover:text-amber-700 bg-amber-500/5 hover:bg-amber-500/10 cursor-pointer ml-auto"
+        >
+          <Activity className="w-4 h-4 text-amber-500" /> 3. Análise Preditiva & Digital Twin (pvlib) →
+        </button>
       </div>
 
       {/* TAB 1: SOLAR SIZING TOOL */}

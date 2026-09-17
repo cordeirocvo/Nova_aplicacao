@@ -713,6 +713,15 @@ export default function SolarExtratorPage() {
         {/* Botões de Ação Principal, Cadastro e Exportação */}
         <div className="flex flex-wrap items-center gap-2">
           <button
+            onClick={() => router.push("/engenharia/solar/preditiva")}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-[#F59E0B] to-[#D97706] hover:from-[#D97706] hover:to-[#B45309] text-slate-950 font-bold text-sm transition-all shadow-lg shadow-[#F59E0B]/20 cursor-pointer"
+            title="Acessar Análise Preditiva e Digital Twin pvlib"
+          >
+            <Activity className="w-4 h-4 text-slate-950" />
+            Análise Preditiva (pvlib)
+          </button>
+
+          <button
             onClick={() => openNewUsinaModal()}
             className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-[#10B981] to-[#059669] hover:from-[#059669] hover:to-[#047857] text-white font-semibold text-sm transition-all shadow-lg shadow-[#10B981]/20"
             title="Cadastrar nova usina solar fotovoltaica"

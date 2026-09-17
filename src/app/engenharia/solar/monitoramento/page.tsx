@@ -665,6 +665,13 @@ print(f"THD de Tensão Calculado (FFT): {thd:.2f} %")`}</pre>
                 </select>
               </div>
               <button 
+                onClick={() => router.push("/engenharia/solar/preditiva")}
+                className="flex items-center gap-2 px-5 py-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black rounded-xl text-xs uppercase tracking-wider transition-all shadow-lg shadow-orange-500/20 cursor-pointer"
+              >
+                <Activity className="w-4 h-4 text-slate-950" />
+                Análise Preditiva (pvlib)
+              </button>
+              <button 
                 onClick={() => router.push("/engenharia/solar/monitoramento/usinas")}
                 className="flex items-center gap-2 px-5 py-2 bg-slate-950 hover:bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-200 hover:text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all"
               >

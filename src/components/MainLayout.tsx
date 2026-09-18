@@ -104,7 +104,12 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
           const isAllowedPath = allowed.some((r: string) => 
             path === r || 
             path.startsWith(r + '/') ||
-            (path.startsWith('/engenharia/solar') && (r === '/engenharia/solar' || r === '/engenharia/solar/monitoramento'))
+            (path.startsWith('/engenharia/solar') && (
+              r === '/engenharia/solar' || 
+              r === '/engenharia/solar/monitoramento' || 
+              r === '/engenharia/solar/preditiva' ||
+              r === '/engenharia'
+            ))
           );
           if (!isAllowedPath && path !== '/login' && path !== '/') {
             window.location.href = allowed[0];
@@ -150,7 +155,8 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
           if (item.href === '/engenharia/solar/preditiva') {
             return userObj.allowedRoutes.includes('/engenharia/solar/preditiva') ||
                    userObj.allowedRoutes.includes('/engenharia/solar') ||
-                   userObj.allowedRoutes.includes('/engenharia/solar/monitoramento');
+                   userObj.allowedRoutes.includes('/engenharia/solar/monitoramento') ||
+                   userObj.allowedRoutes.includes('/engenharia');
           }
           return userObj.allowedRoutes.includes(item.href);
         }
@@ -241,7 +247,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                     <div className="space-y-0.5">
                       {section.items.map((item) => {
                         const isActive = pathname === item.href || (item.href !== '/' && pathname?.startsWith(item.href + '/'));
-                        const disabled = !!item.badge && !['IA', 'NOVO', 'PLANILHA', 'Planilha'].includes(item.badge);
+                        const disabled = (item as any).disabled || (!!item.badge && ['EM BREVE', 'SOON', 'BREVE'].includes(item.badge.toUpperCase()));
                         return (
                           <Link
                             key={item.name}
@@ -257,7 +263,12 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                             <item.icon className={clsx("w-4 h-4 shrink-0 mr-3", isActive ? "text-white" : "text-slate-500 group-hover:text-[#E45318]")} />
                             <span className="text-sm flex-1">{item.name}</span>
                             {item.badge && (
-                              <span className={clsx("text-[9px] font-black px-1.5 py-0.5 rounded-full uppercase", item.badge === 'IA' ? 'bg-[#E45318] text-white' : 'bg-slate-700 text-slate-400')}>
+                              <span className={clsx(
+                                "text-[9px] font-black px-1.5 py-0.5 rounded-full uppercase", 
+                                item.badge === 'IA' ? 'bg-[#E45318] text-white' : 
+                                item.badge.toLowerCase().includes('prescinto') ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' :
+                                'bg-slate-700 text-slate-400'
+                              )}>
                                 {item.badge}
                               </span>
                             )}

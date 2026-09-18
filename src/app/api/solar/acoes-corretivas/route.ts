@@ -50,6 +50,33 @@ export async function POST(req: Request) {
   }
 }
 
+export async function PUT(req: Request) {
+  try {
+    const body = await req.json();
+    const { id, tipoAcao, dataExecucao, observacoes, executadoPor } = body;
+
+    if (!id) {
+      return NextResponse.json({ error: "ID é obrigatório para atualização" }, { status: 400 });
+    }
+
+    const dataToUpdate: any = {};
+    if (tipoAcao) dataToUpdate.tipoAcao = tipoAcao;
+    if (dataExecucao) dataToUpdate.dataExecucao = new Date(dataExecucao);
+    if (observacoes !== undefined) dataToUpdate.observacoes = observacoes;
+    if (executadoPor !== undefined) dataToUpdate.executadoPor = executadoPor;
+
+    const acao = await prisma.acaoCorretiva.update({
+      where: { id },
+      data: dataToUpdate,
+    });
+
+    return NextResponse.json({ success: true, acao });
+  } catch (error: any) {
+    console.error("Erro ao atualizar ação corretiva:", error);
+    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
+  }
+}
+
 export async function DELETE(req: Request) {
   try {
     const { searchParams } = new URL(req.url);

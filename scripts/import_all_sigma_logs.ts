@@ -180,9 +180,11 @@ async function main() {
 
   for (const [bucketKey, b] of buckets.entries()) {
     const [datePart, timePart] = bucketKey.split(' ');
-    // Fuso horário de Brasília (UTC-3)
-    const isoLocal = `${datePart}T${timePart}:00-03:00`;
-    const ts = new Date(isoLocal);
+    // O Datalogger da Sigma registra nativamente em UTC (Horário Universal / GPS)
+    // Portanto, formatamos diretamente como UTC (Z) para que no fuso de Brasília (UTC-3)
+    // o nascer do sol coincida perfeitamente às ~05:56h locais e meio-dia solar às 11:55h/12:00h locais.
+    const isoUtc = `${datePart}T${timePart}:00Z`;
+    const ts = new Date(isoUtc);
     if (isNaN(ts.getTime())) continue;
 
     const ghiMean = b.validGhi > 0 ? parseFloat((b.sumGhi / b.validGhi).toFixed(2)) : null;
@@ -207,7 +209,9 @@ async function main() {
   // Ordenar por timestamp
   recordsToUpsert.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
 
-  console.log(`Total de registros prontos para gravação: ${recordsToUpsert.length}`);
+  // Limpar registros anteriores da estação para garantir integridade perfeita dos fusos
+  console.log(`Limpando registros anteriores da estação ${estacao.id} no banco...`);
+  await prisma.telemetriaEstacao.deleteMany({ where: { estacaoId: estacao.id } });
 
   // Inserir no banco em lotes de 1.000 com skipDuplicates
   const BATCH_SIZE = 1000;

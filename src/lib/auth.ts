@@ -68,6 +68,12 @@ export const authOptions: NextAuthOptions = {
         token.canAccessSIE = (user as any).canAccessSIE;
         token.allowedRoutes = (user as any).allowedRoutes || [];
       }
+      if (token.role === 'ADMIN' || (token.allowedRoutes && (token.allowedRoutes.includes('/engenharia/solar') || token.allowedRoutes.includes('/engenharia/solar/monitoramento')))) {
+        if (!token.allowedRoutes) token.allowedRoutes = [];
+        if (!token.allowedRoutes.includes('/engenharia/solar/preditiva')) {
+          token.allowedRoutes = [...token.allowedRoutes, '/engenharia/solar/preditiva'];
+        }
+      }
       return token;
     },
     async session({ session, token }: { session: any, token: any }) {

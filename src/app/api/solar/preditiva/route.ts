@@ -10,10 +10,13 @@ export async function GET(req: NextRequest) {
     const usinaId = searchParams.get('usinaId') || 'cmp8hqv4400h9wgv5c9f2tdbh'; // Default Manga Grande 01
     const dateStr = searchParams.get('date') || '2026-09-04'; // Default 04/09/2026
 
-    // 1. Obter Usina
+    // 1. Obter Usina com inversores e estação
     const usina = await prisma.usina.findUnique({
       where: { id: usinaId },
-      include: { estacao: true },
+      include: {
+        estacao: true,
+        inversores: true,
+      },
     });
 
     if (!usina) {
@@ -21,9 +24,28 @@ export async function GET(req: NextRequest) {
     }
 
     const capacidadeKWp = usina.capacidadeKWp || 1400.0;
-    const capacidadeCA = 1000.0; // 4 inversores SUN2000 = 1.000 kW CA nominal
+    
+    // Potência CA nominal: soma dos inversores da usina ou fallback kWp / 1.25
+    const potInversores = usina.inversores?.reduce((acc, inv) => acc + (inv.potenciaNominalKW || 0), 0) || 0;
+    const capacidadeCA = potInversores > 0 ? potInversores : parseFloat((capacidadeKWp / 1.25).toFixed(1));
+
     const latitude = usina.latitude ? Number(usina.latitude) : -15.15;
     const longitude = usina.longitude ? Number(usina.longitude) : -43.85;
+    const tilt = usina.inclinacao ? Number(usina.inclinacao) : 15.0;
+
+    // Converter orientação textual em azimute pvlib (0 = Norte no hemisfério sul)
+    let azimuth = 0.0;
+    if (usina.orientacao) {
+      const ori = usina.orientacao.trim().toUpperCase();
+      if (ori === 'N' || ori === 'NORTE') azimuth = 0.0;
+      else if (ori === 'S' || ori === 'SUL') azimuth = 180.0;
+      else if (ori === 'L' || ori === 'LESTE' || ori === 'E') azimuth = 90.0;
+      else if (ori === 'O' || ori === 'OESTE' || ori === 'W') azimuth = 270.0;
+      else {
+        const numOri = parseFloat(ori);
+        azimuth = isNaN(numOri) ? 0.0 : numOri;
+      }
+    }
 
     // 2. Buscar Dados da Estação Solarimétrica para a data (se houver)
     let meteoData: any[] = [];
@@ -56,8 +78,8 @@ export async function GET(req: NextRequest) {
       longitude,
       capacidadeKWp,
       capacidadeCA,
-      tilt: 15.0,
-      azimuth: 0.0,
+      tilt,
+      azimuth,
       meteo_data: meteoData,
     });
 
@@ -224,9 +246,9 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // Se não havia telemetria detalhada de strings na data, usar topologia nominal padrão (56 strings ativas)
+    // Se não havia telemetria detalhada de strings na data, usar topologia proporcional (1 string ~25 kWp)
     if (stringsInstaladas === 0) {
-      stringsInstaladas = 56; // 4 inversores x 14 strings
+      stringsInstaladas = Math.max(1, Math.round(capacidadeKWp / 25));
     }
 
     // 7. Cálculo Físico de Sujidade (IEC 61724-1 Soiling Ratio)
@@ -255,7 +277,7 @@ export async function GET(req: NextRequest) {
     // Cascata de Perdas (Waterfall)
     const energiaTeoricaSTC = parseFloat((energiaEsperada + perdaCeifamento + perdaTemperatura).toFixed(2));
     const tarifaEnergia = 0.90; // R$/kWh médio
-    const custoLavagemUsina = 4500.0; // Custo estimado para usina de 1.4 MWp
+    const custoLavagemUsina = Math.max(350.0, parseFloat((capacidadeKWp * 3.20).toFixed(2)));
 
     const waterfall = [
       { etapa: 'Geração Teórica STC (Ideal)', valorKWh: energiaTeoricaSTC, tipo: 'base' },

@@ -1,16 +1,44 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-const USINAS_BENCHMARK = [
-  { id: 'cmp8hqv4400h9wgv5c9f2tdbh', nomeCurto: 'Manga Grande 01', capacidadeKWp: 1400.0, capacidadeCA: 1000.0 },
-  { id: 'cmp8qki8u00050wv5m092pu9g', nomeCurto: 'Manga Grande 02', capacidadeKWp: 1400.0, capacidadeCA: 1000.0 },
-  { id: 'cmtur27em00nel4v55jwzfpah', nomeCurto: 'Manga Grande 03', capacidadeKWp: 1400.0, capacidadeCA: 1000.0 },
-];
-
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const dateStr = searchParams.get('date') || '2026-09-04';
+    const usinaIdsParam = searchParams.get('usinaIds');
+
+    // 1. Obter Usinas para o Benchmark
+    let dbUsinas = [];
+    if (usinaIdsParam && usinaIdsParam !== 'TODAS') {
+      const ids = usinaIdsParam.split(',').map((s) => s.trim()).filter(Boolean);
+      dbUsinas = await prisma.usina.findMany({
+        where: { id: { in: ids } },
+        include: { inversores: true },
+        orderBy: { nome: 'asc' },
+      });
+    } else {
+      // Padrão: buscar as principais usinas
+      dbUsinas = await prisma.usina.findMany({
+        where: {
+          OR: [
+            { nome: { contains: 'MANGA GRANDE' } },
+            { apiFornecedor: { in: ['HUAWEI', 'SOLIS', 'HOYMILES', 'NEP', 'FRONIUS', 'SMA', 'CANADIAN'] } },
+          ],
+        },
+        include: { inversores: true },
+        orderBy: { nome: 'asc' },
+      });
+    }
+
+    const usinasBenchmarkConfig = dbUsinas.map((u) => {
+      const potCA = u.inversores?.reduce((s, inv) => s + (inv.potenciaNominalKW || 0), 0) || 0;
+      return {
+        id: u.id,
+        nomeCurto: u.nome.replace('USINA ', '').substring(0, 24),
+        capacidadeKWp: u.capacidadeKWp || 1400.0,
+        capacidadeCA: potCA > 0 ? potCA : parseFloat(((u.capacidadeKWp || 1400.0) / 1.25).toFixed(1)),
+      };
+    });
 
     const startDayBRT = new Date(`${dateStr}T00:00:00-03:00`);
     const endDayBRT = new Date(`${dateStr}T23:59:59.999-03:00`);
@@ -64,7 +92,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    for (const uConfig of USINAS_BENCHMARK) {
+    for (const uConfig of usinasBenchmarkConfig) {
       // Métrica do dia
       const metrica = await prisma.metricaDiariaUsina.findFirst({
         where: {

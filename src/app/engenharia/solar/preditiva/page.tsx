@@ -89,6 +89,18 @@ export default function PreditivaSolarPage() {
   const [observacoesOS, setObservacoesOS] = useState("");
   const [salvandoOS, setSalvandoOS] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const [listaUsinas, setListaUsinas] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetch("/api/solar/usinas")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setListaUsinas(data);
+        }
+      })
+      .catch((e) => console.error("Erro ao carregar lista de usinas:", e));
+  }, []);
 
   const fetchPreditiva = async () => {
     setLoading(true);
@@ -399,9 +411,33 @@ export default function PreditivaSolarPage() {
               onChange={(e) => setUsinaId(e.target.value)}
               className="bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-amber-500 cursor-pointer"
             >
-              <option value="cmp8hqv4400h9wgv5c9f2tdbh">USINA MANGA GRANDE UFV 1 1852 (1.400 kWp / 1.000 kW CA)</option>
-              <option value="cmp8qki8u00050wv5m092pu9g">USINA MANGA GRANDE UFV 2 2243 (1.400 kWp / 1.000 kW CA)</option>
-              <option value="cmtur27em00nel4v55jwzfpah">USINA MANGA GRANDE 3 2565 (1.400 kWp / 1.000 kW CA)</option>
+              {listaUsinas.length > 0 ? (
+                Object.entries(
+                  listaUsinas.reduce((acc: Record<string, any[]>, u: any) => {
+                    const fornecedor = (u.apiFornecedor || "OUTROS").toUpperCase();
+                    if (!acc[fornecedor]) acc[fornecedor] = [];
+                    acc[fornecedor].push(u);
+                    return acc;
+                  }, {})
+                ).map(([fabricante, usinasDoGrupo]) => (
+                  <optgroup key={fabricante} label={`--- ${fabricante} ---`}>
+                    {usinasDoGrupo.map((u: any) => {
+                      const potCA = u.inversores?.reduce((s: number, inv: any) => s + (inv.potenciaNominalKW || 0), 0) || Math.round((u.capacidadeKWp || 0) / 1.25);
+                      return (
+                        <option key={u.id} value={u.id}>
+                          [{fabricante}] {u.nome} ({u.capacidadeKWp} kWp / {potCA} kW CA)
+                        </option>
+                      );
+                    })}
+                  </optgroup>
+                ))
+              ) : (
+                <>
+                  <option value="cmp8hqv4400h9wgv5c9f2tdbh">USINA MANGA GRANDE UFV 1 1852 (1.400 kWp / 1.000 kW CA)</option>
+                  <option value="cmp8qki8u00050wv5m092pu9g">USINA MANGA GRANDE UFV 2 2243 (1.400 kWp / 1.000 kW CA)</option>
+                  <option value="cmtur27em00nel4v55jwzfpah">USINA MANGA GRANDE 3 2565 (1.400 kWp / 1.000 kW CA)</option>
+                </>
+              )}
             </select>
           </div>
 
@@ -883,10 +919,12 @@ export default function PreditivaSolarPage() {
                     onChange={(e) => setFiltroUsinaStrings(e.target.value)}
                     className="bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-rose-500 cursor-pointer font-medium"
                   >
-                    <option value="TODAS">TODAS AS USINAS (Complexo Manga Grande Consolidado)</option>
-                    <option value="cmp8hqv4400h9wgv5c9f2tdbh">Manga Grande 01 (1.400 kWp)</option>
-                    <option value="cmp8qki8u00050wv5m092pu9g">Manga Grande 02 (1.400 kWp)</option>
-                    <option value="cmtur27em00nel4v55jwzfpah">Manga Grande 03 (1.400 kWp)</option>
+                    <option value="TODAS">TODAS AS USINAS (Portfólio Consolidado)</option>
+                    {listaUsinas.map((u: any) => (
+                      <option key={u.id} value={u.id}>
+                        [{u.apiFornecedor || "OUTROS"}] {u.nome} ({u.capacidadeKWp} kWp)
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -1116,10 +1154,16 @@ export default function PreditivaSolarPage() {
                                       FUSÍVEL GPV ABERTO
                                     </span>
                                   );
-                                  if (s.status === "DESLIGADA_NC") {
+                                  if (s.status === "NAO_CONECTADA_NC") {
+                                    statusBadge = (
+                                      <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-slate-800 text-slate-400 border border-slate-700">
+                                        PORTA VAZIA (NC)
+                                      </span>
+                                    );
+                                  } else if (s.status === "DESLIGADA_ABERTA" || s.status === "DESLIGADA_NC") {
                                     statusBadge = (
                                       <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/40">
-                                        DESLIGADA / NC
+                                        STRING DESCONECTADA
                                       </span>
                                     );
                                   } else if (s.status === "SUBGERACAO") {
@@ -1135,15 +1179,15 @@ export default function PreditivaSolarPage() {
                                       <td className="py-2 px-2.5 font-mono font-bold text-white">{s.stringName}</td>
                                       <td className="py-2 px-2.5 text-cyan-300 font-semibold">{s.mppt}</td>
                                       <td className="py-2 px-2.5 font-medium text-slate-200">{s.tensaoV} V</td>
-                                      <td className="py-2 px-2.5 font-bold text-rose-400">{s.correnteA.toFixed(2)} A</td>
+                                      <td className={`py-2 px-2.5 font-bold ${s.correnteA > 0 ? "text-amber-400" : "text-rose-400"}`}>{s.correnteA.toFixed(2)} A</td>
                                       <td className="py-2 px-2.5">
                                         <div>{statusBadge}</div>
                                         <div className="text-[10px] text-slate-400 mt-0.5 max-w-[200px] truncate" title={s.diagnostico}>
                                           {s.acaoRecomendada}
                                         </div>
                                       </td>
-                                      <td className="py-2 px-2.5 font-bold text-rose-400 whitespace-nowrap">
-                                        -R$ {s.perdaRSDia?.toFixed(2)}/dia
+                                      <td className={`py-2 px-2.5 font-bold whitespace-nowrap ${s.perdaRSDia > 0 ? "text-rose-400" : "text-slate-500"}`}>
+                                        {s.perdaRSDia > 0 ? `-R$ ${s.perdaRSDia?.toFixed(2)}/dia` : "R$ 0,00"}
                                       </td>
                                     </tr>
                                   );

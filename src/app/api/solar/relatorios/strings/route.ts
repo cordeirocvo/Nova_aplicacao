@@ -28,7 +28,7 @@ const INVERTER_MAPPING: Record<string, { nome: string; modelo: string }> = {
   ES24B0086039: { nome: "Inversor 04", modelo: "SUN2000-100KTL-M1" },
 };
 
-function extrairInfoInversor(invKey: string) {
+function extrairInfoInversor(invKey: string, dbInversores?: any[]) {
   const mapeado = INVERTER_MAPPING[invKey];
   if (mapeado) {
     return {
@@ -40,19 +40,38 @@ function extrairInfoInversor(invKey: string) {
     };
   }
 
+  // Tentar encontrar nos inversores da usina cadastrados no banco
+  if (dbInversores && dbInversores.length > 0) {
+    const invDb = dbInversores.find(
+      (inv: any) =>
+        inv.numeroSerie === invKey ||
+        inv.id === invKey ||
+        (inv.numeroSerie && invKey.includes(inv.numeroSerie))
+    );
+    if (invDb) {
+      return {
+        inversorId: invDb.id,
+        inversorNome: `${invDb.modelo || 'Inversor'} (${invDb.numeroSerie || invKey})`,
+        rotulo: invDb.modelo || 'Inversor',
+        serial: invDb.numeroSerie || invKey,
+        modelo: invDb.modelo || 'Inversor Solar',
+      };
+    }
+  }
+
   // Fallback se não for mapeado diretamente
   return {
     inversorId: invKey,
     inversorNome: `Inversor ${invKey}`,
     rotulo: invKey,
     serial: invKey,
-    modelo: "SUN2000-100KTL",
+    modelo: "Inversor Solar",
   };
 }
 
 function calcularMPPT(stringName: string): string {
-  // Ex: INV01_S14 -> 14, ES2390024603_S9 -> 9
-  const match = stringName.match(/_S(\d+)$/i);
+  // Suporta _S14, _PV2, S14, PV2
+  const match = stringName.match(/(?:_S|_PV|PV|S)(\d+)$/i);
   if (match) {
     const num = parseInt(match[1], 10);
     const mpptNum = Math.ceil(num / 2);
@@ -68,17 +87,15 @@ export async function GET(request: NextRequest) {
     const dateParam = searchParams.get("date") || "2026-09-14";
     const apenasFalhas = searchParams.get("apenasFalhas") !== "false"; // padrão true
 
-    // Buscar usinas
+    // Buscar usinas (todas ou filtrada por id)
     let usinasQuery = {};
     if (usinaIdParam && usinaIdParam !== "TODAS") {
       usinasQuery = { id: usinaIdParam };
-    } else {
-      usinasQuery = { nome: { contains: "MANGA GRANDE" } };
     }
 
     const usinas = await prisma.usina.findMany({
       where: usinasQuery,
-      include: { estacao: true },
+      include: { estacao: true, inversores: true },
       orderBy: { nome: "asc" },
     });
 
@@ -92,6 +109,7 @@ export async function GET(request: NextRequest) {
     const relatorioUsinas = [];
     let complexoTotalFusivel = 0;
     let complexoTotalDesligadas = 0;
+    let complexoTotalNaoConectadas = 0;
     let complexoTotalSubgeracao = 0;
     let complexoTotalNormais = 0;
     let complexoPerdaRSDia = 0;
@@ -183,12 +201,14 @@ export async function GET(request: NextRequest) {
           normais: number;
           fusivel: number;
           desligadas: number;
+          naoConectadas: number;
           subgeracao: number;
         }
       > = {};
 
       let plantFusivel = 0;
       let plantDesligadas = 0;
+      let plantNaoConectadas = 0;
       let plantSubgeracao = 0;
       let plantNormais = 0;
 
@@ -200,11 +220,12 @@ export async function GET(request: NextRequest) {
 
         if (!inversoresMap[invKey]) {
           inversoresMap[invKey] = {
-            inversorInfo: extrairInfoInversor(invKey),
+            inversorInfo: extrairInfoInversor(invKey, u.inversores),
             stringsList: [],
             normais: 0,
             fusivel: 0,
             desligadas: 0,
+            naoConectadas: 0,
             subgeracao: 0,
           };
         }
@@ -213,8 +234,8 @@ export async function GET(request: NextRequest) {
         const I = val.I || 0;
         const mppt = calcularMPPT(stringKey);
 
-        let status: "FUSIVEL_QUEIMADO" | "DESLIGADA_NC" | "SUBGERACAO" | "NORMAL" = "NORMAL";
-        let severidade: "CRITICA" | "ALTA" | "MEDIA" | "OK" = "OK";
+        let status: "FUSIVEL_QUEIMADO" | "DESLIGADA_ABERTA" | "NAO_CONECTADA_NC" | "SUBGERACAO" | "NORMAL" = "NORMAL";
+        let severidade: "CRITICA" | "ALTA" | "MEDIA" | "OK" | "INFORMATIVO" = "OK";
         let diagnostico = "Operação fotovoltaica normal e gerando potência nominal.";
         let acaoRecomendada = "Nenhuma ação necessária.";
         let perdaKWh = 0;
@@ -222,7 +243,7 @@ export async function GET(request: NextRequest) {
 
         // Regras físicas precisas:
         if (I < 0.2 && V >= 350) {
-          // Fusível Queimado / Chave gPV Aberta
+          // Fusível Queimado / Chave gPV Aberta: Tensão alta do barramento MPPT presente, mas corrente nula!
           status = "FUSIVEL_QUEIMADO";
           severidade = "CRITICA";
           diagnostico = `Tensão de circuito aberto alta (${V.toFixed(1)} V) e corrente zero (${I.toFixed(2)} A) sob pleno sol. Fusível gPV de 15A aberto ou chave CC desarmada.`;
@@ -232,11 +253,23 @@ export async function GET(request: NextRequest) {
 
           inversoresMap[invKey].fusivel++;
           plantFusivel++;
-        } else if (I < 0.2 && V < 100) {
-          // Série Desconectada / Conector MC4 Aberto / Porta Vazia (NC)
-          status = "DESLIGADA_NC";
+        } else if (I < 0.15 && V < 50) {
+          // Porta Não Conectada de Projeto (NC - Not Connected)
+          // Em inversores com 18 a 24 entradas onde nem todas são utilizadas pela usina (sem perda financeira!)
+          status = "NAO_CONECTADA_NC";
+          severidade = "INFORMATIVO";
+          diagnostico = `Canal CC não conectado no inversor (NC de projeto). Tensão e corrente nulas (${V.toFixed(1)} V / ${I.toFixed(2)} A).`;
+          acaoRecomendada = "Porta sobressalente de projeto sem cabeamento fotovoltaico. Nenhuma perda.";
+          perdaKWh = 0;
+          perdaRS = 0;
+
+          inversoresMap[invKey].naoConectadas++;
+          plantNaoConectadas++;
+        } else if (I < 0.2 && V >= 50 && V < 350) {
+          // Série Desconectada / Conector MC4 Aberto / Tensão Residual
+          status = "DESLIGADA_ABERTA";
           severidade = "ALTA";
-          diagnostico = `Tensão nula (${V.toFixed(1)} V) e corrente zero (${I.toFixed(2)} A). String desconectada fisicamente, cabo interrompido ou entrada não conectada (NC).`;
+          diagnostico = `Tensão residual atípica (${V.toFixed(1)} V) e corrente zero (${I.toFixed(2)} A). String desconectada fisicamente, cabo interrompido ou conector solto.`;
           acaoRecomendada = "Inspecionar engate dos conectores MC4 e verificar continuidade dos cabos do arranjo.";
           perdaKWh = ENERGIA_MEDIA_STRING_KWH_DIA;
           perdaRS = parseFloat((ENERGIA_MEDIA_STRING_KWH_DIA * TARIFA_ENERGIA_RS).toFixed(2));
@@ -273,7 +306,7 @@ export async function GET(request: NextRequest) {
           perdaRSDia: perdaRS,
         };
 
-        if (!apenasFalhas || status !== "NORMAL") {
+        if (!apenasFalhas || (status !== "NORMAL" && status !== "NAO_CONECTADA_NC")) {
           inversoresMap[invKey].stringsList.push(stringObj);
         }
       }
@@ -313,6 +346,7 @@ export async function GET(request: NextRequest) {
             normais: inv.normais,
             fusivelQueimado: inv.fusivel,
             desligadas: inv.desligadas,
+            naoConectadas: inv.naoConectadas,
             subgeracao: inv.subgeracao,
             totalComFalha: totalAfetadas,
             perdaKWhDia: perdaKWhInv,
@@ -337,6 +371,7 @@ export async function GET(request: NextRequest) {
 
       complexoTotalFusivel += plantFusivel;
       complexoTotalDesligadas += plantDesligadas;
+      complexoTotalNaoConectadas += plantNaoConectadas;
       complexoTotalSubgeracao += plantSubgeracao;
       complexoTotalNormais += plantNormais;
       complexoPerdaRSDia += plantPerdaRSDia;
@@ -355,6 +390,7 @@ export async function GET(request: NextRequest) {
           stringsNormais: plantNormais,
           fusivelQueimadoCount: plantFusivel,
           desligadasCount: plantDesligadas,
+          naoConectadasCount: plantNaoConectadas,
           subgeracaoCount: plantSubgeracao,
           totalComFalha: plantFusivel + plantDesligadas + plantSubgeracao,
           perdaTotalKWhDia: plantPerdaKWhDia,
@@ -373,6 +409,7 @@ export async function GET(request: NextRequest) {
         totalStringsNormais: complexoTotalNormais,
         totalFusivelQueimado: complexoTotalFusivel,
         totalDesligadas: complexoTotalDesligadas,
+        totalNaoConectadas: complexoTotalNaoConectadas,
         totalSubgeracao: complexoTotalSubgeracao,
         totalComFalha: complexoTotalFusivel + complexoTotalDesligadas + complexoTotalSubgeracao,
         perdaTotalRSDia: parseFloat(complexoPerdaRSDia.toFixed(2)),

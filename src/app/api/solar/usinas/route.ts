@@ -6,6 +6,10 @@ export const runtime = 'nodejs';
 export async function GET() {
   try {
     const usinas = await prisma.usina.findMany({
+      include: {
+        inversores: true,
+        estacao: true,
+      },
       orderBy: { nome: "asc" }
     });
     return NextResponse.json(usinas);

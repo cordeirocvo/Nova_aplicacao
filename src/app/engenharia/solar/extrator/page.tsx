@@ -2,7 +2,9 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
+  Brain,
   Sun,
   Database,
   RefreshCw,
@@ -801,6 +803,15 @@ export default function SolarExtratorPage() {
             <Sparkles className={`w-4 h-4 text-amber-400 ${seedingManufacturers ? "animate-spin" : ""}`} />
             {seedingManufacturers ? "Restaurando..." : "Restaurar Fabricantes Padrão"}
           </button>
+
+          <Link
+            href="/engenharia/solar/cockpit-ai"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-sm transition-all shadow-lg shadow-purple-600/20 cursor-pointer"
+            title="Acessar o Cockpit de Inteligência Artificial e Auditoria de Normas"
+          >
+            <Brain className="w-4 h-4" />
+            🧠 Cockpit IA & Normas
+          </Link>
 
           <button
             onClick={() => setModalManualImportOpen(true)}

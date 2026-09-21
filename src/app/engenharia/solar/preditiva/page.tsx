@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import {
+  Brain,
   Sun,
   Zap,
   TrendingUp,
@@ -317,6 +319,13 @@ export default function PreditivaSolarPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
+          <Link
+            href="/engenharia/solar/cockpit-ai"
+            className="flex items-center gap-2 px-3.5 py-2 text-sm font-bold bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-lg transition-all shadow-lg shadow-purple-600/20 cursor-pointer"
+          >
+            <Brain className="w-4 h-4" /> Cockpit IA & Normas
+          </Link>
+
           <button
             onClick={() =>
               abrirModalOSComTipo(

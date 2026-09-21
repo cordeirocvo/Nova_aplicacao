@@ -693,8 +693,11 @@ model Usina {
   inversores      Inversor[]
   telemetria      Telemetria[]
   estacao         EstacaoSolarimetrica? @relation(fields: [estacaoId], references: [id])
-  acoesCorretivas AcaoCorretiva[]
-  metricasDiarias MetricaDiariaUsina[]
+  acoesCorretivas       AcaoCorretiva[]
+  metricasDiarias       MetricaDiariaUsina[]
+  cabines               CabineEletrica[]
+  ordensServicoIA       OrdemServicoIA[]
+  auditoriasNormativas  NormaConformidade[]
 }
 
 model EstacaoSolarimetrica {
@@ -1042,3 +1045,83 @@ model RdoAuditLog {
   detalhes    String?
   createdAt   DateTime @default(now())
 }
+
+// ─── Inteligência Artificial de Engenharia Solar & Compliance Normativo ────────
+
+model CabineEletrica {
+  id                   String   @id @default(cuid())
+  usinaId              String
+  nome                 String   @default("Cabine Primária / Subestação")
+  tag                  String?  @default("SE-01")
+  potenciaTrafoKVA     Float?   @default(1250)
+  tensaoPrimariaKV     Float?   @default(13.8)
+  tensaoSecundariaV    Float?   @default(380)
+  tipoTrafo            String?  @default("OLEO") // "OLEO", "SECO"
+  tensaoFaseA_V        Float?
+  tensaoFaseB_V        Float?
+  tensaoFaseC_V        Float?
+  desbalancoTensao     Float?   // V2/V1 % (PRODIST Módulo 8 <= 3%)
+  fatorPotencia        Float?   // cos phi no PAC (>= 0.92)
+  potenciaAtivaKW      Float?
+  potenciaReativaKVAR  Float?
+  frequenciaHz         Float?   @default(60.0)
+  tempOleoGraus        Float?   // NBR 14039 (< 85°C)
+  tempEnrolamentoGraus Float?   // (< 95°C / 105°C)
+  statusDps            String?  @default("OK") // "OK", "ATUADO_SUBSTITUIR"
+  statusRelay          String?  @default("NORMAL")
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  usina                Usina    @relation(fields: [usinaId], references: [id], onDelete: Cascade)
+
+  @@index([usinaId])
+}
+
+model OrdemServicoIA {
+  id                    String    @id @default(cuid())
+  usinaId               String
+  inversorId            String?
+  codigoOS              String    @unique @default(cuid())
+  titulo                String
+  descricao             String
+  tipoAlvo              String    // "STRING", "INVERSOR", "CABINE", "MODULOS_SUJIDADE", "SPDA_DPS"
+  localizacaoFisica     String?   // ex: "Mesa 04, Lado Leste, Inversor 01, MPPT 7, String S14"
+  gravidade             String    @default("ALTA") // "CRITICA", "ALTA", "MEDIA", "BAIXA"
+  status                String    @default("PENDENTE") // "PENDENTE", "EM_ATENDIMENTO", "CONCLUIDA", "CANCELADA"
+  impactoFinanceiroDia  Float?    // R$/dia de perda estimada
+  perdaPotenciaKW       Float?    // kW perdidos estimados
+  normaReferencia       String?   // "ABNT NBR 16690 item 6.3.2", "ABNT NBR 5410", etc.
+  pecaSugerida          String?   // "Fusível Solar Cilíndrico gPV 1000V DC 15A 10x38mm"
+  procedimentoSeguranca String?   // "Desligar seccionadora CC antes do manuseio (NR-10). Utilizar EPI arco elétrico."
+  responsavelCampo      String?
+  observacoesCampo      String?
+  fotos                 String[]  @default([])
+  resolvidaEm           DateTime?
+  validadoPorTelemetria  Boolean   @default(false)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  usina                 Usina     @relation(fields: [usinaId], references: [id], onDelete: Cascade)
+
+  @@index([usinaId, status])
+  @@index([gravidade])
+}
+
+model NormaConformidade {
+  id                 String   @id @default(cuid())
+  usinaId            String
+  dataAuditoria      DateTime @default(now())
+  norma              String   // "NBR 5410", "NBR 5419", "NBR 16690", "NBR 16274", "NBR 14039", "PRODIST_MD8"
+  itemNorma          String?  // ex: "Item 6.3.2 - Proteção CC", "Item 5.1 - Queda de Tensão"
+  parametroAvaliado  String   // ex: "Queda de tensão CA nos cabos alimentadores"
+  valorMedido        Float?   // ex: 2.8 (%)
+  valorLimite        Float?   // ex: 2.0 (%)
+  unidade            String?  // "%", "V", "A", "°C", "Mohm"
+  statusConformidade String   // "CONFORME", "ALERTA", "NAO_CONFORME"
+  detalhes           String?
+  acaoCorretiva      String?
+  createdAt          DateTime @default(now())
+  usina              Usina    @relation(fields: [usinaId], references: [id], onDelete: Cascade)
+
+  @@index([usinaId, norma])
+  @@index([statusConformidade])
+}
+

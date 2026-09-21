@@ -113,13 +113,12 @@ export class SolarAiEngine {
     dataStr: string,
     options?: { gerarParecerGemini?: boolean }
   ): Promise<DiagnosticoCompletoUsina> {
-    // 1. Obter Usina com inversores, cabines e estação
+    // 1. Obter Usina com inversores e estação
     const usina = await prisma.usina.findUnique({
       where: { id: usinaId },
       include: {
         estacao: true,
         inversores: true,
-        cabines: true,
       },
     });
 
@@ -453,6 +452,13 @@ export class SolarAiEngine {
     });
 
     // 11. Dados da Cabine Elétrica (PRODIST Md. 8)
+    let cabineDb: any = null;
+    try {
+      if ((prisma as any).cabineEletrica) {
+        cabineDb = await (prisma as any).cabineEletrica.findFirst({ where: { usinaId } });
+      }
+    } catch (_) {}
+
     const mediaV = (mediaTensaoA + mediaTensaoB + mediaTensaoC) / 3;
     const maxDevV = Math.max(Math.abs(mediaTensaoA - mediaV), Math.abs(mediaTensaoB - mediaV), Math.abs(mediaTensaoC - mediaV));
     const desbTensao = mediaV > 0 ? (maxDevV / mediaV) * 100 : 0.8;
@@ -460,17 +466,17 @@ export class SolarAiEngine {
       desbTensao > 3.0 ? 'CRITICA' : desbTensao > 2.0 ? 'PRECARIA' : 'ADEQUADA';
 
     const cabineDados: DiagnosticoCompletoUsina['cabine'] = {
-      potenciaTrafoKVA: 1250,
+      potenciaTrafoKVA: cabineDb?.potenciaTrafoKVA || 1250,
       tensaoFasesV: {
         A: parseFloat(mediaTensaoA.toFixed(1)),
         B: parseFloat(mediaTensaoB.toFixed(1)),
         C: parseFloat(mediaTensaoC.toFixed(1)),
       },
       desbalancoTensaoPercent: parseFloat(desbTensao.toFixed(2)),
-      fatorPotencia: 0.985,
-      frequenciaHz: 60.0,
-      tempOleoTrafo: 65.0,
-      statusDps: 'OK',
+      fatorPotencia: cabineDb?.fatorPotencia || 0.985,
+      frequenciaHz: cabineDb?.frequenciaHz || 60.0,
+      tempOleoTrafo: cabineDb?.tempOleoGraus || 65.0,
+      statusDps: cabineDb?.statusDps || 'OK',
       conformidadeProdist,
     };
 

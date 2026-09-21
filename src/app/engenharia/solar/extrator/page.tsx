@@ -33,6 +33,7 @@ import {
   Link as LinkIcon,
   Sparkles,
 } from "lucide-react";
+import ManualTelemetryModal from "@/components/solar/ManualTelemetryModal";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -105,11 +106,27 @@ interface InversorItem {
 interface UsinaItem {
   id: string;
   nome: string;
+  capacidadeKWp?: number;
+  localizacao?: string | null;
   apiFornecedor: string;
+  apiId?: string;
+  apiKey?: string | null;
+  apiSecret?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  inclinacao?: number | null;
+  orientacao?: string | null;
+  coefSujidade?: number | null;
+  coefTemperatura?: number | null;
+  taxaDegradacao?: number | null;
+  estacaoId?: string | null;
+  modoIrradiancia?: string | null;
   inversores: Array<{
     id: string;
     numeroSerie: string;
     modelo: string;
+    potenciaNominalKW?: number;
+    status?: string;
   }>;
 }
 
@@ -156,6 +173,8 @@ export default function SolarExtratorPage() {
   const [discoveryStatusMsg, setDiscoveryStatusMsg] = useState<string | null>(null);
   const [savingUsina, setSavingUsina] = useState<boolean>(false);
   const [usinaErrorMsg, setUsinaErrorMsg] = useState<string | null>(null);
+  const [showDiscovery, setShowDiscovery] = useState<boolean>(false);
+  const [modalManualImportOpen, setModalManualImportOpen] = useState<boolean>(false);
 
   const initialUsinaForm = {
     nome: "",
@@ -229,6 +248,7 @@ export default function SolarExtratorPage() {
 
     if (usinaToEdit) {
       setEditingUsina(usinaToEdit);
+      setShowDiscovery(false);
       setNewUsinaForm({
         nome: usinaToEdit.nome || "",
         capacidadeKWp: usinaToEdit.capacidadeKWp || 0,
@@ -249,6 +269,7 @@ export default function SolarExtratorPage() {
       });
     } else {
       setEditingUsina(null);
+      setShowDiscovery(true);
       setNewUsinaForm(initialUsinaForm);
     }
     setIsUsinaModalOpen(true);
@@ -287,11 +308,39 @@ export default function SolarExtratorPage() {
   };
 
   const handleSaveUsina = async (formDataOverride?: any) => {
-    const payload = formDataOverride || newUsinaForm;
-    if (!payload.nome || !payload.nome.trim()) {
+    // Se formDataOverride for evento de clique do React (SyntheticEvent/MouseEvent), descarte-o
+    const isSyntheticEvent =
+      formDataOverride &&
+      (formDataOverride.nativeEvent ||
+        formDataOverride.target ||
+        formDataOverride._reactName ||
+        typeof formDataOverride.preventDefault === "function");
+
+    const rawPayload =
+      (!isSyntheticEvent && formDataOverride && typeof formDataOverride === "object" && ("nome" in formDataOverride || "capacidadeKWp" in formDataOverride))
+        ? formDataOverride
+        : newUsinaForm;
+
+    // Resgatar o nome prioritariamente do formulário ou editingUsina
+    const nomeFinal =
+      (rawPayload.nome && typeof rawPayload.nome === "string" && rawPayload.nome.trim()) ||
+      (editingUsina?.nome && editingUsina.nome.trim()) ||
+      "";
+
+    if (!nomeFinal) {
       setUsinaErrorMsg("Preencha o Nome da Usina.");
       return;
     }
+
+    const payload = {
+      ...rawPayload,
+      nome: nomeFinal,
+      capacidadeKWp: parseFloat(rawPayload.capacidadeKWp) || 0,
+      latitude: rawPayload.latitude !== "" && rawPayload.latitude !== null && rawPayload.latitude !== undefined ? parseFloat(rawPayload.latitude) : null,
+      longitude: rawPayload.longitude !== "" && rawPayload.longitude !== null && rawPayload.longitude !== undefined ? parseFloat(rawPayload.longitude) : null,
+      inclinacao: rawPayload.inclinacao !== "" && rawPayload.inclinacao !== null && rawPayload.inclinacao !== undefined ? parseFloat(rawPayload.inclinacao) : 10,
+    };
+
     setSavingUsina(true);
     setUsinaErrorMsg(null);
 
@@ -308,6 +357,7 @@ export default function SolarExtratorPage() {
       if (res.ok) {
         const saved = await res.json();
         setIsUsinaModalOpen(false);
+        setEditingUsina(null);
         await fetchData(false);
         if (saved && saved.id) {
           setSelectedUsina(saved.id);
@@ -750,6 +800,15 @@ export default function SolarExtratorPage() {
           >
             <Sparkles className={`w-4 h-4 text-amber-400 ${seedingManufacturers ? "animate-spin" : ""}`} />
             {seedingManufacturers ? "Restaurando..." : "Restaurar Fabricantes Padrão"}
+          </button>
+
+          <button
+            onClick={() => setModalManualImportOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-bold text-sm transition-all shadow-lg shadow-amber-500/20 cursor-pointer"
+            title="Copiar dados do Excel ou enviar planilha da Huawei/Solis para salvar no banco"
+          >
+            <FileSpreadsheet className="w-4 h-4" />
+            📥 Importar do Excel / Colar Telemetria
           </button>
 
           <button
@@ -1494,150 +1553,13 @@ export default function SolarExtratorPage() {
             </div>
 
             <div className="p-6 space-y-6 overflow-y-auto flex-1 font-sans text-xs">
-              {/* Descoberta Automática via API */}
-              <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800 space-y-4">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <h4 className="text-xs font-bold text-[#F59E0B] uppercase tracking-wider flex items-center gap-2">
-                    <Activity className="w-4 h-4" /> Descoberta Automática em Portais (Huawei, Solis, etc.)
-                  </h4>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <button
-                      onClick={() => handleDiscoverUsinaPortal("ALL")}
-                      disabled={isDiscovering}
-                      className="px-3 py-1.5 bg-[#F59E0B]/20 hover:bg-[#F59E0B]/30 border border-[#F59E0B]/40 text-[#F59E0B] rounded-xl text-xs font-bold uppercase flex items-center gap-1.5 transition-colors disabled:opacity-50"
-                      title="Pesquisar em todos os portais cadastrados no sistema"
-                    >
-                      {isDiscovering ? <Loader className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
-                      Pesquisar Todos
-                    </button>
-                    <button
-                      onClick={() => handleDiscoverUsinaPortal("HUAWEI")}
-                      disabled={isDiscovering}
-                      className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold uppercase transition-colors"
-                    >
-                      Huawei
-                    </button>
-                    <button
-                      onClick={() => handleDiscoverUsinaPortal("SOLIS")}
-                      disabled={isDiscovering}
-                      className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold uppercase transition-colors"
-                    >
-                      Solis
-                    </button>
-                    <button
-                      onClick={() => handleDiscoverUsinaPortal("HOYMILES")}
-                      disabled={isDiscovering}
-                      className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-amber-400 rounded-xl text-xs font-semibold uppercase border border-amber-500/30 transition-colors"
-                    >
-                      Hoymiles
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={handleSeedManufacturers}
-                      disabled={seedingManufacturers}
-                      className="px-2.5 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 rounded-xl text-xs font-semibold border border-amber-500/30 flex items-center gap-1 transition-all disabled:opacity-50"
-                      title="Restaurar a lista padrão de 13 fabricantes solares (Hoymiles, Huawei, Solis, Canadian, etc.)"
-                    >
-                      <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                      Restaurar Lista Padrão
-                    </button>
-                  </div>
+              {/* Alerta de erro de validação ou salvamento no topo */}
+              {usinaErrorMsg && (
+                <div className="p-3 bg-rose-500/20 border border-rose-500/40 text-rose-300 rounded-xl text-xs font-bold text-center flex items-center justify-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-rose-400" />
+                  <span>{usinaErrorMsg}</span>
                 </div>
-                <p className="text-[11px] text-slate-400">
-                  Consulte instantaneamente a lista de todas as usinas registradas nas suas contas da Huawei, Solis e outros fabricantes para preencher o formulário em 1-clique.
-                </p>
-
-                {discoveryStatusMsg && (
-                  <div className={`p-3 rounded-xl text-xs font-bold ${discoveryStatusMsg.startsWith("✓") ? "bg-emerald-500/10 border border-emerald-500/30 text-emerald-400" : "bg-amber-500/10 border border-amber-500/30 text-amber-300"}`}>
-                    {discoveryStatusMsg}
-                  </div>
-                )}
-
-                {discoveredUsinas.length > 0 && (
-                  <div className="bg-slate-900 rounded-xl p-3 space-y-2 border border-slate-800">
-                    <input
-                      type="text"
-                      placeholder="🔍 Filtrar usina por nome, ID ou fornecedor..."
-                      className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#F59E0B]"
-                      value={discoverySearch}
-                      onChange={(e) => setDiscoverySearch(e.target.value)}
-                    />
-
-                    <div className="grid grid-cols-1 gap-2 max-h-[220px] overflow-y-auto pr-1">
-                      {discoveredUsinas
-                        .filter(
-                          (d: any) =>
-                            (d.nome || "").toLowerCase().includes(discoverySearch.toLowerCase()) ||
-                            (d.id || "").toLowerCase().includes(discoverySearch.toLowerCase()) ||
-                            (d.fornecedor || "").toLowerCase().includes(discoverySearch.toLowerCase())
-                        )
-                        .map((d: any) => {
-                          const isSelected = newUsinaForm.apiId === d.id;
-                          const rawCap = parseFloat(d.capacidade) || 0;
-                          const capKWp = rawCap > 0 
-                            ? (rawCap < 100 ? Math.round(rawCap * 1000 * 100) / 100 : rawCap)
-                            : 0;
-
-                          return (
-                            <div
-                              key={`${d.fornecedor}_${d.id}`}
-                              className={`flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 rounded-xl transition-all border gap-2 ${
-                                isSelected
-                                  ? "bg-emerald-950/40 border-emerald-500 shadow-lg shadow-emerald-900/20 ring-1 ring-emerald-500/50"
-                                  : "bg-slate-950 hover:bg-slate-800/80 border-slate-800/80"
-                              }`}
-                            >
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-amber-500/20 border border-amber-500/40 text-amber-400">
-                                    {d.fornecedor || "HUAWEI"}
-                                  </span>
-                                  <p className={`text-xs font-bold uppercase transition-colors ${isSelected ? "text-emerald-400" : "text-white"}`}>
-                                    {d.nome || "NOME NÃO IDENTIFICADO"}
-                                  </p>
-                                  {isSelected && (
-                                    <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/50 text-emerald-300 animate-pulse">
-                                      ✓ Selecionada
-                                    </span>
-                                  )}
-                                </div>
-                                <span className="text-[10px] text-slate-400 font-mono mt-0.5 block">
-                                  ID: {d.id} | {capKWp > 0 ? `${capKWp} kWp` : "Potência não informada"} | {d.localizacao || "Brasil"}
-                                </span>
-                              </div>
-
-                              <div className="flex items-center gap-1.5 flex-shrink-0 w-full sm:w-auto justify-end">
-                                <button
-                                  type="button"
-                                  onClick={() => handleSelectDiscoveredUsina(d, false)}
-                                  className={`text-xs font-bold px-3 py-1.5 rounded-lg border transition-all flex items-center gap-1 ${
-                                    isSelected
-                                      ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/50"
-                                      : "bg-slate-800 text-[#F59E0B] border-[#F59E0B]/40 hover:bg-[#F59E0B]/20"
-                                  }`}
-                                >
-                                  {isSelected ? "✓ Preenchido" : "Selecionar"}
-                                </button>
-
-                                <button
-                                  type="button"
-                                  onClick={() => handleSelectDiscoveredUsina(d, true)}
-                                  disabled={savingUsina}
-                                  className="text-xs font-bold px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white border border-emerald-400/40 shadow-md shadow-emerald-900/30 flex items-center gap-1.5 disabled:opacity-50"
-                                  title="Cadastrar esta usina imediatamente na base"
-                                >
-                                  {savingUsina && isSelected ? <Loader className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
-                                  Cadastrar Agora
-                                </button>
-                              </div>
-                            </div>
-                          );
-                        })}
-                    </div>
-                  </div>
-                )}
-              </div>
+              )}
 
               {/* Informações Básicas da Usina */}
               <div id="usina-form-fields" className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1728,6 +1650,178 @@ export default function SolarExtratorPage() {
                     onChange={(e) => setNewUsinaForm({ ...newUsinaForm, apiId: e.target.value })}
                   />
                 </div>
+              </div>
+
+              {/* Descoberta Automática via API (Colapsável) */}
+              <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowDiscovery(!showDiscovery)}
+                    className="text-xs font-bold text-[#F59E0B] uppercase tracking-wider flex items-center gap-2 hover:underline text-left"
+                  >
+                    <Activity className="w-4 h-4" /> Descoberta Automática em Portais (Huawei, Solis, etc.)
+                    <span className="text-[10px] text-slate-400 font-normal">
+                      {showDiscovery ? "(ocultar busca)" : "(clique para buscar nos portais)"}
+                    </span>
+                  </button>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowDiscovery(true);
+                        handleDiscoverUsinaPortal("ALL");
+                      }}
+                      disabled={isDiscovering}
+                      className="px-3 py-1.5 bg-[#F59E0B]/20 hover:bg-[#F59E0B]/30 border border-[#F59E0B]/40 text-[#F59E0B] rounded-xl text-xs font-bold uppercase flex items-center gap-1.5 transition-colors disabled:opacity-50"
+                      title="Pesquisar em todos os portais cadastrados no sistema"
+                    >
+                      {isDiscovering ? <Loader className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
+                      Pesquisar Todos
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowDiscovery(true);
+                        handleDiscoverUsinaPortal("HUAWEI");
+                      }}
+                      disabled={isDiscovering}
+                      className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold uppercase transition-colors"
+                    >
+                      Huawei
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowDiscovery(true);
+                        handleDiscoverUsinaPortal("SOLIS");
+                      }}
+                      disabled={isDiscovering}
+                      className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold uppercase transition-colors"
+                    >
+                      Solis
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowDiscovery(true);
+                        handleDiscoverUsinaPortal("HOYMILES");
+                      }}
+                      disabled={isDiscovering}
+                      className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-amber-400 rounded-xl text-xs font-semibold uppercase border border-amber-500/30 transition-colors"
+                    >
+                      Hoymiles
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSeedManufacturers}
+                      disabled={seedingManufacturers}
+                      className="px-2.5 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 rounded-xl text-xs font-semibold border border-amber-500/30 flex items-center gap-1 transition-all disabled:opacity-50"
+                      title="Restaurar a lista padrão de 13 fabricantes solares"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                      Restaurar Lista Padrão
+                    </button>
+                  </div>
+                </div>
+
+                {showDiscovery && (
+                  <div className="pt-2 border-t border-slate-800/80 space-y-3">
+                    <p className="text-[11px] text-slate-400">
+                      Consulte a lista de usinas nas suas contas dos fabricantes para preencher o formulário em 1-clique.
+                    </p>
+
+                    {discoveryStatusMsg && (
+                      <div className={`p-3 rounded-xl text-xs font-bold ${discoveryStatusMsg.startsWith("✓") ? "bg-emerald-500/10 border border-emerald-500/30 text-emerald-400" : "bg-amber-500/10 border border-amber-500/30 text-amber-300"}`}>
+                        {discoveryStatusMsg}
+                      </div>
+                    )}
+
+                    {discoveredUsinas.length > 0 && (
+                      <div className="bg-slate-900 rounded-xl p-3 space-y-2 border border-slate-800">
+                        <input
+                          type="text"
+                          placeholder="🔍 Filtrar usina por nome, ID ou fornecedor..."
+                          className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#F59E0B]"
+                          value={discoverySearch}
+                          onChange={(e) => setDiscoverySearch(e.target.value)}
+                        />
+
+                        <div className="grid grid-cols-1 gap-2 max-h-[200px] overflow-y-auto pr-1">
+                          {discoveredUsinas
+                            .filter(
+                              (d: any) =>
+                                (d.nome || "").toLowerCase().includes(discoverySearch.toLowerCase()) ||
+                                (d.id || "").toLowerCase().includes(discoverySearch.toLowerCase()) ||
+                                (d.fornecedor || "").toLowerCase().includes(discoverySearch.toLowerCase())
+                            )
+                            .map((d: any) => {
+                              const isSelected = newUsinaForm.apiId === d.id;
+                              const rawCap = parseFloat(d.capacidade) || 0;
+                              const capKWp = rawCap > 0 
+                                ? (rawCap < 100 ? Math.round(rawCap * 1000 * 100) / 100 : rawCap)
+                                : 0;
+
+                              return (
+                                <div
+                                  key={`${d.fornecedor}_${d.id}`}
+                                  className={`flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 rounded-xl transition-all border gap-2 ${
+                                    isSelected
+                                      ? "bg-emerald-950/40 border-emerald-500 shadow-lg shadow-emerald-900/20 ring-1 ring-emerald-500/50"
+                                      : "bg-slate-950 hover:bg-slate-800/80 border-slate-800/80"
+                                  }`}
+                                >
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-amber-500/20 border border-amber-500/40 text-amber-400">
+                                        {d.fornecedor || "HUAWEI"}
+                                      </span>
+                                      <p className={`text-xs font-bold uppercase transition-colors ${isSelected ? "text-emerald-400" : "text-white"}`}>
+                                        {d.nome || "NOME NÃO IDENTIFICADO"}
+                                      </p>
+                                      {isSelected && (
+                                        <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/50 text-emerald-300 animate-pulse">
+                                          ✓ Selecionada
+                                        </span>
+                                      )}
+                                    </div>
+                                    <span className="text-[10px] text-slate-400 font-mono mt-0.5 block">
+                                      ID: {d.id} | {capKWp > 0 ? `${capKWp} kWp` : "Potência não informada"} | {d.localizacao || "Brasil"}
+                                    </span>
+                                  </div>
+
+                                  <div className="flex items-center gap-1.5 flex-shrink-0 w-full sm:w-auto justify-end">
+                                    <button
+                                      type="button"
+                                      onClick={() => handleSelectDiscoveredUsina(d, false)}
+                                      className={`text-xs font-bold px-3 py-1.5 rounded-lg border transition-all flex items-center gap-1 ${
+                                        isSelected
+                                          ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/50"
+                                          : "bg-slate-800 text-[#F59E0B] border-[#F59E0B]/40 hover:bg-[#F59E0B]/20"
+                                      }`}
+                                    >
+                                      {isSelected ? "✓ Preenchido" : "Selecionar"}
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => handleSelectDiscoveredUsina(d, true)}
+                                      disabled={savingUsina}
+                                      className="text-xs font-bold px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white border border-emerald-400/40 shadow-md shadow-emerald-900/30 flex items-center gap-1.5 disabled:opacity-50"
+                                      title="Cadastrar esta usina imediatamente na base"
+                                    >
+                                      {savingUsina && isSelected ? <Loader className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+                                      Cadastrar Agora
+                                    </button>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Fonte de Irradiação e Geometria */}
@@ -1853,31 +1947,54 @@ export default function SolarExtratorPage() {
               </div>
 
               {usinaErrorMsg && (
-                <div className="p-3 bg-rose-500/20 border border-rose-500/40 text-rose-300 rounded-xl text-xs font-bold text-center">
-                  {usinaErrorMsg}
+                <div className="p-3 bg-rose-500/20 border border-rose-500/40 text-rose-300 rounded-xl text-xs font-bold text-center flex items-center justify-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-rose-400" />
+                  <span>{usinaErrorMsg}</span>
                 </div>
               )}
             </div>
 
-            <div className="bg-slate-950 px-6 py-4 border-t border-slate-800 flex items-center justify-end gap-3 flex-shrink-0">
-              <button
-                onClick={() => setIsUsinaModalOpen(false)}
-                className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 text-xs font-semibold transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleSaveUsina}
-                disabled={savingUsina}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#F59E0B] to-[#D97706] text-slate-950 font-bold text-xs hover:from-[#D97706] hover:to-[#B45309] transition-all shadow-md shadow-[#F59E0B]/20 disabled:opacity-50"
-              >
-                {savingUsina ? <Loader className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                {editingUsina ? "Salvar Alterações" : "Cadastrar Usina"}
-              </button>
+            <div className="bg-slate-950 px-6 py-4 border-t border-slate-800 flex items-center justify-between gap-3 flex-shrink-0">
+              <div className="text-xs text-slate-400">
+                {editingUsina ? (
+                  <span>Editando: <strong className="text-amber-400">{editingUsina.nome}</strong></span>
+                ) : (
+                  <span>Cadastrando Nova Usina</span>
+                )}
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsUsinaModalOpen(false)}
+                  className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 text-xs font-semibold transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSaveUsina()}
+                  disabled={savingUsina}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#F59E0B] to-[#D97706] text-slate-950 font-bold text-xs hover:from-[#D97706] hover:to-[#B45309] transition-all shadow-md shadow-[#F59E0B]/20 disabled:opacity-50 cursor-pointer"
+                >
+                  {savingUsina ? <Loader className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  {editingUsina ? "Salvar Alterações" : "Cadastrar Usina"}
+                </button>
+              </div>
             </div>
           </div>
         </div>
       )}
+
+      {/* Modal de Importação Manual de Telemetria (Excel / Copiar & Colar) */}
+      <ManualTelemetryModal
+        isOpen={modalManualImportOpen}
+        onClose={() => setModalManualImportOpen(false)}
+        onSuccess={async () => {
+          await fetchData(false);
+        }}
+        defaultUsinaId={selectedUsina}
+        usinasList={usinas}
+      />
     </div>
   );
 }

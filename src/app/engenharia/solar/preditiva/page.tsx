@@ -35,7 +35,9 @@ import {
   ZapOff,
   AlertOctagon,
   CheckSquare,
+  FileSpreadsheet,
 } from "lucide-react";
+import ManualTelemetryModal from "@/components/solar/ManualTelemetryModal";
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -90,6 +92,10 @@ export default function PreditivaSolarPage() {
   const [salvandoOS, setSalvandoOS] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [listaUsinas, setListaUsinas] = useState<any[]>([]);
+
+  // Escala Dinâmica do Gráfico e Importação Manual de Telemetria
+  const [escalaGrafico, setEscalaGrafico] = useState<"AUTO" | "NOMINAL">("AUTO");
+  const [modalImportManualOpen, setModalImportManualOpen] = useState<boolean>(false);
 
   useEffect(() => {
     fetch("/api/solar/usinas")
@@ -271,6 +277,14 @@ export default function PreditivaSolarPage() {
     return true;
   });
 
+  // Cálculo de Escala Dinâmica para o Gráfico de Geração Real vs Digital Twin
+  const curvaPontos = preditivaData?.curvaComparativa || [];
+  const picoMaxCurva = curvaPontos.reduce((max: number, p: any) => {
+    return Math.max(max, p.realKW || 0, p.expectedKW || 0, p.unclippedKW || 0);
+  }, 0);
+  const yAxisMaxAuto = picoMaxCurva > 0 ? Math.ceil((picoMaxCurva * 1.15) / 20) * 20 : 100;
+  const capCA = preditivaData?.usina?.capacidadeCA || 1000;
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-4 sm:p-6 lg:p-8 space-y-6">
       {/* Toast Notification */}
@@ -321,6 +335,14 @@ export default function PreditivaSolarPage() {
             className="flex items-center gap-2 px-3.5 py-2 text-sm font-medium bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg transition-colors shadow-lg shadow-cyan-600/20 cursor-pointer"
           >
             <Upload className="w-4 h-4" /> Importar Planilha Sigma
+          </button>
+
+          <button
+            onClick={() => setModalImportManualOpen(true)}
+            className="flex items-center gap-2 px-3.5 py-2 text-sm font-bold bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 rounded-lg transition-all shadow-lg shadow-amber-500/20 cursor-pointer"
+            title="Copie e cole dados do Excel da Huawei/Solis ou faça upload da planilha para salvar no banco"
+          >
+            <FileSpreadsheet className="w-4 h-4" /> 📥 Importar do Excel / Colar Telemetria
           </button>
 
           <button
@@ -592,36 +614,64 @@ export default function PreditivaSolarPage() {
 
           {/* Main Chart: Real vs Digital Twin pvlib */}
           <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
               <div>
                 <h3 className="text-base font-bold text-white flex items-center gap-2">
                   <Sun className="w-5 h-5 text-amber-400" />
                   Curva de Geração Real vs. Digital Twin (pvlib)
                 </h3>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Comparação da telemetria de 5 minutos da Huawei com o modelo físico solarimétrico (ceifamento a 1.000 kW).
+                  Comparação da telemetria de 5 minutos com o modelo físico solarimétrico (ceifamento nominal a {capCA} kW).
                 </p>
               </div>
 
-              <div className="flex items-center gap-4 text-xs">
+              <div className="flex flex-wrap items-center gap-4 text-xs">
+                {/* Seletor de Escala do Gráfico: Automática vs Nominal */}
+                <div className="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 shadow-inner">
+                  <button
+                    type="button"
+                    onClick={() => setEscalaGrafico("AUTO")}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      escalaGrafico === "AUTO"
+                        ? "bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm"
+                        : "text-slate-400 hover:text-slate-200"
+                    }`}
+                    title="Ajusta o eixo vertical dinamicamente ao pico real da geração"
+                  >
+                    🔍 Escala Auto (Pico: {picoMaxCurva.toFixed(0)} kW)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEscalaGrafico("NOMINAL")}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      escalaGrafico === "NOMINAL"
+                        ? "bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm"
+                        : "text-slate-400 hover:text-slate-200"
+                    }`}
+                    title="Exibe o gráfico na escala nominal total dos inversores da usina"
+                  >
+                    📐 Escala Nominal ({capCA} kW)
+                  </button>
+                </div>
+
                 <div className="flex items-center gap-1.5">
                   <div className="w-3 h-3 rounded-full bg-amber-500" />
-                  <span className="text-slate-300">Geração Real</span>
+                  <span className="text-slate-300 font-medium">Geração Real</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <div className="w-3 h-0.5 bg-cyan-400" />
-                  <span className="text-slate-300">Esperada (pvlib)</span>
+                  <span className="text-slate-300 font-medium">Esperada (pvlib)</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <div className="w-3 h-0.5 border-t-2 border-dashed border-rose-400" />
-                  <span className="text-slate-300">Sem Ceifamento</span>
+                  <span className="text-slate-300 font-medium">Sem Ceifamento</span>
                 </div>
               </div>
             </div>
 
             <div className="h-[360px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={preditivaData?.curvaComparativa || []} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <ComposedChart data={preditivaData?.curvaComparativa || []} margin={{ top: 10, right: 15, left: -10, bottom: 0 }}>
                   <defs>
                     <linearGradient id="realGradient" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.4} />
@@ -630,7 +680,12 @@ export default function PreditivaSolarPage() {
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
                   <XAxis dataKey="time" stroke="#64748b" tick={{ fontSize: 11 }} />
-                  <YAxis stroke="#64748b" tick={{ fontSize: 11 }} domain={[0, 1500]} />
+                  <YAxis
+                    stroke="#64748b"
+                    tick={{ fontSize: 11 }}
+                    domain={[0, escalaGrafico === "AUTO" ? yAxisMaxAuto : capCA]}
+                    unit=" kW"
+                  />
                   <Tooltip
                     contentStyle={{ backgroundColor: "#0f172a", borderColor: "#334155", borderRadius: "8px", fontSize: "12px" }}
                     formatter={(value: any, name: any) => {
@@ -1363,8 +1418,21 @@ export default function PreditivaSolarPage() {
                 <ComposedChart data={benchmarkData?.curvaComparativa || []} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
                   <XAxis dataKey="time" stroke="#64748b" tick={{ fontSize: 11 }} />
-                  <YAxis yAxisId="left" stroke="#64748b" tick={{ fontSize: 11 }} domain={[0, 1100]} />
-                  <YAxis yAxisId="right" orientation="right" stroke="#64748b" tick={{ fontSize: 11 }} domain={[0, 1200]} />
+                  <YAxis
+                    yAxisId="left"
+                    stroke="#64748b"
+                    tick={{ fontSize: 11 }}
+                    domain={[0, (dataMax: number) => Math.ceil(Math.max((dataMax || 0) * 1.15, 50))]}
+                    unit=" kW"
+                  />
+                  <YAxis
+                    yAxisId="right"
+                    orientation="right"
+                    stroke="#64748b"
+                    tick={{ fontSize: 11 }}
+                    domain={[0, (dataMax: number) => Math.ceil(Math.max((dataMax || 0) * 1.15, 100))]}
+                    unit=" W/m²"
+                  />
                   <Tooltip
                     contentStyle={{ backgroundColor: "#0f172a", borderColor: "#334155", borderRadius: "8px", fontSize: "12px" }}
                   />
@@ -1856,6 +1924,22 @@ export default function PreditivaSolarPage() {
           </div>
         </div>
       )}
+
+      {/* Modal de Importação Manual de Telemetria (Excel / Copiar & Colar) */}
+      <ManualTelemetryModal
+        isOpen={modalImportManualOpen}
+        onClose={() => setModalImportManualOpen(false)}
+        onSuccess={(data) => {
+          setToastMsg(data.mensagem || "Telemetria importada com sucesso!");
+          setTimeout(() => setToastMsg(null), 5000);
+          fetchPreditiva();
+          fetchRelatorios();
+          if (abaAtiva === "BENCHMARK") fetchBenchmark();
+          if (abaAtiva === "STRINGS_FUSIVEIS") fetchStringsReport();
+        }}
+        defaultUsinaId={usinaId}
+        usinasList={listaUsinas}
+      />
     </div>
   );
 }

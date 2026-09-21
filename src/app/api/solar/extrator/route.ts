@@ -30,6 +30,17 @@ export async function GET(req: NextRequest) {
         localizacao: true,
         apiFornecedor: true,
         apiId: true,
+        apiKey: true,
+        apiSecret: true,
+        latitude: true,
+        longitude: true,
+        inclinacao: true,
+        orientacao: true,
+        coefSujidade: true,
+        coefTemperatura: true,
+        taxaDegradacao: true,
+        estacaoId: true,
+        modoIrradiancia: true,
         inversores: {
           select: {
             id: true,

@@ -1,6 +1,7 @@
 import { prisma } from "../prisma";
 import { HoymilesService } from "./hoymilesService";
 import { TelemetryIngestionService } from "./telemetryIngestionService";
+import { CryptoService } from "../security/cryptoService";
 
 export class HoymilesSyncService {
   static async syncAll() {
@@ -20,8 +21,8 @@ export class HoymilesSyncService {
         return;
       }
 
-      const key = hoymilesConfig?.userKey || "";
-      const secret = hoymilesConfig?.secretKey || "";
+      const key = CryptoService.decrypt(hoymilesConfig?.userKey || "");
+      const secret = CryptoService.decrypt(hoymilesConfig?.secretKey || "");
 
       for (const usina of usinasHoymiles) {
         const realtimeData = await HoymilesService.getRealtimeData(usina.apiId, key, secret);

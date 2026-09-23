@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { CryptoService } from "@/lib/security/cryptoService";
 
 export const runtime = 'nodejs';
 
@@ -12,7 +13,19 @@ export async function GET() {
       },
       orderBy: { nome: "asc" }
     });
-    return NextResponse.json(usinas);
+
+    const safeUsinas = usinas.map((u) => ({
+      ...u,
+      apiKey: u.apiKey ? (CryptoService.isEncrypted(u.apiKey) ? CryptoService.decrypt(u.apiKey) : u.apiKey) : null,
+      apiSecret: u.apiSecret ? "********" : null,
+      estacao: u.estacao ? {
+        ...u.estacao,
+        apiSecret: u.estacao.apiSecret ? "********" : null,
+        senha: u.estacao.senha ? "********" : null,
+      } : null,
+    }));
+
+    return NextResponse.json(safeUsinas);
   } catch (error) {
     return NextResponse.json({ error: "Erro ao buscar usinas" }, { status: 500 });
   }
@@ -70,14 +83,18 @@ export async function POST(req: Request) {
       modeIrr
     });
 
+    const rawSecret = apiSecret === "Cordeiroapi123" || (apiSecret && apiSecret.includes("...")) ? "Cordeiroapi123" : apiSecret;
+    const finalApiKey = apiKey ? CryptoService.encrypt(apiKey) : null;
+    const finalApiSecret = rawSecret ? CryptoService.encrypt(rawSecret) : null;
+
     const usina = await prisma.usina.create({
       data: {
         nome,
         capacidadeKWp,
         apiFornecedor,
         apiId,
-        apiKey,
-        apiSecret: apiSecret === "Cordeiroapi123" || apiSecret.includes("...") ? "Cordeiroapi123" : apiSecret,
+        apiKey: finalApiKey,
+        apiSecret: finalApiSecret,
         coefSujidade,
         coefTemperatura,
         taxaDegradacao,
@@ -136,11 +153,11 @@ export async function PUT(req: Request) {
 
     const finalApiKey = (!data.apiKey || data.apiKey.includes("*"))
       ? currentUsina.apiKey
-      : data.apiKey;
+      : CryptoService.encrypt(data.apiKey);
 
     const finalApiSecret = (!data.apiSecret || data.apiSecret.includes("*") || data.apiSecret.includes("..."))
       ? currentUsina.apiSecret
-      : data.apiSecret;
+      : CryptoService.encrypt(data.apiSecret);
 
     const usina = await prisma.usina.update({
       where: { id },

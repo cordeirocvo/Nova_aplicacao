@@ -1,6 +1,7 @@
 import { prisma } from "../prisma";
 import { SolisService } from "./solisService";
 import { TelemetryIngestionService } from "./telemetryIngestionService";
+import { CryptoService } from "../security/cryptoService";
 import fs from "fs";
 import path from "path";
 
@@ -22,13 +23,16 @@ export class SolisSyncService {
       for (const usina of usinas) {
         fs.appendFileSync(logFile, `Processando Solis: ${usina.nome}\n`);
         try {
-          const key = (usina.apiKey && usina.apiKey !== '********' && usina.apiKey.trim() !== '') 
+          const rawKey = (usina.apiKey && usina.apiKey !== '********' && usina.apiKey.trim() !== '') 
             ? usina.apiKey.trim() 
             : ((globalSolis?.userKey || process.env.SOLIS_KEY_ID || '1300319277300416147').trim());
             
-          const secret = (usina.apiSecret && usina.apiSecret !== '********' && usina.apiSecret.trim() !== '') 
+          const rawSecret = (usina.apiSecret && usina.apiSecret !== '********' && usina.apiSecret.trim() !== '') 
             ? usina.apiSecret.trim() 
             : ((globalSolis?.secretKey || process.env.SOLIS_KEY_SECRET || 'f5ad8e6d759d469fb8610e2155f9a20c').trim());
+
+          const key = CryptoService.decrypt(rawKey);
+          const secret = CryptoService.decrypt(rawSecret);
 
           if (!key || !secret || key === "" || secret === "") {
             fs.appendFileSync(logFile, `Sem credenciais válidas configuradas para Solis ${usina.nome}\n`);

@@ -1,12 +1,17 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { CryptoService } from "@/lib/security/cryptoService";
 
 export async function GET() {
   try {
     const manufacturers = await prisma.manufacturerAPI.findMany({
       orderBy: { name: "asc" }
     });
-    return NextResponse.json(manufacturers);
+    const safeManufacturers = manufacturers.map((m) => ({
+      ...m,
+      secretKey: m.secretKey ? "********" : null,
+    }));
+    return NextResponse.json(safeManufacturers);
   } catch (error) {
     return NextResponse.json({ error: "Erro ao buscar fabricantes" }, { status: 500 });
   }
@@ -17,22 +22,28 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { name, userKey, secretKey, apiUrl } = body;
 
+    const encUserKey = userKey ? CryptoService.encrypt(userKey) : userKey;
+    const encSecretKey = secretKey && !secretKey.includes("*") ? CryptoService.encrypt(secretKey) : undefined;
+
     const manufacturer = await prisma.manufacturerAPI.upsert({
       where: { name: name.toUpperCase() },
       update: {
-        userKey,
-        secretKey: secretKey && !secretKey.includes("*") ? secretKey : undefined,
+        userKey: encUserKey,
+        secretKey: encSecretKey,
         apiUrl
       },
       create: {
         name: name.toUpperCase(),
-        userKey,
-        secretKey,
+        userKey: encUserKey,
+        secretKey: secretKey ? CryptoService.encrypt(secretKey) : null,
         apiUrl
       }
     });
 
-    return NextResponse.json(manufacturer);
+    return NextResponse.json({
+      ...manufacturer,
+      secretKey: manufacturer.secretKey ? "********" : null,
+    });
   } catch (error) {
     console.error("Save Manufacturer Error:", error);
     return NextResponse.json({ error: "Erro ao salvar fabricante" }, { status: 500 });

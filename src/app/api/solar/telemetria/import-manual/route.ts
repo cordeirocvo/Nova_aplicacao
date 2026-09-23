@@ -254,6 +254,7 @@ export async function POST(req: NextRequest) {
     let usinaId = "";
     let inversorId: string | null = null;
     let registros: TelemetriaRecordInput[] = [];
+    let nomeArquivoOrigem = "COPIAR_COLAR_PLANILHA";
 
     if (contentType.includes("multipart/form-data")) {
       const formData = await req.formData();
@@ -266,6 +267,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Nenhum arquivo enviado." }, { status: 400 });
       }
 
+      nomeArquivoOrigem = file.name || "planilha_importada.xlsx";
       const buffer = Buffer.from(await file.arrayBuffer());
       const workbook = XLSX.read(buffer, { type: "buffer", cellDates: true });
 
@@ -436,6 +438,28 @@ export async function POST(req: NextRequest) {
           performanceRatioReal: pr,
         },
       });
+
+      // 5. Registrar na Trilha de Auditoria Transacional
+      try {
+        await prisma.auditoriaTelemetria.create({
+          data: {
+            usinaId,
+            usuarioEmail: "ENGENHARIA_OPERACOES",
+            tipoAcao: "IMPORTACAO_MANUAL",
+            dataReferencia: diaStr,
+            totalPontos: pontosDoDia.length,
+            picoPotenciaKW: parseFloat(maxPot.toFixed(2)),
+            energiaKWh: energiaDiaKWh,
+            nomeArquivo: nomeArquivoOrigem,
+            detalhes: {
+              inversorId: inversorId || "GERAL",
+              pontosInseridos: insertPayload.length,
+            },
+          },
+        });
+      } catch (auditErr) {
+        console.warn("[Auditoria] Aviso ao registrar trilha de auditoria:", auditErr);
+      }
 
       resumoPorDia.push({
         data: diaStr,

@@ -1,3 +1,5 @@
+import { CryptoService } from "../security/cryptoService";
+
 /**
  * StationService - Integração com Estações Solarimétricas
  * Suporta ISO-FEN (HB500 Datalogger) e Prescinto API
@@ -8,16 +10,27 @@ export class StationService {
    */
   static async getStationData(estacao: any) {
     try {
-      if (estacao.modoColeta === "FTP") {
-        return await this.fetchFtpData(estacao);
-      } else if (estacao.modoColeta === "GATEWAY") {
-        return await this.fetchGatewayData(estacao);
+      const apiKeyDecrypted = CryptoService.decrypt(estacao.apiKey);
+      const apiSecretDecrypted = CryptoService.decrypt(estacao.apiSecret);
+      const senhaDecrypted = CryptoService.decrypt(estacao.senha);
+
+      const decryptedEstacao = {
+        ...estacao,
+        apiKey: apiKeyDecrypted,
+        apiSecret: apiSecretDecrypted,
+        senha: senhaDecrypted,
+      };
+
+      if (decryptedEstacao.modoColeta === "FTP") {
+        return await this.fetchFtpData(decryptedEstacao);
+      } else if (decryptedEstacao.modoColeta === "GATEWAY") {
+        return await this.fetchGatewayData(decryptedEstacao);
       } else {
         // Modo API (Padrão)
-        if (estacao.apiFornecedor === "ISOFEN") {
-          return await this.fetchIsofenData(estacao.apiId, estacao.apiKey, estacao.apiSecret);
-        } else if (estacao.apiFornecedor === "PRESCINTO") {
-          return await this.fetchPrescintoData(estacao.apiId, estacao.apiKey, estacao.apiSecret);
+        if (decryptedEstacao.apiFornecedor === "ISOFEN") {
+          return await this.fetchIsofenData(decryptedEstacao.apiId, apiKeyDecrypted, apiSecretDecrypted);
+        } else if (decryptedEstacao.apiFornecedor === "PRESCINTO") {
+          return await this.fetchPrescintoData(decryptedEstacao.apiId, apiKeyDecrypted, apiSecretDecrypted);
         }
       }
       return null;

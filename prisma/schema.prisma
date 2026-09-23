@@ -1128,3 +1128,20 @@ model NormaConformidade {
   @@index([statusConformidade])
 }
 
+model AuditoriaTelemetria {
+  id              String   @id @default(cuid())
+  usinaId         String
+  usuarioEmail    String?  @default("SISTEMA")
+  tipoAcao        String   // "IMPORTACAO_MANUAL", "SYNC_API", "BACKFILL_GAP"
+  dataReferencia  String?  // Formato: "YYYY-MM-DD"
+  totalPontos     Int      @default(0)
+  picoPotenciaKW  Float?
+  energiaKWh      Float?
+  nomeArquivo     String?
+  detalhes        Json?    // Metadados adicionais, IPs, inversores afetados
+  createdAt       DateTime @default(now())
+
+  @@index([usinaId, createdAt])
+  @@index([tipoAcao, createdAt])
+}
+

@@ -1,6 +1,7 @@
 import { prisma } from "../prisma";
 import { HuaweiIntegration } from "./huaweiIntegration";
 import { TelemetryIngestionService } from "./telemetryIngestionService";
+import { CryptoService } from "../security/cryptoService";
 import fs from "fs";
 import path from "path";
 
@@ -22,13 +23,16 @@ export class HuaweiSyncService {
       // Agrupar por credenciais para otimizar login, validando e limpando segredos com asteriscos
       const accounts = new Map<string, any[]>();
       usinas.forEach(u => {
-        const uKey = (u.apiKey && u.apiKey !== '********' && u.apiKey.trim() !== '') 
+        const rawUser = (u.apiKey && u.apiKey !== '********' && u.apiKey.trim() !== '') 
           ? u.apiKey.trim() 
           : (globalHuawei?.userKey || 'default').trim();
           
-        const uSecret = (u.apiSecret && u.apiSecret !== '********' && u.apiSecret.trim() !== '') 
+        const rawSecret = (u.apiSecret && u.apiSecret !== '********' && u.apiSecret.trim() !== '') 
           ? u.apiSecret.trim() 
           : (globalHuawei?.secretKey || 'default').trim();
+
+        const uKey = CryptoService.decrypt(rawUser);
+        const uSecret = CryptoService.decrypt(rawSecret);
 
         const key = `${uKey}:${uSecret}`;
         if (!accounts.has(key)) accounts.set(key, []);

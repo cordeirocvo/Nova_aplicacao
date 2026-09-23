@@ -30,7 +30,10 @@ import {
   Maximize2,
   Minimize2,
   Sliders,
+  FileDown,
+  GitCompare,
 } from "lucide-react";
+import { generateTelemetryPdf } from "@/lib/reports/telemetryPdfReport";
 
 export interface TelemetryPoint5Min {
   hora: string;
@@ -57,6 +60,14 @@ export interface AnualPoint {
   mesNumero: number;
   geracaoMWh: number;
   geracaoAnoAnteriorMWh?: number;
+}
+
+export interface PlantComparisonData {
+  usinaId: string;
+  usinaNome: string;
+  capacidadeKWp: number;
+  cor: string;
+  serie: TelemetryPoint5Min[];
 }
 
 interface Props {
@@ -90,6 +101,8 @@ interface Props {
   stringsTimelinePorInversor?: Record<string, any[]>;
   inversoresDisponiveisParaStrings?: string[];
   inversoresCadastrados?: Array<{ id: string; numeroSerie: string; modelo?: string; potenciaNominalKW: number }>;
+  comparativoUsinas?: PlantComparisonData[];
+  isModoComparativo?: boolean;
   loading?: boolean;
 }
 
@@ -128,6 +141,8 @@ export default function GraficoFusionSolarStyle({
   stringsTimelinePorInversor = {},
   inversoresDisponiveisParaStrings = [],
   inversoresCadastrados = [],
+  comparativoUsinas = [],
+  isModoComparativo = false,
   loading = false,
 }: Props) {
   // Controles de visibilidade de séries
@@ -138,6 +153,39 @@ export default function GraficoFusionSolarStyle({
   const [selectedInversorStrings, setSelectedInversorStrings] = useState<string>("");
   const [mostrarStringsSecao, setMostrarStringsSecao] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // Controles de Comparativo Multi-Usinas
+  const [normalizarComparativo, setNormalizarComparativo] = useState(true);
+  const [usinasComparativoVisiveis, setUsinasComparativoVisiveis] = useState<Record<string, boolean>>({});
+
+  // Dataset mesclado para o gráfico comparativo (288 baldes de 5 min)
+  const dadosGraficoComparativo = useMemo(() => {
+    if (!comparativoUsinas || comparativoUsinas.length === 0) return [];
+
+    const baseHours = serieDiaria.length > 0
+      ? serieDiaria.map(p => p.hora)
+      : Array.from({ length: 288 }, (_, i) => {
+          const m = i * 5;
+          const hh = String(Math.floor(m / 60)).padStart(2, "0");
+          const mm = String(m % 60).padStart(2, "0");
+          return `${hh}:${mm}`;
+        });
+
+    return baseHours.map(hora => {
+      const row: Record<string, any> = { hora };
+      comparativoUsinas.forEach(u => {
+        const pt = u.serie.find(s => s.hora === hora);
+        const pKW = pt?.potenciaTotalKW || 0;
+        if (normalizarComparativo) {
+          const yieldInst = u.capacidadeKWp > 0 ? pKW / u.capacidadeKWp : 0;
+          row[u.usinaId] = parseFloat(yieldInst.toFixed(3));
+        } else {
+          row[u.usinaId] = parseFloat(pKW.toFixed(2));
+        }
+      });
+      return row;
+    });
+  }, [comparativoUsinas, serieDiaria, normalizarComparativo]);
 
   // Lista única de seriais de inversores detectados nos dados ou cadastrados
   const listaInversores = useMemo(() => {
@@ -282,6 +330,25 @@ export default function GraficoFusionSolarStyle({
 
         {/* Lado Direito: Seletor de Período (Dia / Mês / Ano) & Ações */}
         <div className="flex items-center gap-2">
+          {/* Botão de Exportação PDF Executivo (1 Clique) */}
+          <button
+            onClick={() => {
+              generateTelemetryPdf({
+                usinaNome,
+                capacidadeKWp,
+                data: date,
+                kpis,
+                serieDiaria,
+                inversoresCadastrados,
+              });
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 transition shadow-sm"
+            title="Exportar Laudo Técnico Executivo em PDF (1 Clique)"
+          >
+            <FileDown className="w-3.5 h-3.5 text-amber-400" />
+            <span className="hidden sm:inline">Exportar PDF</span>
+          </button>
+
           <div className="flex bg-slate-950/80 border border-slate-800 rounded-xl p-1">
             {(["DIA", "MES", "ANO"] as const).map(p => (
               <button
@@ -428,11 +495,33 @@ export default function GraficoFusionSolarStyle({
           <div className="flex items-center gap-2">
             <Layers className="w-4 h-4 text-amber-400" />
             <h3 className="text-sm font-bold text-slate-200">
-              {periodo === "DIA" ? "Curva de Potência e Irradiância (24 Horas / 5 min)" : periodo === "MES" ? "Produção Diária do Mês (kWh/dia)" : "Produção Mensal do Ano (MWh/mês)"}
+              {isModoComparativo
+                ? `Curva Comparativa Multi-Usinas (${comparativoUsinas.length} usinas selecionadas)`
+                : periodo === "DIA"
+                ? "Curva de Potência e Irradiância (24 Horas / 5 min)"
+                : periodo === "MES"
+                ? "Produção Diária do Mês (kWh/dia)"
+                : "Produção Mensal do Ano (MWh/mês)"}
             </h3>
           </div>
 
-          {periodo === "DIA" && (
+          {isModoComparativo ? (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-slate-400 font-medium">Normalização:</span>
+              <button
+                onClick={() => setNormalizarComparativo(!normalizarComparativo)}
+                className={`px-3 py-1 rounded-lg border text-xs font-bold transition flex items-center gap-1.5 ${
+                  normalizarComparativo
+                    ? "bg-amber-500/20 border-amber-500/50 text-amber-300"
+                    : "bg-blue-500/20 border-blue-500/50 text-blue-300"
+                }`}
+                title="Alterna entre Rendimento Específico proporcional (kW/kWp) e Potência Absoluta (kW)"
+              >
+                <GitCompare className="w-3.5 h-3.5" />
+                <span>{normalizarComparativo ? "Yield Específico (kW/kWp)" : "Potência Absoluta (kW)"}</span>
+              </button>
+            </div>
+          ) : periodo === "DIA" && (
             <div className="flex flex-wrap items-center gap-2 text-xs">
               {/* Toggle Curva Usina */}
               <button
@@ -496,8 +585,38 @@ export default function GraficoFusionSolarStyle({
           )}
         </div>
 
-        {/* Sub-legenda de Inversores Individuais (quando habilitado) */}
-        {periodo === "DIA" && mostrarInversores && listaInversores.length > 0 && (
+        {/* Sub-legenda Modo Comparativo */}
+        {isModoComparativo && comparativoUsinas.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 pt-1 pb-2">
+            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mr-1">Usinas Comparadas:</span>
+            {comparativoUsinas.map((u) => {
+              const visible = usinasComparativoVisiveis[u.usinaId] !== false;
+              return (
+                <button
+                  key={u.usinaId}
+                  onClick={() =>
+                    setUsinasComparativoVisiveis((prev) => ({
+                      ...prev,
+                      [u.usinaId]: !visible,
+                    }))
+                  }
+                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold border flex items-center gap-2 transition ${
+                    visible
+                      ? "bg-slate-800/80 text-slate-100 border-slate-700 shadow-sm"
+                      : "bg-slate-900 text-slate-600 border-slate-850 opacity-40"
+                  }`}
+                >
+                  <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: visible ? u.cor : "#475569" }}></span>
+                  <span>{u.usinaNome}</span>
+                  <span className="text-[10px] text-slate-400 font-mono">({u.capacidadeKWp} kWp)</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Sub-legenda de Inversores Individuais (quando habilitado no modo individual) */}
+        {!isModoComparativo && periodo === "DIA" && mostrarInversores && listaInversores.length > 0 && (
           <div className="flex flex-wrap items-center gap-2 pt-1 pb-2">
             <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mr-1">Filtro por Inversor:</span>
             {listaInversores.map((invSn, idx) => {
@@ -528,6 +647,73 @@ export default function GraficoFusionSolarStyle({
               <div className="w-8 h-8 border-2 border-amber-400 border-t-transparent rounded-full animate-spin"></div>
               <p className="text-xs font-medium">Carregando telemetria de alta precisão...</p>
             </div>
+          ) : isModoComparativo && comparativoUsinas.length > 0 ? (
+            /* ── VISÃO COMPARATIVA MULTI-USINAS ── */
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={dadosGraficoComparativo} margin={{ top: 15, right: 30, left: 10, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#1E293B" vertical={false} />
+                <XAxis dataKey="hora" stroke="#64748B" fontSize={11} tickLine={false} interval={23} />
+                <YAxis
+                  stroke="#94A3B8"
+                  fontSize={11}
+                  tickLine={false}
+                  unit={normalizarComparativo ? " kW/kWp" : " kW"}
+                />
+                <Tooltip
+                  content={({ active, payload, label }) => {
+                    if (active && payload && payload.length) {
+                      return (
+                        <div className="bg-slate-900/95 border border-slate-700/80 p-3.5 rounded-2xl shadow-2xl backdrop-blur-md text-xs space-y-2 min-w-[220px]">
+                          <div className="flex items-center justify-between border-b border-slate-800 pb-1.5 font-bold text-slate-200">
+                            <span className="flex items-center gap-1.5">
+                              <Clock className="w-3.5 h-3.5 text-amber-400" />
+                              {label} (Comparativo)
+                            </span>
+                            <span className="text-[10px] text-slate-400 font-mono">
+                              {normalizarComparativo ? "Yield Específico" : "Potência"}
+                            </span>
+                          </div>
+                          <div className="space-y-1.5">
+                            {comparativoUsinas.map((u) => {
+                              const val = payload.find((p) => p.dataKey === u.usinaId)?.value;
+                              return (
+                                <div key={u.usinaId} className="flex justify-between items-center text-xs">
+                                  <span className="flex items-center gap-1.5 text-slate-300">
+                                    <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: u.cor }}></span>
+                                    <span className="font-medium truncate max-w-[130px]">{u.usinaNome}:</span>
+                                  </span>
+                                  <span className="font-bold text-slate-100 font-mono">
+                                    {val !== undefined ? Number(val).toLocaleString("pt-BR") : "--"}{" "}
+                                    {normalizarComparativo ? "kW/kWp" : "kW"}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                {comparativoUsinas.map((u) => {
+                  if (usinasComparativoVisiveis[u.usinaId] === false) return null;
+                  return (
+                    <Area
+                      key={u.usinaId}
+                      type="monotone"
+                      dataKey={u.usinaId}
+                      name={u.usinaNome}
+                      stroke={u.cor}
+                      strokeWidth={2.4}
+                      fill={u.cor}
+                      fillOpacity={0.06}
+                      dot={false}
+                    />
+                  );
+                })}
+              </AreaChart>
+            </ResponsiveContainer>
           ) : periodo === "DIA" ? (
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={serieDiaria} margin={{ top: 15, right: 30, left: 10, bottom: 5 }}>

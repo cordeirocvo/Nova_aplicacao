@@ -765,6 +765,8 @@ model Telemetria {
   correnteCA_B        Float?
   correnteCA_C        Float?
   dadosStrings        Json?
+  dadosInversores     Json?
+  potenciaCC_TotalKW  Float?
   frequenciaRede      Float?
   potenciaCA_A        Float?
   potenciaCA_B        Float?
@@ -776,6 +778,7 @@ model Telemetria {
   tensaoCA_C          Float?
   usina               Usina    @relation(fields: [usinaId], references: [id], onDelete: Cascade)
 
+  @@unique([usinaId, timestamp])
   @@index([usinaId, timestamp])
 }
 

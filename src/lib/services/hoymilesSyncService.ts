@@ -1,5 +1,6 @@
 import { prisma } from "../prisma";
 import { HoymilesService } from "./hoymilesService";
+import { TelemetryIngestionService } from "./telemetryIngestionService";
 
 export class HoymilesSyncService {
   static async syncAll() {
@@ -29,23 +30,17 @@ export class HoymilesSyncService {
           const pKW = realtimeData.activePowerKW || 0;
           const eKWh = realtimeData.dailyEnergyKWh || 0;
 
-          await prisma.telemetria.create({
-            data: {
-              usinaId: usina.id,
-              timestamp: now,
-              potenciaAtivaKW: pKW,
-              energiaAcumuladaKWh: eKWh,
-              tensaoCA_A: 220.0,
-              tensaoCA_B: 220.0,
-              tensaoCA_C: 220.0,
-              correnteCA_A: parseFloat((pKW > 0 ? (pKW * 1000) / 220 : 0).toFixed(1)),
-              correnteCA_B: 0,
-              correnteCA_C: 0,
-              frequenciaRede: 60.0,
-              tempIGBT: 42.5,
-              statusInversor: "NORMAL",
-              dadosStrings: {
-                "HOY_ST1": { V: 380.0, I: parseFloat((pKW > 0 ? (pKW * 1000) / 380 : 0).toFixed(2)) }
+          await TelemetryIngestionService.ingestPlantTelemetry({
+            usinaId: usina.id,
+            timestamp: now,
+            potenciaAtivaKW: pKW,
+            energiaAcumuladaKWh: eKWh,
+            tempAmbiente: realtimeData.temperature || undefined,
+            dadosInversores: {
+              [usina.apiId || "MI_01"]: {
+                potenciaKW: pKW,
+                energiaDiaKWh: eKWh,
+                status: "ONLINE"
               }
             }
           });

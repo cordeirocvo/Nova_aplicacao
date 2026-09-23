@@ -365,16 +365,34 @@ export async function POST(req: NextRequest) {
       });
 
       // 2. Inserir os novos pontos no Prisma
-      const insertPayload = pontosDoDia.map(p => ({
-        usinaId,
-        timestamp: p.timestamp,
-        potenciaAtivaKW: p.potenciaAtivaKW,
-        energiaAcumuladaKWh: p.energiaAcumuladaKWh || 0,
-        tensaoCA_A: p.tensaoCA_A,
-        correnteCA_A: p.correnteCA_A,
-        statusInversor: p.statusInversor || "ONLINE",
-        dadosStrings: p.dadosStrings ? (p.dadosStrings as any) : undefined,
-      }));
+      const insertPayload = pontosDoDia.map(p => {
+        let potCC = 0;
+        const invMap: Record<string, { potenciaKW: number }> = {};
+        if (p.dadosStrings) {
+          Object.entries(p.dadosStrings).forEach(([strKey, val]: any) => {
+            if (val && val.V && val.I) {
+              const pKw = (val.V * val.I) / 1000;
+              potCC += pKw;
+              const invName = strKey.includes('_') ? strKey.split('_')[0] : 'INV01';
+              if (!invMap[invName]) invMap[invName] = { potenciaKW: 0 };
+              invMap[invName].potenciaKW = parseFloat((invMap[invName].potenciaKW + pKw).toFixed(2));
+            }
+          });
+        }
+
+        return {
+          usinaId,
+          timestamp: p.timestamp,
+          potenciaAtivaKW: p.potenciaAtivaKW,
+          energiaAcumuladaKWh: p.energiaAcumuladaKWh || 0,
+          tensaoCA_A: p.tensaoCA_A,
+          correnteCA_A: p.correnteCA_A,
+          statusInversor: p.statusInversor || "ONLINE",
+          dadosStrings: p.dadosStrings ? (p.dadosStrings as any) : undefined,
+          dadosInversores: Object.keys(invMap).length > 0 ? (invMap as any) : undefined,
+          potenciaCC_TotalKW: potCC > 0 ? parseFloat(potCC.toFixed(2)) : undefined,
+        };
+      });
 
       await prisma.telemetria.createMany({
         data: insertPayload,

@@ -1,5 +1,6 @@
 import { prisma } from "../prisma";
 import { SolisService } from "./solisService";
+import { TelemetryIngestionService } from "./telemetryIngestionService";
 import fs from "fs";
 import path from "path";
 
@@ -51,6 +52,8 @@ export class SolisSyncService {
 
           const inverters = await SolisService.getInverterList(usina.apiId, key, secret);
           
+          const inversoresAcc: Record<string, { potenciaKW: number; energiaDiaKWh?: number; tempIGBT?: number; status?: string }> = {};
+
           for (const inv of inverters) {
             const sn = inv.sn || inv.inverterSn;
             if (!sn) continue;
@@ -82,11 +85,20 @@ export class SolisSyncService {
               }
               totalPowerDC += invPowerDC;
               
+              const invPac = parseFloat(String(detail.pac || detail.power || invPowerDC || "0"));
+              const invTemp = detail.inverterTemperature || 45;
+
+              inversoresAcc[String(sn)] = {
+                potenciaKW: invPac,
+                tempIGBT: invTemp,
+                status: "ONLINE"
+              };
+
               // Pega dados CA do primeiro inversor como referência
               if (vAc.a === 0) {
                 vAc = { a: detail.uAc1 || 0, b: detail.uAc2 || 0, c: detail.uAc3 || 0 };
                 iAc = { a: detail.iAc1 || 0, b: detail.iAc2 || 0, c: detail.iAc3 || 0 };
-                temp = detail.inverterTemperature || 45;
+                temp = invTemp;
               }
             }
           }
@@ -96,51 +108,24 @@ export class SolisSyncService {
 
           fs.appendFileSync(logFile, `[SOLIS-SYNC] ${usina.nome}: Final Power=${powerFinal.toFixed(2)}kW, Energy=${energyKWh}kWh\n`);
 
-          const alignedTime = new Date(Math.floor(Date.now() / (5 * 60 * 1000)) * (5 * 60 * 1000));
+          const alignedTime = TelemetryIngestionService.alignTo5MinBucket(Date.now());
           
-          const existing = await prisma.telemetria.findFirst({
-            where: {
-              usinaId: usina.id,
-              timestamp: alignedTime
-            }
+          await TelemetryIngestionService.ingestPlantTelemetry({
+            usinaId: usina.id,
+            timestamp: alignedTime,
+            potenciaAtivaKW: powerFinal,
+            energiaAcumuladaKWh: energyKWh,
+            tensaoCA_A: vAc.a,
+            tensaoCA_B: vAc.b,
+            tensaoCA_C: vAc.c,
+            correnteCA_A: iAc.a,
+            correnteCA_B: iAc.b,
+            correnteCA_C: iAc.c,
+            tempIGBT: temp,
+            dadosStrings: stringsAcc,
+            dadosInversores: inversoresAcc
           });
-
-          if (existing) {
-            await prisma.telemetria.update({
-              where: { id: existing.id },
-              data: {
-                potenciaAtivaKW: powerFinal,
-                energiaAcumuladaKWh: energyKWh,
-                tensaoCA_A: vAc.a,
-                tensaoCA_B: vAc.b,
-                tensaoCA_C: vAc.c,
-                correnteCA_A: iAc.a,
-                correnteCA_B: iAc.b,
-                correnteCA_C: iAc.c,
-                tempIGBT: temp,
-                dadosStrings: stringsAcc
-              }
-            });
-            fs.appendFileSync(logFile, `[SOLIS-SYNC] Telemetria atualizada para o balde de 5min (${alignedTime.toISOString()})\n`);
-          } else {
-            await prisma.telemetria.create({
-              data: {
-                usinaId: usina.id,
-                potenciaAtivaKW: powerFinal,
-                energiaAcumuladaKWh: energyKWh,
-                timestamp: alignedTime,
-                tensaoCA_A: vAc.a,
-                tensaoCA_B: vAc.b,
-                tensaoCA_C: vAc.c,
-                correnteCA_A: iAc.a,
-                correnteCA_B: iAc.b,
-                correnteCA_C: iAc.c,
-                tempIGBT: temp,
-                dadosStrings: stringsAcc
-              }
-            });
-            fs.appendFileSync(logFile, `[SOLIS-SYNC] Nova telemetria criada para o balde de 5min (${alignedTime.toISOString()})\n`);
-          }
+          fs.appendFileSync(logFile, `[SOLIS-SYNC] Telemetria atualizada com sucesso para o balde de 5min (${alignedTime.toISOString()})\n`);
 
           // 3. Sincronização de Histórico de 5 dias (para preencher curvas de carga e métricas diárias)
           try {
@@ -237,7 +222,7 @@ export class SolisSyncService {
                 }
                 
                 if (creations.length > 0) {
-                  await prisma.telemetria.createMany({ data: creations });
+                  await prisma.telemetria.createMany({ data: creations, skipDuplicates: true });
                   fs.appendFileSync(logFile, `[SOLIS-SYNC] Criadas ${creations.length} novas telemetrias.\n`);
                 }
                 

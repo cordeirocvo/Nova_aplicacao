@@ -43,6 +43,7 @@ const NAV_SECTIONS: NavSection[] = [
       { name: 'Dimensionamento BESS', href: '/engenharia/bess', icon: Battery },
       { name: 'Dimensionamento BESS (pvlib)', href: '/engenharia/bess-sizing', icon: Battery },
       { name: 'Sistema Fotovoltaico', href: '/engenharia/solar', icon: Sun },
+      { name: 'Telemetria Solar', href: '/engenharia/solar/telemetria', icon: Zap, badge: 'FusionSolar' },
       { name: 'Solar Intelligence (SIE)', href: '/engenharia/solar/monitoramento', icon: Sun, badge: 'IA' },
       { name: 'Análise Preditiva (pvlib)', href: '/engenharia/solar/preditiva', icon: Activity, badge: 'Prescinto' },
       { name: 'Extrator de Telemetria', href: '/engenharia/solar/extrator', icon: Database, badge: 'Planilha' },

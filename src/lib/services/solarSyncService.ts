@@ -1,10 +1,11 @@
 import { HuaweiSyncService } from "./huaweiSyncService";
 import { SolisSyncService } from "./solisSyncService";
+import { HoymilesSyncService } from "./hoymilesSyncService";
 
 /**
  * Coordenador de Sincronização Solar Decoplado e Isolado
  * Executa as buscas de forma sequencial com tratamento de erro independente.
- * Isso garante que problemas ou latências em um fabricante (como Solis) 
+ * Isso garante que problemas ou latências em um fabricante (como Solis ou Hoymiles) 
  * nunca afetem ou travem o motor do outro fabricante (como Huawei).
  */
 export class SolarSyncService {
@@ -30,6 +31,15 @@ export class SolarSyncService {
       console.log(`[${new Date().toISOString()}] [COORDINATOR] Motor SOLIS concluído.`);
     } catch (e) {
       console.error(`[COORDINATOR] Erro crítico no motor SOLIS:`, e);
+    }
+
+    // 3. Executa a sincronização da Hoymiles de forma isolada
+    try {
+      console.log(`[${new Date().toISOString()}] [COORDINATOR] Iniciando motor HOYMILES...`);
+      await HoymilesSyncService.syncAll();
+      console.log(`[${new Date().toISOString()}] [COORDINATOR] Motor HOYMILES concluído.`);
+    } catch (e) {
+      console.error(`[COORDINATOR] Erro crítico no motor HOYMILES:`, e);
     }
     
     console.log(`[${new Date().toISOString()}] Sincronização global concluída.`);

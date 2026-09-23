@@ -1,5 +1,6 @@
 import { prisma } from "../prisma";
 import { HuaweiIntegration } from "./huaweiIntegration";
+import { TelemetryIngestionService } from "./telemetryIngestionService";
 import fs from "fs";
 import path from "path";
 
@@ -106,6 +107,7 @@ export class HuaweiSyncService {
               const usinaInverters = inverters.filter((i: any) => i.stationCode === usinaCode);
               const stringsAcc: Record<string, { V: number; I: number }> = {};
               let v = { a: 0, b: 0, c: 0 }, cur = { a: 0, b: 0, c: 0 }, t = 45;
+              const invertersAcc: Record<string, { potenciaKW: number; energiaDiaKWh: number; tempIGBT: number; status: string }> = {};
 
               if (usinaInverters.length > 0) {
                 let totalP_DC = 0, totalP_AC = 0, totalE_Daily = 0;
@@ -134,6 +136,14 @@ export class HuaweiSyncService {
                   
                   const energyDaily = parseFloat(String(map.day_cap || map.day_power || "0"));
                   const pAC = parseFloat(String(map.active_power ?? map.a_power ?? "0"));
+                  const invTemp = parseFloat(String(map.temperature ?? map.tempIGBT ?? "45"));
+                  
+                  invertersAcc[String(invSn)] = {
+                    potenciaKW: pAC,
+                    energiaDiaKWh: energyDaily,
+                    tempIGBT: invTemp,
+                    status: "ONLINE"
+                  };
                   
                   let invP_DC = 0;
                   const invLabel = invSn;
@@ -166,7 +176,7 @@ export class HuaweiSyncService {
                       b: parseFloat(String(map.b_i ?? map.i_b ?? "0")), 
                       c: parseFloat(String(map.c_i ?? map.i_c ?? "0")) 
                     };
-                    t = parseFloat(String(map.temperature ?? map.tempIGBT ?? "45"));
+                    t = invTemp;
                   }
                 });
 
@@ -183,51 +193,24 @@ export class HuaweiSyncService {
 
               fs.appendFileSync(logFile, `[HUAWEI-SYNC] Gravando ${usina.nome}: Potência=${powerFinal.toFixed(2)}kW, Energia Dia=${energyKWh}kWh, Tensão=[${v.a}V, ${v.b}V, ${v.c}V]\n`);
 
-              const alignedTime = new Date(Math.floor(Date.now() / (5 * 60 * 1000)) * (5 * 60 * 1000));
+              const alignedTime = TelemetryIngestionService.alignTo5MinBucket(Date.now());
 
-              const existing = await prisma.telemetria.findFirst({
-                where: {
-                  usinaId: usina.id,
-                  timestamp: alignedTime
-                }
+              await TelemetryIngestionService.ingestPlantTelemetry({
+                usinaId: usina.id,
+                timestamp: alignedTime,
+                potenciaAtivaKW: powerFinal,
+                energiaAcumuladaKWh: energyKWh,
+                tensaoCA_A: v.a,
+                tensaoCA_B: v.b,
+                tensaoCA_C: v.c,
+                correnteCA_A: cur.a,
+                correnteCA_B: cur.b,
+                correnteCA_C: cur.c,
+                tempIGBT: t,
+                dadosStrings: stringsAcc,
+                dadosInversores: invertersAcc
               });
-
-              if (existing) {
-                await prisma.telemetria.update({
-                  where: { id: existing.id },
-                  data: {
-                    potenciaAtivaKW: powerFinal,
-                    energiaAcumuladaKWh: energyKWh,
-                    tensaoCA_A: v.a,
-                    tensaoCA_B: v.b,
-                    tensaoCA_C: v.c,
-                    correnteCA_A: cur.a,
-                    correnteCA_B: cur.b,
-                    correnteCA_C: cur.c,
-                    tempIGBT: t,
-                    dadosStrings: stringsAcc
-                  }
-                });
-                fs.appendFileSync(logFile, `[HUAWEI-SYNC] Telemetria atualizada para o balde de 5min (${alignedTime.toISOString()})\n`);
-              } else {
-                await prisma.telemetria.create({
-                  data: {
-                    usinaId: usina.id,
-                    potenciaAtivaKW: powerFinal,
-                    energiaAcumuladaKWh: energyKWh,
-                    timestamp: alignedTime,
-                    tensaoCA_A: v.a,
-                    tensaoCA_B: v.b,
-                    tensaoCA_C: v.c,
-                    correnteCA_A: cur.a,
-                    correnteCA_B: cur.b,
-                    correnteCA_C: cur.c,
-                    tempIGBT: t,
-                    dadosStrings: stringsAcc
-                  }
-                });
-                fs.appendFileSync(logFile, `[HUAWEI-SYNC] Nova telemetria criada para o balde de 5min (${alignedTime.toISOString()})\n`);
-              }
+              fs.appendFileSync(logFile, `[HUAWEI-SYNC] Telemetria sincronizada com sucesso para o balde de 5min (${alignedTime.toISOString()})\n`);
 
               // 3. Sincronização de Histórico de 24h para Huawei (baldes de 5 minutos)
               try {
@@ -280,15 +263,25 @@ export class HuaweiSyncService {
                       let pPowerFinal = 0;
                       let pEnergyKWh = 0;
                       const pStringsAcc: Record<string, { V: number; I: number }> = {};
+                      const pInvertersAcc: Record<string, { potenciaKW: number; energiaDiaKWh: number; tempIGBT: number; status: string }> = {};
                       let pV = { a: 0, b: 0, c: 0 }, pCur = { a: 0, b: 0, c: 0 }, pT = 45;
                       
                       deviceRecords.forEach((h: any, idx: number) => {
                         const map = h.dataItemMap || {};
                         const energyDaily = parseFloat(String(map.day_cap || map.day_power || "0"));
                         const pAC = parseFloat(String(map.active_power ?? map.a_power ?? "0"));
+                        const invTemp = parseFloat(String(map.temperature ?? map.tempIGBT ?? "45"));
                         
                         let pDC_dev = 0;
                         const invLabel = h.sn || usinaInverters.find((i: any) => i.id === h.devId || i.devId === h.devId)?.sn || `Inv${idx+1}`;
+
+                        pInvertersAcc[String(invLabel)] = {
+                          potenciaKW: pAC,
+                          energiaDiaKWh: energyDaily,
+                          tempIGBT: invTemp,
+                          status: "ONLINE"
+                        };
+
                         for (let i = 1; i <= 24; i++) {
                           const vol = parseFloat(String(map[`pv${i}_u`] || "0"));
                           const amp = parseFloat(String(map[`pv${i}_i`] || "0"));
@@ -317,7 +310,7 @@ export class HuaweiSyncService {
                             b: parseFloat(String(map.b_i ?? map.i_b ?? "0")), 
                             c: parseFloat(String(map.c_i ?? map.i_c ?? "0")) 
                           };
-                          pT = parseFloat(String(map.temperature ?? map.tempIGBT ?? "45"));
+                          pT = invTemp;
                         }
                       });
                       
@@ -334,7 +327,8 @@ export class HuaweiSyncService {
                         correnteCA_B: pCur.b,
                         correnteCA_C: pCur.c,
                         tempIGBT: pT,
-                        dadosStrings: pStringsAcc
+                        dadosStrings: pStringsAcc,
+                        dadosInversores: pInvertersAcc
                       };
                       
                       if (existingMap.has(isoStr)) {
@@ -348,7 +342,7 @@ export class HuaweiSyncService {
                     }
                     
                     if (creations.length > 0) {
-                      await prisma.telemetria.createMany({ data: creations });
+                      await prisma.telemetria.createMany({ data: creations, skipDuplicates: true });
                       fs.appendFileSync(logFile, `[HUAWEI-SYNC] Criadas ${creations.length} novas telemetrias.\n`);
                     }
                     
@@ -366,11 +360,12 @@ export class HuaweiSyncService {
                             correnteCA_B: u.data.correnteCA_B,
                             correnteCA_C: u.data.correnteCA_C,
                             tempIGBT: u.data.tempIGBT,
-                            dadosStrings: u.data.dadosStrings
+                            dadosStrings: u.data.dadosStrings,
+                            dadosInversores: u.data.dadosInversores
                           }
                         })
                       ));
-                      fs.appendFileSync(logFile, `[HUAWEI-SYNC] Atualizadas ${updates.length} telemetrias.\n`);
+                      fs.appendFileSync(logFile, `[HUAWEI-SYNC] Atualizadas ${updates.length} telemetrias existentes.\n`);
                     }
                   }
                   fs.appendFileSync(logFile, `[HUAWEI-SYNC] Concluído processamento de histórico para ${usina.nome}\n`);

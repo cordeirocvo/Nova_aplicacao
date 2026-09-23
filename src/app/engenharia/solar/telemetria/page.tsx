@@ -21,9 +21,12 @@ import {
   Clock,
   X,
   FileText,
+  FileDown,
 } from "lucide-react";
 import GraficoFusionSolarStyle, { PlantComparisonData } from "@/components/solar/GraficoFusionSolarStyle";
 import ManualTelemetryModal from "@/components/solar/ManualTelemetryModal";
+import StringDiagnosticModal from "@/components/solar/StringDiagnosticModal";
+import { generateTelemetryPdf } from "@/lib/reports/telemetryPdfReport";
 
 const COMPARISON_COLORS = [
   "#F59E0B", // Âmbar / Ouro
@@ -66,6 +69,9 @@ export default function TelemetriaSolarPage() {
   const [isAuditModalOpen, setIsAuditModalOpen] = useState<boolean>(false);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
   const [loadingAudit, setLoadingAudit] = useState<boolean>(false);
+
+  // Estados do Modal de Diagnóstico de Strings DC
+  const [isDiagnosticModalOpen, setIsDiagnosticModalOpen] = useState<boolean>(false);
 
   // Carregar lista de usinas
   const fetchUsinas = async () => {
@@ -277,6 +283,30 @@ export default function TelemetriaSolarPage() {
     });
   };
 
+  // Exportar Laudo Executivo em PDF diretamente pelo header
+  const handleExportPdf = () => {
+    generateTelemetryPdf({
+      usinaNome: usinaNomeAtual,
+      capacidadeKWp: capacidadeKWpAtual,
+      data: date,
+      kpis: telemetryData?.kpis || {
+        potenciaAtualKW: 0,
+        energiaDiaKWh: 0,
+        energiaOntemKWh: 0,
+        comparativoOntemPct: 0,
+        picoPotenciaKW: 0,
+        horarioPico: "--:--",
+        yieldKWhKWp: 0,
+        horasSolPleno: 0,
+        performanceRatioEst: 80,
+        irradianciaAtualWM2: 0,
+        inversoresStatus: { total: 1, online: 1, standby: 0, alarme: 0 },
+      },
+      serieDiaria: telemetryData?.serieDiaria || [],
+      inversoresCadastrados: telemetryData?.inversores || [],
+    });
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8 space-y-6">
       {/* ── HEADER PRINCIPAL ── */}
@@ -295,56 +325,86 @@ export default function TelemetriaSolarPage() {
           </p>
         </div>
 
-        {/* Ações Rápidas */}
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Switch Modo Comparativo */}
+        {/* Ações Rápidas com Alto Destaque Visual */}
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* 1. MODO COMPARATIVO MULTI-USINAS */}
           <button
             onClick={() => setIsModoComparativo(!isModoComparativo)}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 border shadow-sm ${
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 border shadow-md ${
               isModoComparativo
-                ? "bg-amber-500 text-slate-950 border-amber-400 shadow-amber-500/20"
-                : "bg-slate-900 border-slate-800 hover:border-slate-700 text-slate-300"
+                ? "bg-amber-500 text-slate-950 border-amber-400 shadow-amber-500/30 ring-2 ring-amber-400/30 scale-105"
+                : "bg-slate-900 border-amber-500/40 hover:border-amber-400 hover:bg-slate-850 text-amber-300"
             }`}
             title="Comparar múltiplas usinas na mesma escala normalizada (kW/kWp)"
           >
-            <GitCompare className="w-3.5 h-3.5" />
-            <span>{isModoComparativo ? "Modo Comparativo Ativo" : "Comparar Usinas"}</span>
+            <GitCompare className="w-4 h-4 text-amber-400" />
+            <span>{isModoComparativo ? "✓ Modo Comparativo Ativo" : "Comparar Usinas"}</span>
           </button>
 
-          {/* Auto-Cura de Gaps */}
+          {/* 2. DIAGNÓSTICO DE STRINGS DC (NOVO) */}
+          <button
+            onClick={() => {
+              if (selectedUsinaId === "consolidado") {
+                setStatusMessage({
+                  text: "Selecione uma usina individual para inspecionar o diagnóstico de strings DC.",
+                  type: "info",
+                });
+                setTimeout(() => setStatusMessage(null), 4000);
+                return;
+              }
+              setIsDiagnosticModalOpen(true);
+            }}
+            className="px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-900 border border-rose-500/40 hover:border-rose-400 hover:bg-rose-500/10 text-rose-300 transition-all flex items-center gap-2 shadow-md"
+            title="Diagnóstico de correntes por MPPT, detecção de fusível queimado e strings vazias"
+          >
+            <Cpu className="w-4 h-4 text-rose-400" />
+            <span>Diagnóstico Strings DC</span>
+          </button>
+
+          {/* 3. EXPORTAR PDF EXECUTIVO (1 CLIQUE) */}
+          <button
+            onClick={handleExportPdf}
+            className="px-4 py-2.5 rounded-xl text-xs font-bold bg-amber-500/15 border border-amber-500/40 hover:bg-amber-500/25 text-amber-300 transition-all flex items-center gap-2 shadow-md"
+            title="Exportar Laudo Técnico Executivo em PDF (Conformidade ABNT NBR 16274)"
+          >
+            <FileDown className="w-4 h-4 text-amber-400" />
+            <span>Exportar PDF</span>
+          </button>
+
+          {/* 4. Auto-Cura de Gaps */}
           <button
             onClick={handleOpenGapModal}
-            className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-900 border border-slate-800 hover:border-amber-500/40 text-slate-200 transition flex items-center gap-2 shadow-sm"
+            className="px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-slate-900 border border-slate-850 hover:border-slate-700 text-slate-300 transition flex items-center gap-2 shadow-sm"
             title="Escanear e reparar lacunas temporais sem dados"
           >
             <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
-            <span>Auto-Cura de Gaps</span>
+            <span>Auto-Cura Gaps</span>
           </button>
 
-          {/* Trilha de Auditoria */}
+          {/* 5. Trilha de Auditoria */}
           <button
             onClick={handleOpenAuditModal}
-            className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-300 transition flex items-center gap-2 shadow-sm"
+            className="px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-slate-900 border border-slate-850 hover:border-slate-700 text-slate-300 transition flex items-center gap-2 shadow-sm"
             title="Ver histórico de importações manuais e sincronizações"
           >
             <Activity className="w-3.5 h-3.5 text-cyan-400" />
             <span>Auditoria</span>
           </button>
 
-          {/* Sincronização ao Vivo */}
+          {/* 6. Sincronização ao Vivo */}
           <button
             onClick={handleLiveSync}
             disabled={syncing}
-            className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-900 border border-slate-700 hover:border-amber-500/50 hover:bg-slate-850 text-slate-200 transition flex items-center gap-2 shadow-sm disabled:opacity-50"
+            className="px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-slate-900 border border-slate-700 hover:border-amber-500/50 hover:bg-slate-850 text-slate-200 transition flex items-center gap-2 shadow-sm disabled:opacity-50"
           >
             <RefreshCw className={`w-3.5 h-3.5 text-amber-400 ${syncing ? "animate-spin" : ""}`} />
             <span>{syncing ? "Sincronizando..." : "Sincronizar APIs"}</span>
           </button>
 
-          {/* Importação Manual (Excel/CSV/Colar) */}
+          {/* 7. Importação Manual (Excel/CSV/Colar) */}
           <button
             onClick={() => setIsImportModalOpen(true)}
-            className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500/20 text-emerald-400 transition flex items-center gap-2 shadow-sm"
+            className="px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500/20 text-emerald-400 transition flex items-center gap-2 shadow-sm"
           >
             <FileSpreadsheet className="w-3.5 h-3.5" />
             <span>Importar Planilha</span>
@@ -698,6 +758,18 @@ export default function TelemetriaSolarPage() {
         }}
         defaultUsinaId={selectedUsinaId !== "consolidado" ? selectedUsinaId : usinas[0]?.id}
         usinasList={usinas.map((u) => ({ id: u.id, nome: u.nome, apiFornecedor: u.apiFornecedor }))}
+      />
+
+      {/* ── MODAL DE DIAGNÓSTICO INTELIGENTE DE STRINGS CC ── */}
+      <StringDiagnosticModal
+        isOpen={isDiagnosticModalOpen}
+        onClose={() => setIsDiagnosticModalOpen(false)}
+        usinaId={selectedUsinaId !== "consolidado" ? selectedUsinaId : usinas[0]?.id}
+        usinaNome={usinaNomeAtual}
+        date={date}
+        onDateChange={(newDate) => {
+          setDate(newDate);
+        }}
       />
     </div>
   );

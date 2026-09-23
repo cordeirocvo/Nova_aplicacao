@@ -342,11 +342,11 @@ export default function GraficoFusionSolarStyle({
                 inversoresCadastrados,
               });
             }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 transition shadow-sm"
+            className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/40 transition shadow-sm"
             title="Exportar Laudo Técnico Executivo em PDF (1 Clique)"
           >
-            <FileDown className="w-3.5 h-3.5 text-amber-400" />
-            <span className="hidden sm:inline">Exportar PDF</span>
+            <FileDown className="w-4 h-4 text-amber-400" />
+            <span>Exportar PDF</span>
           </button>
 
           <div className="flex bg-slate-950/80 border border-slate-800 rounded-xl p-1">

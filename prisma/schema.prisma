@@ -630,6 +630,75 @@ model OrcamentoTipoMaterial {
   updatedAt  DateTime @updatedAt
 }
 
+model CemigMaterialPreco {
+  id            String              @id @default(cuid())
+  codigo        String              @unique
+  descricao     String
+  categoria     String              // "POSTE", "CONDUTOR", "ELETRODUTO", "CAIXA", "DISJUNTOR", "ATERRAMENTO", "FERRAGEM", "ACESSORIO", "MAO_DE_OBRA"
+  unidade       String              // "un", "m", "kg", "cj"
+  precoUnitario Float
+  observacao    String?
+  ativo         Boolean             @default(true)
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  
+  itensProposta CemigPropostaItem[]
+}
+
+model CemigPropostaPadrao {
+  id                   String              @id @default(cuid())
+  numeroProposta       String              @unique
+  clienteNome          String
+  clienteTelefone      String?
+  clienteEmail         String?
+  clienteDocumento     String?
+  cidade               String?             @default("Belo Horizonte - MG")
+  endereco             String?
+  finalidade           String              @default("CARREGADOR_VE") // "CARREGADOR_VE", "PADRAO_RESIDENCIAL", "PADRAO_COMERCIAL", "AUMENTO_CARGA"
+  potenciaCarregadorKW Float?              // ex: 7.4, 11, 22
+  modeloCarregador     String?
+  tipoPadrao           String              // "BIFASICO" ou "TRIFASICO"
+  disjuntorAmperes     Int                 // 63, 80, 100, 125, 150, 200
+  faixaDemanda         String              // "B1", "C1", "C2", "C3", "C4", "C5", "C6"
+  ladoRede             String              // "A_FAVOR" ou "CONTRA"
+  tipoEstrutura        String              // "POSTE_CONCRETO", "POSTE_ACO", "PONTALETE", "MURO"
+  posteHomologado      String?             // ex: "PC1", "PC2", "PC3", "PA1"
+  caboEntrada          String?             // ex: "16 mm²", "25 mm²"
+  eletroduto           String?             // ex: "PVC 32 mm"
+  hastesQtde           Int                 @default(2)
+  valorMateriais       Float               @default(0)
+  valorMaoDeObra       Float               @default(0)
+  bdiMargem            Float               @default(0) // %
+  valorDesconto        Float               @default(0)
+  valorTotal           Float               @default(0)
+  status               String              @default("RASCUNHO") // "RASCUNHO", "ENVIADA", "APROVADA", "RECUSADA"
+  observacoes          String?
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+
+  itens                CemigPropostaItem[]
+}
+
+model CemigPropostaItem {
+  id            String              @id @default(cuid())
+  propostaId    String
+  materialId    String?
+  codigo        String?
+  descricao     String
+  categoria     String              @default("GERAL")
+  unidade       String              @default("un")
+  quantidade    Float               @default(1)
+  precoUnitario Float               @default(0)
+  precoTotal    Float               @default(0)
+  ordem         Int                 @default(0)
+  
+  proposta      CemigPropostaPadrao @relation(fields: [propostaId], references: [id], onDelete: Cascade)
+  material      CemigMaterialPreco? @relation(fields: [materialId], references: [id], onDelete: SetNull)
+
+  @@index([propostaId])
+}
+
+
 model Fornecedor {
   id              String                @id @default(cuid())
   razaoSocial     String

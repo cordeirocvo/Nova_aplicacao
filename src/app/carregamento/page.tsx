@@ -31,13 +31,22 @@ export default function CarregamentoDashboard() {
           <h1 className="text-3xl font-bold text-slate-800">Dimensionamento VE</h1>
           <p className="text-slate-500">Gestão de projetos de infraestrutura para carregamento elétrico.</p>
         </div>
-        <Link 
-          href="/carregamento/novo"
-          className="bg-gradient-to-r from-[#1E3A8A] to-[#00BFA5] text-white px-5 py-3 rounded-xl flex items-center gap-2 shadow-lg hover:shadow-xl transition-all font-bold"
-        >
-          <Plus className="w-5 h-5" />
-          Novo Dimensionamento
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link 
+            href="/engenharia/padrao-cemig"
+            className="bg-slate-900 hover:bg-slate-800 text-white px-5 py-3 rounded-xl flex items-center gap-2 shadow-md transition-all font-bold text-sm border border-slate-700"
+          >
+            <Zap className="w-5 h-5 text-[#00BFA5]" />
+            Padrão CEMIG & CAPEX
+          </Link>
+          <Link 
+            href="/carregamento/novo"
+            className="bg-gradient-to-r from-[#1E3A8A] to-[#00BFA5] text-white px-5 py-3 rounded-xl flex items-center gap-2 shadow-lg hover:shadow-xl transition-all font-bold text-sm"
+          >
+            <Plus className="w-5 h-5" />
+            Novo Dimensionamento VE
+          </Link>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -48,7 +57,26 @@ export default function CarregamentoDashboard() {
           <p className="text-3xl font-bold text-slate-800">{projects.length}</p>
           <p className="text-sm text-slate-500 font-medium">Projetos Realizados</p>
         </div>
-        {/* Adicionar mais stats aqui se necessário */}
+
+        <Link 
+          href="/engenharia/padrao-cemig"
+          className="bg-gradient-to-br from-slate-900 to-slate-800 text-white p-6 rounded-2xl shadow-sm border border-slate-700 flex flex-col items-start justify-between hover:border-[#00BFA5] transition-all group cursor-pointer"
+        >
+          <div className="flex items-center justify-between w-full">
+            <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-[#00BFA5]/20 text-[#00BFA5]">
+              Norma ND 5.1
+            </span>
+            <Zap className="w-5 h-5 text-[#00BFA5] group-hover:scale-110 transition-transform" />
+          </div>
+          <div className="mt-3">
+            <p className="text-base font-bold text-white group-hover:text-[#00BFA5] transition-colors">
+              Padrão CEMIG & Levantamento de CAPEX
+            </p>
+            <p className="text-xs text-slate-400 mt-1">
+              Dimensionamento de lista de materiais, quantitativos e custos para conexão de carregadores.
+            </p>
+          </div>
+        </Link>
       </div>
 
       <h2 className="text-xl font-bold text-slate-800 pt-4">Projetos Recentes</h2>

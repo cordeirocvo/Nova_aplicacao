@@ -50,6 +50,7 @@ const NAV_SECTIONS: NavSection[] = [
       { name: 'Operação & Manutenção', href: '/engenharia/om', icon: Settings },
       { name: 'Equipamentos', href: '/engenharia/equipamentos', icon: Package },
       { name: 'Carregadores VE', href: '/carregamento', icon: BatteryCharging },
+      { name: 'Padrão CEMIG & CAPEX', href: '/engenharia/padrao-cemig', icon: Zap, badge: 'ND 5.1' },
       { name: 'Dimensionamento Elétrico', href: '/engenharia/eletrica', icon: Zap },
       { name: 'Gestão de Orçamentos (CAPEX)', href: '/orcamentos', icon: ListTodo, requiresBudgets: true },
     ],

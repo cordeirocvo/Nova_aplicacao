@@ -30,6 +30,41 @@ export default function AtividadesClientView({ atividades, settings, isAdmin, is
   };
 
   const [localIsTV, setLocalIsTV] = useState(isTV);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("__ALL__");
+
+  // Derived: filtered list (applied before pagination)
+  const filteredAtividades = React.useMemo(() => {
+    let list = atividades as any[];
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      list = list.filter(
+        (a) =>
+          (a.instalacao || "").toLowerCase().includes(q) ||
+          (a.obsInstalacao || "").toLowerCase().includes(q)
+      );
+    }
+    if (statusFilter !== "__ALL__") {
+      list = list.filter((a) => (a.status || "Pendente") === statusFilter);
+    }
+    return list;
+  }, [atividades, search, statusFilter]);
+
+  // Unique statuses for filter dropdown
+  const uniqueStatuses = React.useMemo(() => {
+    const seen = new Set<string>();
+    (atividades as any[]).forEach((a) => seen.add(a.status || "Pendente"));
+    return Array.from(seen).sort();
+  }, [atividades]);
+
+  // Counters
+  const totalUrgent = React.useMemo(
+    () =>
+      (atividades as any[]).filter(
+        (a) => a.daysParecer !== null && a.daysParecer <= settings.limiteParecer
+      ).length,
+    [atividades, settings.limiteParecer]
+  );
 
   useEffect(() => {
     const stored = localStorage.getItem("forcedTvMode");
@@ -55,19 +90,20 @@ export default function AtividadesClientView({ atividades, settings, isAdmin, is
     setCurrentPage(0);
   }, [localIsTV]);
 
+  // Reset page when filters change
+  useEffect(() => { setCurrentPage(0); }, [search, statusFilter]);
+
   useEffect(() => {
     const calcRows = () => {
       if (!localIsTV) {
-        setItemsPerPage(20); // 20 itens por página no modo convencional (desktop/mobile)
+        setItemsPerPage(20);
         return;
       }
-      
-      const headerSpace = 250; 
+      const headerSpace = 250;
       const avHeight = window.innerHeight - headerSpace;
-      const rowHeight = 65; 
+      const rowHeight = 65;
       let rows = Math.floor(avHeight / rowHeight);
-      if (rows < 3) rows = 3; 
-      
+      if (rows < 3) rows = 3;
       setItemsPerPage(rows);
     };
 
@@ -77,21 +113,20 @@ export default function AtividadesClientView({ atividades, settings, isAdmin, is
   }, [localIsTV]);
 
   useEffect(() => {
-    if (!localIsTV || atividades.length <= itemsPerPage) return;
-    
+    if (!localIsTV || filteredAtividades.length <= itemsPerPage) return;
+
     const interval = setInterval(() => {
       setCurrentPage((prev) => {
-        const totalPages = Math.ceil(atividades.length / itemsPerPage);
+        const totalPages = Math.ceil(filteredAtividades.length / itemsPerPage);
         return (prev + 1) % totalPages;
       });
     }, 15000);
 
     return () => clearInterval(interval);
-  }, [localIsTV, atividades.length, itemsPerPage]);
+  }, [localIsTV, filteredAtividades.length, itemsPerPage]);
 
-  const currentSlice = atividades.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
-
-  const totalPages = Math.ceil(atividades.length / itemsPerPage);
+  const currentSlice = filteredAtividades.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
+  const totalPages = Math.ceil(filteredAtividades.length / itemsPerPage);
 
   if (atividades.length === 0) {
     return (
@@ -100,6 +135,7 @@ export default function AtividadesClientView({ atividades, settings, isAdmin, is
        </div>
     );
   }
+
 
   // TV View - Render ONLY the table to avoid duplication and use inline styles for safety
   if (localIsTV) {
@@ -292,20 +328,77 @@ export default function AtividadesClientView({ atividades, settings, isAdmin, is
   // Desktop/Mobile View
   return (
     <>
-      {/* Botão de Controle do Modo TV Manual */}
-      <div className="flex justify-end mb-4 px-2">
+      {/* Toolbar: Busca + Filtros + Modo TV */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-4 px-2 items-start sm:items-center">
+        {/* Busca */}
+        <div className="relative flex-1 min-w-0">
+          <input
+            type="text"
+            placeholder="Buscar por cliente ou observação..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-9 pr-4 py-2.5 text-sm bg-white border border-slate-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-[#00BFA5] focus:border-transparent placeholder:text-slate-400"
+          />
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M16.65 16.65A7.5 7.5 0 1 0 4.5 4.5a7.5 7.5 0 0 0 12.15 12.15z" />
+          </svg>
+          {search && (
+            <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+          )}
+        </div>
+
+        {/* Filtro por status */}
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="px-3 py-2.5 text-sm bg-white border border-slate-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-[#00BFA5] text-slate-700 min-w-[160px]"
+        >
+          <option value="__ALL__">Todos os status</option>
+          {uniqueStatuses.map((s) => (
+            <option key={s} value={s}>{s}</option>
+          ))}
+        </select>
+
+        {/* Modo TV */}
         <button
           type="button"
           onClick={toggleTvMode}
-          className="flex items-center gap-2 px-4 py-2.5 text-xs font-bold text-slate-600 hover:text-slate-800 bg-white hover:bg-slate-55 rounded-xl border border-slate-200 shadow-sm transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+          className="flex items-center gap-2 px-4 py-2.5 text-xs font-bold text-slate-600 hover:text-slate-800 bg-white hover:bg-slate-50 rounded-xl border border-slate-200 shadow-sm transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98] shrink-0"
         >
           <Activity className="w-4 h-4 text-[#00BFA5]" />
           Ativar Modo TV
         </button>
       </div>
 
+      {/* Contadores */}
+      <div className="flex gap-3 px-2 mb-4 flex-wrap">
+        <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm">
+          <span className="w-2 h-2 rounded-full bg-slate-400 inline-block" />
+          {filteredAtividades.length} atividade{filteredAtividades.length !== 1 ? "s" : ""}
+          {(search || statusFilter !== "__ALL__") && ` (filtradas de ${(atividades as any[]).length})`}
+        </div>
+        {totalUrgent > 0 && (
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-red-700 bg-red-50 px-3 py-1.5 rounded-lg border border-red-200 shadow-sm">
+            <span className="w-2 h-2 rounded-full bg-red-500 inline-block animate-pulse" />
+            {totalUrgent} com alerta de parecer
+          </div>
+        )}
+      </div>
+
+      {/* Empty filtered state */}
+      {filteredAtividades.length === 0 && (search || statusFilter !== "__ALL__") && (
+        <div className="bg-white rounded-xl p-10 text-center border-2 border-dashed border-slate-200">
+          <p className="text-slate-500 font-medium">Nenhuma atividade encontrada para os filtros aplicados.</p>
+          <button onClick={() => { setSearch(""); setStatusFilter("__ALL__"); }} className="mt-3 text-sm text-[#00BFA5] font-semibold hover:underline">
+            Limpar filtros
+          </button>
+        </div>
+      )}
+
       {/* Table Desktop View */}
-      <div className="hidden lg:block bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden relative">
+      <div className={`hidden lg:block bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden relative ${filteredAtividades.length === 0 ? "hidden" : ""}`}>
         <table className="w-full text-[13px] text-left table-fixed" style={{ tableLayout: 'fixed' }}>
           <thead className="text-[11px] text-slate-500 uppercase bg-slate-50/80 border-b border-slate-100">
             <tr>
@@ -562,9 +655,10 @@ export default function AtividadesClientView({ atividades, settings, isAdmin, is
           <div className="text-xs md:text-sm text-slate-505 font-semibold">
             Mostrando <span className="text-slate-800 font-black">{currentPage * itemsPerPage + 1}</span> a{" "}
             <span className="text-slate-800 font-black">
-              {Math.min((currentPage + 1) * itemsPerPage, atividades.length)}
+              {Math.min((currentPage + 1) * itemsPerPage, filteredAtividades.length)}
             </span>{" "}
-            de <span className="text-slate-800 font-black">{atividades.length}</span> atividades
+            de <span className="text-slate-800 font-black">{filteredAtividades.length}</span> atividade{filteredAtividades.length !== 1 ? "s" : ""}
+
           </div>
           <div className="flex gap-2">
             <button

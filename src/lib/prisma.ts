@@ -38,7 +38,7 @@ const prismaClientSingleton = () => {
 const globalForPrisma = globalThis as unknown as { prisma?: ReturnType<typeof prismaClientSingleton> }
 
 const getPrismaInstance = () => {
-  if (globalForPrisma.prisma && (globalForPrisma.prisma as any).funcionarioCanteiro) {
+  if (globalForPrisma.prisma && (globalForPrisma.prisma as any).cemigMaterialPreco) {
     return globalForPrisma.prisma;
   }
   const client = prismaClientSingleton();

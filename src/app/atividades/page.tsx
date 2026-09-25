@@ -17,22 +17,31 @@ export default async function AcompanhamentoPage() {
   const isAdmin = session?.user?.role === "ADMIN";
   const isTV = session?.user?.role === "TV";
 
-  const [atividades, settingsRaw] = await Promise.all([
+  // Palavras-chave de conclusão — filtro case-insensitive via OR
+  const CONCLUDED_KEYWORDS = [
+    "concluí", "conclui", "finaliz", "execut"
+  ];
+
+  const [atividadesRaw, settingsRaw] = await Promise.all([
     prisma.planilhaInstalacao.findMany({
       where: {
-        status: {
-          notIn: [
-            "Concluído", "Concluido", "concluido", "concluído", "CONCLUÍDO",
-            "Finalizado", "finalizado", "FINALIZADO", "Finalizada", "finalizada",
-            "Executado", "executado", "EXECUTADO", "Executada", "executada"
-          ]
-        },
-        NOT: {
-          AND: [
-            { manualInstalacao: true },
-            { idInterno: { not: null } }
-          ]
-        }
+        AND: [
+          // Exclui status com palavras de conclusão (case-insensitive)
+          {
+            AND: CONCLUDED_KEYWORDS.map((kw) => ({
+              NOT: { status: { contains: kw, mode: "insensitive" as const } },
+            })),
+          },
+          // Exclui registros sincronizados da planilha (manual + com idInterno)
+          {
+            NOT: {
+              AND: [
+                { manualInstalacao: true },
+                { idInterno: { not: null } },
+              ],
+            },
+          },
+        ],
       },
       select: {
         id: true,
@@ -50,9 +59,12 @@ export default async function AcompanhamentoPage() {
         historico: true,
       },
       orderBy: { createdAt: "desc" },
+      take: 500, // segurança: limita carga máxima
     }),
-    prisma.systemSettings.findUnique({ where: { id: "default" } })
+    prisma.systemSettings.findUnique({ where: { id: "default" } }),
   ]);
+
+  const atividades = atividadesRaw;
 
   const settings = settingsRaw || { limiteVerde: 40, limiteAmarelo: 20, limiteParecer: 30 };
 

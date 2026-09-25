@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from "next/link";
-import { Edit, ShieldAlert, Paperclip, Download, Activity } from "lucide-react";
+import { Edit, ShieldAlert, Paperclip, Download, Activity, Sun, RotateCcw, Sliders, Layers } from "lucide-react";
 import { TagToggler } from "./TagToggler";
+import TvUsinasView from "./TvUsinasView";
 
 export default function AtividadesClientView({ atividades, settings, isAdmin, isTV }: any) {
   const downloadFile = async (url: string, filename: string) => {
@@ -83,11 +84,37 @@ export default function AtividadesClientView({ atividades, settings, isAdmin, is
     localStorage.setItem("forcedTvMode", String(nextVal));
   };
 
+  // ── Configuração de Ciclo da TV (Ponto de Restauração Seguro) ─────────────
+  // "HYBRID": Ciclo completo (Atividades 15s por pág -> Usinas 25s)
+  // "CLASSIC": Modo clássico original (Apenas Atividades)
+  const [tvCycleType, setTvCycleType] = useState<"HYBRID" | "CLASSIC">("HYBRID");
+  const [activeTvScreen, setActiveTvScreen] = useState<"atividades" | "usinas">("atividades");
+  const [tvSecondsRemaining, setTvSecondsRemaining] = useState<number>(15);
+
+  useEffect(() => {
+    const savedType = localStorage.getItem("tvCycleType");
+    if (savedType === "CLASSIC" || savedType === "HYBRID") {
+      setTvCycleType(savedType);
+    }
+  }, []);
+
+  const toggleTvCycleType = () => {
+    const next = tvCycleType === "HYBRID" ? "CLASSIC" : "HYBRID";
+    setTvCycleType(next);
+    localStorage.setItem("tvCycleType", next);
+    if (next === "CLASSIC") {
+      setActiveTvScreen("atividades");
+      setTvSecondsRemaining(15);
+    }
+  };
+
   const [currentPage, setCurrentPage] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(20); 
 
   useEffect(() => {
     setCurrentPage(0);
+    setActiveTvScreen("atividades");
+    setTvSecondsRemaining(15);
   }, [localIsTV]);
 
   // Reset page when filters change
@@ -112,21 +139,51 @@ export default function AtividadesClientView({ atividades, settings, isAdmin, is
     return () => window.removeEventListener('resize', calcRows);
   }, [localIsTV]);
 
+  const totalPages = Math.ceil(filteredAtividades.length / itemsPerPage) || 1;
+
+  // ── Temporizador do Modo TV em Loop (Atividades -> Usinas -> Atividades) ──
   useEffect(() => {
-    if (!localIsTV || filteredAtividades.length <= itemsPerPage) return;
+    if (!localIsTV) return;
 
-    const interval = setInterval(() => {
-      setCurrentPage((prev) => {
-        const totalPages = Math.ceil(filteredAtividades.length / itemsPerPage);
-        return (prev + 1) % totalPages;
+    // Se estiver no Modo Clássico (Restaurado)
+    if (tvCycleType === "CLASSIC") {
+      if (totalPages <= 1) return;
+      const interval = setInterval(() => {
+        setCurrentPage((prev) => (prev + 1) % totalPages);
+      }, 15000);
+      return () => clearInterval(interval);
+    }
+
+    // Modo Híbrido (Ciclo Sequencial Completo)
+    const timer = setInterval(() => {
+      setTvSecondsRemaining((prev) => {
+        if (prev <= 1) {
+          // Troca de tela ou de página
+          if (activeTvScreen === "atividades") {
+            // Se ainda tem páginas de atividades
+            if (currentPage < totalPages - 1) {
+              setCurrentPage((p) => p + 1);
+              return 15;
+            } else {
+              // Chegou ao fim das atividades -> entra na tela de Usinas
+              setActiveTvScreen("usinas");
+              return 25; // 25s exibindo as usinas fotovoltaicas
+            }
+          } else {
+            // Estava nas usinas -> retorna para a pág 0 das atividades
+            setActiveTvScreen("atividades");
+            setCurrentPage(0);
+            return 15;
+          }
+        }
+        return prev - 1;
       });
-    }, 15000);
+    }, 1000);
 
-    return () => clearInterval(interval);
-  }, [localIsTV, filteredAtividades.length, itemsPerPage]);
+    return () => clearInterval(timer);
+  }, [localIsTV, tvCycleType, activeTvScreen, currentPage, totalPages]);
 
   const currentSlice = filteredAtividades.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
-  const totalPages = Math.ceil(filteredAtividades.length / itemsPerPage);
 
   if (atividades.length === 0) {
     return (
@@ -139,6 +196,79 @@ export default function AtividadesClientView({ atividades, settings, isAdmin, is
 
   // TV View - Render ONLY the table to avoid duplication and use inline styles for safety
   if (localIsTV) {
+    if (activeTvScreen === "usinas") {
+      return (
+        <>
+          <TvUsinasView
+            onBackToAtividades={() => {
+              setActiveTvScreen("atividades");
+              setCurrentPage(0);
+              setTvSecondsRemaining(15);
+            }}
+            secondsRemaining={tvSecondsRemaining}
+            totalSeconds={25}
+          />
+
+          {/* Floating Controls in TV view */}
+          <div
+            style={{
+              position: 'fixed',
+              bottom: '16px',
+              right: '16px',
+              zIndex: 9999,
+              display: 'flex',
+              gap: '8px',
+            }}
+          >
+            <button
+              onClick={toggleTvCycleType}
+              style={{
+                backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                backdropFilter: 'blur(4px)',
+                color: '#94a3b8',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+                borderRadius: '12px',
+                padding: '8px 14px',
+                fontSize: '11px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.2)',
+              }}
+              title="Alternar entre ciclo híbrido ou modo clássico (restauração)"
+            >
+              <RotateCcw style={{ width: '12px', height: '12px', color: '#f15a24' }} />
+              {tvCycleType === "HYBRID" ? "Modo: Ciclo Completo" : "Modo: Clássico (Só Ativ.)"}
+            </button>
+
+            <button
+              onClick={toggleTvMode}
+              style={{
+                backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                backdropFilter: 'blur(4px)',
+                color: '#ffffff',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+                borderRadius: '12px',
+                padding: '8px 14px',
+                fontSize: '11px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.2)',
+              }}
+            >
+              <Activity style={{ width: '12px', height: '12px', color: '#00BFA5' }} />
+              Sair da TV
+            </button>
+          </div>
+        </>
+      );
+    }
+
     return (
       <>
         <div style={{ padding: '16px', height: 'calc(100vh - 100px)', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
@@ -277,50 +407,120 @@ export default function AtividadesClientView({ atividades, settings, isAdmin, is
               </tbody>
             </table>
   
-          {/* Rodapé de Paginação da TV */}
-          {totalPages > 1 && (
-            <div style={{ backgroundColor: '#f1f5f9', padding: '8px 16px', textAlign: 'center', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-               <div style={{ display: 'flex' }}>
-                 {Array.from({ length: totalPages }).map((_, i) => (
-                   <div key={i} style={{ backgroundColor: currentPage === i ? '#00BFA5' : '#cbd5e1', width: '8px', height: '8px', borderRadius: '50%', marginRight: '4px' }} />
-                 ))}
-               </div>
-               <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#64748b', marginLeft: '12px' }}>Página {currentPage + 1} de {totalPages}</span>
-            </div>
-          )}
+          {/* Rodapé de Paginação e Status do Ciclo da TV */}
+          <div style={{ backgroundColor: '#f1f5f9', padding: '10px 16px', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+             <div style={{ display: 'flex', alignItems: 'center' }}>
+               {totalPages > 1 && (
+                 <div style={{ display: 'flex', marginRight: '12px' }}>
+                   {Array.from({ length: totalPages }).map((_, i) => (
+                     <div key={i} style={{ backgroundColor: currentPage === i ? '#00BFA5' : '#cbd5e1', width: '8px', height: '8px', borderRadius: '50%', marginRight: '4px' }} />
+                   ))}
+                 </div>
+               )}
+               <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#64748b' }}>
+                 Página {currentPage + 1} de {totalPages}
+               </span>
+             </div>
+
+             {/* Indicador de Transição de Ciclo */}
+             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+               {tvCycleType === "HYBRID" ? (
+                 <span style={{ fontSize: '12px', fontWeight: '600', color: '#0369a1', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                   <Sun style={{ width: '14px', height: '14px', color: '#f59e0b' }} />
+                   {currentPage < totalPages - 1
+                     ? `Próxima página em ${tvSecondsRemaining}s`
+                     : `Próxima tela: Performance das Usinas em ${tvSecondsRemaining}s`}
+                 </span>
+               ) : (
+                 <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#94a3b8' }}>
+                   Modo Clássico Ativo (Apenas Atividades)
+                 </span>
+               )}
+
+               <button
+                 onClick={() => {
+                   if (tvCycleType === "HYBRID") {
+                     setActiveTvScreen("usinas");
+                     setTvSecondsRemaining(25);
+                   }
+                 }}
+                 disabled={tvCycleType !== "HYBRID"}
+                 style={{
+                   backgroundColor: tvCycleType === "HYBRID" ? '#00BFA5' : '#cbd5e1',
+                   color: '#ffffff',
+                   border: 'none',
+                   borderRadius: '8px',
+                   padding: '4px 10px',
+                   fontSize: '11px',
+                   fontWeight: 'bold',
+                   cursor: tvCycleType === "HYBRID" ? 'pointer' : 'default',
+                 }}
+                 title="Ir diretamente para a tela de usinas"
+               >
+                 Ver Usinas Agora
+               </button>
+             </div>
+          </div>
         </div>
         </div>
         
-        {/* Floating Button to exit TV view */}
-        <button
-          onClick={toggleTvMode}
+        {/* Floating Controls to exit or switch TV mode */}
+        <div
           style={{
             position: 'fixed',
             bottom: '16px',
             right: '16px',
             zIndex: 9999,
-            backgroundColor: 'rgba(15, 23, 42, 0.85)',
-            backdropFilter: 'blur(4px)',
-            color: '#ffffff',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            borderRadius: '12px',
-            padding: '8px 16px',
-            fontSize: '11px',
-            fontWeight: 'bold',
-            cursor: 'pointer',
             display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-            opacity: 0.3,
-            transition: 'opacity 0.2s'
+            gap: '8px',
           }}
-          onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.3'; }}
         >
-          <Activity style={{ width: '12px', height: '12px' }} />
-          Alternar Visualização
-        </button>
+          {/* Botão de Ponto de Restauração: Alterna entre Modo Híbrido e Modo Clássico */}
+          <button
+            onClick={toggleTvCycleType}
+            style={{
+              backgroundColor: 'rgba(15, 23, 42, 0.9)',
+              backdropFilter: 'blur(4px)',
+              color: '#ffffff',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              borderRadius: '12px',
+              padding: '8px 14px',
+              fontSize: '11px',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.2)',
+            }}
+            title="Alternar entre o novo ciclo com Usinas e o modo antigo clássico"
+          >
+            <RotateCcw style={{ width: '12px', height: '12px', color: '#f15a24' }} />
+            {tvCycleType === "HYBRID" ? "Modo: Atividades + Usinas" : "Modo: Clássico (Restaurado)"}
+          </button>
+
+          <button
+            onClick={toggleTvMode}
+            style={{
+              backgroundColor: 'rgba(15, 23, 42, 0.9)',
+              backdropFilter: 'blur(4px)',
+              color: '#ffffff',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              borderRadius: '12px',
+              padding: '8px 14px',
+              fontSize: '11px',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.2)',
+            }}
+          >
+            <Activity style={{ width: '12px', height: '12px', color: '#00BFA5' }} />
+            Sair da TV
+          </button>
+        </div>
       </>
     );
   }

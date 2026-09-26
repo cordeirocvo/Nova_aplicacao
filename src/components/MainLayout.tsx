@@ -190,12 +190,12 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <div 
-      className={clsx("flex h-screen w-full overflow-hidden text-slate-800 print:h-auto print:overflow-visible", isTV ? "bg-[#0A192F]" : "bg-slate-50")} 
-      style={isTV ? { display: 'flex', height: '100vh', width: '100%', overflow: 'hidden', backgroundColor: '#0A192F', color: '#ffffff' } : {}}
+      className={clsx("flex h-screen w-full bg-slate-50 overflow-hidden text-slate-800 print:h-auto print:overflow-visible")} 
+      style={isTV ? { display: 'flex', height: '100vh', width: '100%', overflow: 'hidden', backgroundColor: '#f8fafc' } : {}}
     >
 
-      {/* TV Header (só exibe se não for /atividades, que tem cabeçalho próprio) */}
-      {isTV && pathname !== '/atividades' && (
+      {/* TV Header */}
+      {isTV && (
         <div 
           className="fixed top-0 left-0 right-0 w-full h-14 bg-[#0A192F] text-white flex items-center justify-between px-6 z-50 shadow-lg print:hidden" 
           style={{ position: 'fixed', top: 0, left: 0, right: 0, height: '56px', backgroundColor: '#0A192F', display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingLeft: '24px', paddingRight: '24px', zIndex: 100 }}
@@ -333,8 +333,8 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       )}
 
       <main 
-        className={clsx("flex-1 flex flex-col min-w-0 overflow-y-auto print:overflow-visible print:bg-white", isTV ? (pathname === '/atividades' ? "pt-0 bg-[#0A192F]" : "pt-14 bg-[#0A192F]") : "pt-16 md:pt-0")}
-        style={isTV ? { flex: 1, display: 'flex', flexDirection: 'column', paddingTop: pathname === '/atividades' ? '0px' : '56px', overflowY: 'hidden', backgroundColor: '#0A192F' } : {}}
+        className={clsx("flex-1 flex flex-col min-w-0 overflow-y-auto print:overflow-visible print:bg-white", isTV ? "pt-14 bg-[#f8fafc]" : "pt-16 md:pt-0")}
+        style={isTV ? { flex: 1, display: 'flex', flexDirection: 'column', paddingTop: '56px', overflowY: 'hidden', backgroundColor: '#f8fafc' } : {}}
       >
         <div 
           className={clsx("flex-1", isTV ? "p-0" : "p-4 md:p-8 print:p-0")}

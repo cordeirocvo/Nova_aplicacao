@@ -33,7 +33,9 @@ interface TvUsinasViewProps {
   usinasPorTela?: number; // Padrão: 5
   onSwitchCycleMode?: () => void;
   onExitTv?: () => void;
-  tvModeSelection?: "HYBRID" | "TV_ATIVIDADES" | "TV_USINAS";
+  tvModeSelection?: "HYBRID" | "TV_ATIVIDADES" | "TV_USINAS" | "CLASSIC" | string;
+  secondsRemaining?: number;
+  totalSeconds?: number;
 }
 
 export default function TvUsinasView({

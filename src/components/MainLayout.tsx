@@ -7,7 +7,7 @@ import { useSession, signOut } from 'next-auth/react';
 import { 
   LayoutDashboard, ListTodo, PlusCircle, Settings, LogOut,
   Menu, X, Zap, Users, Sun, Battery, BarChart, Package,
-  BatteryCharging, ChevronDown, ChevronRight, Calendar, Activity, Wrench, Database
+  BatteryCharging, ChevronDown, ChevronRight, Calendar, Activity, Wrench, Database, Layers
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -51,6 +51,7 @@ const NAV_SECTIONS: NavSection[] = [
       { name: 'Equipamentos', href: '/engenharia/equipamentos', icon: Package },
       { name: 'Carregadores VE', href: '/carregamento', icon: BatteryCharging },
       { name: 'Padrão CEMIG & CAPEX', href: '/engenharia/padrao-cemig', icon: Zap, badge: 'ND 5.1' },
+      { name: 'Painéis & Diagramas CAD', href: '/engenharia/paineis-eletricos', icon: Layers, badge: 'AutoCAD' },
       { name: 'Dimensionamento Elétrico', href: '/engenharia/eletrica', icon: Zap },
       { name: 'Gestão de Orçamentos (CAPEX)', href: '/orcamentos', icon: ListTodo, requiresBudgets: true },
     ],

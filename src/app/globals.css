@@ -32,3 +32,11 @@ body {
 .card-cordeiro {
   @apply bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 border border-slate-100 p-8;
 }
+
+/* TV NOC Overrides - Garante fundo Dark Navy permanente e sem rolagem */
+body:has([data-tv="true"]),
+[data-tv="true"] {
+  background-color: #0A192F !important;
+  color: #FFFFFF !important;
+}
+

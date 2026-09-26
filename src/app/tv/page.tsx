@@ -1,34 +1,15 @@
 import { prisma } from "@/lib/prisma";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import SettingsModal from "./SettingsModal";
 import { calcDaysLate } from "@/lib/dateUtils";
-import SyncButton from "./SyncButton";
-import AtividadesClientView from "./AtividadesClientView";
+import AtividadesClientView from "@/app/atividades/AtividadesClientView";
 
 export const metadata = {
-  title: "Acompanhamento de Atividades | Cordeiro Energia",
+  title: "NOC TV • Cordeiro Energia",
 };
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-interface PageProps {
-  searchParams: Promise<{
-    mode?: string;
-    screen?: string;
-  }>;
-}
-
-export default async function AcompanhamentoPage({ searchParams }: PageProps) {
-  const session: any = await getServerSession(authOptions as any);
-  const isAdmin = session?.user?.role === "ADMIN";
-  const sessionIsTV = session?.user?.role === "TV";
-
-  // Suporte a query params para ativar TV diretamente pela URL (ex: TV na parede)
-  const sp = await searchParams;
-  const isTV = sp?.mode === "tv" || (sp as any)?.tv === "true" || sessionIsTV;
-
-  // Palavras-chave de conclusão para exclusão de concluídas
+export default async function DedicatedTvPage() {
   const CONCLUDED_KEYWORDS = ["concluí", "conclui", "finaliz", "execut"];
 
   const [atividadesRaw, settingsRaw] = await Promise.all([
@@ -75,7 +56,6 @@ export default async function AcompanhamentoPage({ searchParams }: PageProps) {
 
   const settings = settingsRaw || { limiteVerde: 40, limiteAmarelo: 20, limiteParecer: 30 };
 
-  // Cálculo de dias e atraso
   const atividadesWithDays = atividadesRaw
     .map((atv) => {
       const daysPrev = calcDaysLate(atv.dataPrevista || atv.automaticoPrevInstala);
@@ -89,7 +69,6 @@ export default async function AcompanhamentoPage({ searchParams }: PageProps) {
       return true;
     });
 
-  // Ordenação inteligente: Prioritárias -> Extras -> Parecer Crítico -> Mais Atrasadas
   atividadesWithDays.sort((a, b) => {
     if (a.prioridade && !b.prioridade) return -1;
     if (!a.prioridade && b.prioridade) return 1;
@@ -111,34 +90,39 @@ export default async function AcompanhamentoPage({ searchParams }: PageProps) {
   });
 
   return (
-    <div className="space-y-4 font-sans">
-      {/* Search/Header Bar (Oculta se for Modo TV) */}
-      {!isTV && (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-2">
-          <div className="flex flex-col gap-0.5">
-            <h1 className="text-2xl md:text-3xl font-black bg-clip-text text-transparent bg-gradient-to-r from-[#0A192F] via-[#E45318] to-[#00B356] tracking-tight">
-              Acompanhamento de Atividades
-            </h1>
-            <p className="text-xs md:text-sm text-slate-500 font-medium">
-              Monitoramento Operacional em Tempo Real • Cordeiro Energia
-            </p>
-          </div>
-
-          {isAdmin && (
-            <div className="flex items-center gap-2.5">
-              <SyncButton />
-              <SettingsModal initialSettings={settings} />
-            </div>
-          )}
-        </div>
-      )}
-
-      <AtividadesClientView
-        atividades={atividadesWithDays}
-        settings={settings}
-        isAdmin={isAdmin}
-        isTV={isTV}
+    <>
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+            html, body {
+              background-color: #0A192F !important;
+              color: #FFFFFF !important;
+              margin: 0 !important;
+              padding: 0 !important;
+              overflow: hidden !important;
+              font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+            }
+          `,
+        }}
       />
-    </div>
+      <div 
+        data-tv="true"
+        id="tv-container"
+        style={{ 
+          backgroundColor: "#0A192F", 
+          minHeight: "100vh", 
+          maxHeight: "100vh", 
+          width: "100vw", 
+          overflow: "hidden" 
+        }}
+      >
+        <AtividadesClientView
+          atividades={atividadesWithDays}
+          settings={settings}
+          isAdmin={false}
+          isTV={true}
+        />
+      </div>
+    </>
   );
 }

@@ -1,41 +1,69 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { Zap, Sun, TrendingUp, CheckCircle2, AlertTriangle, Clock, RefreshCw, ArrowLeft } from "lucide-react";
+import React, { useEffect, useState, useMemo } from "react";
+import { 
+  Zap, Sun, TrendingUp, CheckCircle2, AlertTriangle, AlertOctagon, 
+  Clock, RefreshCw, ArrowLeft, ChevronLeft, ChevronRight, RotateCcw, Activity
+} from "lucide-react";
 
-interface UsinaData {
+export interface UsinaEssentialKpi {
   id: string;
   nome: string;
+  cidade: string;
   capacidadeKWp: number;
   potenciaAtualKW: number;
+  potenciaCarregamentoPct: number;
   geracaoHojeKWh: number;
   pr: number;
+  inversoresOnline: number;
+  inversoresTotal: number;
   status: "ONLINE" | "ALERTA" | "OFFLINE";
-  cidade?: string;
+  statusColor: "GREEN" | "YELLOW" | "RED";
+  alarmesAtivosCount: number;
+  ultimoAlarmeDesc?: string;
+  ultimaAtualizacao: string;
 }
 
 interface TvUsinasViewProps {
   onBackToAtividades: () => void;
-  secondsRemaining: number;
-  totalSeconds: number;
+  isStandaloneTv?: boolean;
+  prLimiteVerde?: number;
+  prLimiteAmarelo?: number;
+  tempoPorTela?: number; // Tempo de cada página de usina em segundos
+  usinasPorTela?: number; // Padrão: 5
+  onSwitchCycleMode?: () => void;
+  onExitTv?: () => void;
+  tvModeSelection?: "HYBRID" | "TV_ATIVIDADES" | "TV_USINAS";
 }
 
 export default function TvUsinasView({
   onBackToAtividades,
-  secondsRemaining,
-  totalSeconds,
+  isStandaloneTv = false,
+  prLimiteVerde = 78,
+  prLimiteAmarelo = 60,
+  tempoPorTela = 20,
+  usinasPorTela = 5,
+  onSwitchCycleMode,
+  onExitTv,
+  tvModeSelection = "HYBRID",
 }: TvUsinasViewProps) {
-  const [usinas, setUsinas] = useState<UsinaData[]>([]);
+  const [usinas, setUsinas] = useState<UsinaEssentialKpi[]>([]);
   const [kpiTotal, setKpiTotal] = useState({
     potenciaTotalKW: 0,
     capacidadeTotalKWp: 0,
     geracaoTotalHojeKWh: 0,
-    irradianciaMedia: 0,
-    usinasOnline: 0,
-    totalUsinas: 0,
+    usinasTotal: 0,
+    usinasGreen: 0,
+    usinasYellow: 0,
+    usinasRed: 0,
+    prMedio: 0,
   });
   const [loading, setLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState("");
+
+  // Paginação inteligente de Usinas para TV
+  const [currentUsinaPage, setCurrentUsinaPage] = useState(0);
+  const [pageSecondsRemaining, setPageSecondsRemaining] = useState<number>(tempoPorTela);
 
   // Relógio ao vivo
   useEffect(() => {
@@ -50,321 +78,746 @@ export default function TvUsinasView({
     return () => clearInterval(timer);
   }, []);
 
-  // Busca dados das usinas da telemetria
+  const fetchTvKpis = async () => {
+    try {
+      const res = await fetch(
+        `/api/solar/tv-kpis?prGreen=${prLimiteVerde}&prYellow=${prLimiteAmarelo}&_t=${Date.now()}`,
+        { cache: "no-store" }
+      );
+      const data = await res.json();
+      if (data.success) {
+        setUsinas(data.usinas || []);
+        if (data.kpiTotal) {
+          setKpiTotal(data.kpiTotal);
+        }
+      }
+    } catch (err) {
+      console.error("[TV USINAS] Erro ao carregar KPIs:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    let isMounted = true;
+    fetchTvKpis();
+    const pollInterval = setInterval(fetchTvKpis, 10000);
+    return () => clearInterval(pollInterval);
+  }, [prLimiteVerde, prLimiteAmarelo]);
 
-    async function loadUsinasTelemetry() {
-      try {
-        setLoading(true);
-        const resUsinas = await fetch("/api/solar/usinas");
-        const listUsinas = await resUsinas.json();
+  // Cálculo de páginas
+  const itemsPerPage = Math.max(3, usinasPorTela);
+  const totalPages = Math.ceil(usinas.length / itemsPerPage) || 1;
 
-        if (Array.isArray(listUsinas) && listUsinas.length > 0) {
-          const today = new Date().toLocaleDateString("sv-SE", { timeZone: "America/Sao_Paulo" });
+  // Ajusta a página atual caso a lista diminua
+  useEffect(() => {
+    if (currentUsinaPage >= totalPages) {
+      setCurrentUsinaPage(0);
+    }
+  }, [totalPages, currentUsinaPage]);
 
-          // Busca telemetria consolidada de alta fidelidade
-          const resTelemetry = await fetch(
-            `/api/solar/telemetria/alta-fidelidade?usinaId=consolidado&date=${today}&periodo=DIA`
-          );
-          const telData = await resTelemetry.json();
+  // Reset do timer quando o tempo configurado mudar
+  useEffect(() => {
+    setPageSecondsRemaining(tempoPorTela);
+  }, [tempoPorTela]);
 
-          let totalPotencia = 0;
-          let totalGeracao = 0;
-          let onlineCount = 0;
-
-          // Mapeia usinas reais do banco
-          const mapped: UsinaData[] = listUsinas.map((u: any, idx: number) => {
-            const cap = u.capacidadeKWp || 100;
-            // Pega geração diária se disponível ou calcula estimativa
-            const geracao = telData?.kpis?.geracaoTotalKWh
-              ? (telData.kpis.geracaoTotalKWh * (cap / (telData.kpis.capacidadeTotalKWp || 1000)))
-              : 0;
-            const potencia = telData?.kpis?.potenciaAtualKW
-              ? (telData.kpis.potenciaAtualKW * (cap / (telData.kpis.capacidadeTotalKWp || 1000)))
-              : 0;
-
-            const pr = cap > 0 && geracao > 0 ? Math.min(Math.round((geracao / (cap * 4.5)) * 100), 98) : 85;
-            const isOnline = u.status === "ATIVO" || u.status === undefined || u.status === null;
-
-            if (isOnline) onlineCount++;
-            totalPotencia += potencia;
-            totalGeracao += geracao;
-
-            return {
-              id: u.id || String(idx),
-              nome: u.nome || `Usina Fotovoltaica ${idx + 1}`,
-              capacidadeKWp: Math.round(cap),
-              potenciaAtualKW: Number(potencia.toFixed(1)),
-              geracaoHojeKWh: Number(geracao.toFixed(1)),
-              pr: pr > 0 ? pr : 82,
-              status: isOnline ? "ONLINE" : "ALERTA",
-              cidade: u.localizacao || "Minas Gerais",
-            };
-          });
-
-          if (isMounted) {
-            setUsinas(mapped);
-            setKpiTotal({
-              potenciaTotalKW: Number((telData?.kpis?.potenciaAtualKW || totalPotencia).toFixed(1)),
-              capacidadeTotalKWp: Math.round(telData?.kpis?.capacidadeTotalKWp || listUsinas.reduce((a: number, b: any) => a + (b.capacidadeKWp || 0), 0)),
-              geracaoTotalHojeKWh: Number((telData?.kpis?.geracaoTotalKWh || totalGeracao).toFixed(1)),
-              irradianciaMedia: Math.round(telData?.kpis?.irradianciaMediaW || 780),
-              usinasOnline: onlineCount,
-              totalUsinas: listUsinas.length,
-            });
+  // Ciclo automático da TV para as Usinas
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setPageSecondsRemaining((prev) => {
+        if (prev <= 1) {
+          if (currentUsinaPage < totalPages - 1) {
+            setCurrentUsinaPage((p) => p + 1);
+            return tempoPorTela;
+          } else {
+            setCurrentUsinaPage(0);
+            if (!isStandaloneTv) {
+              onBackToAtividades();
+            }
+            return tempoPorTela;
           }
         }
-      } catch (err) {
-        console.error("[TV USINAS] Erro ao carregar dados:", err);
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    }
+        return prev - 1;
+      });
+    }, 1000);
 
-    loadUsinasTelemetry();
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+    return () => clearInterval(timer);
+  }, [currentUsinaPage, totalPages, tempoPorTela, isStandaloneTv, onBackToAtividades]);
 
-  const progressPct = totalSeconds > 0 ? Math.max(0, Math.min(100, (secondsRemaining / totalSeconds) * 100)) : 0;
+  // Usinas exibidas na página atual
+  const paginatedUsinas = useMemo(() => {
+    const start = currentUsinaPage * itemsPerPage;
+    return usinas.slice(start, start + itemsPerPage);
+  }, [usinas, currentUsinaPage, itemsPerPage]);
+
+  const progressPct = tempoPorTela > 0 
+    ? Math.max(0, Math.min(100, ((tempoPorTela - pageSecondsRemaining) / tempoPorTela) * 100)) 
+    : 0;
+
+  const handleNextPage = () => {
+    setCurrentUsinaPage((p) => (p + 1) % totalPages);
+    setPageSecondsRemaining(tempoPorTela);
+  };
+
+  const handlePrevPage = () => {
+    setCurrentUsinaPage((p) => (p - 1 + totalPages) % totalPages);
+    setPageSecondsRemaining(tempoPorTela);
+  };
 
   return (
-    <div className="w-full h-screen bg-[#0A192F] text-white flex flex-col justify-between p-6 select-none overflow-hidden">
-      {/* ── Topo do Modo TV ────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
-        <div className="flex items-center gap-4">
-          <div className="bg-[#f15a24] text-white font-black text-sm px-3 py-1.5 rounded-lg tracking-wider">
+    <div 
+      className="w-full h-full min-h-screen bg-[#0A192F] text-white flex flex-col justify-between p-3 sm:p-4 select-none overflow-hidden font-sans box-border"
+      style={{
+        backgroundColor: "#0A192F",
+        color: "#FFFFFF",
+        minHeight: "100vh",
+        maxHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        padding: "16px",
+        boxSizing: "border-box",
+        overflow: "hidden",
+        fontFamily: "'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+      }}
+    >
+      {/* ── Topo do Painel de TV NOC ──────────────────────────────────── */}
+      <div 
+        className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3 mb-2 shrink-0"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          borderBottom: "1px solid #1E293B",
+          paddingBottom: "12px",
+          marginBottom: "10px"
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <div 
+            style={{
+              backgroundColor: "#E45318",
+              color: "#FFFFFF",
+              fontWeight: 900,
+              fontSize: "13px",
+              padding: "6px 14px",
+              borderRadius: "8px",
+              letterSpacing: "1px",
+              boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.3)"
+            }}
+          >
             CORDEIRO ENERGIA
           </div>
-          <div className="h-6 w-[1px] bg-slate-700" />
+          <div style={{ height: "24px", width: "1px", backgroundColor: "#334155" }} />
           <div>
-            <h1 className="text-xl font-black tracking-tight text-white flex items-center gap-2">
-              <Sun className="w-5 h-5 text-amber-400" />
-              CENTRAL DE MONITORAMENTO FOTOVOLTAICO
+            <h1 
+              style={{
+                fontSize: "18px",
+                fontWeight: 900,
+                color: "#FFFFFF",
+                margin: 0,
+                display: "flex",
+                alignItems: "center",
+                gap: "8px"
+              }}
+            >
+              <Sun style={{ width: "20px", height: "20px", color: "#FBBF24" }} />
+              NOC • MONITORAMENTO SOLAR FOTOVOLTAICO
             </h1>
-            <p className="text-xs text-slate-400">Desempenho das Usinas Solares em Tempo Real</p>
+            <p style={{ fontSize: "11px", color: "#94A3B8", margin: "2px 0 0 0" }}>
+              Telemetria e Desempenho Operacional em Tempo Real
+            </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 bg-emerald-950/60 border border-emerald-500/40 text-emerald-400 px-3 py-1.5 rounded-xl text-xs font-bold">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-            TELEMETRIA AO VIVO
+        {/* Status de Semáforo Rápido, Relógio e Ações */}
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <div 
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+              backgroundColor: "#0D213F",
+              border: "1px solid #1E293B",
+              padding: "6px 14px",
+              borderRadius: "12px",
+              fontSize: "12px",
+              fontWeight: "bold"
+            }}
+          >
+            <span style={{ color: "#34D399", display: "flex", alignItems: "center", gap: "6px" }}>
+              <span style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: "#10B981", display: "inline-block" }} /> 
+              {kpiTotal.usinasGreen} Ideal
+            </span>
+            <span style={{ color: "#475569" }}>|</span>
+            <span style={{ color: "#FBBF24", display: "flex", alignItems: "center", gap: "6px" }}>
+              <span style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: "#F59E0B", display: "inline-block" }} /> 
+              {kpiTotal.usinasYellow} Atenção
+            </span>
+            <span style={{ color: "#475569" }}>|</span>
+            <span style={{ color: "#F87171", display: "flex", alignItems: "center", gap: "6px" }}>
+              <span style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: "#EF4444", display: "inline-block" }} /> 
+              {kpiTotal.usinasRed} Crítico
+            </span>
           </div>
 
-          <div className="bg-slate-800/80 border border-slate-700 px-4 py-1.5 rounded-xl text-sm font-black font-mono tracking-wider text-slate-200">
+          <div 
+            style={{
+              backgroundColor: "rgba(6, 78, 59, 0.6)",
+              border: "1px solid rgba(16, 185, 129, 0.4)",
+              color: "#34D399",
+              padding: "6px 12px",
+              borderRadius: "12px",
+              fontSize: "12px",
+              fontWeight: 900,
+              display: "flex",
+              alignItems: "center",
+              gap: "6px"
+            }}
+          >
+            <span style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: "#34D399", display: "inline-block" }} />
+            AO VIVO
+          </div>
+
+          <div 
+            style={{
+              backgroundColor: "#1E293B",
+              border: "1px solid #334155",
+              color: "#E2E8F0",
+              padding: "6px 14px",
+              borderRadius: "12px",
+              fontSize: "13px",
+              fontWeight: 900,
+              fontFamily: "monospace",
+              letterSpacing: "1px"
+            }}
+          >
             {currentTime || "--:--:--"}
           </div>
 
-          <button
-            onClick={onBackToAtividades}
-            className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer"
-            title="Voltar agora para as Atividades"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Atividades
-          </button>
+          {!isStandaloneTv && (
+            <button
+              onClick={onBackToAtividades}
+              style={{
+                backgroundColor: "#1E293B",
+                border: "1px solid #334155",
+                color: "#00B356",
+                padding: "6px 12px",
+                borderRadius: "12px",
+                fontSize: "12px",
+                fontWeight: "bold",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                cursor: "pointer"
+              }}
+              title="Voltar para Atividades"
+            >
+              <ArrowLeft style={{ width: "14px", height: "14px" }} />
+              Atividades
+            </button>
+          )}
+
+          {onSwitchCycleMode && (
+            <button
+              onClick={onSwitchCycleMode}
+              style={{
+                backgroundColor: "#1E293B",
+                border: "1px solid #334155",
+                color: "#E2E8F0",
+                padding: "6px 12px",
+                borderRadius: "12px",
+                fontSize: "12px",
+                fontWeight: "bold",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                cursor: "pointer"
+              }}
+              title="Alternar ciclo da TV"
+            >
+              <RotateCcw style={{ width: "14px", height: "14px", color: "#E45318" }} />
+              {tvModeSelection === "HYBRID" ? "Ciclo Híbrido" : tvModeSelection === "TV_USINAS" ? "TV Só Usinas" : "TV Só Atividades"}
+            </button>
+          )}
+
+          {onExitTv && (
+            <button
+              onClick={onExitTv}
+              style={{
+                backgroundColor: "#1E293B",
+                border: "1px solid #334155",
+                color: "#CBD5E1",
+                padding: "6px 12px",
+                borderRadius: "12px",
+                fontSize: "12px",
+                fontWeight: "bold",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                cursor: "pointer"
+              }}
+              title="Sair do Modo TV"
+            >
+              <Activity style={{ width: "14px", height: "14px", color: "#00B356" }} />
+              Sair da TV
+            </button>
+          )}
         </div>
       </div>
 
-      {/* ── Faixa de KPIs Globais no Topo ───────────────────────────────── */}
-      <div className="grid grid-cols-4 gap-4 mb-4">
-        {/* Potência Instantânea */}
-        <div className="bg-gradient-to-br from-slate-900 to-slate-800/90 border border-slate-700/80 rounded-2xl p-4 shadow-lg flex items-center gap-4">
-          <div className="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-xl">
-            <Zap className="w-7 h-7" />
+      {/* ── Faixa de 4 KPIs Globais no Topo ─────────────────────────────── */}
+      <div 
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(4, 1fr)",
+          gap: "10px",
+          marginBottom: "10px"
+        }}
+      >
+        {/* Potência Total Instantânea */}
+        <div 
+          style={{
+            backgroundColor: "#0D213F",
+            border: "1px solid #1E293B",
+            borderRadius: "14px",
+            padding: "10px 14px",
+            display: "flex",
+            alignItems: "center",
+            gap: "12px"
+          }}
+        >
+          <div 
+            style={{
+              padding: "8px",
+              backgroundColor: "rgba(245, 158, 11, 0.1)",
+              border: "1px solid rgba(245, 158, 11, 0.2)",
+              color: "#F59E0B",
+              borderRadius: "10px"
+            }}
+          >
+            <Zap style={{ width: "20px", height: "20px" }} />
           </div>
           <div>
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-              Potência Instantânea
+            <span style={{ fontSize: "10px", fontWeight: "bold", color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.5px", display: "block" }}>
+              Potência Total Instantânea
             </span>
-            <div className="flex items-baseline gap-1 mt-0.5">
-              <span className="text-2xl font-black text-amber-400 tracking-tight">
+            <div style={{ display: "flex", alignItems: "baseline", gap: "4px", marginTop: "2px" }}>
+              <span style={{ fontSize: "20px", fontWeight: 900, color: "#F59E0B" }}>
                 {kpiTotal.potenciaTotalKW.toLocaleString("pt-BR")}
               </span>
-              <span className="text-xs text-slate-400 font-bold">kW</span>
+              <span style={{ fontSize: "11px", color: "#94A3B8", fontWeight: "bold" }}>kW</span>
             </div>
-            <span className="text-[10px] text-slate-500">
+            <span style={{ fontSize: "10px", color: "#64748B", display: "block" }}>
               de {kpiTotal.capacidadeTotalKWp.toLocaleString("pt-BR")} kWp instalados
             </span>
           </div>
         </div>
 
-        {/* Geração Total Hoje */}
-        <div className="bg-gradient-to-br from-slate-900 to-slate-800/90 border border-slate-700/80 rounded-2xl p-4 shadow-lg flex items-center gap-4">
-          <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl">
-            <TrendingUp className="w-7 h-7" />
+        {/* Geração Acumulada Hoje */}
+        <div 
+          style={{
+            backgroundColor: "#0D213F",
+            border: "1px solid #1E293B",
+            borderRadius: "14px",
+            padding: "10px 14px",
+            display: "flex",
+            alignItems: "center",
+            gap: "12px"
+          }}
+        >
+          <div 
+            style={{
+              padding: "8px",
+              backgroundColor: "rgba(16, 185, 129, 0.1)",
+              border: "1px solid rgba(16, 185, 129, 0.2)",
+              color: "#10B981",
+              borderRadius: "10px"
+            }}
+          >
+            <TrendingUp style={{ width: "20px", height: "20px" }} />
           </div>
           <div>
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-              Geração Acumulada Hoje
+            <span style={{ fontSize: "10px", fontWeight: "bold", color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.5px", display: "block" }}>
+              Geração Total Hoje
             </span>
-            <div className="flex items-baseline gap-1 mt-0.5">
-              <span className="text-2xl font-black text-emerald-400 tracking-tight">
+            <div style={{ display: "flex", alignItems: "baseline", gap: "4px", marginTop: "2px" }}>
+              <span style={{ fontSize: "20px", fontWeight: 900, color: "#10B981" }}>
                 {kpiTotal.geracaoTotalHojeKWh.toLocaleString("pt-BR")}
               </span>
-              <span className="text-xs text-slate-400 font-bold">kWh</span>
+              <span style={{ fontSize: "11px", color: "#94A3B8", fontWeight: "bold" }}>kWh</span>
             </div>
-            <span className="text-[10px] text-slate-500">Energia limpa injetada na rede</span>
+            <span style={{ fontSize: "10px", color: "#64748B", display: "block" }}>
+              Energia limpa injetada
+            </span>
           </div>
         </div>
 
-        {/* Irradiação Solar Média */}
-        <div className="bg-gradient-to-br from-slate-900 to-slate-800/90 border border-slate-700/80 rounded-2xl p-4 shadow-lg flex items-center gap-4">
-          <div className="p-3 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-xl">
-            <Sun className="w-7 h-7" />
+        {/* Performance Ratio Médio */}
+        <div 
+          style={{
+            backgroundColor: "#0D213F",
+            border: "1px solid #1E293B",
+            borderRadius: "14px",
+            padding: "10px 14px",
+            display: "flex",
+            alignItems: "center",
+            gap: "12px"
+          }}
+        >
+          <div 
+            style={{
+              padding: "8px",
+              backgroundColor: "rgba(59, 130, 246, 0.1)",
+              border: "1px solid rgba(59, 130, 246, 0.2)",
+              color: "#3B82F6",
+              borderRadius: "10px"
+            }}
+          >
+            <Sun style={{ width: "20px", height: "20px" }} />
           </div>
           <div>
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-              Irradiação Solar
+            <span style={{ fontSize: "10px", fontWeight: "bold", color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.5px", display: "block" }}>
+              Performance Ratio Médio
             </span>
-            <div className="flex items-baseline gap-1 mt-0.5">
-              <span className="text-2xl font-black text-blue-400 tracking-tight">
-                {kpiTotal.irradianciaMedia}
+            <div style={{ display: "flex", alignItems: "baseline", gap: "4px", marginTop: "2px" }}>
+              <span style={{ fontSize: "20px", fontWeight: 900, color: "#60A5FA" }}>
+                {kpiTotal.prMedio}%
               </span>
-              <span className="text-xs text-slate-400 font-bold">W/m²</span>
             </div>
-            <span className="text-[10px] text-slate-500">Média estações solares</span>
+            <span style={{ fontSize: "10px", color: "#64748B", display: "block" }}>
+              Eficiência global do parque
+            </span>
           </div>
         </div>
 
-        {/* Status das Usinas */}
-        <div className="bg-gradient-to-br from-slate-900 to-slate-800/90 border border-slate-700/80 rounded-2xl p-4 shadow-lg flex items-center gap-4">
-          <div className="p-3 bg-[#f15a24]/10 border border-[#f15a24]/20 text-[#f15a24] rounded-xl">
-            <CheckCircle2 className="w-7 h-7" />
+        {/* Parque Solar */}
+        <div 
+          style={{
+            backgroundColor: "#0D213F",
+            border: "1px solid #1E293B",
+            borderRadius: "14px",
+            padding: "10px 14px",
+            display: "flex",
+            alignItems: "center",
+            gap: "12px"
+          }}
+        >
+          <div 
+            style={{
+              padding: "8px",
+              backgroundColor: "rgba(228, 83, 24, 0.1)",
+              border: "1px solid rgba(228, 83, 24, 0.2)",
+              color: "#E45318",
+              borderRadius: "10px"
+            }}
+          >
+            <CheckCircle2 style={{ width: "20px", height: "20px" }} />
           </div>
           <div>
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-              Disponibilidade
+            <span style={{ fontSize: "10px", fontWeight: "bold", color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.5px", display: "block" }}>
+              Parque Solar
             </span>
-            <div className="flex items-baseline gap-1 mt-0.5">
-              <span className="text-2xl font-black text-white tracking-tight">
-                {kpiTotal.usinasOnline}
+            <div style={{ display: "flex", alignItems: "baseline", gap: "4px", marginTop: "2px" }}>
+              <span style={{ fontSize: "20px", fontWeight: 900, color: "#FFFFFF" }}>
+                {kpiTotal.usinasTotal} Usinas
               </span>
-              <span className="text-xs text-slate-400 font-bold">/ {kpiTotal.totalUsinas} Online</span>
             </div>
-            <span className="text-[10px] text-emerald-400 font-bold">100% dos inversores reportando</span>
+            <span style={{ fontSize: "10px", color: "#34D399", fontWeight: "bold", display: "block" }}>
+              {kpiTotal.usinasGreen} em operação ideal
+            </span>
           </div>
         </div>
       </div>
 
-      {/* ── Grid Principal de Usinas (Cards Grandes) ───────────────────── */}
-      <div className="flex-1 overflow-hidden">
-        {loading && usinas.length === 0 ? (
-          <div className="h-full flex items-center justify-center flex-col gap-3">
-            <RefreshCw className="w-8 h-8 text-[#00BFA5] animate-spin" />
-            <span className="text-sm font-semibold text-slate-400">Carregando usinas fotovoltaicas...</span>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 h-full content-start overflow-y-auto pr-1">
-            {usinas.map((usina) => {
-              const isGoodPr = usina.pr >= 80;
-              const isWarningPr = usina.pr >= 60 && usina.pr < 80;
+      {/* ── TABELA CLEAN DE USINAS SOLARES (COM ESTILOS INLINE ROBUSTOS) ─ */}
+      <div 
+        style={{
+          flex: 1,
+          backgroundColor: "#0D213F",
+          border: "1px solid #1E293B",
+          borderRadius: "16px",
+          overflow: "hidden",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "space-between",
+          minHeight: 0
+        }}
+      >
+        <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+          {loading && usinas.length === 0 ? (
+            <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: "12px" }}>
+              <RefreshCw style={{ width: "32px", height: "32px", color: "#00B356" }} className="animate-spin" />
+              <span style={{ fontSize: "14px", fontWeight: 600, color: "#94A3B8" }}>Sincronizando usinas fotovoltaicas...</span>
+            </div>
+          ) : (
+            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", tableLayout: "fixed" }}>
+              <thead>
+                <tr style={{ backgroundColor: "#071224", borderBottom: "1px solid #1E293B", color: "#94A3B8", fontSize: "11px", fontWeight: 900, textTransform: "uppercase", letterSpacing: "1px" }}>
+                  <th style={{ padding: "12px 16px", width: "30%" }}>Usina Fotovoltaica / Localização</th>
+                  <th style={{ padding: "12px 16px", width: "15%" }}>1. Potência Atual</th>
+                  <th style={{ padding: "12px 16px", width: "14%" }}>2. Geração Hoje</th>
+                  <th style={{ padding: "12px 16px", width: "17%" }}>3. Performance (PR)</th>
+                  <th style={{ padding: "12px 16px", width: "12%" }}>4. Inversores</th>
+                  <th style={{ padding: "12px 16px", width: "12%", textAlign: "center" }}>Status Semáforo</th>
+                </tr>
+              </thead>
+              <tbody>
+                {paginatedUsinas.map((usina) => {
+                  const isRed = usina.statusColor === "RED";
+                  const isYellow = usina.statusColor === "YELLOW";
 
-              return (
-                <div
-                  key={usina.id}
-                  className="bg-slate-900/80 border border-slate-800 hover:border-slate-700 rounded-2xl p-4 flex flex-col justify-between shadow-md transition-all"
-                >
-                  {/* Cabeçalho da Usina */}
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="min-w-0 flex-1 pr-2">
-                      <h3 className="font-bold text-base text-white truncate" title={usina.nome}>
-                        {usina.nome}
-                      </h3>
-                      <span className="text-[11px] text-slate-400 font-medium">
-                        Capacidade: {usina.capacidadeKWp} kWp • {usina.cidade}
-                      </span>
-                    </div>
+                  const borderLeftColor = isRed ? "#EF4444" : isYellow ? "#F59E0B" : "#10B981";
+                  const rowBg = isRed ? "rgba(127, 29, 29, 0.2)" : isYellow ? "rgba(120, 53, 15, 0.15)" : "transparent";
 
-                    <span
-                      className={`inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0 ${
-                        usina.status === "ONLINE"
-                          ? "bg-emerald-950 text-emerald-400 border border-emerald-500/30"
-                          : "bg-amber-950 text-amber-400 border border-amber-500/30"
-                      }`}
+                  const badgeBg = isRed ? "#450a0a" : isYellow ? "#451a03" : "#022c22";
+                  const badgeColor = isRed ? "#f87171" : isYellow ? "#fbbf24" : "#34d399";
+                  const badgeBorder = isRed ? "1px solid rgba(239, 68, 68, 0.5)" : isYellow ? "1px solid rgba(245, 158, 11, 0.5)" : "1px solid rgba(16, 185, 129, 0.5)";
+
+                  return (
+                    <tr 
+                      key={usina.id} 
+                      style={{
+                        height: "64px",
+                        borderBottom: "1px solid #1E293B",
+                        borderLeft: `4px solid ${borderLeftColor}`,
+                        backgroundColor: rowBg
+                      }}
                     >
-                      <span
-                        className={`w-1.5 h-1.5 rounded-full ${
-                          usina.status === "ONLINE" ? "bg-emerald-400" : "bg-amber-400"
-                        }`}
-                      />
-                      {usina.status}
-                    </span>
-                  </div>
+                      {/* 1. Nome e Capacidade da Usina */}
+                      <td style={{ padding: "10px 16px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                          {isRed ? (
+                            <AlertOctagon style={{ width: "18px", height: "18px", color: "#EF4444", flexShrink: 0 }} />
+                          ) : isYellow ? (
+                            <AlertTriangle style={{ width: "18px", height: "18px", color: "#F59E0B", flexShrink: 0 }} />
+                          ) : (
+                            <CheckCircle2 style={{ width: "18px", height: "18px", color: "#10B981", flexShrink: 0 }} />
+                          )}
+                          <div style={{ minWidth: 0, overflow: "hidden" }}>
+                            <span 
+                              style={{
+                                fontWeight: 900,
+                                color: "#FFFFFF",
+                                fontSize: "14px",
+                                display: "block",
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis"
+                              }}
+                              title={usina.nome}
+                            >
+                              {usina.nome}
+                            </span>
+                            <span style={{ fontSize: "11px", color: "#94A3B8", display: "block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                              Capacidade: <strong style={{ color: "#E2E8F0" }}>{usina.capacidadeKWp} kWp</strong> • {usina.cidade}
+                            </span>
+                          </div>
+                        </div>
+                      </td>
 
-                  {/* Métricas Principais da Usina */}
-                  <div className="grid grid-cols-2 gap-3 my-2 bg-slate-950/60 rounded-xl p-3 border border-slate-800/60">
-                    <div>
-                      <span className="text-[10px] uppercase font-bold text-slate-400 block">Potência Atual</span>
-                      <span className="text-lg font-black text-amber-400">
-                        {usina.potenciaAtualKW > 0 ? `${usina.potenciaAtualKW} kW` : "Em geração"}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-[10px] uppercase font-bold text-slate-400 block">Geração Hoje</span>
-                      <span className="text-lg font-black text-emerald-400">
-                        {usina.geracaoHojeKWh > 0 ? `${usina.geracaoHojeKWh} kWh` : "Operando"}
-                      </span>
-                    </div>
-                  </div>
+                      {/* 2. Potência Atual (kW e %) */}
+                      <td style={{ padding: "10px 16px" }}>
+                        <div style={{ display: "flex", alignItems: "baseline", gap: "4px" }}>
+                          <span style={{ fontSize: "16px", fontWeight: 900, color: "#F59E0B", whiteSpace: "nowrap" }}>
+                            {usina.potenciaAtualKW}
+                          </span>
+                          <span style={{ fontSize: "11px", color: "#94A3B8", fontWeight: "bold" }}>kW</span>
+                          <span style={{ fontSize: "11px", color: "#94A3B8", marginLeft: "4px", whiteSpace: "nowrap" }}>
+                            ({usina.potenciaCarregamentoPct}%)
+                          </span>
+                        </div>
+                      </td>
 
-                  {/* Barra de Performance Ratio (PR) */}
-                  <div className="mt-1">
-                    <div className="flex justify-between items-center text-[11px] font-bold mb-1">
-                      <span className="text-slate-400">Performance Ratio (PR)</span>
-                      <span
-                        className={
-                          isGoodPr
-                            ? "text-emerald-400"
-                            : isWarningPr
-                            ? "text-amber-400"
-                            : "text-red-400"
-                        }
-                      >
-                        {usina.pr}% {isGoodPr ? "(Ótimo)" : isWarningPr ? "(Normal)" : "(Atenção)"}
-                      </span>
-                    </div>
+                      {/* 3. Geração Hoje (kWh) */}
+                      <td style={{ padding: "10px 16px" }}>
+                        <div style={{ display: "flex", alignItems: "baseline", gap: "4px" }}>
+                          <span style={{ fontSize: "16px", fontWeight: 900, color: "#10B981", whiteSpace: "nowrap" }}>
+                            {usina.geracaoHojeKWh.toLocaleString("pt-BR")}
+                          </span>
+                          <span style={{ fontSize: "11px", color: "#94A3B8", fontWeight: "bold" }}>kWh</span>
+                        </div>
+                      </td>
 
-                    <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
-                      <div
-                        className={`h-2 rounded-full transition-all duration-500 ${
-                          isGoodPr
-                            ? "bg-gradient-to-r from-emerald-500 to-teal-400"
-                            : isWarningPr
-                            ? "bg-gradient-to-r from-amber-500 to-yellow-400"
-                            : "bg-red-500"
-                        }`}
-                        style={{ width: `${Math.min(100, Math.max(5, usina.pr))}%` }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
+                      {/* 4. Performance Ratio (PR %) com Barra de Status */}
+                      <td style={{ padding: "10px 16px" }}>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px", fontSize: "12px", fontWeight: 900 }}>
+                          <span style={{ color: badgeColor, fontSize: "14px" }}>
+                            {usina.pr}%
+                          </span>
+                          <span style={{ fontSize: "10px", color: "#94A3B8", fontWeight: "normal" }}>
+                            Meta: ≥ {prLimiteVerde}%
+                          </span>
+                        </div>
+                        <div style={{ width: "100%", backgroundColor: "#1E293B", borderRadius: "9999px", height: "6px", overflow: "hidden" }}>
+                          <div
+                            style={{
+                              height: "6px",
+                              borderRadius: "9999px",
+                              backgroundColor: borderLeftColor,
+                              width: `${Math.min(100, Math.max(5, usina.pr))}%`
+                            }}
+                          />
+                        </div>
+                      </td>
 
-      {/* ── Rodapé com Barra de Ciclo ────────────────────────────────────── */}
-      <div className="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
-        <div className="flex items-center gap-3">
-          <span className="flex items-center gap-1.5 font-bold text-slate-300">
-            <Clock className="w-3.5 h-3.5 text-[#00BFA5]" />
-            Retornando para Acompanhamento de Atividades em {secondsRemaining}s
-          </span>
-          <span className="text-slate-600">•</span>
-          <span>Ciclo inteligente do Modo TV</span>
+                      {/* 5. Inversores */}
+                      <td style={{ padding: "10px 16px" }}>
+                        <span style={{ fontSize: "13px", fontWeight: 900, whiteSpace: "nowrap", color: usina.inversoresOnline < usina.inversoresTotal ? "#F59E0B" : "#E2E8F0" }}>
+                          {usina.inversoresOnline} / {usina.inversoresTotal} Online
+                        </span>
+                        {usina.ultimoAlarmeDesc && (
+                          <span style={{ fontSize: "10px", color: "#F87171", display: "block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={usina.ultimoAlarmeDesc}>
+                            ⚠️ {usina.ultimoAlarmeDesc}
+                          </span>
+                        )}
+                      </td>
+
+                      {/* 6. Status Semáforo */}
+                      <td style={{ padding: "10px 16px", textAlign: "center" }}>
+                        <span 
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "6px",
+                            fontSize: "11px",
+                            fontWeight: 900,
+                            padding: "4px 12px",
+                            borderRadius: "9999px",
+                            textTransform: "uppercase",
+                            letterSpacing: "0.5px",
+                            whiteSpace: "nowrap",
+                            backgroundColor: badgeBg,
+                            color: badgeColor,
+                            border: badgeBorder
+                          }}
+                        >
+                          <span style={{ width: "6px", height: "6px", borderRadius: "50%", backgroundColor: badgeColor }} />
+                          {isRed ? "INTERVENÇÃO" : isYellow ? "ATENÇÃO" : "IDEAL"}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
         </div>
 
-        {/* Barra de progresso do timer */}
-        <div className="w-48 bg-slate-800 rounded-full h-1.5 overflow-hidden">
-          <div
-            className="bg-[#00BFA5] h-full transition-all duration-1000 ease-linear"
-            style={{ width: `${progressPct}%` }}
-          />
+        {/* ── Rodapé da Tabela NOC com Paginação Multi-Telas e Progresso ─ */}
+        <div 
+          style={{
+            padding: "12px 16px",
+            backgroundColor: "#071224",
+            borderTop: "1px solid #1E293B",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            fontSize: "12px",
+            color: "#94A3B8"
+          }}
+        >
+          {/* Lado Esquerdo: Info de Página e Semáforo */}
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <div 
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                backgroundColor: "#0D213F",
+                border: "1px solid #1E293B",
+                padding: "4px 10px",
+                borderRadius: "8px"
+              }}
+            >
+              <span style={{ fontWeight: "bold", color: "#FFFFFF" }}>
+                Página {currentUsinaPage + 1} de {totalPages}
+              </span>
+              {totalPages > 1 && (
+                <div style={{ display: "flex", alignItems: "center", gap: "4px", marginLeft: "6px" }}>
+                  {Array.from({ length: totalPages }).map((_, idx) => (
+                    <span
+                      key={idx}
+                      style={{
+                        width: "8px",
+                        height: "8px",
+                        borderRadius: "50%",
+                        backgroundColor: currentUsinaPage === idx ? "#00B356" : "#334155",
+                        transform: currentUsinaPage === idx ? "scale(1.2)" : "scale(1)"
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <span style={{ color: "#475569" }}>•</span>
+
+            <span style={{ color: "#CBD5E1", fontWeight: 500 }}>
+              Exibindo usinas {usinas.length > 0 ? currentUsinaPage * itemsPerPage + 1 : 0} a {Math.min((currentUsinaPage + 1) * itemsPerPage, usinas.length)} de {usinas.length}
+            </span>
+
+            <span style={{ color: "#475569" }}>•</span>
+
+            <span style={{ fontSize: "11px", color: "#64748B" }}>
+              Semáforo: Verde (≥{prLimiteVerde}%) | Amarelo (≥{prLimiteAmarelo}%) | Vermelho (&lt;{prLimiteAmarelo}%)
+            </span>
+          </div>
+
+          {/* Lado Direito: Navegação Manual e Temporizador de Transição */}
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            {totalPages > 1 && (
+              <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                <button
+                  onClick={handlePrevPage}
+                  style={{
+                    padding: "4px 6px",
+                    backgroundColor: "#1E293B",
+                    border: "1px solid #334155",
+                    borderRadius: "6px",
+                    color: "#CBD5E1",
+                    cursor: "pointer"
+                  }}
+                  title="Página Anterior de Usinas"
+                >
+                  <ChevronLeft style={{ width: "16px", height: "16px" }} />
+                </button>
+                <button
+                  onClick={handleNextPage}
+                  style={{
+                    padding: "4px 6px",
+                    backgroundColor: "#1E293B",
+                    border: "1px solid #334155",
+                    borderRadius: "6px",
+                    color: "#CBD5E1",
+                    cursor: "pointer"
+                  }}
+                  title="Próxima Página de Usinas"
+                >
+                  <ChevronRight style={{ width: "16px", height: "16px" }} />
+                </button>
+              </div>
+            )}
+
+            <span style={{ display: "flex", alignItems: "center", gap: "6px", fontWeight: "bold", color: "#00B356" }}>
+              <Clock style={{ width: "14px", height: "14px" }} />
+              {totalPages > 1 && currentUsinaPage < totalPages - 1
+                ? `Próxima página em ${pageSecondsRemaining}s`
+                : !isStandaloneTv
+                ? `Retornando para Atividades em ${pageSecondsRemaining}s`
+                : `Reiniciando ciclo em ${pageSecondsRemaining}s`}
+            </span>
+
+            <div style={{ width: "100px", backgroundColor: "#1E293B", borderRadius: "9999px", height: "6px", overflow: "hidden" }}>
+              <div
+                style={{
+                  backgroundColor: "#00B356",
+                  height: "100%",
+                  width: `${progressPct}%`,
+                  transition: "width 1s linear"
+                }}
+              />
+            </div>
+          </div>
         </div>
       </div>
     </div>

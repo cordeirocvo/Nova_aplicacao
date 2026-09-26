@@ -1,12 +1,19 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useTransition } from 'react';
 import Link from "next/link";
-import { Edit, ShieldAlert, Paperclip, Download, Activity, Sun, RotateCcw, Sliders, Layers } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { 
+  Edit, ShieldAlert, Paperclip, Download, Activity, Sun, RotateCcw, 
+  Clock, CheckCircle2, ChevronDown, ChevronUp, Tv, AlertTriangle
+} from "lucide-react";
 import { TagToggler } from "./TagToggler";
 import TvUsinasView from "./TvUsinasView";
 
 export default function AtividadesClientView({ atividades, settings, isAdmin, isTV }: any) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+
   const downloadFile = async (url: string, filename: string) => {
     try {
       const res = await fetch(url);
@@ -19,7 +26,7 @@ export default function AtividadesClientView({ atividades, settings, isAdmin, is
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(blobUrl);
-    } catch (err) {
+    } catch {
       const a = document.createElement("a");
       a.href = url;
       a.target = "_blank";
@@ -33,104 +40,168 @@ export default function AtividadesClientView({ atividades, settings, isAdmin, is
   const [localIsTV, setLocalIsTV] = useState(isTV);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("__ALL__");
+  const [pillFilter, setPillFilter] = useState<"ALL" | "URGENT" | "PRIORITY" | "EXTRA" | "LATE">("ALL");
+  const [expandedRow, setExpandedRow] = useState<string | null>(null);
 
-  // Derived: filtered list (applied before pagination)
+  // Configurações do Semáforo e Tempos da TV
+  const [prGreen, setPrGreen] = useState(78);
+  const [prYellow, setPrYellow] = useState(60);
+  const [tvTempoAtividades, setTvTempoAtividades] = useState(15);
+  const [tvTempoUsinas, setTvTempoUsinas] = useState(25);
+  const [tvUsinasPerPage, setTvUsinasPerPage] = useState(5);
+
+  const [tvModeSelection, setTvModeSelection] = useState<"HYBRID" | "TV_ATIVIDADES" | "TV_USINAS">("HYBRID");
+  const [activeTvScreen, setActiveTvScreen] = useState<"atividades" | "usinas">("atividades");
+  const [tvSecondsRemaining, setTvSecondsRemaining] = useState<number>(15);
+
+  // Carrega preferências do localStorage
+  useEffect(() => {
+    const stored = localStorage.getItem("forcedTvMode");
+    if (stored === "true") setLocalIsTV(true);
+    else if (stored === "false") setLocalIsTV(false);
+    else setLocalIsTV(isTV);
+
+    const savedMode = localStorage.getItem("cordeiro_tv_mode");
+    if (savedMode === "HYBRID" || savedMode === "TV_ATIVIDADES" || savedMode === "TV_USINAS") {
+      setTvModeSelection(savedMode);
+      if (savedMode === "TV_USINAS") setActiveTvScreen("usinas");
+      if (savedMode === "TV_ATIVIDADES") setActiveTvScreen("atividades");
+    }
+
+    const g = localStorage.getItem("cordeiro_pr_green");
+    if (g) setPrGreen(Number(g));
+    const y = localStorage.getItem("cordeiro_pr_yellow");
+    if (y) setPrYellow(Number(y));
+    const ta = localStorage.getItem("cordeiro_tv_time_ativ");
+    if (ta) setTvTempoAtividades(Number(ta));
+    const tu = localStorage.getItem("cordeiro_tv_time_usinas");
+    if (tu) setTvTempoUsinas(Number(tu));
+    const upp = localStorage.getItem("cordeiro_tv_usinas_per_page");
+    if (upp) setTvUsinasPerPage(Number(upp));
+  }, [isTV]);
+
+  // Heartbeat para atualização em tempo real
+  useEffect(() => {
+    let lastHash = "";
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch("/api/tv/heartbeat");
+        const data = await res.json();
+        if (data.success && data.hash) {
+          if (lastHash && lastHash !== data.hash) {
+            startTransition(() => {
+              router.refresh();
+            });
+          }
+          lastHash = data.hash;
+        }
+      } catch {
+        // silencioso
+      }
+    }, 6000);
+
+    return () => clearInterval(interval);
+  }, [router]);
+
+  const toggleTvMode = (mode?: "HYBRID" | "TV_ATIVIDADES" | "TV_USINAS") => {
+    if (!localIsTV) {
+      const selected = mode || "HYBRID";
+      setTvModeSelection(selected);
+      localStorage.setItem("cordeiro_tv_mode", selected);
+      setLocalIsTV(true);
+      localStorage.setItem("forcedTvMode", "true");
+      setActiveTvScreen(selected === "TV_USINAS" ? "usinas" : "atividades");
+      setTvSecondsRemaining(selected === "TV_USINAS" ? tvTempoUsinas : tvTempoAtividades);
+    } else {
+      setLocalIsTV(false);
+      localStorage.removeItem("forcedTvMode");
+      window.dispatchEvent(new Event("storage"));
+    }
+  };
+
+  const switchTvCycleMode = () => {
+    let next: "HYBRID" | "TV_ATIVIDADES" | "TV_USINAS" = "HYBRID";
+    if (tvModeSelection === "HYBRID") next = "TV_ATIVIDADES";
+    else if (tvModeSelection === "TV_ATIVIDADES") next = "TV_USINAS";
+    else next = "HYBRID";
+
+    setTvModeSelection(next);
+    localStorage.setItem("cordeiro_tv_mode", next);
+    if (next === "TV_USINAS") {
+      setActiveTvScreen("usinas");
+      setTvSecondsRemaining(tvTempoUsinas);
+    } else {
+      setActiveTvScreen("atividades");
+      setTvSecondsRemaining(tvTempoAtividades);
+    }
+  };
+
+  // Filtros combinados (Busca + Select + Pílulas)
   const filteredAtividades = React.useMemo(() => {
     let list = atividades as any[];
+
     if (search.trim()) {
       const q = search.trim().toLowerCase();
       list = list.filter(
         (a) =>
           (a.instalacao || "").toLowerCase().includes(q) ||
-          (a.obsInstalacao || "").toLowerCase().includes(q)
+          (a.obsInstalacao || "").toLowerCase().includes(q) ||
+          (a.vendedor || "").toLowerCase().includes(q) ||
+          (a.cidade || "").toLowerCase().includes(q)
       );
     }
+
     if (statusFilter !== "__ALL__") {
       list = list.filter((a) => (a.status || "Pendente") === statusFilter);
     }
-    return list;
-  }, [atividades, search, statusFilter]);
 
-  // Unique statuses for filter dropdown
+    if (pillFilter === "URGENT") {
+      list = list.filter((a) => a.daysParecer !== null && a.daysParecer <= settings.limiteParecer);
+    } else if (pillFilter === "PRIORITY") {
+      list = list.filter((a) => a.prioridade);
+    } else if (pillFilter === "EXTRA") {
+      list = list.filter((a) => a.atividadeExtra);
+    } else if (pillFilter === "LATE") {
+      list = list.filter((a) => a.daysPrev !== null && a.daysPrev < 0);
+    }
+
+    return list;
+  }, [atividades, search, statusFilter, pillFilter, settings.limiteParecer]);
+
   const uniqueStatuses = React.useMemo(() => {
     const seen = new Set<string>();
     (atividades as any[]).forEach((a) => seen.add(a.status || "Pendente"));
     return Array.from(seen).sort();
   }, [atividades]);
 
-  // Counters
   const totalUrgent = React.useMemo(
-    () =>
-      (atividades as any[]).filter(
-        (a) => a.daysParecer !== null && a.daysParecer <= settings.limiteParecer
-      ).length,
+    () => (atividades as any[]).filter((a) => a.daysParecer !== null && a.daysParecer <= settings.limiteParecer).length,
     [atividades, settings.limiteParecer]
   );
+  const totalPriority = React.useMemo(() => (atividades as any[]).filter((a) => a.prioridade).length, [atividades]);
+  const totalExtra = React.useMemo(() => (atividades as any[]).filter((a) => a.atividadeExtra).length, [atividades]);
+  const totalLate = React.useMemo(() => (atividades as any[]).filter((a) => a.daysPrev !== null && a.daysPrev < 0).length, [atividades]);
 
-  useEffect(() => {
-    const stored = localStorage.getItem("forcedTvMode");
-    if (stored === "true") {
-      setLocalIsTV(true);
-    } else if (stored === "false") {
-      setLocalIsTV(false);
-    } else {
-      setLocalIsTV(isTV);
-    }
-  }, [isTV]);
-
-  const toggleTvMode = () => {
-    const nextVal = !localIsTV;
-    setLocalIsTV(nextVal);
-    localStorage.setItem("forcedTvMode", String(nextVal));
-  };
-
-  // ── Configuração de Ciclo da TV (Ponto de Restauração Seguro) ─────────────
-  // "HYBRID": Ciclo completo (Atividades 15s por pág -> Usinas 25s)
-  // "CLASSIC": Modo clássico original (Apenas Atividades)
-  const [tvCycleType, setTvCycleType] = useState<"HYBRID" | "CLASSIC">("HYBRID");
-  const [activeTvScreen, setActiveTvScreen] = useState<"atividades" | "usinas">("atividades");
-  const [tvSecondsRemaining, setTvSecondsRemaining] = useState<number>(15);
-
-  useEffect(() => {
-    const savedType = localStorage.getItem("tvCycleType");
-    if (savedType === "CLASSIC" || savedType === "HYBRID") {
-      setTvCycleType(savedType);
-    }
-  }, []);
-
-  const toggleTvCycleType = () => {
-    const next = tvCycleType === "HYBRID" ? "CLASSIC" : "HYBRID";
-    setTvCycleType(next);
-    localStorage.setItem("tvCycleType", next);
-    if (next === "CLASSIC") {
-      setActiveTvScreen("atividades");
-      setTvSecondsRemaining(15);
-    }
-  };
-
+  // Paginação inteligente para caber perfeitamente na TV sem barra de rolagem
   const [currentPage, setCurrentPage] = useState(0);
-  const [itemsPerPage, setItemsPerPage] = useState(20); 
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   useEffect(() => {
     setCurrentPage(0);
-    setActiveTvScreen("atividades");
-    setTvSecondsRemaining(15);
-  }, [localIsTV]);
-
-  // Reset page when filters change
-  useEffect(() => { setCurrentPage(0); }, [search, statusFilter]);
+  }, [localIsTV, search, statusFilter, pillFilter]);
 
   useEffect(() => {
     const calcRows = () => {
       if (!localIsTV) {
-        setItemsPerPage(20);
+        setItemsPerPage(25);
         return;
       }
-      const headerSpace = 250;
+      const headerSpace = 200;
       const avHeight = window.innerHeight - headerSpace;
-      const rowHeight = 65;
+      const rowHeight = 62;
       let rows = Math.floor(avHeight / rowHeight);
-      if (rows < 3) rows = 3;
+      if (rows < 4) rows = 4;
+      if (rows > 8) rows = 8;
       setItemsPerPage(rows);
     };
 
@@ -141,743 +212,614 @@ export default function AtividadesClientView({ atividades, settings, isAdmin, is
 
   const totalPages = Math.ceil(filteredAtividades.length / itemsPerPage) || 1;
 
-  // ── Temporizador do Modo TV em Loop (Atividades -> Usinas -> Atividades) ──
+  // Ciclo automático da TV
   useEffect(() => {
     if (!localIsTV) return;
 
-    // Se estiver no Modo Clássico (Restaurado)
-    if (tvCycleType === "CLASSIC") {
+    if (tvModeSelection === "TV_ATIVIDADES") {
       if (totalPages <= 1) return;
       const interval = setInterval(() => {
         setCurrentPage((prev) => (prev + 1) % totalPages);
-      }, 15000);
+      }, tvTempoAtividades * 1000);
       return () => clearInterval(interval);
     }
 
-    // Modo Híbrido (Ciclo Sequencial Completo)
-    const timer = setInterval(() => {
-      setTvSecondsRemaining((prev) => {
-        if (prev <= 1) {
-          // Troca de tela ou de página
-          if (activeTvScreen === "atividades") {
-            // Se ainda tem páginas de atividades
+    if (tvModeSelection === "TV_USINAS") {
+      setActiveTvScreen("usinas");
+      return;
+    }
+
+    // Modo Híbrido: controla a tela de atividades; a tela de usinas controla seu próprio ciclo e chama onBackToAtividades
+    if (tvModeSelection === "HYBRID" && activeTvScreen === "atividades") {
+      const timer = setInterval(() => {
+        setTvSecondsRemaining((prev) => {
+          if (prev <= 1) {
             if (currentPage < totalPages - 1) {
               setCurrentPage((p) => p + 1);
-              return 15;
+              return tvTempoAtividades;
             } else {
-              // Chegou ao fim das atividades -> entra na tela de Usinas
               setActiveTvScreen("usinas");
-              return 25; // 25s exibindo as usinas fotovoltaicas
+              return tvTempoUsinas;
             }
-          } else {
-            // Estava nas usinas -> retorna para a pág 0 das atividades
-            setActiveTvScreen("atividades");
-            setCurrentPage(0);
-            return 15;
           }
-        }
-        return prev - 1;
-      });
-    }, 1000);
+          return prev - 1;
+        });
+      }, 1000);
 
-    return () => clearInterval(timer);
-  }, [localIsTV, tvCycleType, activeTvScreen, currentPage, totalPages]);
+      return () => clearInterval(timer);
+    }
+  }, [localIsTV, tvModeSelection, activeTvScreen, currentPage, totalPages, tvTempoAtividades, tvTempoUsinas]);
 
   const currentSlice = filteredAtividades.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
 
-  if (atividades.length === 0) {
-    return (
-       <div className="bg-white rounded-xl p-12 text-center border-2 border-dashed border-slate-200 mt-4">
-          <p className="text-slate-500 font-medium italic">Nenhuma atividade registrada no sistema.</p>
-       </div>
-    );
-  }
-
-
-  // TV View - Render ONLY the table to avoid duplication and use inline styles for safety
+  // ── MODO TV: RENDERIZAÇÃO FULLSCREEN COM DESIGN DARK NOC DE ALTO CONTRASTE ──
   if (localIsTV) {
     if (activeTvScreen === "usinas") {
       return (
-        <>
+        <div data-tv="true" className="fixed inset-0 z-[100] w-full h-[100dvh] max-h-[100dvh] overflow-hidden bg-[#0A192F] box-border">
           <TvUsinasView
             onBackToAtividades={() => {
               setActiveTvScreen("atividades");
               setCurrentPage(0);
-              setTvSecondsRemaining(15);
+              setTvSecondsRemaining(tvTempoAtividades);
             }}
-            secondsRemaining={tvSecondsRemaining}
-            totalSeconds={25}
+            isStandaloneTv={tvModeSelection === "TV_USINAS"}
+            prLimiteVerde={prGreen}
+            prLimiteAmarelo={prYellow}
+            tempoPorTela={tvTempoUsinas}
+            usinasPorTela={tvUsinasPerPage}
+            onSwitchCycleMode={switchTvCycleMode}
+            onExitTv={() => toggleTvMode()}
+            tvModeSelection={tvModeSelection}
           />
-
-          {/* Floating Controls in TV view */}
-          <div
-            style={{
-              position: 'fixed',
-              bottom: '16px',
-              right: '16px',
-              zIndex: 9999,
-              display: 'flex',
-              gap: '8px',
-            }}
-          >
-            <button
-              onClick={toggleTvCycleType}
-              style={{
-                backgroundColor: 'rgba(15, 23, 42, 0.9)',
-                backdropFilter: 'blur(4px)',
-                color: '#94a3b8',
-                border: '1px solid rgba(255, 255, 255, 0.15)',
-                borderRadius: '12px',
-                padding: '8px 14px',
-                fontSize: '11px',
-                fontWeight: 'bold',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.2)',
-              }}
-              title="Alternar entre ciclo híbrido ou modo clássico (restauração)"
-            >
-              <RotateCcw style={{ width: '12px', height: '12px', color: '#f15a24' }} />
-              {tvCycleType === "HYBRID" ? "Modo: Ciclo Completo" : "Modo: Clássico (Só Ativ.)"}
-            </button>
-
-            <button
-              onClick={toggleTvMode}
-              style={{
-                backgroundColor: 'rgba(15, 23, 42, 0.9)',
-                backdropFilter: 'blur(4px)',
-                color: '#ffffff',
-                border: '1px solid rgba(255, 255, 255, 0.15)',
-                borderRadius: '12px',
-                padding: '8px 14px',
-                fontSize: '11px',
-                fontWeight: 'bold',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.2)',
-              }}
-            >
-              <Activity style={{ width: '12px', height: '12px', color: '#00BFA5' }} />
-              Sair da TV
-            </button>
-          </div>
-        </>
+        </div>
       );
     }
 
     return (
-      <>
-        <div style={{ padding: '16px', height: 'calc(100vh - 100px)', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
-          <div 
-            className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden relative flex-1 flex flex-col justify-between" 
-            style={{ 
-              backgroundColor: '#ffffff', 
-              borderRadius: '16px', 
-              border: '1px solid #e2e8f0', 
-              overflow: 'hidden', 
-              position: 'relative',
-              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.05)',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
-              height: '100%'
-            }}
-          >
-            <table 
-              style={{ 
-                width: '100%', 
-                borderCollapse: 'collapse', 
-                textAlign: 'left', 
-                fontSize: '13px',
-                tableLayout: 'fixed'
-              }}
+      <div 
+        data-tv="true"
+        className="fixed inset-0 z-[100] w-full h-[100dvh] max-h-[100dvh] bg-[#0A192F] text-white flex flex-col justify-between p-3 sm:p-4 lg:p-5 select-none overflow-hidden font-sans box-border"
+        style={{
+          backgroundColor: "#0A192F",
+          color: "#FFFFFF",
+          minHeight: "100vh",
+          maxHeight: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "space-between",
+          padding: "16px",
+          boxSizing: "border-box",
+          overflow: "hidden",
+          fontFamily: "'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+        }}
+      >
+        {/* Topo da TV Atividades */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3 mb-2.5 shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="bg-[#E45318] text-white font-black text-xs sm:text-sm px-3 py-1.5 rounded-lg tracking-wider shadow-md shrink-0">
+              CORDEIRO ENERGIA
+            </div>
+            <div className="h-6 w-[1px] bg-slate-700 hidden sm:block shrink-0" />
+            <div>
+              <h1 className="text-base sm:text-lg lg:text-xl font-black tracking-tight text-white flex items-center gap-2">
+                <Activity className="w-5 h-5 text-[#00B356] shrink-0" />
+                CENTRAL DE OPERAÇÕES • ATIVIDADES
+              </h1>
+              <p className="text-[11px] text-slate-400 hidden sm:block">Linha de Produção, Instalações e Pareceres CEMIG</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            <div className="flex items-center gap-2 bg-slate-900/90 border border-slate-800 px-3 py-1.5 rounded-xl text-xs font-bold">
+              <span className="text-slate-200">{filteredAtividades.length} Ativas</span>
+              <span className="text-slate-600">|</span>
+              <span className="text-amber-400">{totalPriority} Prioritárias</span>
+              <span className="text-slate-600">|</span>
+              <span className="text-red-400">{totalUrgent} Parecer CEMIG</span>
+            </div>
+
+            <div className="bg-slate-800/90 border border-slate-700 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-black font-mono tracking-wider text-slate-200">
+              Página {currentPage + 1} de {totalPages}
+            </div>
+
+            {tvModeSelection === "HYBRID" && (
+              <button
+                onClick={() => {
+                  setActiveTvScreen("usinas");
+                  setTvSecondsRemaining(tvTempoUsinas);
+                }}
+                className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-amber-400 hover:text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                title="Ir para o painel de usinas"
+              >
+                <Sun className="w-3.5 h-3.5 text-amber-400" />
+                <span className="hidden sm:inline">Ver Usinas</span>
+              </button>
+            )}
+
+            <button
+              onClick={switchTvCycleMode}
+              className="hidden lg:flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer"
+              title="Alternar modo da TV"
             >
-              <thead style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+              <RotateCcw className="w-3.5 h-3.5 text-[#E45318]" />
+              {tvModeSelection === "HYBRID" ? "Ciclo Híbrido" : tvModeSelection === "TV_ATIVIDADES" ? "TV Só Atividades" : "TV Só Usinas"}
+            </button>
+
+            <button
+              onClick={() => toggleTvMode()}
+              className="flex items-center gap-1.5 bg-slate-800 hover:bg-red-900/60 border border-slate-700 hover:border-red-500/40 text-slate-300 hover:text-red-200 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer"
+              title="Sair do Modo TV"
+            >
+              <Activity className="w-3.5 h-3.5 text-[#00B356]" />
+              <span className="hidden sm:inline">Sair da TV</span>
+            </button>
+          </div>
+        </div>
+
+        {/* ── TABELA DE ATIVIDADES NOC (DARK MODE DE ALTO CONTRASTE) ──── */}
+        <div 
+          className="flex-1 bg-slate-900/95 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl flex flex-col justify-between min-h-0"
+          style={{
+            flex: 1,
+            backgroundColor: "#0D213F",
+            border: "1px solid #1E293B",
+            borderRadius: "16px",
+            overflow: "hidden",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "space-between",
+            minHeight: 0
+          }}
+        >
+          <div className="overflow-y-auto flex-1" style={{ flex: 1, overflowY: "auto" }}>
+            <table className="w-full border-collapse text-left text-sm table-fixed" style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", tableLayout: "fixed" }}>
+              <thead 
+                className="bg-slate-950/90 border-b border-slate-800 text-[11px] font-black uppercase text-slate-400 tracking-wider sticky top-0 z-10 backdrop-blur-md"
+                style={{ backgroundColor: "#071224", borderBottom: "1px solid #1E293B", color: "#94A3B8" }}
+              >
                 <tr>
-                  <th style={{ width: '25%', padding: '12px', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '11px', color: '#64748b' }}>Cliente / Instalação</th>
-                  <th style={{ width: '130px', padding: '12px', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '11px', color: '#64748b' }}>Dias para Montar</th>
-                  <th style={{ padding: '12px', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '11px', color: '#64748b' }}>Observações</th>
-                  <th style={{ width: '120px', padding: '12px', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '11px', color: '#64748b' }}>Venc. Parecer</th>
-                  <th style={{ width: '155px', padding: '12px', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '11px', color: '#64748b' }}>Prev. Instalação / Execução</th>
-                  <th style={{ width: '110px', padding: '12px', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '11px', color: '#64748b' }}>Status</th>
+                  <th className="p-3.5 w-1/3" style={{ padding: "12px 14px", width: "33%" }}>Cliente / Instalação</th>
+                  <th className="p-3.5 w-36" style={{ padding: "12px 14px", width: "15%" }}>Dias para Montar</th>
+                  <th className="p-3.5" style={{ padding: "12px 14px" }}>Observações</th>
+                  <th className="p-3.5 w-36" style={{ padding: "12px 14px", width: "15%" }}>Venc. Parecer</th>
+                  <th className="p-3.5 w-36" style={{ padding: "12px 14px", width: "15%" }}>Prev. Instalação</th>
+                  <th className="p-3.5 w-32 text-center" style={{ padding: "12px 14px", width: "10%", textAlign: "center" }}>Status</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-slate-800/80">
                 {currentSlice.map((atv: any) => {
                   const isUrgentParecer = atv.daysParecer !== null && atv.daysParecer <= settings.limiteParecer;
-                  
-                  let diaPrevRender = "-";
-                  let inlineStyle: any = { height: '65px', borderBottom: '1px solid #f1f5f9' };
-                  let fontColorHex = "#475569";
-                  
-                  if (atv.daysPrev !== null) {
-                     if (atv.daysPrev >= settings.limiteVerde) {
-                        inlineStyle = { ...inlineStyle, backgroundColor: '#dcfce7', color: '#14532d' };
-                        fontColorHex = "#14532d";
-                     } else if (atv.daysPrev >= settings.limiteAmarelo) {
-                        inlineStyle = { ...inlineStyle, backgroundColor: '#fef9c3', color: '#713f12' };
-                        fontColorHex = "#713f12";
-                     } else {
-                        inlineStyle = { ...inlineStyle, backgroundColor: '#fee2e2', color: '#7f1d1d' };
-                        fontColorHex = "#7f1d1d";
-                     }
-                     diaPrevRender = `${atv.daysPrev} dias`;
-                  }
-  
+                  const isLate = atv.daysPrev !== null && atv.daysPrev < 0;
+
+                  // Borda lateral e destaque por criticidade
+                  let rowBorderClass = "border-l-4 border-l-slate-700 hover:bg-slate-800/50";
                   if (atv.prioridade) {
-                     inlineStyle = { ...inlineStyle, backgroundColor: '#9333ea', color: '#ffffff' };
-                     fontColorHex = "#ffffff";
+                    rowBorderClass = "border-l-4 border-l-amber-400 bg-amber-950/10 hover:bg-amber-950/20";
                   } else if (atv.atividadeExtra) {
-                     inlineStyle = { ...inlineStyle, backgroundColor: '#1E3A8A', color: '#ffffff' };
-                     fontColorHex = "#ffffff";
+                    rowBorderClass = "border-l-4 border-l-[#E45318] bg-orange-950/10 hover:bg-orange-950/20";
                   } else if (isUrgentParecer) {
-                     inlineStyle = { ...inlineStyle, backgroundColor: '#dc2626', color: '#ffffff' };
-                     fontColorHex = "#ffffff";
+                    rowBorderClass = "border-l-4 border-l-red-500 bg-red-950/25 hover:bg-red-950/35 animate-pulse";
+                  } else if (isLate) {
+                    rowBorderClass = "border-l-4 border-l-red-500/80 bg-red-950/10 hover:bg-red-950/20";
+                  } else if (atv.daysPrev !== null && atv.daysPrev >= settings.limiteVerde) {
+                    rowBorderClass = "border-l-4 border-l-emerald-500 hover:bg-slate-800/50";
+                  } else if (atv.daysPrev !== null && atv.daysPrev >= settings.limiteAmarelo) {
+                    rowBorderClass = "border-l-4 border-l-amber-500 hover:bg-slate-800/50";
                   }
-  
-                  const hasAttachments = (atv.anexoFotos && atv.anexoFotos.length > 0) || (atv.anexoArquivos && atv.anexoArquivos.length > 0);
+
+                  // Badge de prazo (Dias para Montar)
+                  let badgePrazoClass = "bg-slate-800 text-slate-300 border-slate-700";
+                  if (atv.daysPrev !== null) {
+                    if (atv.daysPrev >= settings.limiteVerde) {
+                      badgePrazoClass = "bg-emerald-950/80 text-emerald-400 border border-emerald-500/40";
+                    } else if (atv.daysPrev >= settings.limiteAmarelo) {
+                      badgePrazoClass = "bg-amber-950/80 text-amber-400 border border-amber-500/40";
+                    } else {
+                      badgePrazoClass = "bg-red-950/80 text-red-400 border border-red-500/40";
+                    }
+                  }
+
                   return (
-                    <tr key={atv.id} style={inlineStyle}>
-                      <td style={{ padding: '12px', fontWeight: 'bold', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {isUrgentParecer && <ShieldAlert className="inline-block w-4 h-4 mr-1 mb-0.5" style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '4px', color: '#fecaca' }} />}
-                        <span style={{ fontSize: '14px', verticalAlign: 'middle' }}>{atv.instalacao || "N/A"}</span>
-                        {hasAttachments && (
-                          <span style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '2px',
-                            fontSize: '9px',
-                            fontWeight: 'bold',
-                            padding: '1px 5px',
-                            borderRadius: '4px',
-                            marginLeft: '6px',
-                            textTransform: 'uppercase',
-                            backgroundColor: (atv.prioridade || atv.atividadeExtra || isUrgentParecer) ? 'rgba(255,255,255,0.2)' : 'rgba(79,70,229,0.1)',
-                            color: (atv.prioridade || atv.atividadeExtra || isUrgentParecer) ? '#ffffff' : '#4f46e5',
-                            verticalAlign: 'middle'
-                          }}>
-                            <Paperclip style={{ width: '10px', height: '10px' }} /> Anexos
+                    <tr key={atv.id} className={`h-14 transition-colors ${rowBorderClass}`}>
+                      {/* Cliente / Instalação */}
+                      <td className="p-3.5">
+                        <div className="flex items-center gap-2">
+                          {isUrgentParecer ? (
+                            <ShieldAlert className="w-4 h-4 text-red-400 shrink-0 animate-pulse" />
+                          ) : atv.prioridade ? (
+                            <span className="text-amber-400 text-xs shrink-0">⭐</span>
+                          ) : atv.atividadeExtra ? (
+                            <span className="text-[#E45318] text-xs shrink-0">⚡</span>
+                          ) : (
+                            <CheckCircle2 className="w-4 h-4 text-[#00B356] shrink-0" />
+                          )}
+                          <div className="min-w-0">
+                            <span className="font-bold text-white text-sm block truncate" title={atv.instalacao}>
+                              {atv.instalacao || "N/A"}
+                            </span>
+                            <div className="flex items-center gap-1.5 text-[11px] text-slate-400 truncate">
+                              {atv.cidade && <span>{atv.cidade} •</span>}
+                              <span>Vendedor: {atv.vendedor || "Não informado"}</span>
+                              {atv.prioridade && (
+                                <span className="ml-1 text-[9px] font-black px-1.5 py-0.5 rounded bg-amber-400/20 text-amber-300 border border-amber-400/30">
+                                  PRIORIDADE
+                                </span>
+                              )}
+                              {atv.atividadeExtra && (
+                                <span className="ml-1 text-[9px] font-black px-1.5 py-0.5 rounded bg-[#E45318]/20 text-[#E45318] border border-[#E45318]/30">
+                                  EXTRA
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Dias para Montar */}
+                      <td className="p-3.5">
+                        <span className={`inline-block px-3 py-1 rounded-lg text-xs font-black tracking-tight ${badgePrazoClass}`}>
+                          {atv.daysPrev !== null ? `${atv.daysPrev} dias` : "-"}
+                        </span>
+                      </td>
+
+                      {/* Observações */}
+                      <td className="p-3.5">
+                        <span className="text-xs text-slate-200 block truncate" title={atv.obsInstalacao || ""}>
+                          {atv.obsInstalacao || "-"}
+                        </span>
+                      </td>
+
+                      {/* Vencimento Parecer CEMIG */}
+                      <td className="p-3.5">
+                        {isUrgentParecer ? (
+                          <span className="inline-flex items-center gap-1 text-xs font-black text-red-300 bg-red-950/80 border border-red-500/50 px-2.5 py-1 rounded-lg animate-pulse">
+                            ⚠️ {atv.vencimentoParecer} ({atv.daysParecer}d)
+                          </span>
+                        ) : (
+                          <span className="text-xs font-semibold text-slate-300">
+                            {atv.vencimentoParecer || "-"}
                           </span>
                         )}
-                        {atv.prioridade && (
-                          <span style={{ fontSize: '9px', fontWeight: 'bold', padding: '1px 5px', borderRadius: '4px', backgroundColor: 'rgba(255, 193, 7, 0.2)', color: '#ffc107', marginLeft: '6px', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
-                            ⭐ PRIORIDADE
-                          </span>
-                        )}
-                        {atv.atividadeExtra && (
-                          <span style={{ fontSize: '9px', fontWeight: 'bold', padding: '1px 5px', borderRadius: '4px', backgroundColor: 'rgba(139, 92, 246, 0.2)', color: '#a78bfa', marginLeft: '6px', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
-                            ⚡ EXTRA
-                          </span>
-                        )}
                       </td>
-                      <td style={{ padding: '12px', fontWeight: '900', fontSize: '12px' }}>
-                        {diaPrevRender}
+
+                      {/* Previsão de Instalação */}
+                      <td className="p-3.5">
+                        <span className="text-xs font-semibold text-slate-300">
+                          {atv.dataPrevista || atv.automaticoPrevInstala || "-"}
+                        </span>
                       </td>
-                      <td style={{ padding: '12px', fontSize: '12px', color: fontColorHex, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {atv.obsInstalacao || "-"}
-                      </td>
-                      <td style={{ padding: '12px', fontWeight: '500', whiteSpace: 'nowrap', color: fontColorHex }}>
-                        {atv.vencimentoParecer || "-"}
-                      </td>
-                      <td style={{ padding: '12px', fontWeight: '500', whiteSpace: 'nowrap', color: fontColorHex }}>
-                        {atv.dataPrevista || atv.automaticoPrevInstala || "-"}
-                      </td>
-                      <td style={{ padding: '12px' }}>
-                         <span style={{ 
-                           display: 'inline-flex', 
-                           alignItems: 'center', 
-                           padding: '2px 8px', 
-                           borderRadius: '6px', 
-                           fontSize: '10px', 
-                           fontWeight: 'bold', 
-                           textTransform: 'uppercase',
-                           backgroundColor: (isUrgentParecer || atv.prioridade || atv.atividadeExtra) ? 'rgba(255,255,255,0.2)' : 'rgba(10,25,47,0.05)',
-                           color: (isUrgentParecer || atv.prioridade || atv.atividadeExtra) ? '#ffffff' : '#0A192F'
-                         }}>
-                            {atv.status || "Pendente"}
-                         </span>
+
+                      {/* Status */}
+                      <td className="p-3.5 text-center">
+                        <span className="inline-block px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-800 text-slate-300 border border-slate-700">
+                          {atv.status || "Pendente"}
+                        </span>
                       </td>
                     </tr>
                   );
                 })}
               </tbody>
             </table>
-  
-          {/* Rodapé de Paginação e Status do Ciclo da TV */}
-          <div style={{ backgroundColor: '#f1f5f9', padding: '10px 16px', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-             <div style={{ display: 'flex', alignItems: 'center' }}>
-               {totalPages > 1 && (
-                 <div style={{ display: 'flex', marginRight: '12px' }}>
-                   {Array.from({ length: totalPages }).map((_, i) => (
-                     <div key={i} style={{ backgroundColor: currentPage === i ? '#00BFA5' : '#cbd5e1', width: '8px', height: '8px', borderRadius: '50%', marginRight: '4px' }} />
-                   ))}
-                 </div>
-               )}
-               <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#64748b' }}>
-                 Página {currentPage + 1} de {totalPages}
-               </span>
-             </div>
+          </div>
 
-             {/* Indicador de Transição de Ciclo */}
-             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-               {tvCycleType === "HYBRID" ? (
-                 <span style={{ fontSize: '12px', fontWeight: '600', color: '#0369a1', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                   <Sun style={{ width: '14px', height: '14px', color: '#f59e0b' }} />
-                   {currentPage < totalPages - 1
-                     ? `Próxima página em ${tvSecondsRemaining}s`
-                     : `Próxima tela: Performance das Usinas em ${tvSecondsRemaining}s`}
-                 </span>
-               ) : (
-                 <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#94a3b8' }}>
-                   Modo Clássico Ativo (Apenas Atividades)
-                 </span>
-               )}
+          {/* Rodapé da tabela da TV */}
+          <div className="p-3 bg-slate-950/90 border-t border-slate-800 flex justify-between items-center text-xs font-bold text-slate-400 shrink-0">
+            <div className="flex items-center gap-2">
+              <span className="text-slate-300">Página {currentPage + 1} de {totalPages}</span>
+              <div className="flex gap-1.5 ml-2">
+                {Array.from({ length: totalPages }).map((_, i) => (
+                  <div
+                    key={i}
+                    className={`w-2.5 h-2.5 rounded-full transition-all ${
+                      currentPage === i ? "bg-[#00B356] scale-110" : "bg-slate-700"
+                    }`}
+                  />
+                ))}
+              </div>
+            </div>
 
-               <button
-                 onClick={() => {
-                   if (tvCycleType === "HYBRID") {
-                     setActiveTvScreen("usinas");
-                     setTvSecondsRemaining(25);
-                   }
-                 }}
-                 disabled={tvCycleType !== "HYBRID"}
-                 style={{
-                   backgroundColor: tvCycleType === "HYBRID" ? '#00BFA5' : '#cbd5e1',
-                   color: '#ffffff',
-                   border: 'none',
-                   borderRadius: '8px',
-                   padding: '4px 10px',
-                   fontSize: '11px',
-                   fontWeight: 'bold',
-                   cursor: tvCycleType === "HYBRID" ? 'pointer' : 'default',
-                 }}
-                 title="Ir diretamente para a tela de usinas"
-               >
-                 Ver Usinas Agora
-               </button>
-             </div>
+            {tvModeSelection === "HYBRID" ? (
+              <span className="flex items-center gap-1.5 text-blue-400 font-bold">
+                <Clock className="w-3.5 h-3.5 text-[#00B356]" />
+                {currentPage < totalPages - 1
+                  ? `Próxima página em ${tvSecondsRemaining}s`
+                  : `Transitando para Usinas em ${tvSecondsRemaining}s`}
+              </span>
+            ) : (
+              <span className="text-emerald-400 font-bold">Modo TV 1: Exclusivo Atividades da Equipe</span>
+            )}
           </div>
         </div>
-        </div>
-        
-        {/* Floating Controls to exit or switch TV mode */}
-        <div
-          style={{
-            position: 'fixed',
-            bottom: '16px',
-            right: '16px',
-            zIndex: 9999,
-            display: 'flex',
-            gap: '8px',
-          }}
-        >
-          {/* Botão de Ponto de Restauração: Alterna entre Modo Híbrido e Modo Clássico */}
-          <button
-            onClick={toggleTvCycleType}
-            style={{
-              backgroundColor: 'rgba(15, 23, 42, 0.9)',
-              backdropFilter: 'blur(4px)',
-              color: '#ffffff',
-              border: '1px solid rgba(255, 255, 255, 0.15)',
-              borderRadius: '12px',
-              padding: '8px 14px',
-              fontSize: '11px',
-              fontWeight: 'bold',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.2)',
-            }}
-            title="Alternar entre o novo ciclo com Usinas e o modo antigo clássico"
-          >
-            <RotateCcw style={{ width: '12px', height: '12px', color: '#f15a24' }} />
-            {tvCycleType === "HYBRID" ? "Modo: Atividades + Usinas" : "Modo: Clássico (Restaurado)"}
-          </button>
-
-          <button
-            onClick={toggleTvMode}
-            style={{
-              backgroundColor: 'rgba(15, 23, 42, 0.9)',
-              backdropFilter: 'blur(4px)',
-              color: '#ffffff',
-              border: '1px solid rgba(255, 255, 255, 0.15)',
-              borderRadius: '12px',
-              padding: '8px 14px',
-              fontSize: '11px',
-              fontWeight: 'bold',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.2)',
-            }}
-          >
-            <Activity style={{ width: '12px', height: '12px', color: '#00BFA5' }} />
-            Sair da TV
-          </button>
-        </div>
-      </>
+      </div>
     );
   }
 
-  // Desktop/Mobile View
+  // ── MODO NORMAL: APLICAÇÃO WEB (TABELA CLEAN EXCLUSIVA) ───────────────────
   return (
-    <>
-      {/* Toolbar: Busca + Filtros + Modo TV */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-4 px-2 items-start sm:items-center">
+    <div className="space-y-4">
+      {/* ── Barra Superior de Filtros & Ações ──────────────────────────── */}
+      <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
         {/* Busca */}
-        <div className="relative flex-1 min-w-0">
+        <div className="relative flex-1 min-w-[260px]">
           <input
             type="text"
-            placeholder="Buscar por cliente ou observação..."
+            placeholder="Buscar por cliente, observação, vendedor ou cidade..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 text-sm bg-white border border-slate-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-[#00BFA5] focus:border-transparent placeholder:text-slate-400"
+            className="w-full pl-9 pr-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00B356] placeholder:text-slate-400"
           />
           <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M16.65 16.65A7.5 7.5 0 1 0 4.5 4.5a7.5 7.5 0 0 0 12.15 12.15z" />
           </svg>
           {search && (
             <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              ✕
             </button>
           )}
         </div>
 
-        {/* Filtro por status */}
+        {/* Status Dropdown */}
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-3 py-2.5 text-sm bg-white border border-slate-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-[#00BFA5] text-slate-700 min-w-[160px]"
+          className="px-3 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00B356] text-slate-700 min-w-[160px]"
         >
-          <option value="__ALL__">Todos os status</option>
+          <option value="__ALL__">Todos os Status</option>
           {uniqueStatuses.map((s) => (
             <option key={s} value={s}>{s}</option>
           ))}
         </select>
 
-        {/* Modo TV */}
+        {/* Botão de Ativação do Modo TV */}
         <button
           type="button"
-          onClick={toggleTvMode}
-          className="flex items-center gap-2 px-4 py-2.5 text-xs font-bold text-slate-600 hover:text-slate-800 bg-white hover:bg-slate-50 rounded-xl border border-slate-200 shadow-sm transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98] shrink-0"
+          onClick={() => toggleTvMode("HYBRID")}
+          className="flex items-center justify-center gap-2 px-5 py-2.5 text-xs font-black text-white bg-[#0A192F] hover:bg-slate-800 rounded-xl shadow-md transition-all cursor-pointer shrink-0"
         >
-          <Activity className="w-4 h-4 text-[#00BFA5]" />
-          Ativar Modo TV
+          <Tv className="w-4 h-4 text-[#00B356]" />
+          Modo TV (NOC)
         </button>
       </div>
 
-      {/* Contadores */}
-      <div className="flex gap-3 px-2 mb-4 flex-wrap">
-        <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm">
-          <span className="w-2 h-2 rounded-full bg-slate-400 inline-block" />
-          {filteredAtividades.length} atividade{filteredAtividades.length !== 1 ? "s" : ""}
-          {(search || statusFilter !== "__ALL__") && ` (filtradas de ${(atividades as any[]).length})`}
-        </div>
+      {/* ── Pílulas Rápidas de Filtragem ───────────────────────────────── */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 px-1">
+        <button
+          onClick={() => setPillFilter("ALL")}
+          className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer ${
+            pillFilter === "ALL"
+              ? "bg-[#0A192F] text-white shadow-sm"
+              : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
+          }`}
+        >
+          Todas ({atividades.length})
+        </button>
+
         {totalUrgent > 0 && (
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-red-700 bg-red-50 px-3 py-1.5 rounded-lg border border-red-200 shadow-sm">
-            <span className="w-2 h-2 rounded-full bg-red-500 inline-block animate-pulse" />
-            {totalUrgent} com alerta de parecer
-          </div>
+          <button
+            onClick={() => setPillFilter(pillFilter === "URGENT" ? "ALL" : "URGENT")}
+            className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${
+              pillFilter === "URGENT"
+                ? "bg-red-600 text-white shadow-sm"
+                : "bg-red-50 text-red-700 border border-red-200 hover:bg-red-100"
+            }`}
+          >
+            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+            Parecer CEMIG ({totalUrgent})
+          </button>
+        )}
+
+        {totalPriority > 0 && (
+          <button
+            onClick={() => setPillFilter(pillFilter === "PRIORITY" ? "ALL" : "PRIORITY")}
+            className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${
+              pillFilter === "PRIORITY"
+                ? "bg-purple-700 text-white shadow-sm"
+                : "bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100"
+            }`}
+          >
+            ⭐ Prioritárias ({totalPriority})
+          </button>
+        )}
+
+        {totalExtra > 0 && (
+          <button
+            onClick={() => setPillFilter(pillFilter === "EXTRA" ? "ALL" : "EXTRA")}
+            className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${
+              pillFilter === "EXTRA"
+                ? "bg-[#E45318] text-white shadow-sm"
+                : "bg-orange-50 text-[#E45318] border border-orange-200 hover:bg-orange-100"
+            }`}
+          >
+            ⚡ Extras ({totalExtra})
+          </button>
+        )}
+
+        {totalLate > 0 && (
+          <button
+            onClick={() => setPillFilter(pillFilter === "LATE" ? "ALL" : "LATE")}
+            className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${
+              pillFilter === "LATE"
+                ? "bg-amber-600 text-white shadow-sm"
+                : "bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100"
+            }`}
+          >
+            ⚠️ Atrasadas ({totalLate})
+          </button>
         )}
       </div>
 
-      {/* Empty filtered state */}
-      {filteredAtividades.length === 0 && (search || statusFilter !== "__ALL__") && (
-        <div className="bg-white rounded-xl p-10 text-center border-2 border-dashed border-slate-200">
-          <p className="text-slate-500 font-medium">Nenhuma atividade encontrada para os filtros aplicados.</p>
-          <button onClick={() => { setSearch(""); setStatusFilter("__ALL__"); }} className="mt-3 text-sm text-[#00BFA5] font-semibold hover:underline">
-            Limpar filtros
+      {/* Estado Vazio */}
+      {filteredAtividades.length === 0 && (
+        <div className="bg-white rounded-2xl p-12 text-center border-2 border-dashed border-slate-200">
+          <p className="text-slate-500 font-medium">Nenhuma atividade encontrada com os filtros selecionados.</p>
+          <button
+            onClick={() => { setSearch(""); setStatusFilter("__ALL__"); setPillFilter("ALL"); }}
+            className="mt-3 text-xs font-bold text-[#E45318] hover:underline"
+          >
+            Limpar todos os filtros
           </button>
         </div>
       )}
 
-      {/* Table Desktop View */}
-      <div className={`hidden lg:block bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden relative ${filteredAtividades.length === 0 ? "hidden" : ""}`}>
-        <table className="w-full text-[13px] text-left table-fixed" style={{ tableLayout: 'fixed' }}>
-          <thead className="text-[11px] text-slate-500 uppercase bg-slate-50/80 border-b border-slate-100">
-            <tr>
-              <th className="w-1/4 px-3 py-3 font-bold tracking-wider" style={{ width: '22%' }}>Cliente / Instalação</th>
-              <th className="w-[100px] px-3 py-3 font-bold tracking-wider" style={{ width: '100px' }}>Dias para Montar</th>
-              <th className="px-3 py-3 font-bold tracking-wider" style={{ width: '20%' }}>Observações</th>
-              <th className="px-3 py-3 font-bold tracking-wider" style={{ width: '20%' }}>Histórico</th>
-              <th className="w-[100px] px-3 py-3 font-bold tracking-wider" style={{ width: '100px' }}>Venc. Parecer</th>
-              <th className="w-[140px] px-3 py-3 font-bold tracking-wider" style={{ width: '140px' }}>Prev. Instalação / Execução</th>
-              <th className="w-[90px] px-3 py-3 font-bold tracking-wider" style={{ width: '90px' }}>Status</th>
-              {!isTV && <th className="w-[70px] px-3 py-3 font-bold tracking-wider text-right" style={{ width: '70px' }}>Ação</th>}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {currentSlice.map((atv: any) => {
-              const isUrgentParecer = atv.daysParecer !== null && atv.daysParecer <= settings.limiteParecer;
-              
-              let bgColorCss = "hover:bg-slate-50 transition-colors h-[65px]";
-              let diaPrevRender = "-";
-              let inlineStyle = {};
-              let fontColor = "text-slate-600";
-              
-              if (atv.daysPrev !== null) {
-                 if (atv.daysPrev >= settings.limiteVerde) {
-                    bgColorCss = "bg-green-100 text-green-900 h-[65px]";
-                 } else if (atv.daysPrev >= settings.limiteAmarelo) {
-                    bgColorCss = "bg-yellow-100 text-yellow-900 h-[65px]";
-                 } else {
-                    bgColorCss = "bg-red-100 text-red-900 h-[65px]";
-                 }
-                 diaPrevRender = `${atv.daysPrev} dias`;
-              }
+      {/* ── TABELA CLEAN DE ATIVIDADES (MODO EXCLUSIVO E MODERNO) ───────── */}
+      {filteredAtividades.length > 0 && (
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <table className="w-full border-collapse text-left text-sm">
+            <thead className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-700 uppercase tracking-wider">
+              <tr>
+                <th className="p-3.5 w-1/4">Cliente / Instalação</th>
+                <th className="p-3.5 w-36">Dias para Montar</th>
+                <th className="p-3.5">Observações</th>
+                <th className="p-3.5 w-32">Venc. Parecer</th>
+                <th className="p-3.5 w-36">Previsão</th>
+                <th className="p-3.5 w-32">Status</th>
+                <th className="p-3.5 w-28 text-right">Ações</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 text-slate-800">
+              {filteredAtividades.map((atv: any) => {
+                const isUrgentParecer = atv.daysParecer !== null && atv.daysParecer <= settings.limiteParecer;
+                const isExpanded = expandedRow === atv.id;
+                const hasAttachments = (atv.anexoFotos && atv.anexoFotos.length > 0) || (atv.anexoArquivos && atv.anexoArquivos.length > 0);
 
-              if (atv.prioridade) {
-                 bgColorCss = "bg-purple-600 text-white font-medium shadow-md z-20 relative h-[65px]";
-                 fontColor = "text-white";
-              } else if (atv.atividadeExtra) {
-                 bgColorCss = "bg-[#1E3A8A] text-white font-medium shadow-md z-15 relative h-[65px]";
-                 fontColor = "text-white";
-              } else if (isUrgentParecer) {
-                 bgColorCss = "bg-red-600 text-white font-medium shadow-md z-10 relative h-[65px] animate-pulse";
-                 fontColor = "text-white";
-              }
+                let badgeColor = "bg-slate-100 text-slate-700 border-slate-200";
+                if (atv.daysPrev !== null) {
+                  if (atv.daysPrev >= settings.limiteVerde) badgeColor = "bg-emerald-50 text-emerald-800 border-emerald-200";
+                  else if (atv.daysPrev >= settings.limiteAmarelo) badgeColor = "bg-amber-50 text-amber-800 border-amber-200";
+                  else badgeColor = "bg-red-50 text-red-800 border-red-200";
+                }
 
-              return (
-                <tr key={atv.id} className={bgColorCss} style={inlineStyle}>
-                  <td className="px-3 py-3 font-bold leading-tight break-words">
-                    {isUrgentParecer && <ShieldAlert className="inline-block w-4 h-4 mr-1 mb-0.5 text-red-200" />}
-                    <span className="text-sm">{atv.instalacao || "N/A"}</span>
-                    {((atv.anexoFotos && atv.anexoFotos.length > 0) || (atv.anexoArquivos && atv.anexoArquivos.length > 0)) && (
-                      <div className="flex flex-wrap gap-1 mt-1.5">
-                        {atv.anexoFotos?.map((url: string, idx: number) => (
-                          <button
-                            type="button"
-                            key={`foto-${idx}`}
-                            onClick={(e) => { e.stopPropagation(); downloadFile(url, `foto-${idx + 1}-${atv.instalacao || 'anexo'}.jpg`); }}
-                            className={`inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded border transition-colors cursor-pointer ${
-                              (atv.prioridade || atv.atividadeExtra || isUrgentParecer)
-                                ? 'bg-white/20 hover:bg-white/30 border-white/25 text-white'
-                                : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-600'
-                            }`}
-                            title="Baixar Foto"
-                          >
-                            <Download className="w-2.5 h-2.5" /> Foto {idx + 1}
-                          </button>
-                        ))}
-                        {atv.anexoArquivos?.map((url: string, idx: number) => {
-                          const filename = url.split('/').pop() || `arq-${idx + 1}`;
-                          return (
-                            <button
-                              type="button"
-                              key={`arq-${idx}`}
-                              onClick={(e) => { e.stopPropagation(); downloadFile(url, `${atv.instalacao || 'anexo'}-${filename}`); }}
-                              className={`inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded border transition-colors cursor-pointer ${
-                                (atv.prioridade || atv.atividadeExtra || isUrgentParecer)
-                                  ? 'bg-white/20 hover:bg-white/30 border-white/25 text-white'
-                                  : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-600'
-                              }`}
-                              title={`Baixar ${filename}`}
-                            >
-                              <Download className="w-2.5 h-2.5" /> {filename.length > 12 ? filename.substring(0, 10) + '...' : filename}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-                    <TagToggler id={atv.id} prioridade={atv.prioridade} atividadeExtra={atv.atividadeExtra} isAdmin={!!isAdmin} light={atv.prioridade || atv.atividadeExtra || isUrgentParecer} />
-                  </td>
-                  <td className="px-3 py-3 font-black text-xs">
-                    {diaPrevRender}
-                  </td>
-                  <td className={`px-3 py-3 text-[12px] leading-tight line-clamp-2 ${fontColor}`} title={atv.obsInstalacao || ""}>
-                    {atv.obsInstalacao || "-"}
-                  </td>
-                  <td className={`px-3 py-2 text-[11px] leading-tight ${fontColor}`}>
-                    {Array.isArray(atv.historico) && atv.historico.length > 0 ? (
-                      <div className="space-y-1 max-h-[55px] overflow-y-auto custom-scrollbar pr-1">
-                        {(atv.historico as any[]).map((h: any, idx: number) => (
-                          <div key={idx} className="whitespace-normal break-words">
-                            <span className="font-bold opacity-75">{h.date}:</span> {h.action}
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <span className="opacity-60 italic">-</span>
-                    )}
-                  </td>
-                  <td className={`px-3 py-3 font-medium whitespace-nowrap ${fontColor}`}>
-                    {atv.vencimentoParecer || "-"}
-                  </td>
-                  <td className={`px-3 py-3 font-medium whitespace-nowrap ${fontColor}`}>
-                    {atv.dataPrevista || atv.automaticoPrevInstala || "-"}
-                  </td>
-                  <td className="px-3 py-3">
-                     <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-tighter ${ (isUrgentParecer || atv.prioridade || atv.atividadeExtra) ? 'bg-white/20 text-white' : 'bg-[#0A192F]/5 text-[#0A192F]'}`}>
-                        {atv.status || "Pendente"}
-                     </span>
-                  </td>
-                  {!isTV && (
-                    <td className="px-3 py-3 text-right">
-                      {isAdmin ? (
-                        <Link 
-                          href={`/atividades/editar/${atv.id}`}
-                          className={`inline-flex items-center p-1.5 rounded-lg transition-all ${isUrgentParecer ? 'bg-white text-red-700 hover:bg-white/90' : 'text-[#00BFA5] hover:bg-[#00BFA5]/10'}`}
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Link>
-                      ) : (
-                        <span className="text-[10px] opacity-50">Admin Only</span>
-                      )}
-                    </td>
-                  )}
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Mobile Card View */}
-      <div className="lg:hidden grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-        {currentSlice.map((atv: any) => {
-          const isUrgentParecer = atv.daysParecer !== null && atv.daysParecer <= settings.limiteParecer;
-          let urgencyColor = "border-slate-100 bg-white";
-          
-          if (atv.daysPrev !== null) {
-             if (atv.daysPrev >= settings.limiteVerde) urgencyColor = "border-green-200 bg-green-50";
-             else if (atv.daysPrev >= settings.limiteAmarelo) urgencyColor = "border-yellow-200 bg-yellow-50";
-             else urgencyColor = "border-red-200 bg-red-50";
-          }
-          if (isUrgentParecer) urgencyColor = "bg-red-600 border-red-800 text-white";
-          if (atv.atividadeExtra) urgencyColor = "bg-[#1E3A8A] border-[#152e75] text-white";
-          if (atv.prioridade) urgencyColor = "animate-[pulse_2s_infinite] bg-purple-600 border-purple-800 text-white";
-
-          return (
-            <div key={atv.id} className={`p-4 rounded-xl border-2 shadow-sm relative ${urgencyColor}`}>
-              {isUrgentParecer && <ShieldAlert className="absolute top-2 right-2 w-5 h-5 text-white animate-bounce" />}
-              <div className="flex justify-between items-start mb-2">
-                <div className="w-2/3">
-                  <h3 className="font-bold text-lg leading-tight">
-                    {atv.instalacao}
-                    {((atv.anexoFotos && atv.anexoFotos.length > 0) || (atv.anexoArquivos && atv.anexoArquivos.length > 0)) && (
-                      <div className="flex flex-wrap gap-1 mt-1.5">
-                        {atv.anexoFotos?.map((url: string, idx: number) => (
-                          <button
-                            type="button"
-                            key={`foto-${idx}`}
-                            onClick={(e) => { e.stopPropagation(); downloadFile(url, `foto-${idx + 1}-${atv.instalacao || 'anexo'}.jpg`); }}
-                            className={`inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded border transition-colors cursor-pointer ${
-                              (atv.prioridade || atv.atividadeExtra || isUrgentParecer)
-                                ? 'bg-white/20 hover:bg-white/30 border-white/25 text-white'
-                                : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-600'
-                            }`}
-                            title="Baixar Foto"
-                          >
-                            <Download className="w-2.5 h-2.5" /> Foto {idx + 1}
-                          </button>
-                        ))}
-                        {atv.anexoArquivos?.map((url: string, idx: number) => {
-                          const filename = url.split('/').pop() || `arq-${idx + 1}`;
-                          return (
-                            <button
-                              type="button"
-                              key={`arq-${idx}`}
-                              onClick={(e) => { e.stopPropagation(); downloadFile(url, `${atv.instalacao || 'anexo'}-${filename}`); }}
-                              className={`inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded border transition-colors cursor-pointer ${
-                                (atv.prioridade || atv.atividadeExtra || isUrgentParecer)
-                                  ? 'bg-white/20 hover:bg-white/30 border-white/25 text-white'
-                                  : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-600'
-                              }`}
-                              title={`Baixar ${filename}`}
-                            >
-                              <Download className="w-2.5 h-2.5" /> {filename.length > 12 ? filename.substring(0, 10) + '...' : filename}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </h3>
-                  <TagToggler id={atv.id} prioridade={atv.prioridade} atividadeExtra={atv.atividadeExtra} isAdmin={!!isAdmin} light={atv.prioridade || atv.atividadeExtra || isUrgentParecer} />
-                </div>
-                <span className="text-xs font-black px-2 py-1 bg-black/5 rounded uppercase tracking-widest">{atv.status || "Pendente"}</span>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-y-2 text-sm mt-3 border-t border-black/5 pt-3">
-                <div className="col-span-2">
-                  <p className="text-[10px] opacity-75 uppercase font-bold">Observações</p>
-                  <p className="font-medium whitespace-normal break-words text-xs">{atv.obsInstalacao || "-"}</p>
-                </div>
-                <div className="col-span-2">
-                  <p className="text-[10px] opacity-75 uppercase font-bold">Histórico de Ações</p>
-                  {Array.isArray(atv.historico) && atv.historico.length > 0 ? (
-                    <div className="mt-1 space-y-1 text-xs max-h-[80px] overflow-y-auto pr-1">
-                      {(atv.historico as any[]).map((h: any, idx: number) => (
-                        <div key={idx} className="whitespace-normal break-words">
-                          <span className="font-bold opacity-75">{h.date}:</span> {h.action}
+                return (
+                  <React.Fragment key={atv.id}>
+                    <tr className={`hover:bg-slate-50/80 transition-colors ${isUrgentParecer ? "bg-red-50/30" : ""}`}>
+                      {/* Cliente / Instalação */}
+                      <td className="p-3.5">
+                        <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                          {isUrgentParecer && <ShieldAlert className="w-4 h-4 text-red-500 shrink-0" />}
+                          <span className="truncate">{atv.instalacao || "N/A"}</span>
+                          {atv.prioridade && (
+                            <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 border border-purple-200 shrink-0">
+                              ⭐
+                            </span>
+                          )}
+                          {atv.atividadeExtra && (
+                            <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-orange-100 text-[#E45318] border border-orange-200 shrink-0">
+                              ⚡
+                            </span>
+                          )}
                         </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-xs opacity-60 italic">-</p>
-                  )}
-                </div>
-                <div>
-                  <p className="text-[10px] opacity-75 uppercase font-bold">Venc. Parecer</p>
-                  <p className="font-semibold">{atv.vencimentoParecer || "-"}</p>
-                </div>
-                <div>
-                  <p className="text-[10px] opacity-75 uppercase font-bold">Prev. Instalação / Execução</p>
-                  <p className="font-semibold">{atv.dataPrevista || atv.automaticoPrevInstala || "-"}</p>
-                </div>
-                <div className="col-span-2">
-                   <p className="text-[10px] opacity-75 uppercase font-bold">Dias para Montar</p>
-                   <p className="font-black text-[#1E3A8A]">{atv.daysPrev !== null ? `${atv.daysPrev} dias` : "-"}</p>
-                </div>
-              </div>
+                        <span className="text-xs text-slate-500 block truncate">
+                          {atv.cidade ? `${atv.cidade} • ` : ""}Vendedor: {atv.vendedor || "Não informado"}
+                        </span>
+                      </td>
 
-              {!isTV && isAdmin && (
-                <Link 
-                  href={`/atividades/editar/${atv.id}`}
-                  className="mt-4 w-full flex items-center justify-center py-2 bg-[#00BFA5] text-white rounded-lg font-bold text-sm shadow-md"
-                >
-                  <Edit className="w-4 h-4 mr-2" /> Editar Atividade
-                </Link>
-              )}
-            </div>
-          );
-        })}
-      </div>
+                      {/* Dias para Montar */}
+                      <td className="p-3.5">
+                        <span className={`inline-block px-2.5 py-1 rounded-lg text-xs font-black border ${badgeColor}`}>
+                          {atv.daysPrev !== null ? `${atv.daysPrev} dias` : "-"}
+                        </span>
+                      </td>
 
-      {/* Paginação do Modo Convencional */}
-      {!localIsTV && totalPages > 1 && (
-        <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 px-5 py-4 bg-white border border-slate-200 rounded-2xl shadow-sm">
-          <div className="text-xs md:text-sm text-slate-505 font-semibold">
-            Mostrando <span className="text-slate-800 font-black">{currentPage * itemsPerPage + 1}</span> a{" "}
-            <span className="text-slate-800 font-black">
-              {Math.min((currentPage + 1) * itemsPerPage, filteredAtividades.length)}
-            </span>{" "}
-            de <span className="text-slate-800 font-black">{filteredAtividades.length}</span> atividade{filteredAtividades.length !== 1 ? "s" : ""}
+                      {/* Observações com botão de expandir */}
+                      <td className="p-3.5">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-xs text-slate-700 line-clamp-1 truncate">
+                            {atv.obsInstalacao || "-"}
+                          </span>
+                          {(atv.obsInstalacao || hasAttachments) && (
+                            <button
+                              onClick={() => setExpandedRow(isExpanded ? null : atv.id)}
+                              className="text-[11px] font-bold text-slate-500 hover:text-slate-800 flex items-center gap-0.5 shrink-0 cursor-pointer"
+                            >
+                              {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                            </button>
+                          )}
+                        </div>
+                      </td>
 
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
-              disabled={currentPage === 0}
-              className="px-4 py-2 text-xs font-bold text-slate-650 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200 transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
-            >
-              Anterior
-            </button>
-            <button
-              onClick={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))}
-              disabled={currentPage === totalPages - 1}
-              className="px-4 py-2 text-xs font-bold text-slate-650 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200 transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
-            >
-              Próximo
-            </button>
-          </div>
+                      {/* Vencimento Parecer */}
+                      <td className="p-3.5">
+                        <span className={`text-xs font-semibold ${isUrgentParecer ? "text-red-600 font-bold" : "text-slate-700"}`}>
+                          {atv.vencimentoParecer || "-"}
+                        </span>
+                      </td>
+
+                      {/* Previsão */}
+                      <td className="p-3.5 text-xs text-slate-700 font-medium">
+                        {atv.dataPrevista || atv.automaticoPrevInstala || "-"}
+                      </td>
+
+                      {/* Status */}
+                      <td className="p-3.5">
+                        <span className="inline-block px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-800 border border-slate-200">
+                          {atv.status || "Pendente"}
+                        </span>
+                      </td>
+
+                      {/* Ações */}
+                      <td className="p-3.5 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <TagToggler id={atv.id} prioridade={!!atv.prioridade} atividadeExtra={!!atv.atividadeExtra} isAdmin={isAdmin} />
+                          {isAdmin && (
+                            <Link
+                              href={`/atividades/editar?id=${atv.id}`}
+                              className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-600 hover:text-slate-900 transition-colors"
+                              title="Editar atividade"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Link>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+
+                    {/* Linha expansível com detalhes e anexos */}
+                    {isExpanded && (
+                      <tr className="bg-slate-50/80">
+                        <td colSpan={7} className="p-4 text-xs space-y-2 border-b border-slate-200">
+                          {hasAttachments && (
+                            <div className="mb-2">
+                              <span className="font-bold text-slate-800 block mb-1">Anexos & Documentos:</span>
+                              <div className="flex flex-wrap gap-2">
+                                {atv.anexoFotos?.map((f: string, idx: number) => (
+                                  <button
+                                    key={idx}
+                                    onClick={() => downloadFile(f, `anexo_foto_${idx + 1}`)}
+                                    className="flex items-center gap-1 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 px-2.5 py-1 rounded-md text-[11px] font-bold cursor-pointer"
+                                  >
+                                    <Paperclip className="w-3 h-3 text-[#E45318]" /> Foto {idx + 1}
+                                  </button>
+                                ))}
+                                {atv.anexoArquivos?.map((a: string, idx: number) => (
+                                  <button
+                                    key={idx}
+                                    onClick={() => downloadFile(a, `anexo_doc_${idx + 1}`)}
+                                    className="flex items-center gap-1 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 px-2.5 py-1 rounded-md text-[11px] font-bold cursor-pointer"
+                                  >
+                                    <Download className="w-3 h-3 text-[#00B356]" /> Doc {idx + 1}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          <div>
+                            <span className="font-bold text-slate-800 block mb-1">Observação Completa:</span>
+                            <div className="bg-white p-3 rounded-xl border border-slate-200 text-slate-800 whitespace-pre-wrap">
+                              {atv.obsInstalacao || "Nenhuma observação registrada."}
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       )}
-    </>
+    </div>
   );
 }

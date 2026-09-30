@@ -8,6 +8,9 @@
  */
 
 export type TipoPadrao = "BIFASICO" | "TRIFASICO";
+export type CategoriaDemandaPadrao = "INDIVIDUAL_TABELA_2" | "ALTA_DEMANDA_TABELA_4";
+export type CaixaDisjuntorTabela4 = "CM-9" | "CM-18";
+export type TipoCaixaSubterraneaTabela4 = "ZC" | "ZD";
 export type LadoRede = "MESMO_LADO" | "LADO_OPOSTO"; // A Favor ou Contra
 export type TipoSaida = "AEREA" | "SUBTERRANEA"; // Saída Aérea ou Subterrânea
 export type LocalizacaoPadrao = "URBANO" | "RURAL"; // Localização da Unidade Consumidora
@@ -16,6 +19,9 @@ export type FinalidadePadrao = "CARREGADOR_VE" | "PADRAO_GERAL" | "AUMENTO_CARGA
 
 export interface ParametrosPadraoCemig {
   tipoPadrao: TipoPadrao;
+  categoriaDemanda?: CategoriaDemandaPadrao; // Tabela 2 (Individual até 75 kVA) ou Tabela 4 (Alta Demanda 75,1 a 304 kVA)
+  tipoCaixaDisjuntorTabela4?: CaixaDisjuntorTabela4; // Para F1 e F2: CM-9 ou CM-18
+  tipoCaixaSubterranea?: TipoCaixaSubterraneaTabela4; // Caixa de Passagem: ZC (Padrão/Calçada) ou ZD (Pista/Derivação)
   disjuntorAmperes: number;
   ladoRede: LadoRede;
   tipoSaida?: TipoSaida; // default "AEREA"
@@ -43,10 +49,11 @@ export interface ItemMaterialSugerido {
 
 export interface ResultadoDimensionamentoPadrao {
   tipoPadrao: TipoPadrao;
+  categoriaDemanda?: CategoriaDemandaPadrao;
   tipoSaida: TipoSaida;
   localizacao: LocalizacaoPadrao;
   ladoRede: LadoRede;
-  faixaFornecimento: string; // "B1", "C1", "C2", "C3", "C4", "C5", "C6"
+  faixaFornecimento: string; // "B1", "C1", "C2", "C3", "C4", "C5", "C6" ou "F1".."F9"
   demandaMinKVA: number;
   demandaMaxKVA: number;
   fases: number;
@@ -60,9 +67,12 @@ export interface ResultadoDimensionamentoPadrao {
   eletrodutoPVCmm: number;
   eletrodutoPvcPol: string;
   eletrodutoAcoMm: number;
+  tcRelacao?: string;
+  tcQuantidade?: number;
   posteHomologado: string;
   caixaMedicao: string;
   caixaDisjuntor: string;
+  tipoCaixaSubterranea?: TipoCaixaSubterraneaTabela4;
   descricaoResumo: string;
   notasTecnicas: string[];
   alertasEV: string[];
@@ -207,6 +217,841 @@ export const FAIXA_BIFASICO_TABELA_1 = {
   pontalete: "PT1"
 };
 
+export interface FaixaTabela4 {
+  faixa: "F1" | "F2" | "F3" | "F4" | "F5" | "F6" | "F7" | "F8" | "F9";
+  demandaMin: number;
+  demandaMax: number;
+  disjuntor: number;
+  disjuntoresAlternativos?: number[];
+  caboFaseAl: number;
+  caboFaseAlVias: number;
+  caboFaseCu: number;
+  caboFaseCuVias: number;
+  caboProtecaoCu: number;
+  tcRelacao: "200/5" | "400/5" | "600/5";
+  tcFatorTermico: number;
+  hastes: number;
+  caboAterramentoNu: number;
+  eletrodutoCuPVC: number;
+  eletrodutoCuPvcPol: string;
+  eletrodutoCuAco: number;
+  eletrodutoCuVias: number;
+  posteMesmoLadoAco?: string;
+  posteMesmoLadoConc?: string;
+  posteLadoOpostoAco?: string;
+  posteLadoOpostoConc?: string;
+  caixaMedicao: "CM-4";
+  caixasDisjuntorPermitidas: ("CM-9" | "CM-18")[];
+  subterraneoObrigatorio: boolean;
+}
+
+export const FAIXAS_TRIFASICO_TABELA_4: FaixaTabela4[] = [
+  {
+    faixa: "F1",
+    demandaMin: 75.1,
+    demandaMax: 86.0,
+    disjuntor: 225,
+    caboFaseAl: 150,
+    caboFaseAlVias: 1,
+    caboFaseCu: 120,
+    caboFaseCuVias: 1,
+    caboProtecaoCu: 70,
+    tcRelacao: "200/5",
+    tcFatorTermico: 2.0,
+    hastes: 3,
+    caboAterramentoNu: 16,
+    eletrodutoCuPVC: 85,
+    eletrodutoCuPvcPol: "3\"",
+    eletrodutoCuAco: 80,
+    eletrodutoCuVias: 1,
+    posteMesmoLadoAco: "PA3",
+    posteMesmoLadoConc: "PC3",
+    posteLadoOpostoAco: "PA6",
+    posteLadoOpostoConc: "PC3",
+    caixaMedicao: "CM-4",
+    caixasDisjuntorPermitidas: ["CM-9", "CM-18"],
+    subterraneoObrigatorio: false
+  },
+  {
+    faixa: "F2",
+    demandaMin: 86.1,
+    demandaMax: 95.0,
+    disjuntor: 250,
+    caboFaseAl: 185,
+    caboFaseAlVias: 1,
+    caboFaseCu: 150,
+    caboFaseCuVias: 1,
+    caboProtecaoCu: 70,
+    tcRelacao: "200/5",
+    tcFatorTermico: 2.0,
+    hastes: 3,
+    caboAterramentoNu: 16,
+    eletrodutoCuPVC: 110,
+    eletrodutoCuPvcPol: "4\"",
+    eletrodutoCuAco: 100,
+    eletrodutoCuVias: 1,
+    posteMesmoLadoAco: "PA3",
+    posteMesmoLadoConc: "PC3",
+    posteLadoOpostoAco: "PA6",
+    posteLadoOpostoConc: "PC3",
+    caixaMedicao: "CM-4",
+    caixasDisjuntorPermitidas: ["CM-9", "CM-18"],
+    subterraneoObrigatorio: false
+  },
+  {
+    faixa: "F3",
+    demandaMin: 95.1,
+    demandaMax: 114.0,
+    disjuntor: 300,
+    disjuntoresAlternativos: [300, 315, 320],
+    caboFaseAl: 240,
+    caboFaseAlVias: 1,
+    caboFaseCu: 240,
+    caboFaseCuVias: 1,
+    caboProtecaoCu: 120,
+    tcRelacao: "200/5",
+    tcFatorTermico: 2.0,
+    hastes: 3,
+    caboAterramentoNu: 16,
+    eletrodutoCuPVC: 110,
+    eletrodutoCuPvcPol: "4\"",
+    eletrodutoCuAco: 100,
+    eletrodutoCuVias: 1,
+    caixaMedicao: "CM-4",
+    caixasDisjuntorPermitidas: ["CM-18"],
+    subterraneoObrigatorio: true
+  },
+  {
+    faixa: "F4",
+    demandaMin: 114.1,
+    demandaMax: 152.0,
+    disjuntor: 400,
+    caboFaseAl: 240,
+    caboFaseAlVias: 2,
+    caboFaseCu: 120,
+    caboFaseCuVias: 2,
+    caboProtecaoCu: 50,
+    tcRelacao: "400/5",
+    tcFatorTermico: 2.0,
+    hastes: 3,
+    caboAterramentoNu: 16,
+    eletrodutoCuPVC: 75,
+    eletrodutoCuPvcPol: "2.1/2\"",
+    eletrodutoCuAco: 65,
+    eletrodutoCuVias: 2,
+    caixaMedicao: "CM-4",
+    caixasDisjuntorPermitidas: ["CM-18"],
+    subterraneoObrigatorio: true
+  },
+  {
+    faixa: "F5",
+    demandaMin: 152.1,
+    demandaMax: 171.0,
+    disjuntor: 450,
+    caboFaseAl: 240,
+    caboFaseAlVias: 2,
+    caboFaseCu: 150,
+    caboFaseCuVias: 2,
+    caboProtecaoCu: 70,
+    tcRelacao: "400/5",
+    tcFatorTermico: 2.0,
+    hastes: 3,
+    caboAterramentoNu: 16,
+    eletrodutoCuPVC: 85,
+    eletrodutoCuPvcPol: "3\"",
+    eletrodutoCuAco: 80,
+    eletrodutoCuVias: 2,
+    caixaMedicao: "CM-4",
+    caixasDisjuntorPermitidas: ["CM-18"],
+    subterraneoObrigatorio: true
+  },
+  {
+    faixa: "F6",
+    demandaMin: 171.1,
+    demandaMax: 188.0,
+    disjuntor: 500,
+    caboFaseAl: 240,
+    caboFaseAlVias: 2,
+    caboFaseCu: 185,
+    caboFaseCuVias: 2,
+    caboProtecaoCu: 95,
+    tcRelacao: "400/5",
+    tcFatorTermico: 2.0,
+    hastes: 3,
+    caboAterramentoNu: 16,
+    eletrodutoCuPVC: 110,
+    eletrodutoCuPvcPol: "4\"",
+    eletrodutoCuAco: 100,
+    eletrodutoCuVias: 2,
+    caixaMedicao: "CM-4",
+    caixasDisjuntorPermitidas: ["CM-18"],
+    subterraneoObrigatorio: true
+  },
+  {
+    faixa: "F7",
+    demandaMin: 188.1,
+    demandaMax: 228.0,
+    disjuntor: 630,
+    disjuntoresAlternativos: [600, 630],
+    caboFaseAl: 240,
+    caboFaseAlVias: 3,
+    caboFaseCu: 240,
+    caboFaseCuVias: 2,
+    caboProtecaoCu: 120,
+    tcRelacao: "600/5",
+    tcFatorTermico: 2.0,
+    hastes: 3,
+    caboAterramentoNu: 16,
+    eletrodutoCuPVC: 110,
+    eletrodutoCuPvcPol: "4\"",
+    eletrodutoCuAco: 100,
+    eletrodutoCuVias: 2,
+    caixaMedicao: "CM-4",
+    caixasDisjuntorPermitidas: ["CM-18"],
+    subterraneoObrigatorio: true
+  },
+  {
+    faixa: "F8",
+    demandaMin: 228.1,
+    demandaMax: 266.0,
+    disjuntor: 700,
+    caboFaseAl: 240,
+    caboFaseAlVias: 3,
+    caboFaseCu: 150,
+    caboFaseCuVias: 3,
+    caboProtecaoCu: 70,
+    tcRelacao: "600/5",
+    tcFatorTermico: 2.0,
+    hastes: 3,
+    caboAterramentoNu: 16,
+    eletrodutoCuPVC: 85,
+    eletrodutoCuPvcPol: "3\"",
+    eletrodutoCuAco: 80,
+    eletrodutoCuVias: 3,
+    caixaMedicao: "CM-4",
+    caixasDisjuntorPermitidas: ["CM-18"],
+    subterraneoObrigatorio: true
+  },
+  {
+    faixa: "F9",
+    demandaMin: 266.1,
+    demandaMax: 304.0,
+    disjuntor: 800,
+    caboFaseAl: 240,
+    caboFaseAlVias: 3,
+    caboFaseCu: 185,
+    caboFaseCuVias: 3,
+    caboProtecaoCu: 95,
+    tcRelacao: "600/5",
+    tcFatorTermico: 2.0,
+    hastes: 3,
+    caboAterramentoNu: 16,
+    eletrodutoCuPVC: 110,
+    eletrodutoCuPvcPol: "4\"",
+    eletrodutoCuAco: 100,
+    eletrodutoCuVias: 3,
+    caixaMedicao: "CM-4",
+    caixasDisjuntorPermitidas: ["CM-18"],
+    subterraneoObrigatorio: true
+  }
+];
+
+/**
+ * Dimensionamento exclusivo para a Tabela 4 CEMIG ND 5.1 (Alta Demanda 75,1 a 304 kVA)
+ */
+export function dimensionarPadraoTabela4(
+  params: ParametrosPadraoCemig,
+  precosMap?: Record<string, number>,
+  getPrecoExternal?: (codigo: string, fallback: number) => number
+): ResultadoDimensionamentoPadrao {
+  const getPreco = getPrecoExternal || ((codigo: string, fallback: number) => {
+    if (precosMap && precosMap[codigo] !== undefined) {
+      return precosMap[codigo];
+    }
+    return fallback;
+  });
+
+  const disj = params.disjuntorAmperes;
+  // Localizar faixa na Tabela 4
+  const match = FAIXAS_TRIFASICO_TABELA_4.find(f => f.disjuntor === disj || f.disjuntoresAlternativos?.includes(disj)) || FAIXAS_TRIFASICO_TABELA_4[0];
+  const faixaDemanda = match.faixa;
+  const demandaMinKVA = match.demandaMin;
+  const demandaMaxKVA = match.demandaMax;
+
+  // Localização e Lado da Rede
+  const localizacao: LocalizacaoPadrao = params.localizacao || "URBANO";
+  const ladoRede: LadoRede = localizacao === "RURAL" ? "LADO_OPOSTO" : (params.ladoRede || "MESMO_LADO");
+  const aFavor = ladoRede === "MESMO_LADO";
+
+  // Saída e Ramal: F3 a F9 exigem obrigatoriamente ramal subterrâneo (Nota 4)
+  const isSubtObrigatorio = match.subterraneoObrigatorio;
+  const tipoSaida: TipoSaida = isSubtObrigatorio ? "SUBTERRANEA" : (params.tipoSaida || "AEREA");
+  const isAerea = tipoSaida === "AEREA";
+
+  const itensSugeridos: ItemMaterialSugerido[] = [];
+
+  // 1. Caixas Metálicas (CM-4 obrigatória para TCs + CM-9/CM-18 para proteção)
+  // Caixa CM-4 para Medição Indireta (3 TCs + Medidor)
+  itensSugeridos.push({
+    codigo: "CX-CM4",
+    descricao: "Caixa Metálica de Medição Tipo CM-4 em Chapa de Aço (TCs e Medição Indireta CEMIG)",
+    categoria: "CAIXA",
+    unidade: "un",
+    quantidade: 1,
+    precoUnitarioEstimado: getPreco("CX-CM4", 580),
+    precoTotal: getPreco("CX-CM4", 580),
+    obrigatorioNorma: true,
+    nota: "Abriga os 3 Transformadores de Corrente (TCs) e o medidor eletrônico de 3 elementos (ND 5.1 Desenho 36 e 46)."
+  });
+
+  // Caixa para Disjuntor Geral (CM-9 ou CM-18 para F1/F2; CM-18 obrigatória para F3 a F9)
+  const permiteCM9 = match.faixa === "F1" || match.faixa === "F2";
+  const usaCM9 = permiteCM9 && params.tipoCaixaDisjuntorTabela4 === "CM-9";
+  const cxDisjCodigo = usaCM9 ? "CX-CM9" : "CX-CM18";
+  const cxDisjDesc = usaCM9
+    ? "Caixa Metálica de Proteção para Disjuntor Geral Tipo CM-9 em Chapa de Aço c/ lacre"
+    : "Caixa Metálica de Proteção para Disjuntor Tipo CM-18 em Chapa de Aço";
+  const cxDisjPreco = getPreco(cxDisjCodigo, usaCM9 ? 180 : 210);
+
+  itensSugeridos.push({
+    codigo: cxDisjCodigo,
+    descricao: cxDisjDesc,
+    categoria: "CAIXA",
+    unidade: "un",
+    quantidade: 1,
+    precoUnitarioEstimado: cxDisjPreco,
+    precoTotal: cxDisjPreco,
+    obrigatorioNorma: true,
+    nota: usaCM9
+      ? "Caixa de proteção CM-9 permitida para faixas F1 e F2 (Nota 6 da Tabela 4)."
+      : "Caixa de proteção reforçada CM-18 com barramentos para disjuntores caixa moldada (Nota 6)."
+  });
+
+  // Interligação de Proteção entre Caixas (Desenho 46 e Nota 3)
+  itensSugeridos.push({
+    codigo: "CABO-VERDE-10-INTERLIGACAO",
+    descricao: "Cabo Cobre Isolado Verde 0,6/1kV 10 mm² p/ Equipotencialização entre Caixas CM-9/18 e CM-4 (Desenho 46)",
+    categoria: "CONDUTOR",
+    unidade: "m",
+    quantidade: 2,
+    precoUnitarioEstimado: getPreco("CABO-VERDE-10-INTERLIGACAO", 12.50),
+    precoTotal: 2 * getPreco("CABO-VERDE-10-INTERLIGACAO", 12.50),
+    obrigatorioNorma: true,
+    nota: "Condutor de proteção obrigatório interligando a caixa do disjuntor à caixa CM-4 (Nota 3 e Desenho 46)."
+  });
+
+  // 2. Transformadores de Corrente (TC) com FT = 2,0
+  // NOTA NORMATIVA CEMIG: Os TCs são de fornecimento exclusivo e gratuito pela concessionária CEMIG.
+  // Não geram custo de aquisição na lista de materiais do cliente (apenas a Caixa CM-4 para alojá-los).
+
+  // 3. Disjuntor Caixa Moldada Tripolar (PEC-11 CEMIG)
+  const disjCodigo = `DISJ-CXM-3P-${disj}A`;
+  const disjFallbackPreco = disj <= 250 ? 1550 : disj <= 400 ? 2850 : disj <= 500 ? 3800 : disj <= 630 ? 4900 : disj <= 700 ? 5800 : 6900;
+  const disjPreco = getPreco(disjCodigo, disjFallbackPreco);
+  itensSugeridos.push({
+    codigo: disjCodigo,
+    descricao: `Disjuntor Tripolar Caixa Moldada ${disj}A Icu>=25kA/50kA Homologado CEMIG`,
+    categoria: "DISJUNTOR",
+    unidade: "un",
+    quantidade: 1,
+    precoUnitarioEstimado: disjPreco,
+    precoTotal: disjPreco,
+    obrigatorioNorma: true,
+    nota: `Proteção geral termomagnética homologada CEMIG PEC-11 (${disj}A) com alta capacidade de interrupção.`
+  });
+
+  // 4. Barramentos e Conectores Internos de Cobre (Desenho 46) - Unidade em Metros (m)
+  itensSugeridos.push({
+    codigo: "BARRAMENTO-NEUTRO-TERRA-ALTA",
+    descricao: "Barramento de Neutro e Aterramento em Cobre Eletrolítico c/ Parafusos e Suportes (Desenho 46)",
+    categoria: "ACESSORIO",
+    unidade: "m",
+    quantidade: 1,
+    precoUnitarioEstimado: getPreco("BARRAMENTO-NEUTRO-TERRA-ALTA", 380),
+    precoTotal: getPreco("BARRAMENTO-NEUTRO-TERRA-ALTA", 380),
+    obrigatorioNorma: true,
+    nota: "Barramento plano de cobre eletrolítico (medido em metros) para neutro e aterramento na caixa CM-9/18."
+  });
+
+  itensSugeridos.push({
+    codigo: "BARRAMENTO-FASE-ISOLADO-ALTA",
+    descricao: "Barramento de Cobre Eletrolítico para Fases c/ Isoladores Epóxi (Desenho 46)",
+    categoria: "ACESSORIO",
+    unidade: "m",
+    quantidade: 3,
+    precoUnitarioEstimado: getPreco("BARRAMENTO-FASE-ISOLADO-ALTA", 195),
+    precoTotal: 3 * getPreco("BARRAMENTO-FASE-ISOLADO-ALTA", 195),
+    obrigatorioNorma: true,
+    nota: "3 metros de barramento de cobre eletrolítico para as fases R, S e T com isoladores epóxi bujão (Desenho 46)."
+  });
+
+  // 5. Condutores de Entrada em Cobre 0,6/1kV Subterrâneos (Nunca 750V)
+  const caboGauge = match.caboFaseCu;
+  const caboVias = match.caboFaseCuVias;
+  const peGauge = match.caboProtecaoCu;
+
+  // Metragens base por condutor
+  let metrosPretoBase = 0;
+  let metrosAzulBase = 0;
+  let metrosVerde = 0;
+
+  if (!aFavor && isAerea) {
+    metrosPretoBase = 38;
+    metrosAzulBase = 17;
+    metrosVerde = 8;
+  } else if (!aFavor && !isAerea) {
+    metrosPretoBase = 25;
+    metrosAzulBase = 10;
+    metrosVerde = 3;
+  } else if (aFavor && isAerea) {
+    metrosPretoBase = 30;
+    metrosAzulBase = 10;
+    metrosVerde = 7;
+  } else {
+    metrosPretoBase = 20;
+    metrosAzulBase = 7;
+    metrosVerde = 3;
+  }
+
+  // Fases (Preto): 3 fases * vias - Isolação 0,6/1kV Subterrânea
+  const metrosPretoTotal = caboVias * metrosPretoBase;
+  const caboPretoCodigo = `CABO-PRETO-${caboGauge}`;
+  const caboPretoPreco = getPreco(caboPretoCodigo, caboGauge === 120 ? 138 : caboGauge === 150 ? 172 : caboGauge === 185 ? 215 : 285);
+  itensSugeridos.push({
+    codigo: caboPretoCodigo,
+    descricao: `Cabo Cobre Isolado Preto (Fase) 0,6/1kV ${caboGauge} mm² - Subterrâneo`,
+    categoria: "CONDUTOR",
+    unidade: "m",
+    quantidade: metrosPretoTotal,
+    precoUnitarioEstimado: caboPretoPreco,
+    precoTotal: metrosPretoTotal * caboPretoPreco,
+    obrigatorioNorma: true,
+    nota: caboVias > 1
+      ? `${caboVias} condutores de ${caboGauge} mm² em paralelo por fase (${caboVias * 3} condutores pretos no total). Isolação 0,6/1kV subterrânea. ND 5.1 Tabela 4.`
+      : `3 condutores de fase (${caboGauge} mm²). Isolação 0,6/1kV subterrânea. ND 5.1 Tabela 4.`
+  });
+
+  // Neutro (Azul Claro): Seção igual à fase e mesma quantidade de vias (Nota 9 da Tabela 4) - Isolação 0,6/1kV
+  const metrosAzulTotal = caboVias * metrosAzulBase;
+  const caboAzulCodigo = `CABO-AZUL-${caboGauge}`;
+  const caboAzulPreco = getPreco(caboAzulCodigo, caboGauge === 120 ? 138 : caboGauge === 150 ? 172 : caboGauge === 185 ? 215 : 285);
+  itensSugeridos.push({
+    codigo: caboAzulCodigo,
+    descricao: `Cabo Cobre Isolado Azul Claro (Neutro) 0,6/1kV ${caboGauge} mm² - Subterrâneo`,
+    categoria: "CONDUTOR",
+    unidade: "m",
+    quantidade: metrosAzulTotal,
+    precoUnitarioEstimado: caboAzulPreco,
+    precoTotal: metrosAzulTotal * caboAzulPreco,
+    obrigatorioNorma: true,
+    nota: `Condutor neutro isolação 0,6/1kV subterrânea com seção igual à fase (${caboVias}x ${caboGauge} mm²) conforme Nota 9 da Tabela 4 CEMIG.`
+  });
+
+  // Terra / Proteção PE (Verde) - Isolação 0,6/1kV
+  const caboVerdeCodigo = `CABO-VERDE-${peGauge}`;
+  const caboVerdePreco = getPreco(caboVerdeCodigo, peGauge <= 50 ? 54 : peGauge <= 70 ? 76 : peGauge <= 95 ? 105 : 138);
+  itensSugeridos.push({
+    codigo: caboVerdeCodigo,
+    descricao: `Cabo Cobre Isolado Verde (Terra/PE) 0,6/1kV ${peGauge} mm² - Subterrâneo`,
+    categoria: "CONDUTOR",
+    unidade: "m",
+    quantidade: metrosVerde,
+    precoUnitarioEstimado: caboVerdePreco,
+    precoTotal: metrosVerde * caboVerdePreco,
+    obrigatorioNorma: true,
+    nota: `Condutor de proteção PE isolação 0,6/1kV subterrânea (${peGauge} mm²) conforme Tabela 4.`
+  });
+
+  // Terminais de Compressão Alta Corrente
+  const qtdeTerminais = 4 * caboVias * 2; // 3F + 1N nas duas extremidades
+  const termCodigo = `TERM-COMPRESSAO-${caboGauge}`;
+  const termPreco = getPreco(termCodigo, caboGauge === 120 ? 18.5 : caboGauge === 150 ? 22 : caboGauge === 185 ? 28 : 36);
+  itensSugeridos.push({
+    codigo: termCodigo,
+    descricao: `Terminal de Compressão Tubular/Olhal em Cobre Estanhado ${caboGauge} mm²`,
+    categoria: "ACESSORIO",
+    unidade: "un",
+    quantidade: qtdeTerminais,
+    precoUnitarioEstimado: termPreco,
+    precoTotal: qtdeTerminais * termPreco,
+    obrigatorioNorma: true,
+    nota: `${qtdeTerminais} terminais de compressão reforçados para conexões do disjuntor e barramentos.`
+  });
+
+  // Terminais Especiais de Aterramento (Solicitados pelo Usuário)
+  // 1. 02 terminais de compressão 10 mm² com isolação para o cabo de aterramento da caixa CM-04
+  itensSugeridos.push({
+    codigo: "TERM-COMPRESSAO-10-ISOLADO",
+    descricao: "Terminal de Compressão Tubular c/ Isolação para Cabo 10 mm² (Aterramento Caixa CM-4)",
+    categoria: "ACESSORIO",
+    unidade: "un",
+    quantidade: 2,
+    precoUnitarioEstimado: getPreco("TERM-COMPRESSAO-10-ISOLADO", 4.5),
+    precoTotal: 2 * getPreco("TERM-COMPRESSAO-10-ISOLADO", 4.5),
+    obrigatorioNorma: true,
+    nota: "2 terminais com isolação para conexão do condutor de proteção de 10 mm² na carcaça da CM-4."
+  });
+
+  // 2. 02 terminais de aterramento caixa padrão cemig
+  itensSugeridos.push({
+    codigo: "TERM-ATERRAMENTO-CARCACA-CEMIG",
+    descricao: "Terminal de Aterramento para Carcaça de Caixa Padrão CEMIG (Conector Terra de Caixa)",
+    categoria: "ACESSORIO",
+    unidade: "un",
+    quantidade: 2,
+    precoUnitarioEstimado: getPreco("TERM-ATERRAMENTO-CARCACA-CEMIG", 15.0),
+    precoTotal: 2 * getPreco("TERM-ATERRAMENTO-CARCACA-CEMIG", 15.0),
+    obrigatorioNorma: true,
+    nota: "2 conectores homologados CEMIG para fixação mecânica e aterramento das carcaças metálicas."
+  });
+
+  // 3. 02 terminais compressão cabo 16mm² para o cabo de aterramento que vem das hastes
+  itensSugeridos.push({
+    codigo: "TERM-COMPRESSAO-16",
+    descricao: "Terminal de Compressão para Cabo 16 mm² (Conexão Malha de Aterramento)",
+    categoria: "ACESSORIO",
+    unidade: "un",
+    quantidade: 2,
+    precoUnitarioEstimado: getPreco("TERM-COMPRESSAO-16", 8.0),
+    precoTotal: 2 * getPreco("TERM-COMPRESSAO-16", 8.0),
+    obrigatorioNorma: true,
+    nota: "2 terminais para terminação do condutor de cobre nu 16 mm² proveniente das hastes de aterramento."
+  });
+
+  // 6. Duto Corrugado PEAD 3" (5m na entrada + 5m na saída por eletroduto)
+  // Substitui eletrodutos rígidos e curvas conforme instrução do usuário
+  const eletroVias = match.eletrodutoCuVias;
+  const metrosDutoTotal = eletroVias * 10; // 5m para cada entrada e 5m para cada saída por eletroduto
+  const dutoCodigo = "DUTO-CORRUGADO-PEAD-3POL";
+  const dutoPreco = getPreco(dutoCodigo, 38.0);
+  itensSugeridos.push({
+    codigo: dutoCodigo,
+    descricao: 'Duto Corrugado PEAD Flexível de 3" (Ø 85mm) Subterrâneo (5m Entrada + 5m Saída por Circuito)',
+    categoria: "ELETRODUTO",
+    unidade: "m",
+    quantidade: metrosDutoTotal,
+    precoUnitarioEstimado: dutoPreco,
+    precoTotal: metrosDutoTotal * dutoPreco,
+    obrigatorioNorma: true,
+    nota: `${eletroVias} linha(s) de duto corrugado PEAD 3": 5 metros para cada entrada e 5 metros para cada saída subterrânea.`
+  });
+
+  // Buchas e Arruelas de vedação para entrada nas caixas
+  const qtdeBuchas = eletroVias * 2;
+  const buchaCodigo = "BUCHA-ARRUELA-PVC-85";
+  const buchaPreco = getPreco(buchaCodigo, 56);
+  itensSugeridos.push({
+    codigo: buchaCodigo,
+    descricao: 'Bucha e Arruela de PVC Roscável Ø 85 mm (3") p/ Fixação nas Caixas',
+    categoria: "ELETRODUTO",
+    unidade: "cj",
+    quantidade: qtdeBuchas,
+    precoUnitarioEstimado: buchaPreco,
+    precoTotal: qtdeBuchas * buchaPreco,
+    obrigatorioNorma: true
+  });
+
+  // 7. Aterramento Normativo Tabela 4 (3 hastes cantoneiras galvanizadas a fogo + cabo nu 16 mm²)
+  itensSugeridos.push({
+    codigo: "HASTE-ATERRAMENTO-CANTONEIRA-GALV",
+    descricao: "Haste de Aterramento Cantoneira de Aço Galvanizado a Fogo (Padrão CEMIG - 2,40m)",
+    categoria: "ATERRAMENTO",
+    unidade: "un",
+    quantidade: 3,
+    precoUnitarioEstimado: getPreco("HASTE-ATERRAMENTO-CANTONEIRA-GALV", 95.0),
+    precoTotal: 3 * getPreco("HASTE-ATERRAMENTO-CANTONEIRA-GALV", 95.0),
+    obrigatorioNorma: true,
+    nota: "3 hastes tipo cantoneira de aço galvanizado a fogo obrigatórias para todas as faixas da Tabela 4 (F1 a F9)."
+  });
+
+  // Caixa de Inspeção de Aterramento Cilíndrica PVC (Corpo) + Tampa de Ferro Fundido Separada
+  itensSugeridos.push({
+    codigo: "CX-INSPECAO-ATERRAMENTO-CORPO",
+    descricao: "Caixa de Inspeção de Aterramento Cilíndrica PVC Ø 150 mm (Corpo de Solo)",
+    categoria: "ATERRAMENTO",
+    unidade: "un",
+    quantidade: 3,
+    precoUnitarioEstimado: getPreco("CX-INSPECAO-ATERRAMENTO-CORPO", 28.0),
+    precoTotal: 3 * getPreco("CX-INSPECAO-ATERRAMENTO-CORPO", 28.0),
+    obrigatorioNorma: true,
+    nota: "Corpo cilíndrico de solo para inspeção de aterramento das 3 hastes cantoneiras."
+  });
+
+  itensSugeridos.push({
+    codigo: "TAMPA-FOFO-INSPECAO-TERRA",
+    descricao: "Tampa de Ferro Fundido para Caixa de Inspeção de Aterramento Ø 150 mm (Padrão CEMIG)",
+    categoria: "ATERRAMENTO",
+    unidade: "un",
+    quantidade: 3,
+    precoUnitarioEstimado: getPreco("TAMPA-FOFO-INSPECAO-TERRA", 45.0),
+    precoTotal: 3 * getPreco("TAMPA-FOFO-INSPECAO-TERRA", 45.0),
+    obrigatorioNorma: true,
+    nota: "Tampa de ferro fundido para fechamento seguro da caixa de inspeção de terra no solo."
+  });
+
+  itensSugeridos.push({
+    codigo: "CABO-COBRE-NU-16",
+    descricao: "Cabo Cobre Nu 16 mm² para Aterramento / Malha (Tabela 4 CEMIG)",
+    categoria: "ATERRAMENTO",
+    unidade: "m",
+    quantidade: 12,
+    precoUnitarioEstimado: getPreco("CABO-COBRE-NU-16", 18.0),
+    precoTotal: 12 * getPreco("CABO-COBRE-NU-16", 18.0),
+    obrigatorioNorma: true,
+    nota: "Condutor de aterramento da malha com seção mínima de 16 mm² conforme Tabela 4."
+  });
+
+  // 8. Infraestrutura Subterrânea - Caixa Tipo ZC vs Tipo ZD (ND-2.3 / ND-5.1)
+  const usaZD = params.tipoCaixaSubterranea === "ZD";
+  const cxSubtCodigo = usaZD ? "CX-SUBTERRANEA-ZD" : "CX-SUBTERRANEA-ZC";
+  const cxSubtDesc = usaZD
+    ? "Caixa Subterrânea de Passagem Tipo ZD em Alvenaria/Concreto (100 x 75 x 120 cm - Norma CEMIG ND-2.3)"
+    : "Caixa Subterrânea de Passagem Tipo ZC em Alvenaria/Concreto (77 x 67 x 90 cm - Norma CEMIG ND-2.3 / ND-5.1)";
+  const cxSubtPreco = getPreco(cxSubtCodigo, usaZD ? 1250 : 750);
+
+  itensSugeridos.push({
+    codigo: cxSubtCodigo,
+    descricao: cxSubtDesc,
+    categoria: "ACESSORIO",
+    unidade: "un",
+    quantidade: 1,
+    precoUnitarioEstimado: cxSubtPreco,
+    precoTotal: cxSubtPreco,
+    obrigatorioNorma: true,
+    nota: usaZD
+      ? "Caixa tipo ZD com maiores dimensões para pista de rolamento, conexões de derivação com barramentos BTX ou múltiplos circuitos."
+      : "Caixa subterrânea padrão tipo ZC para passeio/calçada em ramais de entrada subterrâneos."
+  });
+
+  // Tampa de Ferro Fundido da Caixa Subterrânea (Item Separado na Lista)
+  const tampaSubtCodigo = usaZD ? "TAMPA-FOFO-ZD" : "TAMPA-FOFO-ZC";
+  const tampaSubtDesc = usaZD
+    ? "Tampa e Aro de Ferro Fundido Nodular Reforçada Articulada Tipo ZD (Classe 125/250 kN - Padrão CEMIG)"
+    : "Tampa e Aro de Ferro Fundido Nodular Articulada Tipo ZC (Padrão CEMIG)";
+  const tampaSubtPreco = getPreco(tampaSubtCodigo, usaZD ? 850 : 480);
+
+  itensSugeridos.push({
+    codigo: tampaSubtCodigo,
+    descricao: tampaSubtDesc,
+    categoria: "ACESSORIO",
+    unidade: "un",
+    quantidade: 1,
+    precoUnitarioEstimado: tampaSubtPreco,
+    precoTotal: tampaSubtPreco,
+    obrigatorioNorma: true,
+    nota: "Tampa e aro em ferro fundido nodular com inscrição CEMIG conforme padrão normativo."
+  });
+
+  // Brita nº 1: 3 sacos sempre para camada drenante
+  itensSugeridos.push({
+    codigo: "BRITA-1-DRAIN",
+    descricao: "Brita nº 1 para Drenagem de Caixa de Passagem/Inspeção (Saco 20kg)",
+    categoria: "ACESSORIO",
+    unidade: "un",
+    quantidade: 3,
+    precoUnitarioEstimado: getPreco("BRITA-1-DRAIN", 18),
+    precoTotal: 3 * getPreco("BRITA-1-DRAIN", 18),
+    obrigatorioNorma: true,
+    nota: "3 sacos de brita nº 1 para drenagem de fundo da caixa subterrânea conforme Desenho 36."
+  });
+
+  // 9. Suporte / Poste se Aéreo (F1/F2)
+  let posteCodigo = "ESTRUTURA-MURO";
+  let posteHomologado = "Mureta / Divisa em Alvenaria";
+  if (isAerea && params.tipoEstrutura !== "MURO") {
+    const postNome = aFavor ? (match.posteMesmoLadoAco || "PA3") : (match.posteLadoOpostoAco || "PA6");
+    posteHomologado = postNome;
+    posteCodigo = `POSTE-${postNome}`;
+    const postePreco = getPreco(posteCodigo, postNome === "PA3" ? 1620 : 2150);
+
+    itensSugeridos.push({
+      codigo: posteCodigo,
+      descricao: `Poste Aço Galvanizado ${postNome} (Homologado CEMIG Alta Demanda)`,
+      categoria: "POSTE",
+      unidade: "un",
+      quantidade: 1,
+      precoUnitarioEstimado: postePreco,
+      precoTotal: postePreco,
+      obrigatorioNorma: true,
+      nota: `Poste homologado para ramal aéreo multiplexado Q-120 (Nota 4 e Desenho 66/67).`
+    });
+
+    const tampaoCodigo = `TAMPAO-POSTE-${postNome}`;
+    itensSugeridos.push({
+      codigo: tampaoCodigo,
+      descricao: `Tampão de Vedação Superior para Poste de Aço ${postNome}`,
+      categoria: "ACESSORIO",
+      unidade: "un",
+      quantidade: 1,
+      precoUnitarioEstimado: getPreco(tampaoCodigo, 48),
+      precoTotal: getPreco(tampaoCodigo, 48),
+      obrigatorioNorma: true
+    });
+
+    // Cintas para poste
+    const cintaCodigo = `CINTA-POSTE-${postNome}`;
+    itensSugeridos.push({
+      codigo: cintaCodigo,
+      descricao: `Cinta de Aço para Poste Circular / Duplo T ${postNome}`,
+      categoria: "FERRAGEM",
+      unidade: "un",
+      quantidade: 4,
+      precoUnitarioEstimado: getPreco(cintaCodigo, 44),
+      precoTotal: 4 * getPreco(cintaCodigo, 44),
+      obrigatorioNorma: true
+    });
+
+    itensSugeridos.push({
+      codigo: "PARAFUSO-PORCA-ARRUELA-CINTA",
+      descricao: "Parafuso Galvanizado com Porca e Arruela para Cinta de Poste",
+      categoria: "FERRAGEM",
+      unidade: "un",
+      quantidade: 4,
+      precoUnitarioEstimado: getPreco("PARAFUSO-PORCA-ARRUELA-CINTA", 9.5),
+      precoTotal: 4 * getPreco("PARAFUSO-PORCA-ARRUELA-CINTA", 9.5),
+      obrigatorioNorma: true
+    });
+
+    itensSugeridos.push({
+      codigo: "ARMACAO-SECUNDARIA-1E",
+      descricao: "Armação Secundária de 1 Estribo Reforçada Galvanizada a Fogo",
+      categoria: "FERRAGEM",
+      unidade: "un",
+      quantidade: 1,
+      precoUnitarioEstimado: getPreco("ARMACAO-SECUNDARIA-1E", 36),
+      precoTotal: getPreco("ARMACAO-SECUNDARIA-1E", 36),
+      obrigatorioNorma: true
+    });
+
+    itensSugeridos.push({
+      codigo: "ISOLADOR-ROLDANA-72",
+      descricao: "Isolador Roldana de Porcelana Vitrificada 72x72 mm",
+      categoria: "FERRAGEM",
+      unidade: "un",
+      quantidade: 1,
+      precoUnitarioEstimado: getPreco("ISOLADOR-ROLDANA-72", 18),
+      precoTotal: getPreco("ISOLADOR-ROLDANA-72", 18),
+      obrigatorioNorma: true
+    });
+
+    itensSugeridos.push({
+      codigo: "SRV-BASE-CONCRETO",
+      descricao: "Material Civil para Base Concretada do Poste (Cimento, Areia, Brita)",
+      categoria: "ACESSORIO",
+      unidade: "cj",
+      quantidade: 1,
+      precoUnitarioEstimado: getPreco("SRV-BASE-CONCRETO", 220),
+      precoTotal: getPreco("SRV-BASE-CONCRETO", 220),
+      obrigatorioNorma: true,
+      nota: "Obrigatório engastamento em base concretada conforme Nota 7 da Tabela 4."
+    });
+  }
+
+  // 10. Mão de Obra e Engenharia Especializada
+  if (params.incluirMaoDeObra !== false) {
+    itensSugeridos.push({
+      codigo: "SRV-MONTAGEM-PADRAO",
+      descricao: "Mão de Obra de Montagem Especializada Padrão Alta Demanda",
+      categoria: "MAO_DE_OBRA",
+      unidade: "sv",
+      quantidade: 1,
+      precoUnitarioEstimado: getPreco("SRV-MONTAGEM-PADRAO", 10000),
+      precoTotal: getPreco("SRV-MONTAGEM-PADRAO", 10000),
+      obrigatorioNorma: false,
+      nota: "Equipe especializada Cordeiro Energia para montagem completa de infraestrutura, caixas, barramentos e conexões."
+    });
+  }
+
+  if (params.incluirART !== false) {
+    itensSugeridos.push({
+      codigo: "SRV-PROJETO-CEMIG",
+      descricao: "Projeto Elétrico de Entrada de Serviço e Homologação junto à CEMIG",
+      categoria: "MAO_DE_OBRA",
+      unidade: "sv",
+      quantidade: 1,
+      precoUnitarioEstimado: getPreco("SRV-PROJETO-CEMIG", 1500),
+      precoTotal: getPreco("SRV-PROJETO-CEMIG", 1500),
+      obrigatorioNorma: false,
+      nota: "Elaboração de projeto elétrico, memorial de cálculo, diagrama unifilar e aprovação técnica formal junto à CEMIG."
+    });
+  }
+
+  if (params.incluirVistoria !== false) {
+    itensSugeridos.push({
+      codigo: "SRV-VISTORIA-CEMIG",
+      descricao: "Acompanhamento Técnico de Vistoria e Homologação na CEMIG",
+      categoria: "MAO_DE_OBRA",
+      unidade: "sv",
+      quantidade: 1,
+      precoUnitarioEstimado: getPreco("SRV-VISTORIA-CEMIG", 600),
+      precoTotal: getPreco("SRV-VISTORIA-CEMIG", 600),
+      obrigatorioNorma: false
+    });
+  }
+
+  // Notas Técnicas
+  const notasTecnicas: string[] = [
+    `Dimensionamento normativo CEMIG ND-5.1 - Tabela 4 (Fornecimento Trifásico Tipo F: Faixa ${faixaDemanda} de ${demandaMinKVA} a ${demandaMaxKVA} kVA).`,
+    `Tensão nominal de atendimento: 127/220V em Baixa Tensão (3 Fases + Neutro).`,
+    `Medição Indireta em Baixa Tensão: 3 Transformadores de Corrente (TCs) relação ${match.tcRelacao}A com FT=2,0 instalados na Caixa CM-4 (Fornecimento gratuito e exclusivo da CEMIG).`,
+    `Proteção Geral: Disjuntor termomagnético caixa moldada de ${disj}A alojado na ${usaCM9 ? "Caixa CM-9" : "Caixa CM-18"} (Nota 6).`,
+    `Equipotencialização: Condutor de proteção verde 0,6/1kV de 10 mm² interligando a caixa do disjuntor à caixa CM-4 (Desenho 46 e Nota 3).`,
+    `Condutores com isolação 0,6/1kV para instalação subterrânea. Neutro de ${caboVias}x ${caboGauge} mm² igual à fase (Nota 9).`,
+    isSubtObrigatorio
+      ? `Ramal de Entrada Obrigatoriamente Subterrâneo conforme Nota 4 da Tabela 4 (demanda superior a 95 kVA).`
+      : `Ramal de Entrada com atendimento ${isAerea ? "Aéreo multiplexado Al/XLPE Q-120" : "Subterrâneo em duto flexível PEAD"}.`,
+    `Infraestrutura Subterrânea: ${eletroVias} linha(s) de Duto Corrugado PEAD 3" (5m entrada + 5m saída) e Caixa de Passagem Tipo ${usaZD ? "ZD (100x75x120cm)" : "ZC (77x67x90cm)"} com tampa de ferro fundido.`,
+    `Malha de Aterramento: 3 hastes cantoneiras de aço galvanizado a fogo (2,40m), 3 caixas de inspeção com tampa de ferro fundido e cabo de cobre nu 16 mm².`
+  ];
+
+  // Alertas EV
+  const alertasEV: string[] = [];
+  if (params.finalidade === "CARREGADOR_VE" || params.potenciaCarregadorKW) {
+    const potEV = params.potenciaCarregadorKW || 60;
+    alertasEV.push(`Hub de Recarga de Veículos Elétricos: Demanda simultânea projetada para ${potEV} kW.`);
+    if (potEV > demandaMaxKVA) {
+      alertasEV.push(`⚠️ ATENÇÃO: A potência da estação (${potEV} kW) excede o limite desta faixa (${demandaMaxKVA} kVA). Recomenda-se selecionar um disjuntor superior.`);
+    } else {
+      alertasEV.push(`✅ Estação de Recarga EV (${potEV} kW): Atendida com margem de segurança pela faixa ${faixaDemanda} (${disj}A).`);
+    }
+    alertasEV.push(`Conforme NBR 17019, cada ponto de recarga deve possuir proteção individual com DR Tipo B ou Tipo A (30mA) e DPS coordenado.`);
+  }
+
+  const descResumo = `Padrão de Alta Demanda CEMIG ND 5.1 (Tabela 4) | Disjuntor ${disj}A | Faixa ${faixaDemanda} (${demandaMinKVA} a ${demandaMaxKVA} kVA) | Cabos 0,6/1kV ${caboVias}x ${caboGauge}mm² | Caixa Subt. ${usaZD ? "ZD" : "ZC"} | Caixas ${usaCM9 ? "CM-9" : "CM-18"} + CM-4`;
+
+  return {
+    tipoPadrao: "TRIFASICO",
+    categoriaDemanda: "ALTA_DEMANDA_TABELA_4",
+    tipoSaida,
+    localizacao,
+    ladoRede,
+    faixaFornecimento: faixaDemanda,
+    demandaMinKVA,
+    demandaMaxKVA,
+    fases: 3,
+    fios: 4,
+    disjuntorNominalA: disj,
+    caboFaseMm2: caboGauge,
+    caboNeutroMm2: caboGauge,
+    caboProtecaoMm2: peGauge,
+    caboNuMm2: 16,
+    hastesAterramentoQtde: 3,
+    eletrodutoPVCmm: 85,
+    eletrodutoPvcPol: "3\"",
+    eletrodutoAcoMm: match.eletrodutoCuAco,
+    tcRelacao: `${match.tcRelacao} A (FT=2,0) - Fornecido pela CEMIG`,
+    tcQuantidade: 3,
+    posteHomologado,
+    caixaMedicao: "CM-4 Metálica (Medição Indireta c/ TCs)",
+    caixaDisjuntor: usaCM9 ? "CM-9 Metálica (Proteção Geral)" : "CM-18 Metálica (Proteção Geral c/ Barramentos)",
+    tipoCaixaSubterranea: usaZD ? "ZD" : "ZC",
+    descricaoResumo: descResumo,
+    notasTecnicas,
+    alertasEV,
+    itensSugeridos
+  };
+}
+
 /**
  * Motor central de dimensionamento normativo CEMIG
  */
@@ -221,8 +1066,15 @@ export function dimensionarPadraoCemig(
     return fallback;
   };
 
-  const isBifasico = params.tipoPadrao === "BIFASICO";
   const disj = params.disjuntorAmperes;
+
+  // Se for solicitado Padrão de Alta Demanda (Tabela 4) ou disjuntor acima de 200A
+  const isTabela4 = params.categoriaDemanda === "ALTA_DEMANDA_TABELA_4" || disj > 200;
+  if (isTabela4) {
+    return dimensionarPadraoTabela4(params, precosMap, getPreco);
+  }
+
+  const isBifasico = params.tipoPadrao === "BIFASICO";
 
   // Localização e Lado da Rede: se Rural, obrigatoriamente LADO_OPOSTO (Contra a rede - ND 5.1 Nota 9)
   const localizacao: LocalizacaoPadrao = params.localizacao || "URBANO";
@@ -902,6 +1754,7 @@ export function dimensionarPadraoCemig(
 
   return {
     tipoPadrao: params.tipoPadrao,
+    categoriaDemanda: "INDIVIDUAL_TABELA_2",
     tipoSaida,
     localizacao,
     ladoRede,

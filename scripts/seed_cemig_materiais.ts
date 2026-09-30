@@ -452,7 +452,81 @@ export const CEMIG_MATERIAIS_ATUALIZADOS = [
   { codigo: "SRV-MONTAGEM-PADRAO", descricao: "Mão de Obra de Montagem Completa do Padrão CEMIG", categoria: "MAO_DE_OBRA", unidade: "sv", precoUnitario: 1400.00 },
   { codigo: "SRV-ENG-ART", descricao: "Elaboração de Projeto Elétrico de Entrada e Emissão de ART (CREA-MG)", categoria: "MAO_DE_OBRA", unidade: "sv", precoUnitario: 350.00 },
   { codigo: "SRV-VISTORIA-CEMIG", descricao: "Acompanhamento Técnico de Vistoria e Ligação Nova na CEMIG", categoria: "MAO_DE_OBRA", unidade: "sv", precoUnitario: 450.00 },
-  { codigo: "SRV-BASE-CONCRETO", descricao: "Material Civil para Base Concretada do Poste (Cimento, Areia, Brita)", categoria: "ACESSORIO", unidade: "cj", precoUnitario: 220.00 }
+  { codigo: "SRV-BASE-CONCRETO", descricao: "Material Civil para Base Concretada do Poste (Cimento, Areia, Brita)", categoria: "ACESSORIO", unidade: "cj", precoUnitario: 220.00 },
+
+  // ─── TABELA 4 CEMIG (75,1 A 304 kVA) - ALTA DEMANDA / POSTOS VE ───
+  // Disjuntores Caixa Moldada Tripolares Homologados CEMIG (PEC-11)
+  { codigo: "DISJ-CXM-3P-225A", descricao: "Disjuntor Tripolar Caixa Moldada 225A Icu>=25kA Homologado CEMIG", categoria: "DISJUNTOR", unidade: "un", precoUnitario: 1450.00, observacao: "Padrão Tabela 4 Faixa F1 (75,1 a 86,0 kVA)" },
+  { codigo: "DISJ-CXM-3P-250A", descricao: "Disjuntor Tripolar Caixa Moldada 250A Icu>=25kA Homologado CEMIG", categoria: "DISJUNTOR", unidade: "un", precoUnitario: 1650.00, observacao: "Padrão Tabela 4 Faixa F2 (86,1 a 95,0 kVA)" },
+  { codigo: "DISJ-CXM-3P-300A", descricao: "Disjuntor Tripolar Caixa Moldada 300A/320A Icu>=36kA Homologado CEMIG", categoria: "DISJUNTOR", unidade: "un", precoUnitario: 2100.00, observacao: "Padrão Tabela 4 Faixa F3 (95,1 a 114,0 kVA)" },
+  { codigo: "DISJ-CXM-3P-400A", descricao: "Disjuntor Tripolar Caixa Moldada 400A Icu>=36kA Homologado CEMIG", categoria: "DISJUNTOR", unidade: "un", precoUnitario: 2850.00, observacao: "Padrão Tabela 4 Faixa F4 (114,1 a 152,0 kVA)" },
+  { codigo: "DISJ-CXM-3P-450A", descricao: "Disjuntor Tripolar Caixa Moldada 450A/500A Icu>=36kA Homologado CEMIG", categoria: "DISJUNTOR", unidade: "un", precoUnitario: 3400.00, observacao: "Padrão Tabela 4 Faixa F5 (152,1 a 171,0 kVA)" },
+  { codigo: "DISJ-CXM-3P-500A", descricao: "Disjuntor Tripolar Caixa Moldada 500A Icu>=50kA Homologado CEMIG", categoria: "DISJUNTOR", unidade: "un", precoUnitario: 3800.00, observacao: "Padrão Tabela 4 Faixa F6 (171,1 a 188,0 kVA)" },
+  { codigo: "DISJ-CXM-3P-630A", descricao: "Disjuntor Tripolar Caixa Moldada 600A/630A Icu>=50kA Homologado CEMIG", categoria: "DISJUNTOR", unidade: "un", precoUnitario: 4900.00, observacao: "Padrão Tabela 4 Faixa F7 (188,1 a 228,0 kVA)" },
+  { codigo: "DISJ-CXM-3P-700A", descricao: "Disjuntor Tripolar Caixa Moldada 700A/800A Icu>=50kA Homologado CEMIG", categoria: "DISJUNTOR", unidade: "un", precoUnitario: 5800.00, observacao: "Padrão Tabela 4 Faixa F8 (228,1 a 266,0 kVA)" },
+  { codigo: "DISJ-CXM-3P-800A", descricao: "Disjuntor Tripolar Caixa Moldada 800A Icu>=50kA Homologado CEMIG", categoria: "DISJUNTOR", unidade: "un", precoUnitario: 6900.00, observacao: "Padrão Tabela 4 Faixa F9 (266,1 a 304,0 kVA)" },
+
+  // Transformadores de Corrente (TC) com Fator Térmico FT = 2,0 Homologados CEMIG
+  { codigo: "TC-200-5", descricao: "Transformador de Corrente (TC) 200/5 A c/ Fator Térmico FT=2,0 Homologado CEMIG", categoria: "ACESSORIO", unidade: "un", precoUnitario: 380.00, observacao: "Tabela 4 Faixas F1, F2 e F3 (conjunto com 3 TCs instalados na Caixa CM-4)" },
+  { codigo: "TC-400-5", descricao: "Transformador de Corrente (TC) 400/5 A c/ Fator Térmico FT=2,0 Homologado CEMIG", categoria: "ACESSORIO", unidade: "un", precoUnitario: 440.00, observacao: "Tabela 4 Faixas F4, F5 e F6 (conjunto com 3 TCs instalados na Caixa CM-4)" },
+  { codigo: "TC-600-5", descricao: "Transformador de Corrente (TC) 600/5 A c/ Fator Térmico FT=2,0 Homologado CEMIG", categoria: "ACESSORIO", unidade: "un", precoUnitario: 520.00, observacao: "Tabela 4 Faixas F7, F8 e F9 (conjunto com 3 TCs instalados na Caixa CM-4)" },
+
+  // Condutores Cobre Pesados Preto (Fases) 0,6/1kV Subterrâneos (ND 5.1 Tabela 4)
+  { codigo: "CABO-PRETO-120", descricao: "Cabo Cobre Isolado Preto (Fase) 0,6/1kV 120 mm² - Subterrâneo", categoria: "CONDUTOR", unidade: "m", precoUnitario: 138.00, observacao: "Tabela 4 Faixas F1 e F4" },
+  { codigo: "CABO-PRETO-150", descricao: "Cabo Cobre Isolado Preto (Fase) 0,6/1kV 150 mm² - Subterrâneo", categoria: "CONDUTOR", unidade: "m", precoUnitario: 172.00, observacao: "Tabela 4 Faixas F2, F5 e F8" },
+  { codigo: "CABO-PRETO-185", descricao: "Cabo Cobre Isolado Preto (Fase) 0,6/1kV 185 mm² - Subterrâneo", categoria: "CONDUTOR", unidade: "m", precoUnitario: 215.00, observacao: "Tabela 4 Faixas F6 e F9" },
+  { codigo: "CABO-PRETO-240", descricao: "Cabo Cobre Isolado Preto (Fase) 0,6/1kV 240 mm² - Subterrâneo", categoria: "CONDUTOR", unidade: "m", precoUnitario: 285.00, observacao: "Tabela 4 Faixas F3 e F7" },
+
+  // Condutores Cobre Pesados Azul Claro (Neutro 0,6/1kV - Seção igual à fase conf. Nota 9)
+  { codigo: "CABO-AZUL-120", descricao: "Cabo Cobre Isolado Azul Claro (Neutro) 0,6/1kV 120 mm² - Subterrâneo", categoria: "CONDUTOR", unidade: "m", precoUnitario: 138.00, observacao: "Tabela 4 Faixas F1 e F4" },
+  { codigo: "CABO-AZUL-150", descricao: "Cabo Cobre Isolado Azul Claro (Neutro) 0,6/1kV 150 mm² - Subterrâneo", categoria: "CONDUTOR", unidade: "m", precoUnitario: 172.00, observacao: "Tabela 4 Faixas F2, F5 e F8" },
+  { codigo: "CABO-AZUL-185", descricao: "Cabo Cobre Isolado Azul Claro (Neutro) 0,6/1kV 185 mm² - Subterrâneo", categoria: "CONDUTOR", unidade: "m", precoUnitario: 215.00, observacao: "Tabela 4 Faixas F6 e F9" },
+  { codigo: "CABO-AZUL-240", descricao: "Cabo Cobre Isolado Azul Claro (Neutro) 0,6/1kV 240 mm² - Subterrâneo", categoria: "CONDUTOR", unidade: "m", precoUnitario: 285.00, observacao: "Tabela 4 Faixas F3 e F7" },
+
+  // Condutores Cobre Pesados Verde (Proteção PE 0,6/1kV Subterrâneo)
+  { codigo: "CABO-VERDE-50", descricao: "Cabo Cobre Isolado Verde (Terra/PE) 0,6/1kV 50 mm² - Subterrâneo", categoria: "CONDUTOR", unidade: "m", precoUnitario: 54.00, observacao: "Tabela 4 Faixa F4" },
+  { codigo: "CABO-VERDE-70", descricao: "Cabo Cobre Isolado Verde (Terra/PE) 0,6/1kV 70 mm² - Subterrâneo", categoria: "CONDUTOR", unidade: "m", precoUnitario: 76.00, observacao: "Tabela 4 Faixas F1, F2, F5 e F8" },
+  { codigo: "CABO-VERDE-95", descricao: "Cabo Cobre Isolado Verde (Terra/PE) 0,6/1kV 95 mm² - Subterrâneo", categoria: "CONDUTOR", unidade: "m", precoUnitario: 105.00, observacao: "Tabela 4 Faixas F6 e F9" },
+  { codigo: "CABO-VERDE-120", descricao: "Cabo Cobre Isolado Verde (Terra/PE) 0,6/1kV 120 mm² - Subterrâneo", categoria: "CONDUTOR", unidade: "m", precoUnitario: 138.00, observacao: "Tabela 4 Faixas F3 e F7" },
+  { codigo: "CABO-VERDE-10-INTERLIGACAO", descricao: "Cabo Cobre Isolado Verde 0,6/1kV 10 mm² p/ Equipotencialização entre Caixas CM-9/18 e CM-4 (Desenho 46)", categoria: "CONDUTOR", unidade: "m", precoUnitario: 12.50, observacao: "Obrigatório interligar carcaça da CM-9/18 à CM-4 (Desenho 46)" },
+
+  // Cobre Nu 16mm² para malha de aterramento Tabela 4
+  { codigo: "CABO-COBRE-NU-16", descricao: "Cabo Cobre Nu 16 mm² para Aterramento / Malha (Tabela 4 CEMIG)", categoria: "ATERRAMENTO", unidade: "m", precoUnitario: 18.00, observacao: "Obrigatório para Tabela 4 (todas as faixas F1 a F9)" },
+
+  // Duto Corrugado PEAD 3" e Acessórios
+  { codigo: "DUTO-CORRUGADO-PEAD-3POL", descricao: "Duto Corrugado PEAD Flexível de 3\" (Ø 85mm) para Entrada e Saída Subterrânea", categoria: "ELETRODUTO", unidade: "m", precoUnitario: 38.00, observacao: "5m na entrada e 5m na saída por eletroduto" },
+  { codigo: "BUCHA-ARRUELA-PVC-85", descricao: "Bucha e Arruela de PVC Roscável Ø 85 mm (3\") p/ Fixação nas Caixas", categoria: "ELETRODUTO", unidade: "cj", precoUnitario: 56.00 },
+
+  // Terminais de Compressão Alta Corrente
+  { codigo: "TERM-COMPRESSAO-120", descricao: "Terminal de Compressão Tubular/Olhal em Cobre Estanhado 120 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 18.50 },
+  { codigo: "TERM-COMPRESSAO-150", descricao: "Terminal de Compressão Tubular/Olhal em Cobre Estanhado 150 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 22.00 },
+  { codigo: "TERM-COMPRESSAO-185", descricao: "Terminal de Compressão Tubular/Olhal em Cobre Estanhado 185 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 28.00 },
+  { codigo: "TERM-COMPRESSAO-240", descricao: "Terminal de Compressão Tubular/Olhal em Cobre Estanhado 240 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 36.00 },
+
+  // Terminais Especiais de Aterramento
+  { codigo: "TERM-COMPRESSAO-10-ISOLADO", descricao: "Terminal de Compressão Tubular c/ Isolação para Cabo 10 mm² (Aterramento Caixa CM-4)", categoria: "ACESSORIO", unidade: "un", precoUnitario: 4.50 },
+  { codigo: "TERM-ATERRAMENTO-CARCACA-CEMIG", descricao: "Terminal de Aterramento para Carcaça de Caixa Padrão CEMIG (Conector Terra de Caixa)", categoria: "ACESSORIO", unidade: "un", precoUnitario: 15.00 },
+  { codigo: "TERM-COMPRESSAO-16", descricao: "Terminal de Compressão para Cabo 16 mm² (Conexão Malha de Aterramento)", categoria: "ACESSORIO", unidade: "un", precoUnitario: 8.00 },
+
+  // Aterramento Cantoneira e Caixas de Inspeção c/ Tampa de Ferro
+  { codigo: "HASTE-ATERRAMENTO-CANTONEIRA-GALV", descricao: "Haste de Aterramento Cantoneira de Aço Galvanizado a Fogo (Padrão CEMIG - 2,40m)", categoria: "ATERRAMENTO", unidade: "un", precoUnitario: 95.00, observacao: "Padrão Tabela 4 CEMIG" },
+  { codigo: "CX-INSPECAO-ATERRAMENTO-CORPO", descricao: "Caixa de Inspeção de Aterramento Cilíndrica PVC Ø 150 mm (Corpo de Solo)", categoria: "ATERRAMENTO", unidade: "un", precoUnitario: 28.00 },
+  { codigo: "TAMPA-FOFO-INSPECAO-TERRA", descricao: "Tampa de Ferro Fundido para Caixa de Inspeção de Aterramento Ø 150 mm (Padrão CEMIG)", categoria: "ATERRAMENTO", unidade: "un", precoUnitario: 45.00 },
+
+  // Barramentos em Metros (m) (Desenho 46)
+  { codigo: "BARRAMENTO-NEUTRO-TERRA-ALTA", descricao: "Barramento de Neutro e Aterramento em Cobre Eletrolítico c/ Parafusos e Suportes (Desenho 46)", categoria: "ACESSORIO", unidade: "m", precoUnitario: 380.00 },
+  { codigo: "BARRAMENTO-FASE-ISOLADO-ALTA", descricao: "Barramento de Cobre Eletrolítico para Fases c/ Isoladores Epóxi (Desenho 46)", categoria: "ACESSORIO", unidade: "m", precoUnitario: 195.00 },
+
+  // Caixas Subterrâneas Tipo ZC e Tipo ZD e Tampas de Ferro Fundido Separadas (ND-2.3)
+  { codigo: "CX-SUBTERRANEA-ZC", descricao: "Caixa Subterrânea de Passagem Tipo ZC em Alvenaria/Concreto (77 x 67 x 90 cm - Norma CEMIG ND-2.3 / ND-5.1)", categoria: "ACESSORIO", unidade: "un", precoUnitario: 750.00, observacao: "Caixa padrão para passeio/calçada" },
+  { codigo: "TAMPA-FOFO-ZC", descricao: "Tampa e Aro de Ferro Fundido Nodular Articulada Tipo ZC (Padrão CEMIG)", categoria: "ACESSORIO", unidade: "un", precoUnitario: 480.00 },
+  { codigo: "CX-SUBTERRANEA-ZD", descricao: "Caixa Subterrânea de Passagem Tipo ZD em Alvenaria/Concreto (100 x 75 x 120 cm - Norma CEMIG ND-2.3)", categoria: "ACESSORIO", unidade: "un", precoUnitario: 1250.00, observacao: "Caixa reforçada para pista de rolamento e derivações BTX" },
+  { codigo: "TAMPA-FOFO-ZD", descricao: "Tampa e Aro de Ferro Fundido Nodular Reforçada Articulada Tipo ZD (Classe 125/250 kN - Padrão CEMIG)", categoria: "ACESSORIO", unidade: "un", precoUnitario: 850.00 },
+  { codigo: "BRITA-1-DRAIN", descricao: "Brita nº 1 para Drenagem de Caixa de Passagem/Inspeção (Saco 20kg)", categoria: "ACESSORIO", unidade: "un", precoUnitario: 18.00 },
+
+  // Mão de Obra e Projeto Atualizados
+  { codigo: "SRV-MONTAGEM-PADRAO", descricao: "Mão de Obra de Montagem Especializada Padrão Alta Demanda", categoria: "MAO_DE_OBRA", unidade: "sv", precoUnitario: 10000.00, observacao: "Montagem completa de padrão alta demanda" },
+  { codigo: "SRV-PROJETO-CEMIG", descricao: "Projeto Elétrico de Entrada de Serviço e Homologação junto à CEMIG", categoria: "MAO_DE_OBRA", unidade: "sv", precoUnitario: 1500.00, observacao: "Projeto elétrico, memorial e aprovação técnica CEMIG" }
 ];
 
 async function seed() {

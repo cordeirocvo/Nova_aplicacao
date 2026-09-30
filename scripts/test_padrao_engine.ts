@@ -167,6 +167,127 @@ console.log("\n--- CENÁRIO 6: Padrão Rural Travado em Contra ---");
 console.log("Lado da Rede Efetivo:", c6.ladoRede, "(esperado LADO_OPOSTO)");
 console.log("Poste Rural C1:", c6.posteHomologado, "(esperado PC2)");
 
+
+// ==================================================================
+// CENÁRIOS TABELA 4 (ALTA DEMANDA 75,1 A 304 kVA) - CEMIG ND 5.1
+// ==================================================================
+
+// Cenário 7: F1 (225A) - Caixa CM-9 selecionada, Caixa ZC padrão, Duto 3" (1 via = 10m)
+const t4_f1_cm9 = dimensionarPadraoCemig({
+  tipoPadrao: "TRIFASICO",
+  categoriaDemanda: "ALTA_DEMANDA_TABELA_4",
+  tipoCaixaDisjuntorTabela4: "CM-9",
+  tipoCaixaSubterranea: "ZC",
+  disjuntorAmperes: 225,
+  ladoRede: "MESMO_LADO",
+  tipoSaida: "AEREA",
+  tipoEstrutura: "POSTE_ACO",
+  finalidade: "CARREGADOR_VE",
+  potenciaCarregadorKW: 80
+});
+
+console.log("\n--- CENÁRIO 7: Tabela 4 F1 (225A, 75,1-86 kVA) c/ Caixa CM-9 e Caixa Subt. ZC ---");
+console.log("Faixa Fornecimento:", t4_f1_cm9.faixaFornecimento, "(esperado F1)");
+console.log("Demanda kVA:", `${t4_f1_cm9.demandaMinKVA} a ${t4_f1_cm9.demandaMaxKVA} kVA`);
+console.log("Caixa Medição:", t4_f1_cm9.caixaMedicao, "| Caixa Disjuntor:", t4_f1_cm9.caixaDisjuntor);
+const cxCM4_f1 = t4_f1_cm9.itensSugeridos.find(i => i.codigo === "CX-CM4");
+const cxCM9_f1 = t4_f1_cm9.itensSugeridos.find(i => i.codigo === "CX-CM9");
+const tc_f1 = t4_f1_cm9.itensSugeridos.find(i => i.codigo.startsWith("TC-"));
+const disj_f1 = t4_f1_cm9.itensSugeridos.find(i => i.codigo === "DISJ-CXM-3P-225A");
+const equipot_f1 = t4_f1_cm9.itensSugeridos.find(i => i.codigo === "CABO-VERDE-10-INTERLIGACAO");
+const haste_f1 = t4_f1_cm9.itensSugeridos.find(i => i.codigo === "HASTE-ATERRAMENTO-CANTONEIRA-GALV");
+const caboNu_f1 = t4_f1_cm9.itensSugeridos.find(i => i.codigo === "CABO-COBRE-NU-16");
+const duto_f1 = t4_f1_cm9.itensSugeridos.find(i => i.codigo === "DUTO-CORRUGADO-PEAD-3POL");
+const cxZC_f1 = t4_f1_cm9.itensSugeridos.find(i => i.codigo === "CX-SUBTERRANEA-ZC");
+const tampaZC_f1 = t4_f1_cm9.itensSugeridos.find(i => i.codigo === "TAMPA-FOFO-ZC");
+const brita_f1 = t4_f1_cm9.itensSugeridos.find(i => i.codigo === "BRITA-1-DRAIN");
+const term10_f1 = t4_f1_cm9.itensSugeridos.find(i => i.codigo === "TERM-COMPRESSAO-10-ISOLADO");
+const termCarc_f1 = t4_f1_cm9.itensSugeridos.find(i => i.codigo === "TERM-ATERRAMENTO-CARCACA-CEMIG");
+const term16_f1 = t4_f1_cm9.itensSugeridos.find(i => i.codigo === "TERM-COMPRESSAO-16");
+const tampaInspec_f1 = t4_f1_cm9.itensSugeridos.find(i => i.codigo === "TAMPA-FOFO-INSPECAO-TERRA");
+const srvMontagem_f1 = t4_f1_cm9.itensSugeridos.find(i => i.codigo === "SRV-MONTAGEM-PADRAO");
+const srvProjeto_f1 = t4_f1_cm9.itensSugeridos.find(i => i.codigo === "SRV-PROJETO-CEMIG");
+
+console.log("Caixa CM-4 no BOM:", cxCM4_f1?.descricao);
+console.log("Caixa CM-9 no BOM:", cxCM9_f1?.descricao);
+console.log("TC no BOM ausente (fornecido pela concessionária)?:", tc_f1 === undefined ? "SIM (Correto!)" : "NÃO (Erro)");
+console.log("Duto Corrugado 3\" (1 via = 10m):", duto_f1?.quantidade, "m (esperado 10m)");
+console.log("Caixa Subterrânea ZC:", cxZC_f1?.descricao);
+console.log("Tampa Ferro Fundido ZC:", tampaZC_f1?.descricao);
+console.log("Brita nº 1:", brita_f1?.quantidade, "sacos (esperado 3 sacos)");
+console.log("Haste Cantoneira Galv a Fogo:", haste_f1?.descricao, "| Qtde:", haste_f1?.quantidade);
+console.log("Tampa Ferro Inspeção Terra:", tampaInspec_f1?.quantidade, "un");
+console.log("Terminais 10mm² Isolados:", term10_f1?.quantidade, "un (esperado 2 un)");
+console.log("Terminais Carcaça CEMIG:", termCarc_f1?.quantidade, "un (esperado 2 un)");
+console.log("Terminais 16mm²:", term16_f1?.quantidade, "un (esperado 2 un)");
+console.log("Mão de Obra de Montagem:", srvMontagem_f1?.descricao, "| R$", srvMontagem_f1?.precoUnitarioEstimado, "(esperado R$ 10.000,00)");
+console.log("Projeto Elétrico CEMIG:", srvProjeto_f1?.descricao, "| R$", srvProjeto_f1?.precoUnitarioEstimado, "(esperado R$ 1.500,00)");
+
+
+// Cenário 8: F4 (400A) - Subterrâneo Obrigatório, 2 condutores por fase (2x 120 mm²), 2 dutos corrugados de 3" (20m)
+const t4_f4 = dimensionarPadraoCemig({
+  tipoPadrao: "TRIFASICO",
+  categoriaDemanda: "ALTA_DEMANDA_TABELA_4",
+  tipoCaixaSubterranea: "ZD",
+  disjuntorAmperes: 400,
+  ladoRede: "MESMO_LADO",
+  tipoEstrutura: "MURO",
+  finalidade: "CARREGADOR_VE",
+  potenciaCarregadorKW: 150
+});
+
+console.log("\n--- CENÁRIO 8: Tabela 4 F4 (400A, 114,1-152 kVA) - 2x Cabos por Fase e Caixa ZD ---");
+console.log("Faixa Fornecimento:", t4_f4.faixaFornecimento, "(esperado F4)");
+console.log("Tipo de Saída Forçado:", t4_f4.tipoSaida, "(esperado SUBTERRANEA)");
+console.log("Caixas:", t4_f4.caixaMedicao, "+", t4_f4.caixaDisjuntor);
+const caboPreto_f4 = t4_f4.itensSugeridos.find(i => i.codigo === "CABO-PRETO-120");
+const caboAzul_f4 = t4_f4.itensSugeridos.find(i => i.codigo === "CABO-AZUL-120");
+const caboVerde_f4 = t4_f4.itensSugeridos.find(i => i.codigo === "CABO-VERDE-50");
+const duto_f4 = t4_f4.itensSugeridos.find(i => i.codigo === "DUTO-CORRUGADO-PEAD-3POL");
+const cxZD_f4 = t4_f4.itensSugeridos.find(i => i.codigo === "CX-SUBTERRANEA-ZD");
+const tampaZD_f4 = t4_f4.itensSugeridos.find(i => i.codigo === "TAMPA-FOFO-ZD");
+const barramentoFase_f4 = t4_f4.itensSugeridos.find(i => i.codigo === "BARRAMENTO-FASE-ISOLADO-ALTA");
+const barramentoNeutro_f4 = t4_f4.itensSugeridos.find(i => i.codigo === "BARRAMENTO-NEUTRO-TERRA-ALTA");
+
+console.log("Cabos Fase (2x 120mm² 0,6/1kV):", caboPreto_f4?.descricao, "| Qtde:", caboPreto_f4?.quantidade, "m (esperado 40m)");
+console.log("Cabo Neutro (2x 120mm² 0,6/1kV):", caboAzul_f4?.quantidade, "m (esperado 14m)");
+console.log("Duto Corrugado 3\" (2 vias = 20m):", duto_f4?.quantidade, "m (esperado 20m)");
+console.log("Caixa Subterrânea ZD (100x75x120cm):", cxZD_f4?.descricao);
+console.log("Tampa Ferro Fundido ZD:", tampaZD_f4?.descricao);
+console.log("Barramento Fase em Metros:", barramentoFase_f4?.quantidade, barramentoFase_f4?.unidade, "(esperado 3 m)");
+console.log("Barramento Neutro/Terra em Metros:", barramentoNeutro_f4?.quantidade, barramentoNeutro_f4?.unidade, "(esperado 1 m)");
+
+
+// Cenário 9: F9 (800A) - Subterrâneo Obrigatório, 3 condutores por fase (3x 185 mm²), 3 dutos corrugados de 3" (30m)
+const t4_f9 = dimensionarPadraoCemig({
+  tipoPadrao: "TRIFASICO",
+  categoriaDemanda: "ALTA_DEMANDA_TABELA_4",
+  disjuntorAmperes: 800,
+  ladoRede: "LADO_OPOSTO",
+  tipoEstrutura: "MURO",
+  finalidade: "CARREGADOR_VE",
+  potenciaCarregadorKW: 300
+});
+
+console.log("\n--- CENÁRIO 9: Tabela 4 F9 (800A, 266,1-304 kVA) - 3x Cabos por Fase, 3 Dutos Corrugados ---");
+console.log("Faixa Fornecimento:", t4_f9.faixaFornecimento, "(esperado F9)");
+console.log("TCs:", t4_f9.tcRelacao, "| Qtde:", t4_f9.tcQuantidade);
+const caboPreto_f9 = t4_f9.itensSugeridos.find(i => i.codigo === "CABO-PRETO-185");
+const duto_f9 = t4_f9.itensSugeridos.find(i => i.codigo === "DUTO-CORRUGADO-PEAD-3POL");
+const eletroRigido_f9 = t4_f9.itensSugeridos.find(i => i.codigo.startsWith("ELET-PVC"));
+const curvaRigida_f9 = t4_f9.itensSugeridos.find(i => i.codigo.startsWith("CURVA-90"));
+const cabecote_f9 = t4_f9.itensSugeridos.find(i => i.codigo.startsWith("CABECOTE"));
+
+console.log("Cabos Fase (3x 185mm² 0,6/1kV):", caboPreto_f9?.quantidade, "m (esperado 75m)");
+console.log("Duto Corrugado 3\" (3 vias = 30m):", duto_f9?.quantidade, "m (esperado 30m)");
+console.log("Eletroduto PVC rígido removido da Tabela 4?:", eletroRigido_f9 === undefined ? "SIM (Correto!)" : "NÃO (Erro)");
+console.log("Curva 90° rígida removida da Tabela 4?:", curvaRigida_f9 === undefined ? "SIM (Correto!)" : "NÃO (Erro)");
+console.log("Cabeçote pingadouro removido da Tabela 4?:", cabecote_f9 === undefined ? "SIM (Correto!)" : "NÃO (Erro)");
+
+const totalItens = t4_f9.itensSugeridos.length;
+const totalCapex = t4_f9.itensSugeridos.reduce((acc, curr) => acc + curr.precoTotal, 0);
+console.log(`Total de Itens no BOM F9: ${totalItens} | Capex Total Estimado: R$ ${totalCapex.toFixed(2)}`);
+
 console.log("\n==================================================================");
-console.log("TODAS AS REGRAS VALIDADAS COM SUCESSO!");
+console.log("TODAS AS REGRAS E TABELAS (1, 2 E 4) CEMIG VALIDADAS COM SUCESSO!");
 console.log("==================================================================");

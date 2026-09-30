@@ -37,6 +37,9 @@ import PropostaModal from "@/components/cemig/PropostaModal";
 import {
   dimensionarPadraoCemig,
   TipoPadrao,
+  CategoriaDemandaPadrao,
+  CaixaDisjuntorTabela4,
+  TipoCaixaSubterraneaTabela4,
   LadoRede,
   TipoSaida,
   LocalizacaoPadrao,
@@ -44,7 +47,8 @@ import {
   FinalidadePadrao,
   ResultadoDimensionamentoPadrao,
   ItemMaterialSugerido,
-  FAIXAS_TRIFASICO_TABELA_2
+  FAIXAS_TRIFASICO_TABELA_2,
+  FAIXAS_TRIFASICO_TABELA_4
 } from "@/lib/cemig/padraoEngine";
 
 export default function PadraoCemigPage() {
@@ -52,6 +56,9 @@ export default function PadraoCemigPage() {
   const [abaAtiva, setAbaAtiva] = useState<"ORCAMENTO" | "PROPOSTAS_SALVAS" | "BANCO_PRECOS">("ORCAMENTO");
 
   // Parâmetros de Seleção do Padrão
+  const [categoriaDemanda, setCategoriaDemanda] = useState<CategoriaDemandaPadrao>("INDIVIDUAL_TABELA_2");
+  const [tipoCaixaDisjuntorTabela4, setTipoCaixaDisjuntorTabela4] = useState<CaixaDisjuntorTabela4>("CM-18");
+  const [tipoCaixaSubterranea, setTipoCaixaSubterranea] = useState<TipoCaixaSubterraneaTabela4>("ZC");
   const [tipoPadrao, setTipoPadrao] = useState<TipoPadrao>("TRIFASICO");
   const [disjuntorAmperes, setDisjuntorAmperes] = useState<number>(100);
   const [ladoRede, setLadoRede] = useState<LadoRede>("MESMO_LADO");
@@ -145,6 +152,9 @@ export default function PadraoCemigPage() {
     const resultado = dimensionarPadraoCemig(
       {
         tipoPadrao,
+        categoriaDemanda,
+        tipoCaixaDisjuntorTabela4,
+        tipoCaixaSubterranea,
         disjuntorAmperes,
         ladoRede: localizacao === "RURAL" ? "LADO_OPOSTO" : ladoRede,
         tipoSaida,
@@ -163,12 +173,41 @@ export default function PadraoCemigPage() {
 
   useEffect(() => {
     calcularListaPadrao();
-  }, [tipoPadrao, disjuntorAmperes, ladoRede, tipoSaida, localizacao, tipoEstrutura, finalidade, potenciaCarregadorKW]);
+  }, [
+    categoriaDemanda,
+    tipoCaixaDisjuntorTabela4,
+    tipoCaixaSubterranea,
+    tipoPadrao,
+    disjuntorAmperes,
+    ladoRede,
+    tipoSaida,
+    localizacao,
+    tipoEstrutura,
+    finalidade,
+    potenciaCarregadorKW
+  ]);
+
+  const handleTrocaCategoriaDemanda = (cat: CategoriaDemandaPadrao) => {
+    setCategoriaDemanda(cat);
+    if (cat === "ALTA_DEMANDA_TABELA_4") {
+      setTipoPadrao("TRIFASICO");
+      if (disjuntorAmperes < 225) {
+        setDisjuntorAmperes(225);
+      }
+      setTipoEstrutura("MURO");
+    } else {
+      if (disjuntorAmperes > 200) {
+        setDisjuntorAmperes(100);
+      }
+      setTipoEstrutura("POSTE_CONCRETO");
+    }
+  };
 
   // Se trocar para bifásico, ajustar disjuntor para 63A caso estivesse em um valor inválido
   const handleTrocaTipoPadrao = (tipo: TipoPadrao) => {
     setTipoPadrao(tipo);
     if (tipo === "BIFASICO") {
+      setCategoriaDemanda("INDIVIDUAL_TABELA_2");
       setDisjuntorAmperes(63);
       if (potenciaCarregadorKW > 7.4) {
         setPotenciaCarregadorKW(7.4);
@@ -519,63 +558,151 @@ export default function PadraoCemigPage() {
                 <span className="text-xs text-slate-400 font-medium">Conforme ND 5.1 CEMIG</span>
               </div>
 
-              {/* Seletor Bifásico vs Trifásico */}
+              {/* 0. SELETOR DE CATEGORIA NORMATIVA: CONVENCIONAL vs ALTA DEMANDA */}
               <div>
                 <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-2">
-                  1. Tipo de Fornecimento / Fases
+                  1. Categoria da Norma Técnica CEMIG ND 5.1
                 </label>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <button
                     type="button"
-                    onClick={() => handleTrocaTipoPadrao("TRIFASICO")}
+                    onClick={() => handleTrocaCategoriaDemanda("INDIVIDUAL_TABELA_2")}
                     className={`p-4 rounded-xl border-2 text-left transition-all flex items-start justify-between ${
-                      tipoPadrao === "TRIFASICO"
-                        ? "border-[#00BFA5] bg-emerald-50/40 ring-2 ring-[#00BFA5]/20"
+                      categoriaDemanda === "INDIVIDUAL_TABELA_2"
+                        ? "border-[#00BFA5] bg-emerald-50/40 ring-2 ring-[#00BFA5]/20 shadow-sm"
                         : "border-slate-200 hover:border-slate-300 bg-white"
                     }`}
                   >
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-black text-slate-900">TRIFÁSICO (3F + Neutro)</span>
-                        <span className="text-[10px] font-black px-2 py-0.5 rounded bg-blue-100 text-blue-700">Tabela 2</span>
+                        <span className="font-black text-slate-900 text-sm">PADRÃO CONVENCIONAL</span>
+                        <span className="text-[10px] font-black px-2 py-0.5 rounded bg-blue-100 text-blue-700">Tabelas 1 e 2</span>
                       </div>
                       <p className="text-xs text-slate-500 mt-1 font-medium">
-                        127/220V (4 Fios) | Demanda até 75 kVA | Ideal para carregadores VE rápidos e potências acima de 11 kW.
+                        Até 75 kVA (40A a 200A) | Medição direta até 125A (CM-14) ou indireta 200A (CM-3). Ideal para residências, comércios e carregadores até 44 kW.
                       </p>
                     </div>
-                    {tipoPadrao === "TRIFASICO" && <CheckCircle className="w-5 h-5 text-[#00BFA5] shrink-0" />}
+                    {categoriaDemanda === "INDIVIDUAL_TABELA_2" && <CheckCircle className="w-5 h-5 text-[#00BFA5] shrink-0" />}
                   </button>
 
                   <button
                     type="button"
-                    onClick={() => handleTrocaTipoPadrao("BIFASICO")}
+                    onClick={() => handleTrocaCategoriaDemanda("ALTA_DEMANDA_TABELA_4")}
                     className={`p-4 rounded-xl border-2 text-left transition-all flex items-start justify-between ${
-                      tipoPadrao === "BIFASICO"
-                        ? "border-[#00BFA5] bg-emerald-50/40 ring-2 ring-[#00BFA5]/20"
+                      categoriaDemanda === "ALTA_DEMANDA_TABELA_4"
+                        ? "border-[#E45318] bg-amber-50/40 ring-2 ring-[#E45318]/20 shadow-sm"
                         : "border-slate-200 hover:border-slate-300 bg-white"
                     }`}
                   >
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-black text-slate-900">BIFÁSICO (2F + Neutro)</span>
-                        <span className="text-[10px] font-black px-2 py-0.5 rounded bg-amber-100 text-amber-700">Tabela 1</span>
+                        <span className="font-black text-slate-900 text-sm">ALTA DEMANDA / POSTOS VE</span>
+                        <span className="text-[10px] font-black px-2 py-0.5 rounded bg-orange-100 text-orange-800 border border-orange-200 font-bold">Tabela 4 (F1 a F9)</span>
                       </div>
                       <p className="text-xs text-slate-500 mt-1 font-medium">
-                        127/220V (3 Fios) | Carga até 16 kW | Ideal para residências e carregadores VE até 7.4 kW (32A).
+                        75,1 a 304 kVA (225A a 800A) | Medição indireta com 3 TCs (FT=2,0) em Caixa CM-4 + Disjuntor em CM-9 ou CM-18. Ideal para hubs de recarga rápida VE.
                       </p>
                     </div>
-                    {tipoPadrao === "BIFASICO" && <CheckCircle className="w-5 h-5 text-[#00BFA5] shrink-0" />}
+                    {categoriaDemanda === "ALTA_DEMANDA_TABELA_4" && <CheckCircle className="w-5 h-5 text-[#E45318] shrink-0" />}
                   </button>
                 </div>
               </div>
 
+              {/* Seletor Bifásico vs Trifásico (Apenas visível se Padrão Convencional) */}
+              {categoriaDemanda === "INDIVIDUAL_TABELA_2" && (
+                <div>
+                  <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-2">
+                    2. Tipo de Fornecimento / Fases
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => handleTrocaTipoPadrao("TRIFASICO")}
+                      className={`p-4 rounded-xl border-2 text-left transition-all flex items-start justify-between ${
+                        tipoPadrao === "TRIFASICO"
+                          ? "border-[#00BFA5] bg-emerald-50/40 ring-2 ring-[#00BFA5]/20"
+                          : "border-slate-200 hover:border-slate-300 bg-white"
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-black text-slate-900">TRIFÁSICO (3F + Neutro)</span>
+                          <span className="text-[10px] font-black px-2 py-0.5 rounded bg-blue-100 text-blue-700">Tabela 2</span>
+                        </div>
+                        <p className="text-xs text-slate-500 mt-1 font-medium">
+                          127/220V (4 Fios) | Demanda até 75 kVA | Ideal para carregadores VE rápidos e potências acima de 11 kW.
+                        </p>
+                      </div>
+                      {tipoPadrao === "TRIFASICO" && <CheckCircle className="w-5 h-5 text-[#00BFA5] shrink-0" />}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleTrocaTipoPadrao("BIFASICO")}
+                      className={`p-4 rounded-xl border-2 text-left transition-all flex items-start justify-between ${
+                        tipoPadrao === "BIFASICO"
+                          ? "border-[#00BFA5] bg-emerald-50/40 ring-2 ring-[#00BFA5]/20"
+                          : "border-slate-200 hover:border-slate-300 bg-white"
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-black text-slate-900">BIFÁSICO (2F + Neutro)</span>
+                          <span className="text-[10px] font-black px-2 py-0.5 rounded bg-amber-100 text-amber-700">Tabela 1</span>
+                        </div>
+                        <p className="text-xs text-slate-500 mt-1 font-medium">
+                          127/220V (3 Fios) | Carga até 16 kW | Ideal para residências e carregadores VE até 7.4 kW (32A).
+                        </p>
+                      </div>
+                      {tipoPadrao === "BIFASICO" && <CheckCircle className="w-5 h-5 text-[#00BFA5] shrink-0" />}
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Seletor do Disjuntor */}
               <div>
-                <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-2">
-                  2. Disjuntor Termomagnético IEC ({tipoPadrao === "TRIFASICO" ? "Tripolar" : "Bipolar"})
-                </label>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-xs font-black text-slate-500 uppercase tracking-wider">
+                    {categoriaDemanda === "ALTA_DEMANDA_TABELA_4" ? "2. Disjuntor Tripolar Caixa Moldada (Tabela 4 CEMIG)" : "3. Disjuntor Termomagnético IEC"}
+                  </label>
+                  {categoriaDemanda === "ALTA_DEMANDA_TABELA_4" && (
+                    <span className="text-[10px] font-bold text-orange-700 bg-orange-50 px-2 py-0.5 rounded border border-orange-200">
+                      Disjuntores Caixa Moldada PEC-11 CEMIG
+                    </span>
+                  )}
+                </div>
 
-                {tipoPadrao === "TRIFASICO" ? (
+                {categoriaDemanda === "ALTA_DEMANDA_TABELA_4" ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+                    {FAIXAS_TRIFASICO_TABELA_4.map((f) => (
+                      <button
+                        key={f.faixa}
+                        type="button"
+                        onClick={() => {
+                          setDisjuntorAmperes(f.disjuntor);
+                          if (f.subterraneoObrigatorio) {
+                            setTipoSaida("SUBTERRANEA");
+                            setTipoCaixaDisjuntorTabela4("CM-18");
+                          }
+                        }}
+                        className={`p-3 rounded-xl border text-center transition flex flex-col items-center justify-center ${
+                          disjuntorAmperes === f.disjuntor
+                            ? "border-[#E45318] bg-[#E45318] text-white shadow-md font-black ring-2 ring-[#E45318]/30"
+                            : "border-slate-200 hover:border-slate-300 bg-slate-50 text-slate-800"
+                        }`}
+                      >
+                        <span className="text-lg font-black">{f.disjuntor} A</span>
+                        <span className={`text-[10px] font-bold ${disjuntorAmperes === f.disjuntor ? "text-amber-100" : "text-amber-700 font-black"}`}>
+                          Faixa {f.faixa} (TC {f.tcRelacao})
+                        </span>
+                        <span className={`text-[9px] ${disjuntorAmperes === f.disjuntor ? "text-amber-100" : "text-slate-500"}`}>
+                          {f.demandaMin} a {f.demandaMax} kVA
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                ) : tipoPadrao === "TRIFASICO" ? (
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
                     {FAIXAS_TRIFASICO_TABELA_2.map((f) => (
                       <button
@@ -620,6 +747,140 @@ export default function PadraoCemigPage() {
                   </div>
                 )}
               </div>
+
+              {/* Seletor de Caixas para Tabela 4 (CM-4 obrigatória + CM-9/CM-18) */}
+              {categoriaDemanda === "ALTA_DEMANDA_TABELA_4" && (
+                <div className="p-4 bg-orange-50/50 rounded-xl border border-orange-200 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-black text-orange-950 uppercase tracking-wider flex items-center gap-1.5">
+                      <Package className="w-4 h-4 text-[#E45318]" /> Caixas Metálicas Homologadas (ND 5.1 Desenhos 36 e 46)
+                    </span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-orange-100 text-orange-800">
+                      Caixa CM-4 (3 TCs + Medidor) + Caixa de Proteção
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                    {/* Caixa CM-4 fixa */}
+                    <div className="p-3 bg-white rounded-lg border border-orange-200 flex items-center justify-between">
+                      <div>
+                        <p className="font-black text-slate-900">Caixa CM-4 (Medição Indireta)</p>
+                        <p className="text-[10px] text-slate-500">Abriga 3 TCs (FT=2,0) e medidor eletrônico</p>
+                      </div>
+                      <span className="text-[10px] font-black px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded">Obrigatória</span>
+                    </div>
+
+                    {/* Caixa do Disjuntor */}
+                    <div className="p-3 bg-white rounded-lg border border-orange-200">
+                      <p className="font-black text-slate-900 mb-1.5">Caixa do Disjuntor Geral:</p>
+                      {disjuntorAmperes <= 250 ? (
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setTipoCaixaDisjuntorTabela4("CM-9")}
+                            className={`p-2 rounded border text-center transition ${
+                              tipoCaixaDisjuntorTabela4 === "CM-9"
+                                ? "border-[#E45318] bg-orange-50 text-orange-900 font-bold ring-1 ring-[#E45318]"
+                                : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                            }`}
+                          >
+                            <span className="block font-black">Caixa CM-9</span>
+                            <span className="text-[9px] text-slate-500">Compacta (F1/F2)</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setTipoCaixaDisjuntorTabela4("CM-18")}
+                            className={`p-2 rounded border text-center transition ${
+                              tipoCaixaDisjuntorTabela4 === "CM-18"
+                                ? "border-[#E45318] bg-orange-50 text-orange-900 font-bold ring-1 ring-[#E45318]"
+                                : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                            }`}
+                          >
+                            <span className="block font-black">Caixa CM-18</span>
+                            <span className="text-[9px] text-slate-500">Reforçada (Recomendada)</span>
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <span className="font-black text-slate-800">Caixa CM-18 com Barramentos</span>
+                            <p className="text-[10px] text-slate-500">Obrigatória para faixas F3 a F9 (Nota 6)</p>
+                          </div>
+                          <span className="text-[10px] font-black px-2 py-0.5 bg-blue-100 text-blue-800 rounded">Nota 6 ND 5.1</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Seletor de Caixa Subterrânea (ZC vs ZD) e Guia Normativo CEMIG ND-2.3 */}
+              {categoriaDemanda === "ALTA_DEMANDA_TABELA_4" && (
+                <div className="p-4 bg-slate-900 text-white rounded-xl border border-slate-800 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-black uppercase tracking-wider flex items-center gap-1.5 text-emerald-400">
+                      <Layers className="w-4 h-4 text-emerald-400" /> Caixa de Passagem Subterrânea (Norma CEMIG ND-2.3 / ND-5.1)
+                    </span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
+                      Tampa de Ferro Fundido Inclusa como Item Separado
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setTipoCaixaSubterranea("ZC")}
+                      className={`p-3.5 rounded-xl border text-left transition ${
+                        tipoCaixaSubterranea === "ZC"
+                          ? "border-emerald-500 bg-emerald-950/40 text-white ring-1 ring-emerald-500"
+                          : "border-slate-800 bg-slate-800/60 text-slate-300 hover:border-slate-700"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-black text-sm text-emerald-400">Caixa Tipo ZC (77 x 67 x 90 cm)</span>
+                        <span className="text-[9px] px-2 py-0.5 rounded bg-emerald-900/60 text-emerald-300 border border-emerald-700 font-bold">
+                          Passeio / Calçada (Padrão)
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 leading-relaxed">
+                        Padrão regulamentar CEMIG para ramais de entrada subterrâneos instalados em calçadas/passeios públicos até o padrão de medição.
+                      </p>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setTipoCaixaSubterranea("ZD")}
+                      className={`p-3.5 rounded-xl border text-left transition ${
+                        tipoCaixaSubterranea === "ZD"
+                          ? "border-orange-500 bg-orange-950/40 text-white ring-1 ring-orange-500"
+                          : "border-slate-800 bg-slate-800/60 text-slate-300 hover:border-slate-700"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-black text-sm text-orange-400">Caixa Tipo ZD (100 x 75 x 120 cm)</span>
+                        <span className="text-[9px] px-2 py-0.5 rounded bg-orange-900/60 text-orange-300 border border-orange-700 font-bold">
+                          Pista / Tráfego Pesado / BTX
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 leading-relaxed">
+                        Caixa reforçada com maiores dimensões para pista de rolamento, derivações com barramentos de baixa tensão (BTX) ou múltiplos cabos paralelos.
+                      </p>
+                    </button>
+                  </div>
+
+                  {/* Explicação Técnica Normativa: Em que situação usa a ZD? */}
+                  <div className="p-3 bg-slate-800/80 rounded-lg border border-slate-700 text-[11px] space-y-1 text-slate-300">
+                    <p className="font-bold text-amber-300 flex items-center gap-1.5">
+                      💡 Critérios Normativos CEMIG: Em que situação usar a Caixa ZD?
+                    </p>
+                    <ul className="list-disc list-inside space-y-1 text-slate-400 pl-1 leading-relaxed">
+                      <li><strong className="text-slate-200">Local com Tráfego de Veículos:</strong> Quando a caixa de passagem subterrânea estiver localizada sob a pista de rolamento, garagens ou acessos de veículos pesados (requer tampa reforçada articulada classe 125/250 kN).</li>
+                      <li><strong className="text-slate-200">Derivações com Barramentos BTX:</strong> Quando a CEMIG exigir instalação de barramento de baixa tensão (BTX) ou pontos de emenda e derivação de rede.</li>
+                      <li><strong className="text-slate-200">Raio de Curvatura de Cabos Pesados:</strong> Em entradas com múltiplos circuitos em paralelo (ex.: 2x ou 3x condutores de 185 mm² ou 240 mm²), onde as dimensões da caixa ZC não comportam a curva mínima permitida dos condutores sem esforço mecânico na isolação 1kV.</li>
+                    </ul>
+                  </div>
+                </div>
+              )}
 
               {/* Parâmetros Construtivos: Localização, Posição da Rede, Tipo de Saída e Estrutura */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -721,20 +982,30 @@ export default function PadraoCemigPage() {
 
                 {/* 5. Tipo de Saída da Carga (Aérea vs Subterrânea) */}
                 <div>
-                  <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-2">
-                    5. Tipo de Saída da Carga
-                  </label>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-xs font-black text-slate-500 uppercase tracking-wider">
+                      5. Tipo de Saída da Carga
+                    </label>
+                    {categoriaDemanda === "ALTA_DEMANDA_TABELA_4" && disjuntorAmperes >= 300 && (
+                      <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-blue-100 text-blue-800 border border-blue-200">
+                        ND 5.1 Nota 4: Subterrâneo Obrigatório
+                      </span>
+                    )}
+                  </div>
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       type="button"
+                      disabled={categoriaDemanda === "ALTA_DEMANDA_TABELA_4" && disjuntorAmperes >= 300}
                       onClick={() => setTipoSaida("AEREA")}
                       className={`p-3 rounded-xl border text-left transition flex items-center gap-2.5 ${
-                        tipoSaida === "AEREA"
+                        categoriaDemanda === "ALTA_DEMANDA_TABELA_4" && disjuntorAmperes >= 300
+                          ? "opacity-50 cursor-not-allowed bg-slate-100 border-slate-200 text-slate-400"
+                          : tipoSaida === "AEREA"
                           ? "border-sky-500 bg-sky-50 text-sky-950 font-bold ring-1 ring-sky-500"
                           : "border-slate-200 hover:border-slate-300 bg-slate-50 text-slate-700"
                       }`}
                     >
-                      <div className={`w-3 h-3 rounded-full ${tipoSaida === "AEREA" ? "bg-sky-500" : "bg-slate-300"}`} />
+                      <div className={`w-3 h-3 rounded-full ${tipoSaida === "AEREA" && !(categoriaDemanda === "ALTA_DEMANDA_TABELA_4" && disjuntorAmperes >= 300) ? "bg-sky-500" : "bg-slate-300"}`} />
                       <div>
                         <p className="text-xs font-black">SAÍDA AÉREA</p>
                         <p className="text-[10px] text-slate-500 font-normal">2 Cabeçotes + 2 Curvas S</p>
@@ -883,9 +1154,20 @@ export default function PadraoCemigPage() {
                       <div className="flex justify-between items-center">
                         <span className="text-slate-500">Poste Homologado:</span>
                         <span className="font-black text-xs text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
-                          {resumoTecnico.posteHomologado || "PC1"}
+                          {resumoTecnico.posteHomologado || "Mureta / Divisa"}
                         </span>
                       </div>
+                      {resumoTecnico.tcRelacao && (
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <span className="text-slate-500 font-bold text-orange-950 block">Medição Indireta (TC):</span>
+                            <span className="text-[9px] text-emerald-700 font-bold block">Fornecimento Concessionária (Sem custo)</span>
+                          </div>
+                          <span className="font-black text-xs text-orange-800 bg-orange-100 px-2 py-0.5 rounded border border-orange-300">
+                            3 TCs {resumoTecnico.tcRelacao}
+                          </span>
+                        </div>
+                      )}
                       <div className="flex justify-between">
                         <span className="text-slate-500">Localização / Saída:</span>
                         <span className="font-bold text-slate-800">
@@ -894,21 +1176,43 @@ export default function PadraoCemigPage() {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-500">Condutores de Entrada:</span>
-                        <span className="font-bold text-slate-800">{resumoTecnico.caboFaseMm2} mm² (PVC 70°C)</span>
+                        <span className="font-bold text-slate-800">
+                          {categoriaDemanda === "ALTA_DEMANDA_TABELA_4"
+                            ? `${resumoTecnico.caboFaseMm2} mm² (Isolação 0,6/1kV Subterrânea)`
+                            : `${resumoTecnico.caboFaseMm2} mm² (PVC 70°C)`}
+                        </span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-slate-500">Eletroduto:</span>
-                        <span className="font-bold text-slate-800">PVC Ø {resumoTecnico.eletrodutoPVCmm} mm ({resumoTecnico.eletrodutoPvcPol})</span>
+                        <span className="text-slate-500">Dutos / Eletroduto:</span>
+                        <span className="font-bold text-slate-800">
+                          {categoriaDemanda === "ALTA_DEMANDA_TABELA_4"
+                            ? 'Duto Corrugado PEAD Flexível 3" (85 mm)'
+                            : `PVC Ø ${resumoTecnico.eletrodutoPVCmm} mm (${resumoTecnico.eletrodutoPvcPol})`}
+                        </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-500">Aterramento:</span>
                         <span className="font-bold text-slate-800">
-                          {resumoTecnico.hastesAterramentoQtde} Haste(s) Galvanizada(s) 5/8"
+                          {categoriaDemanda === "ALTA_DEMANDA_TABELA_4"
+                            ? `3 Hastes Cantoneiras Galv. a Fogo (${resumoTecnico.caboNuMm2}mm² nu) + Tampas Fº Fº`
+                            : `${resumoTecnico.hastesAterramentoQtde} Haste(s) Galvanizada(s) 5/8" (${resumoTecnico.caboNuMm2}mm²)`}
                         </span>
                       </div>
+                      {categoriaDemanda === "ALTA_DEMANDA_TABELA_4" && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-slate-500">Caixa Subterrânea:</span>
+                          <span className="font-black text-xs text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
+                            Tipo {tipoCaixaSubterranea} + Tampa Fº Fº
+                          </span>
+                        </div>
+                      )}
                       <div className="flex justify-between">
                         <span className="text-slate-500">Caixa de Medição:</span>
                         <span className="font-bold text-slate-800">{resumoTecnico.caixaMedicao}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-500">Caixa de Proteção:</span>
+                        <span className="font-bold text-slate-800">{resumoTecnico.caixaDisjuntor}</span>
                       </div>
                     </div>
 

@@ -5,7 +5,7 @@ export interface EtapaAvancoInfo {
   nome: string;
   pesoPercentual: number;
   progressoAcumulado: number;
-  contribuiçãoGlobal: number; // (pesoPercentual * progressoAcumulado) / 100
+  contribuiçãoGlobal: number;
 }
 
 export interface CurvaSPoint {
@@ -41,13 +41,13 @@ export async function calcularAvancoFisicoObra(projetoId: string): Promise<Curva
         orderBy: { data: 'asc' }
       }
     }
-  });
+  }) as any;
 
   if (!projeto) {
     throw new Error(`Projeto ${projetoId} não encontrado`);
   }
 
-  let etapasList = projeto.etapas || [];
+  let etapasList: any[] = projeto.etapas || [];
 
   // Se o projeto ainda não tiver etapas do CAPEX cadastradas, geramos etapas modelo padrão de usinas solares/obras elétricas
   if (etapasList.length === 0) {
@@ -60,16 +60,16 @@ export async function calcularAvancoFisicoObra(projetoId: string): Promise<Curva
       { nome: '6. Comissionamento e Testes Operacionais', pesoPercentual: 5, progressoAcumulado: 0 },
     ];
 
-    etapasList = etapasPadrao as any[];
+    etapasList = etapasPadrao;
   } else {
     // Se as etapas existirem mas não tiverem pesos atribuídos, distribuímos pesos igualitários (soma 100%)
-    const totalSemPeso = etapasList.filter(e => e.pesoPercentual === 0).length;
+    const totalSemPeso = etapasList.filter((e: any) => !e.pesoPercentual || e.pesoPercentual === 0).length;
     if (totalSemPeso > 0) {
-      const somaPesosExistentes = etapasList.reduce((acc, e) => acc + (e.pesoPercentual || 0), 0);
+      const somaPesosExistentes = etapasList.reduce((acc: number, e: any) => acc + (e.pesoPercentual || 0), 0);
       const pesoRestante = Math.max(0, 100 - somaPesosExistentes);
       const pesoDistribuido = Math.round((pesoRestante / (totalSemPeso || 1)) * 10) / 10;
 
-      etapasList = etapasList.map(e => ({
+      etapasList = etapasList.map((e: any) => ({
         ...e,
         pesoPercentual: e.pesoPercentual > 0 ? e.pesoPercentual : pesoDistribuido
       }));
@@ -80,7 +80,7 @@ export async function calcularAvancoFisicoObra(projetoId: string): Promise<Curva
   let avancoRealAcumulado = 0;
   let somaPesos = 0;
 
-  const etapasInfo: EtapaAvancoInfo[] = etapasList.map(etapa => {
+  const etapasInfo: EtapaAvancoInfo[] = etapasList.map((etapa: any) => {
     const peso = etapa.pesoPercentual || 0;
     const progresso = etapa.progressoAcumulado || 0;
     const contribuicao = Math.round(((peso * progresso) / 100) * 100) / 100;
@@ -100,7 +100,7 @@ export async function calcularAvancoFisicoObra(projetoId: string): Promise<Curva
   avancoRealAcumulado = Math.round(avancoRealAcumulado * 10) / 10;
 
   // Obter ou gerar a curva prevista e os pontos históricos para a Curva S
-  let historicoCurvaS: CurvaSPoint[] = (projeto.curvaSHistorico || []).map(h => ({
+  let historicoCurvaS: CurvaSPoint[] = (projeto.curvaSHistorico || []).map((h: any) => ({
     dataStr: new Date(h.data).toISOString().split('T')[0],
     avancoReal: h.avancoRealAcumulado,
     avancoPrevisto: h.avancoPrevistoAcumulado,
@@ -168,7 +168,7 @@ export async function registrarSnapshotCurvaS(projetoId: string, dataRdo: Date, 
     const desvio = Math.round((avancoReal - avancoPrevisto) * 10) / 10;
     const dataApenas = new Date(dataRdo.toISOString().split('T')[0] + 'T00:00:00.000Z');
 
-    await prisma.rdoCurvaSHistorico.upsert({
+    await (prisma as any).rdoCurvaSHistorico.upsert({
       where: {
         projetoId_data: {
           projetoId,

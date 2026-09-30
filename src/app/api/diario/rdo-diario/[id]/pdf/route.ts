@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { calcularAvancoFisicoObra } from "@/lib/rdo/curvaSEngine";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import React from "react";
@@ -355,17 +356,23 @@ function SectionTitle(title: string): any {
   );
 }
 
-function buildPdf(rdo: any, atividadesExecutadasDia: any[] = [], todasAtividadesObra: any[] = [], logoBase64: string = "", resolvedPhotoMap: Record<string, string> = {}): any {
+function buildPdf(
+  rdo: any,
+  atividadesExecutadasDia: any[] = [],
+  todasAtividadesObra: any[] = [],
+  logoBase64: string = "",
+  resolvedPhotoMap: Record<string, string> = {},
+  curvaSData: any = null
+): any {
   const status = rdo.status || "RASCUNHO";
   const rdoNum = String(rdo.numeroRdo).padStart(3, "0");
   const totalMDO = (rdo.maoDeObra || []).reduce((a: number, m: any) => a + (m.quantidade || 1), 0);
   const totalH = (rdo.maoDeObra || []).reduce((a: number, m: any) => a + (m.horasTrab || 0) * (m.quantidade || 1), 0);
   const weekDay = getWeekDay(rdo.data);
 
-  // Totais do Projeto (CAPEX - Contabilização Total da Obra)
-  const totalObra = todasAtividadesObra.length || 1;
-  const sumProgress = todasAtividadesObra.reduce((acc: number, a: any) => acc + (a.status === "CONCLUIDA" ? 100 : (a.lancamentos?.[0]?.progresso || 0)), 0);
-  const pctMedia = Math.round(sumProgress / totalObra);
+  // Cálculo do Avanço Físico Ponderado da Obra (EAP / Curva S)
+  const avancoPonderado = curvaSData?.avancoRealAcumulado || 0;
+  const desvioStatusStr = curvaSData?.statusDesvio === 'ATRASADO' ? 'ATRASADO' : 'NO PRAZO';
 
   // Formatting Clima as clean 3-period horizontal cards
   const climasArr = (rdo.climas as any[]) || [];
@@ -552,6 +559,10 @@ function buildPdf(rdo: any, atividadesExecutadasDia: any[] = [], todasAtividades
           el(Text, { style: s.kpiTitle }, "MÃO DE OBRA ATIVA"),
           el(Text, { style: s.kpiVal }, totalMDO + " pessoa(s) / " + totalH + "h"),
         ),
+        el(View, { style: s.kpiCard },
+          el(Text, { style: s.kpiTitle }, "AVANÇO FÍSICO PONDERADO"),
+          el(Text, { style: s.kpiVal }, avancoPonderado + "% (" + desvioStatusStr + ")"),
+        ),
         el(View, { style: s.kpiCardLast },
           el(Text, { style: s.kpiTitle }, "OBRA VINCULADA"),
           el(Text, { style: [s.kpiVal, { fontSize: 8 }] }, rdo.projeto?.nome || "-"),
@@ -711,7 +722,14 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       })
     );
 
-    const pdfDoc = buildPdf(rdo, atividadesExecutadasDia, todasAtividadesObra, logoBase64, resolvedPhotoMap);
+    let curvaSData = null;
+    try {
+      curvaSData = await calcularAvancoFisicoObra(rdo.projetoId);
+    } catch (errCurva) {
+      console.warn("[PDF] Aviso ao calcular Curva S:", errCurva);
+    }
+
+    const pdfDoc = buildPdf(rdo, atividadesExecutadasDia, todasAtividadesObra, logoBase64, resolvedPhotoMap, curvaSData);
     const rawBuffer = await renderToBuffer(pdfDoc);
     const buffer = new Uint8Array(rawBuffer);
     const safeName = (rdo.projeto?.nome || "obra").replace(/\s+/g, "-");

@@ -585,15 +585,18 @@ model OrcamentoProjeto {
   etapas          OrcamentoEtapa[]
   atividadesDiario AtividadeDiario[]
   rdosDiarios      RdoDiario[]
+  curvaSHistorico  RdoCurvaSHistorico[]
 }
 
 model OrcamentoEtapa {
-  id        String           @id @default(cuid())
-  projetoId String
-  nome      String
-  ordem     Int              @default(0)
-  projeto   OrcamentoProjeto @relation(fields: [projetoId], references: [id], onDelete: Cascade)
-  itens     OrcamentoItem[]
+  id                 String           @id @default(cuid())
+  projetoId          String
+  nome               String
+  ordem              Int              @default(0)
+  pesoPercentual     Float            @default(0)
+  progressoAcumulado Float            @default(0)
+  projeto            OrcamentoProjeto @relation(fields: [projetoId], references: [id], onDelete: Cascade)
+  itens              OrcamentoItem[]
 }
 
 model OrcamentoItem {
@@ -1040,23 +1043,39 @@ model FuncionarioCanteiro {
 }
 
 model RdoDiario {
-  id            String                @id @default(cuid())
-  projetoId     String
-  data          DateTime
-  numeroRdo     Int
-  responsavelId String
-  status        String                @default("RASCUNHO") // RASCUNHO, PENDENTE, APROVADO, RECUSADO
-  observacoes   String?
-  outrasAtividades String?
-  createdAt     DateTime              @default(now())
-  updatedAt     DateTime              @updatedAt
+  id                      String                @id @default(cuid())
+  projetoId               String
+  data                    DateTime
+  numeroRdo               Int
+  responsavelId           String
+  status                  String                @default("RASCUNHO") // RASCUNHO, PENDENTE, APROVADO, RECUSADO
+  observacoes             String?
+  outrasAtividades        String?
+  avancoRealAcumulado     Float                 @default(0)
+  avancoPrevistoAcumulado Float                 @default(0)
+  createdAt               DateTime              @default(now())
+  updatedAt               DateTime              @updatedAt
 
-  projeto       OrcamentoProjeto      @relation(fields: [projetoId], references: [id], onDelete: Cascade)
-  responsavel   User                  @relation(fields: [responsavelId], references: [id], onDelete: Cascade)
-  climas        ClimaRdo[]
-  maoDeObra     MaoDeObraRdo[]
-  materiais     MaterialRecebidoRdo[]
-  ocorrencias   OcorrenciaRdo[]
+  projeto                 OrcamentoProjeto      @relation(fields: [projetoId], references: [id], onDelete: Cascade)
+  responsavel             User                  @relation(fields: [responsavelId], references: [id], onDelete: Cascade)
+  climas                  ClimaRdo[]
+  maoDeObra               MaoDeObraRdo[]
+  materiais               MaterialRecebidoRdo[]
+  ocorrencias             OcorrenciaRdo[]
+
+  @@unique([projetoId, data])
+}
+
+model RdoCurvaSHistorico {
+  id                      String           @id @default(cuid())
+  projetoId               String
+  data                    DateTime
+  avancoRealAcumulado     Float            @default(0)
+  avancoPrevistoAcumulado Float            @default(0)
+  desvioPercentual        Float            @default(0)
+  createdAt               DateTime         @default(now())
+
+  projeto                 OrcamentoProjeto @relation(fields: [projetoId], references: [id], onDelete: Cascade)
 
   @@unique([projetoId, data])
 }

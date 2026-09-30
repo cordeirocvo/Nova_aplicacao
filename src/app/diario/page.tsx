@@ -9,6 +9,7 @@ import {
   Sparkles, BarChart3, Upload, HardHat, Square, AlertCircle, MessageSquare, Pencil,
   Wind, Users, Package, AlertTriangle, FileDown, UserPlus, ChevronDown, ChevronUp, Eye, Printer
 } from "lucide-react";
+import CurvaSChart from "@/components/rdo/CurvaSChart";
 
 // Formats a date string/ISO from DB without UTC→local timezone shift
 // (new Date("2026-08-17") parses as UTC midnight → shows 16/08 in UTC-3)
@@ -2106,7 +2107,7 @@ export default function DiarioObrasPage() {
                         </div>
 
                         {/* Resumo Executivo / KPIs */}
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-200/60">
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-200/60">
                           <div>
                             <span className="text-[9px] font-black text-slate-400 uppercase block">Apontamentos Realizados</span>
                             <span className="text-lg font-black text-[#1E3A8A]">
@@ -2126,6 +2127,13 @@ export default function DiarioObrasPage() {
                             </span>
                           </div>
                         </div>
+
+                        {/* Módulo de Curva S & Avanço Físico Ponderado */}
+                        {(selectedObraFilter || targetDailyRdo?.projetoId) && (
+                          <div className="my-4">
+                            <CurvaSChart projetoId={selectedObraFilter || targetDailyRdo?.projetoId || ''} />
+                          </div>
+                        )}
 
                         {/* Condições Climáticas (Clima) */}
                         <div className="space-y-2">

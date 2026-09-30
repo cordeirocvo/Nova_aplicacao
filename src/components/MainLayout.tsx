@@ -49,7 +49,7 @@ const NAV_SECTIONS: NavSection[] = [
       { name: 'Extrator de Telemetria', href: '/engenharia/solar/extrator', icon: Database, badge: 'Planilha' },
       { name: 'Operação & Manutenção', href: '/engenharia/om', icon: Settings },
       { name: 'Equipamentos', href: '/engenharia/equipamentos', icon: Package },
-      { name: 'Carregadores VE', href: '/carregamento', icon: BatteryCharging },
+      { name: 'CoenergyGO', href: '/carregamento', icon: BatteryCharging, badge: 'VE' },
       { name: 'Padrão CEMIG & CAPEX', href: '/engenharia/padrao-cemig', icon: Zap, badge: 'ND 5.1' },
       { name: 'Painéis & Diagramas CAD', href: '/engenharia/paineis-eletricos', icon: Layers, badge: 'AutoCAD' },
       { name: 'Dimensionamento Elétrico', href: '/engenharia/eletrica', icon: Zap },

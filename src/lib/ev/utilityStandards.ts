@@ -115,6 +115,21 @@ export const UTILITY_DATABASE: Record<string, UtilityInfo> = {
       { id: "T3", phases: 3, limitKW: 75, breakerA: 100, desc: "Trifásico até 75 kW (Disjuntor 100A)" }
     ]
   },
+  ENERGISA: {
+    name: "ENERGISA",
+    fullName: "Grupo Energisa (Cataguases, PB, MS, MT, TO, SE, RO, AC)",
+    region: "MG, PB, MS, MT, TO, SE, RO, AC",
+    tensions: "127/220V ou 220/380V",
+    maxBTLimitKW: 75,
+    standardsDocName: "NDU 042 (Recarga VE), NDU 001 (BT) e NDU 002 (MT)",
+    categories: [
+      { id: "M-1", phases: 1, limitKW: 10, breakerA: 40, desc: "Monofásico até 10 kW (Disjuntor 40A)" },
+      { id: "B-1", phases: 2, limitKW: 15, breakerA: 50, desc: "Bifásico até 15 kW (Disjuntor 50A)" },
+      { id: "T-1", phases: 3, limitKW: 38, breakerA: 63, desc: "Trifásico até 38 kW (Disjuntor 63A)" },
+      { id: "T-2", phases: 3, limitKW: 50, breakerA: 80, desc: "Trifásico até 50 kW (Disjuntor 80A)" },
+      { id: "T-3", phases: 3, limitKW: 75, breakerA: 125, desc: "Trifásico até 75 kW (Disjuntor 125A)" }
+    ]
+  },
   EQUATORIAL: {
     name: "EQUATORIAL",
     fullName: "Equatorial Energia (MA / PA / AL / PI)",

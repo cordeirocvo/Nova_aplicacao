@@ -2120,12 +2120,6 @@ export default function DiarioObrasPage() {
                             </span>
                           </div>
                           <div>
-                            <span className="text-[9px] font-black text-slate-400 uppercase block">Avanço Físico Médio</span>
-                            <span className="text-lg font-black text-emerald-600">
-                              {avgProgress}%
-                            </span>
-                          </div>
-                          <div>
                             <span className="text-[9px] font-black text-slate-400 uppercase block">Obra Vinculada</span>
                             <span className="text-xs font-black text-[#f15a24] truncate block">
                               {ativos.find(a => a.id === selectedObraFilter)?.nome || targetDailyRdo?.projeto?.nome || "Todas as Obras"}
@@ -4859,12 +4853,6 @@ export default function DiarioObrasPage() {
                           <span className="text-[9px] font-black text-slate-400 uppercase block">Mão de Obra Total</span>
                           <span className="text-lg font-black text-slate-800">
                             {workforceCount} colaborador(es)
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-[9px] font-black text-slate-400 uppercase block">Avanço Físico Médio</span>
-                          <span className="text-lg font-black text-emerald-600">
-                            {avgProgress}%
                           </span>
                         </div>
                         <div>

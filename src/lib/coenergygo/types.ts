@@ -272,3 +272,97 @@ export interface DLMSimulationResult {
   capexSavingsEstimateBRL: number;   // Economia estimada por evitar troca de trafo/padrão
   recommendations: string[];
 }
+
+// ─── 6. TIPOS DO PASSO 3: MEDIÇÃO POR PERÍODO & INFRAESTRUTURA ELETROTÉCNICA ───
+
+export interface MeasuredIntervalPoint {
+  index: number;
+  dateStr: string;
+  timeStr: string;
+  powerKW: number;
+  voltageV?: number;
+  estimatedCurrentA?: number;
+}
+
+export interface PeriodMeasurementSummary {
+  fileName: string;
+  fileType: 'xlsx' | 'csv' | 'txt';
+  periodStart: string;
+  periodEnd: string;
+  durationMinutes: number;
+  intervalMinutes: number;
+  totalReadings: number;
+  minPowerKW: number;
+  maxPowerKW: number;
+  peakTimestamp: string;
+  averagePowerKW: number;
+  totalEnergyKWh: number;
+  intervalPoints: MeasuredIntervalPoint[];
+}
+
+export interface BillOfMaterialItem {
+  id: string;
+  category: 'condutores' | 'protecao' | 'quadro' | 'infraestrutura' | 'seguranca';
+  description: string;
+  quantity: number;
+  unit: 'm' | 'pç' | 'cj' | 'kit';
+  spec: string;
+  normReference: string;
+}
+
+export interface ElectricalInfrastructureInput {
+  chargerPowerKW: number;
+  chargerVoltage: number;
+  chargerPhases: 1 | 3;
+  cableLengthMeters: number;
+  installationMethod: 'B1' | 'B2' | 'C' | 'D';
+  ambientTemperatureC?: number;
+  groupedCircuits?: number;
+  existingPeakDemandKW: number;
+  gridStandardLimitKW: number;
+  isOutdoor?: boolean;
+}
+
+export interface ElectricalInfrastructureSizing {
+  // Circuito Terminal do Carregador (EV)
+  chargerDesignCurrentA: number;
+  recommendedBreakerA: number;
+  cableGaugePhaseMM2: number;
+  cableGaugeNeutralMM2: number;
+  cableGaugeGroundMM2: number;
+  calculatedVoltageDropPercent: number;
+  isVoltageDropCompliant: boolean;
+  maxAllowedVoltageDropPercent: number;
+  
+  // Proteções Conforme NBR 17019
+  residualCurrentProtection: ProtectionDeviceSpec;
+  surgeProtectionDPS: ProtectionDeviceSpec;
+  
+  // Especificação do Quadro (QDC-VE)
+  panelSpecification: {
+    enclosureType: string;
+    ipRating: string;
+    dinModulesCount: number;
+    recommendedModel: string;
+  };
+  
+  // Eletroduto / Eletrocalha
+  conduitSpecification: {
+    type: string;
+    nominalDiameterMM: number;
+    nominalInches: string;
+  };
+  
+  // Balanço com a Demanda Real Medida (SmartMeter)
+  measuredPeakDemandKW: number;
+  totalSimultaneousDemandKW: number;
+  feederGeneralBreakerRecommendedA: number;
+  feederCableGaugePhaseMM2: number;
+  feederCableGaugeGroundMM2: number;
+  isGridLimitExceeded: boolean;
+  gridHeadroomKW: number;
+  
+  // Relação de Materiais (BOM) & Notas
+  billOfMaterials: BillOfMaterialItem[];
+  technicalNotes: string[];
+}

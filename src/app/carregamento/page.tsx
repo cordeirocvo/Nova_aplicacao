@@ -5,7 +5,8 @@ import Link from "next/link";
 import { 
   Zap, Plus, FileText, Calendar, User, ChevronRight, Loader, 
   Car, Shield, CheckCircle2, AlertTriangle, Search, Info, 
-  BatteryCharging, Gauge, ArrowRight, BookOpen, Layers, Flame, Activity
+  BatteryCharging, Gauge, ArrowRight, BookOpen, Layers, Flame, Activity,
+  Cable, FileSpreadsheet, Upload, AlertCircle
 } from "lucide-react";
 import { 
   BRAZIL_ELECTRIC_VEHICLES, 
@@ -25,17 +26,23 @@ import {
   generateScaledHourlyCurve, 
   simulateDLM, 
   parseLoadDataFile, 
+  parseUniversalLoadFile,
+  sizeElectricalInfrastructure,
   TypicalProfileType, 
   DLMSimulationResult,
   HourlyLoadPoint,
+  PeriodMeasurementSummary,
+  ElectricalInfrastructureSizing,
   evaluateUtility
 } from "@/lib/coenergygo";
 import LoadCurveChart from "@/components/ev/LoadCurveChart";
 import DLMControlPanel from "@/components/ev/DLMControlPanel";
 import LoadFeasibilityReport from "@/components/ev/LoadFeasibilityReport";
+import ImportedDataViewer from "@/components/ev/ImportedDataViewer";
+import InfrastructurePanel from "@/components/ev/InfrastructurePanel";
 
 export default function CoenergyGODashboard() {
-  const [activeTab, setActiveTab] = useState<'projetos' | 'veiculos' | 'concessionarias' | 'nbr17019' | 'curva_dlm'>('projetos');
+  const [activeTab, setActiveTab] = useState<'projetos' | 'veiculos' | 'concessionarias' | 'nbr17019' | 'curva_dlm' | 'infraestrutura'>('projetos');
   const [projects, setProjects] = useState<any[]>([]);
   const [loadingProjects, setLoadingProjects] = useState(true);
 
@@ -75,6 +82,17 @@ export default function CoenergyGODashboard() {
   const [auditHasBollards, setAuditHasBollards] = useState(true);
   const [auditHasSignaling, setAuditHasSignaling] = useState(true);
   const [auditResult, setAuditResult] = useState<any>(null);
+
+  // Estados do Passo 3: Infraestrutura Eletrotécnica & SmartMeter
+  const [smartMeterSummary, setSmartMeterSummary] = useState<PeriodMeasurementSummary | null>(null);
+  const [infraChargerPowerKW, setInfraChargerPowerKW] = useState(7.4);
+  const [infraChargerVoltage, setInfraChargerVoltage] = useState(220);
+  const [infraChargerPhases, setInfraChargerPhases] = useState<1 | 3>(1);
+  const [infraCableLength, setInfraCableLength] = useState(25);
+  const [infraInstallationMethod, setInfraInstallationMethod] = useState<'B1' | 'B2' | 'C' | 'D'>('B1');
+  const [infraAmbientTemp, setInfraAmbientTemp] = useState(30);
+  const [infraIsOutdoor, setInfraIsOutdoor] = useState(false);
+  const [infraGridLimitKW, setInfraGridLimitKW] = useState(75);
 
   useEffect(() => {
     fetch("/api/ev/sizing")
@@ -161,16 +179,63 @@ export default function CoenergyGODashboard() {
     solarPeakKW: dlmSolarPeakKW
   });
 
+  // Dimensionamento Eletrotécnico de Infraestrutura (Passo 3)
+  const infrastructureSizing: ElectricalInfrastructureSizing = sizeElectricalInfrastructure({
+    chargerPowerKW: infraChargerPowerKW,
+    chargerVoltage: infraChargerVoltage,
+    chargerPhases: infraChargerPhases,
+    cableLengthMeters: infraCableLength,
+    installationMethod: infraInstallationMethod,
+    ambientTemperatureC: infraAmbientTemp,
+    existingPeakDemandKW: smartMeterSummary ? smartMeterSummary.maxPowerKW : dlmPeakDemandKW,
+    gridStandardLimitKW: infraGridLimitKW,
+    isOutdoor: infraIsOutdoor
+  });
+
   const handleFileUpload = async (file: File) => {
     try {
       setIsLoadingFile(true);
-      const text = await file.text();
-      const parsed = parseLoadDataFile(text, file.name);
-      setCustomCurvePoints(parsed.hourlyCurve24h);
-      setDlmPeakDemandKW(parsed.maxRecordedDemandKW);
+      const isExcel = file.name.endsWith('.xlsx') || file.name.endsWith('.xls');
+      let summary: PeriodMeasurementSummary;
+      let parsedResult: any;
+
+      if (isExcel) {
+        const buffer = await file.arrayBuffer();
+        const res = parseUniversalLoadFile(buffer, file.name);
+        summary = res.summary;
+        parsedResult = res.parsedResult;
+      } else {
+        const text = await file.text();
+        const res = parseUniversalLoadFile(text, file.name);
+        summary = res.summary;
+        parsedResult = res.parsedResult;
+      }
+
+      setSmartMeterSummary(summary);
+      setCustomCurvePoints(parsedResult.hourlyCurve24h);
+      setDlmPeakDemandKW(summary.maxPowerKW);
       setIsLoadingFile(false);
     } catch (err: any) {
       alert("Erro ao ler arquivo de medição: " + (err.message || "Formato inválido"));
+      setIsLoadingFile(false);
+    }
+  };
+
+  const handleLoadSmartMeterDemo = async () => {
+    try {
+      setIsLoadingFile(true);
+      const res = await fetch("/api/ev/smartmeter-demo");
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error || "Arquivo SmartMeter.xlsx não encontrado");
+      }
+      const data = await res.json();
+      setSmartMeterSummary(data.summary);
+      setCustomCurvePoints(data.parsedResult.hourlyCurve24h);
+      setDlmPeakDemandKW(data.summary.maxPowerKW);
+      setIsLoadingFile(false);
+    } catch (err: any) {
+      alert("Aviso: " + err.message);
       setIsLoadingFile(false);
     }
   };
@@ -284,6 +349,19 @@ export default function CoenergyGODashboard() {
             <Activity className="w-4 h-4 text-purple-300" />
             Curva de Carga & DLM
             <span className="bg-white/20 text-white text-[9px] px-2 py-0.5 rounded-full font-bold">Passo 2</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('infraestrutura')}
+            className={`px-4 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center gap-2 whitespace-nowrap ${
+              activeTab === 'infraestrutura'
+                ? 'bg-gradient-to-r from-[#E45318] to-orange-600 text-white shadow'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800'
+            }`}
+          >
+            <Cable className="w-4 h-4 text-orange-200" />
+            Infraestrutura Elétrica & SmartMeter
+            <span className="bg-white/20 text-white text-[9px] px-2 py-0.5 rounded-full font-bold">Passo 3</span>
           </button>
         </div>
       </div>
@@ -994,6 +1072,173 @@ export default function CoenergyGODashboard() {
           />
 
           <LoadFeasibilityReport simulation={dlmResult} />
+        </div>
+      )}
+
+      {/* ─── TAB 6: INFRAESTRUTURA ELETROTÉCNICA & SMARTMETER (PASSO 3) ─── */}
+      {activeTab === 'infraestrutura' && (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          {/* Painel de Upload e Seleção de Dados */}
+          <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-5">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-black uppercase text-[#E45318] tracking-wider bg-orange-50 px-2.5 py-0.5 rounded-full">
+                    Passo 3: Módulo de Infraestrutura
+                  </span>
+                  <span className="text-[10px] font-bold text-slate-400">Leitura por Período Excel & Memória de Massa</span>
+                </div>
+                <h3 className="text-xl font-black text-slate-800 mt-1">
+                  Dados de Medição do Local & Dimensionamento Eletrotécnico
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Importe dados de consumo em Excel (.xlsx) ou memórias de massa (.csv) para calcular a infraestrutura elétrica exata do carregador.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleLoadSmartMeterDemo}
+                  disabled={isLoadingFile}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow transition-all flex items-center gap-2 disabled:opacity-50"
+                >
+                  <FileSpreadsheet className="w-4 h-4" />
+                  Carregar SmartMeter.xlsx (Local de Exemplo)
+                </button>
+                <label className="bg-[#E45318] hover:bg-[#d04610] text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow cursor-pointer transition-all flex items-center gap-2">
+                  <Upload className="w-4 h-4" />
+                  Upload Planilha (.xlsx / .csv)
+                  <input
+                    type="file"
+                    accept=".xlsx,.xls,.csv,.txt"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleFileUpload(file);
+                    }}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+            </div>
+
+            {/* Configuração dos Parâmetros da Infraestrutura */}
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 pt-1">
+              <div>
+                <label className="text-[10px] font-bold text-slate-500 block uppercase">Potência do Carregador</label>
+                <select
+                  value={infraChargerPowerKW}
+                  onChange={(e) => {
+                    const p = Number(e.target.value);
+                    setInfraChargerPowerKW(p);
+                    if (p >= 11) {
+                      setInfraChargerPhases(3);
+                      setInfraChargerVoltage(380);
+                    } else {
+                      setInfraChargerPhases(1);
+                      setInfraChargerVoltage(220);
+                    }
+                  }}
+                  className="w-full text-xs font-bold border border-slate-200 rounded-xl p-2.5 bg-slate-50 text-slate-800 focus:ring-0 mt-1"
+                >
+                  <option value="7.4">7.4 kW (Wallbox 32A Monofásico/Bifásico)</option>
+                  <option value="11.0">11.0 kW (Wallbox 16A Trifásico 380V)</option>
+                  <option value="22.0">22.0 kW (Wallbox 32A Trifásico 380V)</option>
+                  <option value="3.7">3.7 kW (Wallbox 16A Monofásico)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold text-slate-500 block uppercase">Comprimento do Circuito</label>
+                <div className="flex items-center gap-2 mt-1">
+                  <input
+                    type="number"
+                    min="5"
+                    max="150"
+                    value={infraCableLength}
+                    onChange={(e) => setInfraCableLength(Math.max(1, Number(e.target.value)))}
+                    className="w-full text-xs font-bold border border-slate-200 rounded-xl p-2.5 bg-slate-50 text-slate-800"
+                  />
+                  <span className="text-xs font-bold text-slate-400">metros</span>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold text-slate-500 block uppercase">Método de Instalação</label>
+                <select
+                  value={infraInstallationMethod}
+                  onChange={(e) => setInfraInstallationMethod(e.target.value as any)}
+                  className="w-full text-xs font-bold border border-slate-200 rounded-xl p-2.5 bg-slate-50 text-slate-800 mt-1"
+                >
+                  <option value="B1">B1 - Eletroduto em alvenaria</option>
+                  <option value="B2">B2 - Eletroduto aparente</option>
+                  <option value="C">C - Eletrocalha / perfilado</option>
+                  <option value="D">D - Eletroduto subterrâneo</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold text-slate-500 block uppercase">Limite Padrão da Rede</label>
+                <div className="flex items-center gap-2 mt-1">
+                  <input
+                    type="number"
+                    value={infraGridLimitKW}
+                    onChange={(e) => setInfraGridLimitKW(Number(e.target.value))}
+                    className="w-full text-xs font-bold border border-slate-200 rounded-xl p-2.5 bg-slate-50 text-slate-800"
+                  />
+                  <span className="text-xs font-bold text-slate-400">kW</span>
+                </div>
+              </div>
+
+              <div className="flex items-end pb-1">
+                <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={infraIsOutdoor}
+                    onChange={(e) => setInfraIsOutdoor(e.target.checked)}
+                    className="rounded text-[#E45318]"
+                  />
+                  Instalação Externa (IP65)
+                </label>
+              </div>
+            </div>
+          </div>
+
+          {/* Visualização dos Dados Medidos Importados (SmartMeter.xlsx) */}
+          {smartMeterSummary ? (
+            <ImportedDataViewer
+              summary={smartMeterSummary}
+              chargerPowerKW={infraChargerPowerKW}
+              gridLimitKW={infraGridLimitKW}
+              onClear={() => setSmartMeterSummary(null)}
+            />
+          ) : (
+            <div className="bg-amber-50/70 border border-amber-200/80 rounded-3xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="w-5 h-5 text-amber-600" />
+                  <h4 className="text-sm font-bold text-amber-950">Nenhuma planilha SmartMeter importada no momento</h4>
+                </div>
+                <p className="text-xs text-amber-800">
+                  Carregue o arquivo <strong>SmartMeter.xlsx</strong> da pasta download ou clique no botão acima para visualizar a curva de medição em alta resolução.
+                </p>
+              </div>
+              <button
+                onClick={handleLoadSmartMeterDemo}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow whitespace-nowrap"
+              >
+                Carregar Arquivo SmartMeter.xlsx Agora
+              </button>
+            </div>
+          )}
+
+          {/* Painel de Infraestrutura Eletrotécnica e Lista de Materiais (BOM) */}
+          <InfrastructurePanel
+            sizing={infrastructureSizing}
+            chargerPowerKW={infraChargerPowerKW}
+            chargerVoltage={infraChargerVoltage}
+            chargerPhases={infraChargerPhases}
+            cableLengthMeters={infraCableLength}
+          />
         </div>
       )}
     </div>

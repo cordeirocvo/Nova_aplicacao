@@ -37,7 +37,8 @@ export const UTILITY_DATABASE: Record<string, UtilityInfo> = {
       { id: "C2", phases: 3, limitKW: 30, breakerA: 80, desc: "Trifásico até 30 kW (Disjuntor 80A)" },
       { id: "C3", phases: 3, limitKW: 38, breakerA: 100, desc: "Trifásico até 38 kW (Disjuntor 100A)" },
       { id: "C4", phases: 3, limitKW: 47, breakerA: 125, desc: "Trifásico até 47 kW (Disjuntor 125A)" },
-      { id: "C5", phases: 3, limitKW: 75, breakerA: 200, desc: "Trifásico até 75 kW (Disjuntor 200A)" },
+      { id: "C5", phases: 3, limitKW: 57, breakerA: 150, desc: "Trifásico até 57 kW (Disjuntor 150A)" },
+      { id: "C6", phases: 3, limitKW: 75, breakerA: 200, desc: "Trifásico até 75 kW (Disjuntor 200A)" },
       { id: "F", phases: 3, limitKW: 304, breakerA: 400, desc: "Tipo F - Trifásico BT por opção (até 304 kVA)" }
     ]
   },

@@ -70,11 +70,19 @@ export default function LoadFeasibilityReport({ simulation }: LoadFeasibilityRep
         {/* KPI 1: Pico de Carga */}
         <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
           <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">
-            Pico Sem DLM vs Com DLM
+            Pico de Demanda (24h)
           </span>
           <div className="flex items-baseline gap-2">
-            <span className="text-xl font-black text-red-600 line-through">{peakWithoutDLMKW} kW</span>
-            <span className="text-2xl font-black text-[#00B356]">{peakWithDLMKW} kW</span>
+            {peakWithoutDLMKW > peakWithDLMKW ? (
+              <>
+                <span className="text-lg font-black text-red-600 line-through">{peakWithoutDLMKW} kW</span>
+                <span className="text-2xl font-black text-[#00B356]">{peakWithDLMKW} kW</span>
+              </>
+            ) : (
+              <span className={`text-2xl font-black ${peakWithDLMKW > gridEffectiveLimitKW ? 'text-red-600' : 'text-[#00B356]'}`}>
+                {peakWithDLMKW} kW
+              </span>
+            )}
           </div>
           <p className="text-[10px] text-slate-500 mt-1 font-medium">
             Limite do Padrão: <strong>{gridEffectiveLimitKW} kW</strong>
@@ -86,12 +94,28 @@ export default function LoadFeasibilityReport({ simulation }: LoadFeasibilityRep
           <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">
             Sobrecarga Evitada
           </span>
-          <p className="text-2xl font-black text-slate-800">
-            {isOverloadedWithoutDLM ? `${maxOverloadWithoutDLMKW} kW` : 'Zero'}
-          </p>
-          <p className="text-[10px] text-slate-500 mt-1 font-medium">
-            {isOverloadedWithoutDLM ? `${overloadHoursCount} horas com risco de desarme eliminadas` : 'Sem risco de sobrecarga'}
-          </p>
+          {peakWithDLMKW <= gridEffectiveLimitKW && peakWithoutDLMKW > gridEffectiveLimitKW ? (
+            <>
+              <p className="text-2xl font-black text-[#00B356]">{maxOverloadWithoutDLMKW} kW</p>
+              <p className="text-[10px] text-emerald-700 mt-1 font-medium">
+                {overloadHoursCount} horas de sobrecarga eliminadas com DLM
+              </p>
+            </>
+          ) : peakWithDLMKW > gridEffectiveLimitKW ? (
+            <>
+              <p className="text-2xl font-black text-red-600">Não evitada</p>
+              <p className="text-[10px] text-red-700 mt-1 font-medium">
+                Excede em +{(peakWithDLMKW - gridEffectiveLimitKW).toFixed(1)} kW (DLM desativado ou limite crítico)
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-2xl font-black text-slate-800">0 kW</p>
+              <p className="text-[10px] text-slate-500 mt-1 font-medium">
+                Operação 100% contida no limite do padrão
+              </p>
+            </>
+          )}
         </div>
 
         {/* KPI 3: Corrente Média Modulada */}

@@ -441,3 +441,151 @@ function parseTimeToMinutes(timeStr: string): number {
   }
   return 0;
 }
+
+// ─── AGREGADOR E COMPILADOR MULTI-PLANILHA E DIÁRIO ─────────────────────────
+
+import { DailyPeakPoint, MultiSheetMeasurementSummary } from '../types';
+
+/**
+ * Extrai o pico máximo registrado para cada dia a partir de um conjunto de pontos de medição.
+ * Suporta tanto uma única planilha com múltiplos dias quanto arquivos diários separados.
+ */
+export function extractDailyPeaks(intervalPoints: MeasuredIntervalPoint[], defaultSourceFileName?: string): DailyPeakPoint[] {
+  const dayMap = new Map<string, {
+    maxPowerKW: number;
+    peakTimeStr: string;
+    sumPowerKW: number;
+    readingsCount: number;
+    sourceFileName?: string;
+  }>();
+
+  for (const pt of intervalPoints) {
+    let dateKey = pt.dateStr.trim();
+    if (!dateKey) dateKey = 'Dia Único';
+
+    const current = dayMap.get(dateKey) || {
+      maxPowerKW: -Infinity,
+      peakTimeStr: pt.timeStr,
+      sumPowerKW: 0,
+      readingsCount: 0,
+      sourceFileName: defaultSourceFileName
+    };
+
+    if (pt.powerKW > current.maxPowerKW) {
+      current.maxPowerKW = pt.powerKW;
+      current.peakTimeStr = pt.timeStr;
+    }
+    current.sumPowerKW += pt.powerKW;
+    current.readingsCount += 1;
+
+    dayMap.set(dateKey, current);
+  }
+
+  // Converter para array ordenado
+  const result: DailyPeakPoint[] = [];
+  dayMap.forEach((val, dateStr) => {
+    // Formatar rótulo curto do dia (ex: '29/09' ou '29/09/2026')
+    const parts = dateStr.split('/');
+    const dayLabel = parts.length >= 2 ? `${parts[0]}/${parts[1]}` : dateStr;
+
+    const avg = val.readingsCount > 0 ? Number((val.sumPowerKW / val.readingsCount).toFixed(3)) : 0;
+    // Estimativa de energia integrada: assumindo ~5 min por leitura (dt = 5/60 h)
+    const energy = Number((val.sumPowerKW * (5 / 60)).toFixed(2));
+
+    result.push({
+      dateStr,
+      dayLabel,
+      maxPowerKW: Number(val.maxPowerKW.toFixed(3)),
+      peakTimeStr: val.peakTimeStr,
+      averagePowerKW: avg,
+      totalEnergyKWh: energy,
+      readingsCount: val.readingsCount,
+      sourceFileName: val.sourceFileName
+    });
+  });
+
+  // Ordenação cronológica simples (se formato DD/MM/AAAA)
+  return result.sort((a, b) => {
+    const pA = a.dateStr.split('/');
+    const pB = b.dateStr.split('/');
+    if (pA.length === 3 && pB.length === 3) {
+      const dtA = new Date(parseInt(pA[2]), parseInt(pA[1]) - 1, parseInt(pA[0])).getTime();
+      const dtB = new Date(parseInt(pB[2]), parseInt(pB[1]) - 1, parseInt(pB[0])).getTime();
+      return dtA - dtB;
+    }
+    return a.dateStr.localeCompare(b.dateStr);
+  });
+}
+
+/**
+ * Compila uma lista de resumos de medições (de uma ou múltiplas planilhas anexadas)
+ * em uma estrutura unificada, consolidando todos os picos de cada dia.
+ */
+export function compileMultipleLoadSummaries(summaries: PeriodMeasurementSummary[]): MultiSheetMeasurementSummary {
+  if (summaries.length === 0) {
+    throw new Error('Nenhuma medição fornecida para compilação.');
+  }
+
+  // Se houver apenas 1 resumo
+  if (summaries.length === 1) {
+    const s = summaries[0];
+    const dailyPeaks = extractDailyPeaks(s.intervalPoints, s.fileName);
+    return {
+      files: summaries,
+      consolidatedSummary: s,
+      dailyPeaks,
+      globalMaxPowerKW: s.maxPowerKW,
+      globalPeakTimestamp: s.peakTimestamp,
+      totalDays: Math.max(1, dailyPeaks.length)
+    };
+  }
+
+  // Múltiplos arquivos: mesclar pontos e extrair picos diários
+  let allPoints: MeasuredIntervalPoint[] = [];
+  let globalMaxPowerKW = -Infinity;
+  let globalPeakTimestamp = '';
+  let sumPowerTotal = 0;
+  let totalReadingsCount = 0;
+  let totalEnergySum = 0;
+
+  for (const s of summaries) {
+    for (const pt of s.intervalPoints) {
+      allPoints.push(pt);
+      if (pt.powerKW > globalMaxPowerKW) {
+        globalMaxPowerKW = pt.powerKW;
+        globalPeakTimestamp = `${pt.dateStr} ${pt.timeStr}`.trim();
+      }
+      sumPowerTotal += pt.powerKW;
+    }
+    totalReadingsCount += s.totalReadings;
+    totalEnergySum += s.totalEnergyKWh;
+  }
+
+  const dailyPeaks = extractDailyPeaks(allPoints);
+  const avgTotal = totalReadingsCount > 0 ? Number((sumPowerTotal / totalReadingsCount).toFixed(3)) : 0;
+
+  const consolidatedSummary: PeriodMeasurementSummary = {
+    fileName: `${summaries.length} Planilhas Compiladas (${dailyPeaks.length} dias)`,
+    fileType: 'xlsx',
+    periodStart: dailyPeaks[0]?.dateStr || summaries[0].periodStart,
+    periodEnd: dailyPeaks[dailyPeaks.length - 1]?.dateStr || summaries[summaries.length - 1].periodEnd,
+    durationMinutes: totalReadingsCount * 5,
+    intervalMinutes: 5,
+    totalReadings: totalReadingsCount,
+    minPowerKW: Math.min(...summaries.map(s => s.minPowerKW)),
+    maxPowerKW: Number(globalMaxPowerKW.toFixed(3)),
+    peakTimestamp: globalPeakTimestamp,
+    averagePowerKW: avgTotal,
+    totalEnergyKWh: Number(totalEnergySum.toFixed(2)),
+    intervalPoints: allPoints
+  };
+
+  return {
+    files: summaries,
+    consolidatedSummary,
+    dailyPeaks,
+    globalMaxPowerKW: Number(globalMaxPowerKW.toFixed(3)),
+    globalPeakTimestamp,
+    totalDays: dailyPeaks.length
+  };
+}

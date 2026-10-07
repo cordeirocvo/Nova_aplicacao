@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { PvlibService } from '@/lib/services/pvlibService';
+import { CresesbSolarService } from '@/lib/services/cresesbSolarService';
 
 export const runtime = 'nodejs';
 
@@ -47,9 +48,12 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // 2. Buscar Dados da Estação Solarimétrica para a data (se houver)
+    // 2. Buscar Dados da Estação Solarimétrica para a data
     let meteoData: any[] = [];
-    if (usina.estacaoId) {
+    let estacaoNome = usina.estacao?.nome || 'Estação Climatológica CRESESB';
+
+    // Se a usina possui estação física (ex: SIGMA) com telemetria gravada no banco
+    if (usina.estacaoId && usina.estacao?.apiFornecedor !== 'CRESESB') {
       const startDay = new Date(`${dateStr}T00:00:00-03:00`);
       const endDay = new Date(`${dateStr}T23:59:59.999-03:00`);
 
@@ -61,14 +65,30 @@ export async function GET(req: NextRequest) {
         orderBy: { timestamp: 'asc' },
       });
 
-      meteoData = telemetriasEst.map((t) => ({
-        timestamp: t.timestamp,
-        ghi: t.ghi,
-        poa: t.poa,
-        tempAmbiente: t.tempAmbiente,
-        tempModulos: t.tempModulos,
-        velocidadeVento: t.velocidadeVento,
-      }));
+      if (telemetriasEst.length > 0) {
+        meteoData = telemetriasEst.map((t) => ({
+          timestamp: t.timestamp,
+          ghi: t.ghi,
+          poa: t.poa,
+          tempAmbiente: t.tempAmbiente,
+          tempModulos: t.tempModulos,
+          velocidadeVento: t.velocidadeVento,
+        }));
+      }
+    }
+
+    // Se for estação virtual CRESESB ou se não houver dados gravados na estação física para a data,
+    // gerar curva sintética de alta fidelidade regionalizada (CRESESB SunData / NASA POWER)
+    if (meteoData.length === 0) {
+      const cresesbRes = await CresesbSolarService.generateDailyMeteo({
+        dateStr,
+        latitude,
+        longitude,
+        tilt,
+        azimuth,
+      });
+      meteoData = cresesbRes.meteoRecords;
+      estacaoNome = cresesbRes.estacaoNome || `Base Climatológica (${cresesbRes.regiaoNome})`;
     }
 
     // 3. Executar Simulação Científica do Digital Twin pvlib
@@ -262,16 +282,34 @@ export async function GET(req: NextRequest) {
       soilingRatio = parseFloat(measuredRatio.toFixed(3));
     }
 
+    // 7. Alinhamento de dia em andamento (telemetria parcial)
+    const lastRealTel = telemetriasUsina.length > 0 ? telemetriasUsina[telemetriasUsina.length - 1] : null;
+    const lastRealTimeStr = lastRealTel
+      ? lastRealTel.timestamp.toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' })
+      : '23:55';
+
+    const dtHours = 5.0 / 60.0;
+    let energiaEsperadaAteMomentoKWh = 0;
+    for (const pt of pvlibResult.curvaEsperada) {
+      if (pt.time <= lastRealTimeStr) {
+        energiaEsperadaAteMomentoKWh += pt.expectedKW * dtHours;
+      }
+    }
+    energiaEsperadaAteMomentoKWh = parseFloat(energiaEsperadaAteMomentoKWh.toFixed(2));
+
+    // Dia em andamento se o último registro for antes do fim da tarde (17:30)
+    const diaEmAndamento = telemetriasUsina.length > 0 && lastRealTimeStr < '17:30';
+    const energiaEsperadaRef = diaEmAndamento && energiaEsperadaAteMomentoKWh > 0 ? energiaEsperadaAteMomentoKWh : energiaEsperada;
+
     // Perda de energia por Sujidade (kWh) baseada estritamente no Soiling Ratio
-    const energiaSemClipping = energiaEsperada;
     const taxaSujidade = Math.max(0.015, Math.min(0.08, 1 - soilingRatio));
-    const perdaSujidadeKWh = parseFloat((energiaSemClipping * taxaSujidade).toFixed(2));
+    const perdaSujidadeKWh = parseFloat((energiaEsperadaRef * taxaSujidade).toFixed(2));
 
     // Perda de energia por Falhas de Strings (Fusível Queimado)
     let perdaStringsKWh = 0;
     if (stringsComFalha > 0) {
       const proporcaoFalhas = stringsComFalha / stringsInstaladas;
-      perdaStringsKWh = parseFloat((energiaSemClipping * proporcaoFalhas * 0.85).toFixed(2));
+      perdaStringsKWh = parseFloat((energiaEsperadaRef * proporcaoFalhas * 0.85).toFixed(2));
     }
 
     // Cascata de Perdas (Waterfall)
@@ -288,7 +326,7 @@ export async function GET(req: NextRequest) {
       { etapa: 'Geração Real Entregue', valorKWh: energiaRealKWh, tipo: 'resultado', impactoRS: energiaRealKWh * tarifaEnergia },
     ];
 
-    // 7. Otimizador Financeiro de Limpeza (Smart Cleaning Dispatcher)
+    // Otimizador Financeiro de Limpeza (Smart Cleaning Dispatcher)
     const perdaFinanceiraSujidadeDia = parseFloat((perdaSujidadeKWh * tarifaEnergia).toFixed(2));
     const diasAteEquilibrioLavagem = perdaFinanceiraSujidadeDia > 50
       ? Math.max(1, Math.round(custoLavagemUsina / perdaFinanceiraSujidadeDia))
@@ -304,8 +342,8 @@ export async function GET(req: NextRequest) {
     // 8. Performance Ratio Real vs Esperado
     const prReal = metricaDiaria?.performanceRatioReal
       ? metricaDiaria.performanceRatioReal * 100
-      : energiaRealKWh > 0 && pvlibResult.energiaEsperadaKWh > 0
-      ? (energiaRealKWh / pvlibResult.energiaEsperadaKWh) * pvlibResult.prEsperado
+      : energiaRealKWh > 0 && energiaEsperadaRef > 0
+      ? Math.min(100.0, (energiaRealKWh / energiaEsperadaRef) * pvlibResult.prEsperado)
       : 80.0;
 
     return NextResponse.json({
@@ -315,12 +353,17 @@ export async function GET(req: NextRequest) {
         nome: usina.nome,
         capacidadeKWp,
         capacidadeCA,
-        estacaoNome: usina.estacao?.nome || 'Estação Sigma',
+        razaoCCCA: parseFloat((capacidadeKWp / capacidadeCA).toFixed(2)),
+        estacaoNome: estacaoNome,
+        modoIrradiancia: usina.modoIrradiancia,
       },
       data: dateStr,
       resumo: {
         energiaRealKWh,
         energiaEsperadaKWh: energiaEsperada,
+        energiaEsperadaAteMomentoKWh,
+        momentoCorteTelemetria: lastRealTimeStr,
+        diaEmAndamento,
         energiaTeoricaSTCKWh: energiaTeoricaSTC,
         performanceRatioReal: parseFloat(prReal.toFixed(1)),
         performanceRatioEsperado: pvlibResult.prEsperado,

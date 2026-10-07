@@ -271,29 +271,50 @@ export default function LoadCurveChart({
               <span className="text-[10px] text-slate-400">Padrão: {gridLimitKW} kW</span>
             </div>
             <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[11px] pt-1">
-              <span className="text-slate-400">Consumo Edificação:</span>
+              <span className="text-slate-400">Consumo da Edificação:</span>
               <strong className="text-right">{hoveredPoint.baseLoadKW} kW</strong>
 
               {hoveredPoint.solarGenerationKW > 0 && (
                 <>
                   <span className="text-amber-400">Geração Solar:</span>
                   <strong className="text-right text-amber-300">-{hoveredPoint.solarGenerationKW} kW</strong>
+                  {hoveredPoint.solarGenerationKW > hoveredPoint.baseLoadKW && (
+                    <>
+                      <span className="text-emerald-400">Excedente Solar:</span>
+                      <strong className="text-right text-emerald-300">
+                        +{(hoveredPoint.solarGenerationKW - hoveredPoint.baseLoadKW).toFixed(1)} kW
+                      </strong>
+                    </>
+                  )}
                 </>
               )}
 
-              <span className="text-slate-400">Folga Disponível:</span>
+              <span className="text-slate-400">Carregadores VE:</span>
+              <strong className={`text-right font-bold ${hoveredPoint.evLoadUncontrolledKW > 0 ? 'text-orange-400' : 'text-slate-400'}`}>
+                {hoveredPoint.evLoadUncontrolledKW > 0 
+                  ? `+${hoveredPoint.evLoadUncontrolledKW} kW (Ativo)` 
+                  : 'Desconectados (0 kW)'}
+              </strong>
+
+              <span className="text-slate-400">Folga no Padrão:</span>
               <strong className="text-right text-emerald-400">{hoveredPoint.headroomKW} kW</strong>
 
-              <span className="text-red-400">Total Sem DLM:</span>
-              <strong className="text-right text-red-300">{hoveredPoint.totalUncontrolledKW} kW</strong>
+              <div className="col-span-2 border-t border-slate-700/80 my-1"></div>
+
+              <span className="text-slate-300">Demanda da Rede (Sem DLM):</span>
+              <strong className="text-right text-slate-200">{hoveredPoint.totalUncontrolledKW} kW</strong>
 
               {enableDLM && (
                 <>
-                  <span className="text-emerald-400">Total Com DLM:</span>
-                  <strong className="text-right text-emerald-300 font-bold">{hoveredPoint.totalControlledKW} kW</strong>
+                  <span className="text-[#00B356] font-bold">Demanda da Rede (Com DLM):</span>
+                  <strong className="text-right text-[#00B356] font-black">{hoveredPoint.totalControlledKW} kW</strong>
 
-                  <span className="text-slate-400">Corrente p/ Carro:</span>
-                  <strong className="text-right text-slate-200">{hoveredPoint.perChargerCurrentA}A</strong>
+                  {hoveredPoint.evLoadUncontrolledKW > 0 && (
+                    <>
+                      <span className="text-slate-400">Corrente por Veículo:</span>
+                      <strong className="text-right text-slate-200">{hoveredPoint.perChargerCurrentA}A</strong>
+                    </>
+                  )}
                 </>
               )}
             </div>

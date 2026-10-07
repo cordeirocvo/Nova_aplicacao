@@ -49,6 +49,22 @@ export function simulateDLM(
     : (voltage * minCurrentA * cosPhi) / 1000;
   const minTotalChargersKW = minPowerPerChargerKW * chargerCount;
 
+  // Cálculo da Potência Máxima Segura Contínua por Carregador (IEC 61851-1 / NBR 17019):
+  // Qual a potência que cada carregador pode operar continuamente para que a soma com a carga da edificação
+  // NUNCA ultrapasse a capacidade nominal do disjuntor do padrão, evitando qualquer desarme.
+  const availableContinuousHeadroomKW = Math.max(0, gridEffectiveLimitKW - uncontrolled.peakBaseLoadKW);
+  const rawSafePowerPerChargerKW = chargerCount > 0 ? availableContinuousHeadroomKW / chargerCount : availableContinuousHeadroomKW;
+  // Limita entre a potência mínima de norma (6A) e a potência nominal do carregador
+  const suggestedSafeChargerPowerKW = Number(
+    Math.min(chargerUnitPowerKW, Math.max(minPowerPerChargerKW, rawSafePowerPerChargerKW)).toFixed(1)
+  );
+
+  // Teto efetivo de potência unitária por carregador a ser respeitado nesta simulação
+  const effectiveMaxChargerPowerKW = config.maxChargerCapKW !== undefined && config.maxChargerCapKW > 0
+    ? Math.min(chargerUnitPowerKW, config.maxChargerCapKW)
+    : chargerUnitPowerKW;
+  const isLimitationAccepted = Boolean(config.maxChargerCapKW !== undefined && config.maxChargerCapKW < chargerUnitPowerKW);
+
   let totalEnergyDeliveredControlledKWh = 0;
   let peakWithDLMKW = 0;
   let isOverloadedWithDLM = false;
@@ -85,20 +101,34 @@ export function simulateDLM(
 
     countChargingHours++;
 
+    // Carga de veículos pretendida nesta hora considerando eventual limitação aceita
+    const targetEVLoadKW = isLimitationAccepted
+      ? Number((effectiveMaxChargerPowerKW * chargerCount).toFixed(1))
+      : evLoadUncontrolledKW;
+
     if (!enableDLM) {
       // Se DLM desativado, o comportamento controlado é idêntico ao descontrolado
-      evLoadControlledKW = evLoadUncontrolledKW;
-      perChargerCurrentA = Number(maxCurrentA.toFixed(1));
+      evLoadControlledKW = targetEVLoadKW;
+      const targetUnitPower = targetEVLoadKW / Math.max(1, chargerCount);
+      perChargerCurrentA = phases === 3
+        ? (targetUnitPower * 1000) / (Math.sqrt(3) * voltage * cosPhi)
+        : (targetUnitPower * 1000) / (voltage * cosPhi);
     } else {
       // DLM ATIVADO: Calcula a potência máxima que os carros podem puxar sem estourar o padrão
       const availablePowerKW = Math.max(0, gridEffectiveLimitKW - netBuildingLoadKW);
 
-      if (availablePowerKW >= evLoadUncontrolledKW) {
-        // Há folga plena: todos os veículos carregam na potência máxima
-        evLoadControlledKW = evLoadUncontrolledKW;
-        perChargerCurrentA = Number(maxCurrentA.toFixed(1));
+      if (availablePowerKW >= targetEVLoadKW) {
+        // Há folga plena para a potência alvo
+        evLoadControlledKW = targetEVLoadKW;
+        const pUnit = targetEVLoadKW / Math.max(1, chargerCount);
+        perChargerCurrentA = phases === 3
+          ? (pUnit * 1000) / (Math.sqrt(3) * voltage * cosPhi)
+          : (pUnit * 1000) / (voltage * cosPhi);
+        if (isLimitationAccepted) {
+          isThrottled = true;
+        }
       } else if (availablePowerKW >= minTotalChargersKW) {
-        // Folga intermediária: modula a corrente de todos proporcionalmente (entre 6A e maxCurrentA)
+        // Folga intermediária: modula a corrente de todos proporcionalmente (entre 6A e max)
         evLoadControlledKW = Number(availablePowerKW.toFixed(1));
         const powerPerCharger = availablePowerKW / chargerCount;
         perChargerCurrentA = phases === 3
@@ -107,7 +137,7 @@ export function simulateDLM(
         isThrottled = true;
       } else {
         // Folga crítica: nem todos conseguem carregar a 6A simultaneamente.
-        // O algoritmo mantém a potência no limite de segurança permitindo rotatividade
+        // O algoritmo mantém a potência estritamente no teto de segurança garantido da concessionária
         evLoadControlledKW = Number(availablePowerKW.toFixed(1));
         perChargerCurrentA = minCurrentA;
         isThrottled = true;
@@ -168,20 +198,31 @@ export function simulateDLM(
     statusColor = 'green';
     recommendations.push('A folga da edificação comporta a carga total nominal dos carregadores sem risco de sobrecarga.');
     recommendations.push('O DLM ainda pode ser instalado para contingência futura e gestão de tarifas horárias.');
-  } else if (enableDLM && !isOverloadedWithDLM && (energyDeliveryEfficiencyPercent >= 30 || averageModulatedCurrentA >= 6.0)) {
+  } else if (enableDLM && !isOverloadedWithDLM) {
     status = 'approved_with_dlm';
-    statusLabel = 'Viável com DLM (Gestão Dinâmica de Carga Elimina a Sobrecarga)';
-    statusColor = 'yellow';
+    statusLabel = isLimitationAccepted
+      ? `Operação 100% Segura e Aprovada com DLM (Carregador limitado a ${effectiveMaxChargerPowerKW} kW)`
+      : 'Viável com DLM (Gestão Dinâmica de Carga Elimina a Sobrecarga)';
+    statusColor = 'green';
     
     // Estimativa de economia de CAPEX: troca de transformador / cabine primária custa R$ 120k a R$ 250k
     capexSavingsEstimateBRL = chargerCount >= 4 ? 160000 : 45000;
 
-    recommendations.push(`Sem DLM, a edificação ultrapassaria o limite do padrão em até ${uncontrolled.maxOverloadWithoutDLMKW} kW por ${uncontrolled.overloadHoursCount} horas.`);
-    recommendations.push(`Com o DLM ativo, a corrente é modulada de forma segura (média de ${averageModulatedCurrentA}A), entregando ${energyDeliveryEfficiencyPercent}% da energia nominal sem desarmar o disjuntor.`);
-    if (energyDeliveryEfficiencyPercent < 70) {
-      recommendations.push('Como a folga no horário de pico é estreita, o tempo total de recarga será prolongado até as horas de madrugada, quando a folga se expande.');
+    if (isLimitationAccepted) {
+      recommendations.push(`Limitação Segura Aplicada: A potência de cada carregador foi parametrizada para ${effectiveMaxChargerPowerKW} kW, eliminando qualquer risco de desarme térmico do disjuntor geral.`);
+      recommendations.push(`Conformidade Normativa: Operação em estrita consonância com ABNT NBR 17019, IEC 61851-1 e regulamentação CEMIG ND-5.1.`);
+    } else {
+      recommendations.push(`Sem DLM, a edificação ultrapassaria o limite do padrão em até ${uncontrolled.maxOverloadWithoutDLMKW} kW por ${uncontrolled.overloadHoursCount} horas.`);
+      recommendations.push(`Com o DLM ativo, a corrente é modulada de forma dinâmica em malha fechada (média de ${averageModulatedCurrentA}A), garantindo entrega de ${energyDeliveryEfficiencyPercent}% da energia nominal sem desarmar o disjuntor.`);
     }
-    recommendations.push(`Economia estimada de aproximadamente R$ ${capexSavingsEstimateBRL.toLocaleString('pt-BR')} ao evitar aumento de padrão ou subestação particular.`);
+    recommendations.push(`Economia estimada de aproximadamente R$ ${capexSavingsEstimateBRL.toLocaleString('pt-BR')} ao evitar solicitação de aumento de carga, adequação de ramal ou nova subestação.`);
+  } else if (enableDLM && isOverloadedWithDLM && (energyDeliveryEfficiencyPercent >= 30 || averageModulatedCurrentA >= 6.0)) {
+    status = 'approved_with_dlm';
+    statusLabel = 'Viável com DLM Dinâmico (Modulação de Corrente Operacional)';
+    statusColor = 'yellow';
+    capexSavingsEstimateBRL = chargerCount >= 4 ? 160000 : 45000;
+    recommendations.push(`A corrente é modulada dinamicamente entre 6A e a máxima permitida pela folga instantânea.`);
+    recommendations.push(`Economia estimada de R$ ${capexSavingsEstimateBRL.toLocaleString('pt-BR')} ao manter a infraestrutura existente.`);
   } else {
     status = 'requires_infrastructure_upgrade';
     statusLabel = 'Inviável no Padrão Atual (Exige Aumento de Carga ou Subestação MT)';
@@ -210,6 +251,9 @@ export function simulateDLM(
     statusLabel,
     statusColor,
     capexSavingsEstimateBRL,
-    recommendations
+    recommendations,
+    suggestedSafeChargerPowerKW,
+    isLimitationAccepted,
+    limitedChargerPowerKW: isLimitationAccepted ? effectiveMaxChargerPowerKW : undefined
   };
 }

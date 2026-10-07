@@ -15,22 +15,28 @@ import { CPFL_CATEGORIES, selectNormalizedTransformer } from '../database/utilit
 export function evaluateCPFL(input: UtilitySizingInput): UtilitySizingOutput {
   const { chargers, existingLoadKW, installationType, hasDedicatedTransformer, hasSmartChargingDLM } = input;
 
-  const totalChargersKW = chargers.reduce((sum, c) => sum + (c.powerKW * c.quantity), 0);
+  const totalChargersKW = Number(chargers.reduce((sum, c) => sum + (c.powerKW * c.quantity), 0).toFixed(1));
   const totalChargersCount = chargers.reduce((sum, c) => sum + c.quantity, 0);
   const hasDCCharger = chargers.some(c => c.chargerType === 'DC');
+  const nominalTotalLoadKW = Number((existingLoadKW + totalChargersKW).toFixed(1));
+  const isNominalLoadAboveBTLimit = nominalTotalLoadKW > 75;
 
   // Fator de simultaneidade conforme CPFL GED-150030
   let fSimult = 1.0;
-  if (installationType === 'coletivo_condominio' || installationType === 'comercial_eletroposto') {
+  if (installationType === 'coletivo_condominio') {
     if (hasSmartChargingDLM) {
       fSimult = totalChargersCount <= 4 ? 0.70 : totalChargersCount <= 10 ? 0.50 : 0.35;
     } else {
       fSimult = totalChargersCount <= 2 ? 0.90 : totalChargersCount <= 5 ? 0.80 : totalChargersCount <= 10 ? 0.70 : 0.55;
     }
+  } else if (installationType === 'comercial_eletroposto') {
+    fSimult = hasSmartChargingDLM
+      ? (totalChargersCount <= 4 ? 0.70 : totalChargersCount <= 10 ? 0.50 : 0.35)
+      : 1.0; // Sem DLM em eletroposto comercial, 100%
   }
 
-  const diversifiedChargersKW = totalChargersKW * fSimult;
-  const totalInstallationLoadKW = existingLoadKW + diversifiedChargersKW;
+  const diversifiedChargersKW = Number((totalChargersKW * fSimult).toFixed(1));
+  const totalInstallationLoadKW = Number((existingLoadKW + diversifiedChargersKW).toFixed(1));
   const avgPF = hasDCCharger ? 0.98 : 0.95;
   const calculatedDemandKVA = Number((totalInstallationLoadKW / avgPF).toFixed(1));
 
@@ -39,7 +45,8 @@ export function evaluateCPFL(input: UtilitySizingInput): UtilitySizingOutput {
   let recommendedTrafo: number | undefined = undefined;
 
   // Limite BT CPFL GED-13 é 75 kW
-  if (totalInstallationLoadKW > 75 || hasDedicatedTransformer) {
+  const effectiveDemandForSupply = hasSmartChargingDLM ? totalInstallationLoadKW : nominalTotalLoadKW;
+  if (effectiveDemandForSupply > 75 || totalInstallationLoadKW > 75 || hasDedicatedTransformer) {
     supplyLevel = 'MT';
     requiresTransformer = true;
     recommendedTrafo = selectNormalizedTransformer(calculatedDemandKVA);
@@ -96,28 +103,74 @@ export function evaluateCPFL(input: UtilitySizingInput): UtilitySizingOutput {
     });
   }
 
-  const needsStandardUpgrade = totalInstallationLoadKW > existingLoadKW && existingLoadKW > 0;
-  if (needsStandardUpgrade) {
-    actions.push({
-      type: 'alerta',
-      title: 'Aumento de Carga Solicitado na CPFL',
-      description: `Carga total estimada em ${totalInstallationLoadKW.toFixed(1)} kW. Deve ser aberto pedido de aumento de carga via portal de projetos particulares CPFL.`,
-      normReference: 'CPFL GED-13 / GED-119'
-    });
+  // Comparação com o Padrão Atual do Cliente (CPFL)
+  let currentCategory: UtilityCategorySpec | undefined = undefined;
+  if (input.currentStandardCategoryId && CPFL_CATEGORIES[input.currentStandardCategoryId]) {
+    currentCategory = CPFL_CATEGORIES[input.currentStandardCategoryId];
+  }
+
+  const effectiveCurrentLimitKW = input.currentStandardLimitKW || currentCategory?.maxLimitKW || 0;
+  
+  let isExistingStandardAdequate = true;
+  let needsStandardUpgrade = false;
+  let headroomInCurrentStandardKW = 0;
+
+  if (effectiveCurrentLimitKW > 0) {
+    if (totalInstallationLoadKW <= effectiveCurrentLimitKW) {
+      isExistingStandardAdequate = true;
+      needsStandardUpgrade = false;
+      headroomInCurrentStandardKW = Number((effectiveCurrentLimitKW - totalInstallationLoadKW).toFixed(1));
+      
+      actions.push({
+        type: 'recomendada',
+        title: 'Padrão Atual CPFL Atende Integralmente',
+        description: `O padrão atual (${currentCategory ? currentCategory.categoryName : `${effectiveCurrentLimitKW} kW`}) possui capacidade suficiente para absorver a nova demanda. Folga restante: ${headroomInCurrentStandardKW} kW.`,
+        normReference: 'CPFL GED-13'
+      });
+    } else {
+      isExistingStandardAdequate = false;
+      needsStandardUpgrade = true;
+      headroomInCurrentStandardKW = 0;
+
+      actions.push({
+        type: 'alerta',
+        title: 'Necessidade de Adequação / Aumento de Padrão CPFL',
+        description: `A demanda calculada (${totalInstallationLoadKW.toFixed(1)} kW) excede o padrão atual informado (${effectiveCurrentLimitKW} kW). Necessário solicitar aumento de carga para a Categoria ${category.categoryId} (${category.breakerCurrentA}A) ou acionar o DLM.`,
+        normReference: 'CPFL GED-13 / GED-119'
+      });
+    }
+  } else {
+    isExistingStandardAdequate = totalInstallationLoadKW <= category.maxLimitKW;
+    needsStandardUpgrade = totalInstallationLoadKW > existingLoadKW && existingLoadKW > 0;
+    headroomInCurrentStandardKW = Math.max(0, category.maxLimitKW - totalInstallationLoadKW);
+
+    if (needsStandardUpgrade) {
+      actions.push({
+        type: 'alerta',
+        title: 'Aumento de Carga Solicitado na CPFL',
+        description: `Carga total estimada em ${totalInstallationLoadKW.toFixed(1)} kW. Recomendado adequar para a Categoria ${category.categoryId} (${category.breakerCurrentA}A).`,
+        normReference: 'CPFL GED-13 / GED-119'
+      });
+    }
   }
 
   return {
     utility: 'CPFL',
     utilityFullName: 'CPFL Energia (Paulista / Piratininga / Santa Cruz / RGE)',
     applicableStandards: ['GED-150030 (Acesso VE)', 'GED-13 (BT Individual)', 'GED-119 (Edificações Coletivas)', 'GED-11 (MT)'],
-    voltageSupply: '127/220V ou 220/380V (Secundário) / 13.8kV ou 34.5kV (Primário)',
+    voltageSupply: supplyLevel === 'BT' ? '127/220V ou 220/380V (Secundário)' : '13.8kV ou 34.5kV (Primário)',
     totalChargersKW,
+    nominalTotalLoadKW,
+    isNominalLoadAboveBTLimit,
     simultaneityFactorApplied: fSimult,
     diversifiedChargersKW: Number(diversifiedChargersKW.toFixed(1)),
     totalInstallationLoadKW: Number(totalInstallationLoadKW.toFixed(1)),
     calculatedDemandKVA,
     supplyLevel,
     category,
+    currentCategory,
+    isExistingStandardAdequate,
+    headroomInCurrentStandardKW,
     requiresTransformer,
     recommendedTransformerKVA: recommendedTrafo,
     meteringScheme,

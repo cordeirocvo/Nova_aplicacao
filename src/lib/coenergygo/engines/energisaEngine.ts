@@ -14,21 +14,27 @@ import { ENERGISA_CATEGORIES, selectNormalizedTransformer } from '../database/ut
 export function evaluateEnergisa(input: UtilitySizingInput): UtilitySizingOutput {
   const { chargers, existingLoadKW, installationType, hasDedicatedTransformer, hasSmartChargingDLM } = input;
 
-  const totalChargersKW = chargers.reduce((sum, c) => sum + (c.powerKW * c.quantity), 0);
+  const totalChargersKW = Number(chargers.reduce((sum, c) => sum + (c.powerKW * c.quantity), 0).toFixed(1));
   const totalChargersCount = chargers.reduce((sum, c) => sum + c.quantity, 0);
   const hasDCCharger = chargers.some(c => c.chargerType === 'DC');
+  const nominalTotalLoadKW = Number((existingLoadKW + totalChargersKW).toFixed(1));
+  const isNominalLoadAboveBTLimit = nominalTotalLoadKW > 75;
 
   let fSimult = 1.0;
-  if (installationType === 'coletivo_condominio' || installationType === 'comercial_eletroposto') {
+  if (installationType === 'coletivo_condominio') {
     if (hasSmartChargingDLM) {
       fSimult = totalChargersCount <= 4 ? 0.70 : totalChargersCount <= 10 ? 0.50 : 0.35;
     } else {
       fSimult = totalChargersCount <= 2 ? 0.90 : totalChargersCount <= 5 ? 0.80 : totalChargersCount <= 10 ? 0.70 : 0.50;
     }
+  } else if (installationType === 'comercial_eletroposto') {
+    fSimult = hasSmartChargingDLM
+      ? (totalChargersCount <= 4 ? 0.70 : totalChargersCount <= 10 ? 0.50 : 0.35)
+      : 1.0;
   }
 
-  const diversifiedChargersKW = totalChargersKW * fSimult;
-  const totalInstallationLoadKW = existingLoadKW + diversifiedChargersKW;
+  const diversifiedChargersKW = Number((totalChargersKW * fSimult).toFixed(1));
+  const totalInstallationLoadKW = Number((existingLoadKW + diversifiedChargersKW).toFixed(1));
   const avgPF = hasDCCharger ? 0.98 : 0.95;
   const calculatedDemandKVA = Number((totalInstallationLoadKW / avgPF).toFixed(1));
 
@@ -37,7 +43,8 @@ export function evaluateEnergisa(input: UtilitySizingInput): UtilitySizingOutput
   let recommendedTrafo: number | undefined = undefined;
 
   // Limite BT Energisa NDU 001 é 75 kW
-  if (totalInstallationLoadKW > 75 || hasDedicatedTransformer) {
+  const effectiveDemandForSupply = hasSmartChargingDLM ? totalInstallationLoadKW : nominalTotalLoadKW;
+  if (effectiveDemandForSupply > 75 || totalInstallationLoadKW > 75 || hasDedicatedTransformer) {
     supplyLevel = 'MT';
     requiresTransformer = true;
     recommendedTrafo = selectNormalizedTransformer(calculatedDemandKVA);
@@ -94,28 +101,74 @@ export function evaluateEnergisa(input: UtilitySizingInput): UtilitySizingOutput
     });
   }
 
-  const needsStandardUpgrade = totalInstallationLoadKW > existingLoadKW && existingLoadKW > 0;
-  if (needsStandardUpgrade) {
-    actions.push({
-      type: 'alerta',
-      title: 'Solicitação de Aumento de Carga na Energisa',
-      description: `A inclusão dos carregadores eleva a carga total da edificação para ${totalInstallationLoadKW.toFixed(1)} kW. Necessário formalizar pedido de aumento de carga via portal da Energisa.`,
-      normReference: 'Energisa NDU 001'
-    });
+  // Comparação com o Padrão Atual do Cliente (Energisa)
+  let currentCategory: UtilityCategorySpec | undefined = undefined;
+  if (input.currentStandardCategoryId && ENERGISA_CATEGORIES[input.currentStandardCategoryId]) {
+    currentCategory = ENERGISA_CATEGORIES[input.currentStandardCategoryId];
+  }
+
+  const effectiveCurrentLimitKW = input.currentStandardLimitKW || currentCategory?.maxLimitKW || 0;
+  
+  let isExistingStandardAdequate = true;
+  let needsStandardUpgrade = false;
+  let headroomInCurrentStandardKW = 0;
+
+  if (effectiveCurrentLimitKW > 0) {
+    if (totalInstallationLoadKW <= effectiveCurrentLimitKW) {
+      isExistingStandardAdequate = true;
+      needsStandardUpgrade = false;
+      headroomInCurrentStandardKW = Number((effectiveCurrentLimitKW - totalInstallationLoadKW).toFixed(1));
+      
+      actions.push({
+        type: 'recomendada',
+        title: 'Padrão Atual Energisa Atende Integralmente',
+        description: `O padrão atual informado (${currentCategory ? currentCategory.categoryName : `${effectiveCurrentLimitKW} kW`}) possui capacidade para absorver a nova demanda. Folga restante no disjuntor: ${headroomInCurrentStandardKW} kW.`,
+        normReference: 'Energisa NDU 001'
+      });
+    } else {
+      isExistingStandardAdequate = false;
+      needsStandardUpgrade = true;
+      headroomInCurrentStandardKW = 0;
+
+      actions.push({
+        type: 'alerta',
+        title: 'Necessidade de Adequação / Aumento de Padrão Energisa',
+        description: `A demanda calculada (${totalInstallationLoadKW.toFixed(1)} kW) excede o padrão atual informado (${effectiveCurrentLimitKW} kW). É necessário solicitar aumento de carga para a Categoria ${category.categoryId} (${category.breakerCurrentA}A) ou acionar o DLM.`,
+        normReference: 'Energisa NDU 001 / NDU 042'
+      });
+    }
+  } else {
+    isExistingStandardAdequate = totalInstallationLoadKW <= category.maxLimitKW;
+    needsStandardUpgrade = totalInstallationLoadKW > existingLoadKW && existingLoadKW > 0;
+    headroomInCurrentStandardKW = Math.max(0, category.maxLimitKW - totalInstallationLoadKW);
+
+    if (needsStandardUpgrade) {
+      actions.push({
+        type: 'alerta',
+        title: 'Solicitação de Aumento de Carga na Energisa',
+        description: `A inclusão dos carregadores eleva a carga total para ${totalInstallationLoadKW.toFixed(1)} kW. Recomendado adequar para a Categoria ${category.categoryId} (${category.breakerCurrentA}A).`,
+        normReference: 'Energisa NDU 001'
+      });
+    }
   }
 
   return {
     utility: 'ENERGISA',
     utilityFullName: 'Grupo Energisa (Cataguases, PB, MS, MT, TO, SE, RO, AC)',
     applicableStandards: ['NDU 042 (Estações de Recarga VE)', 'NDU 001 (BT)', 'NDU 002 (MT)'],
-    voltageSupply: '127/220V ou 220/380V (Secundário) / 13.8kV ou 34.5kV (Primário)',
+    voltageSupply: supplyLevel === 'BT' ? '127/220V ou 220/380V (Secundário)' : '13.8kV ou 34.5kV (Primário)',
     totalChargersKW,
+    nominalTotalLoadKW,
+    isNominalLoadAboveBTLimit,
     simultaneityFactorApplied: fSimult,
     diversifiedChargersKW: Number(diversifiedChargersKW.toFixed(1)),
     totalInstallationLoadKW: Number(totalInstallationLoadKW.toFixed(1)),
     calculatedDemandKVA,
     supplyLevel,
     category,
+    currentCategory,
+    isExistingStandardAdequate,
+    headroomInCurrentStandardKW,
     requiresTransformer,
     recommendedTransformerKVA: recommendedTrafo,
     meteringScheme,

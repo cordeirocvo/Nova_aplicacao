@@ -236,6 +236,25 @@ export default function NovoDimensionamento() {
 
   return (
     <div className="max-w-5xl mx-auto pb-20">
+      {/* Banner de Direcionamento para o CoenergyGO Integrado */}
+      <div className="mb-6 p-4 bg-gradient-to-r from-[#0A192F] to-[#1E293B] text-white rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md border border-slate-700">
+        <div>
+          <span className="bg-[#E45318] text-white text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full tracking-wider">
+            Recomendado
+          </span>
+          <h3 className="text-sm font-bold text-white mt-1">Conheça o novo CoenergyGO 5 Etapas</h3>
+          <p className="text-xs text-slate-300">
+            Dimensionamento integrado com Curva de Carga 24h, Gestão DLM e motores CEMIG ND-5.1/5.2/5.3 em tempo real.
+          </p>
+        </div>
+        <button
+          onClick={() => router.push('/carregamento')}
+          className="bg-[#00B356] hover:bg-emerald-600 text-white text-xs font-bold px-4 py-2 rounded-xl whitespace-nowrap transition-all shadow cursor-pointer self-start sm:self-auto"
+        >
+          Abrir CoenergyGO Completo →
+        </button>
+      </div>
+
       <div className="mb-8">
         <h1 className="text-3xl font-black text-slate-800 tracking-tighter">Novo Dimensionamento EV</h1>
         <p className="text-slate-500 mt-1 text-sm font-medium">Dimensionamento técnico conforme NBR 17019, NBR 5410 e IT 41 Bombeiros.</p>

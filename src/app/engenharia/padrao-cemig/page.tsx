@@ -34,12 +34,16 @@ import {
 } from "lucide-react";
 import AdicionarMaterialModal from "@/components/cemig/AdicionarMaterialModal";
 import PropostaModal from "@/components/cemig/PropostaModal";
+import CotacaoDistribuidoresModal from "@/components/cemig/CotacaoDistribuidoresModal";
 import {
   dimensionarPadraoCemig,
   TipoPadrao,
   CategoriaDemandaPadrao,
   CaixaDisjuntorTabela4,
   TipoCaixaSubterraneaTabela4,
+  TipoTerminalDisjuntor,
+  getDisjuntorSoprano,
+  selecionarBarramentoCM18,
   LadoRede,
   TipoSaida,
   LocalizacaoPadrao,
@@ -59,6 +63,7 @@ export default function PadraoCemigPage() {
   const [categoriaDemanda, setCategoriaDemanda] = useState<CategoriaDemandaPadrao>("INDIVIDUAL_TABELA_2");
   const [tipoCaixaDisjuntorTabela4, setTipoCaixaDisjuntorTabela4] = useState<CaixaDisjuntorTabela4>("CM-18");
   const [tipoCaixaSubterranea, setTipoCaixaSubterranea] = useState<TipoCaixaSubterraneaTabela4>("ZC");
+  const [tipoTerminalDisjuntor, setTipoTerminalDisjuntor] = useState<TipoTerminalDisjuntor>("COMPRESSAO_OLHAL");
   const [tipoPadrao, setTipoPadrao] = useState<TipoPadrao>("TRIFASICO");
   const [disjuntorAmperes, setDisjuntorAmperes] = useState<number>(100);
   const [ladoRede, setLadoRede] = useState<LadoRede>("MESMO_LADO");
@@ -91,6 +96,7 @@ export default function PadraoCemigPage() {
   // Modais
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isPropostaModalOpen, setIsPropostaModalOpen] = useState(false);
+  const [isCotacaoModalOpen, setIsCotacaoModalOpen] = useState(false);
   const [propostaParaModal, setPropostaParaModal] = useState<any>(null);
 
   // Histórico de Propostas Salvas
@@ -155,6 +161,7 @@ export default function PadraoCemigPage() {
         categoriaDemanda,
         tipoCaixaDisjuntorTabela4,
         tipoCaixaSubterranea,
+        tipoTerminalDisjuntor,
         disjuntorAmperes,
         ladoRede: localizacao === "RURAL" ? "LADO_OPOSTO" : ladoRede,
         tipoSaida,
@@ -177,6 +184,7 @@ export default function PadraoCemigPage() {
     categoriaDemanda,
     tipoCaixaDisjuntorTabela4,
     tipoCaixaSubterranea,
+    tipoTerminalDisjuntor,
     tipoPadrao,
     disjuntorAmperes,
     ladoRede,
@@ -479,7 +487,12 @@ export default function PadraoCemigPage() {
   };
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
+    <>
+      <div
+        className={`p-4 md:p-8 max-w-7xl mx-auto space-y-6 ${
+          isCotacaoModalOpen || isPropostaModalOpen ? "print:hidden" : ""
+        }`}
+      >
       {/* Header Superior */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
         <div className="flex items-center gap-4">
@@ -882,6 +895,182 @@ export default function PadraoCemigPage() {
                 </div>
               )}
 
+              {/* Seletor de Conexão no Disjuntor & Informações Técnicas Soprano e Copperbarras */}
+              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                    <Zap className="w-4 h-4 text-[#00BFA5]" /> Conexão do Disjuntor & Barramentos (Soprano & Copperbarras)
+                  </span>
+                  {resumoTecnico?.usaTerminalBandeira ? (
+                    <span className="text-[10px] font-black px-2.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200 flex items-center gap-1">
+                      <AlertTriangle className="w-3 h-3 text-amber-600" /> Requer Terminal Bandeira
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-black px-2.5 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1">
+                      <CheckCircle className="w-3 h-3 text-emerald-600" /> Entrada Direta nos Bornes
+                    </span>
+                  )}
+                </div>
+
+                {/* Seletor de Tipo de Terminal */}
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1.5">
+                    Tipo de Terminal para Conexão aos Bornes do Disjuntor:
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setTipoTerminalDisjuntor("COMPRESSAO_OLHAL")}
+                      className={`p-3 rounded-xl border text-left transition ${
+                        tipoTerminalDisjuntor === "COMPRESSAO_OLHAL"
+                          ? "border-[#00BFA5] bg-emerald-50/70 text-slate-900 ring-2 ring-[#00BFA5]/30 font-bold"
+                          : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-black text-xs text-slate-800">Terminal de Compressão Olhal</span>
+                        <span className="text-[9px] px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded font-bold">Parafuso / Chato</span>
+                      </div>
+                      <p className="text-[10px] text-slate-500 font-normal leading-relaxed">
+                        Cobre estanhado tubular com furo para fixação mecânica aparafusada. Obrigatório para conexão em terminais bandeira e barramentos da Caixa CM-18.
+                      </p>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setTipoTerminalDisjuntor("PINO_MACICO")}
+                      disabled={resumoTecnico?.usaTerminalBandeira}
+                      className={`p-3 rounded-xl border text-left transition ${
+                        resumoTecnico?.usaTerminalBandeira
+                          ? "opacity-60 cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400"
+                          : tipoTerminalDisjuntor === "PINO_MACICO"
+                            ? "border-[#00BFA5] bg-emerald-50/70 text-slate-900 ring-2 ring-[#00BFA5]/30 font-bold"
+                            : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-black text-xs text-slate-800">Terminal Pino Maciço</span>
+                        <span className="text-[9px] px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded font-bold">Bornes Túnel</span>
+                      </div>
+                      <p className="text-[10px] text-slate-500 font-normal leading-relaxed">
+                        Pino sólido de cobre estanhado para inserção direta em bornes de fixação por parafuso de topo tipo túnel (1 cabo por polo).
+                      </p>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Banner Informativo Dinâmico Conforme Quantidade de Condutores */}
+                {resumoTecnico?.usaTerminalBandeira ? (
+                  <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs space-y-1">
+                    <p className="font-bold text-amber-900 flex items-center gap-1.5 text-[11px]">
+                      <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                      Regra Técnica de Montagem: Múltiplos Cabos por Polo Requerem Terminal Bandeira
+                    </p>
+                    <p className="text-amber-800 text-[11px] leading-relaxed">
+                      Neste padrão chegam <strong>múltiplos condutores de {resumoTecnico.caboFaseMm2} mm² em paralelo por fase</strong>. O disjuntor de caixa moldada não comporta aperto direto de múltiplos condutores pesados em um único terminal. O sistema incluiu automaticamente <strong>3x Terminais Bandeira em cobre com parafusos proporcionais</strong> e padronizou <strong>Terminais de Compressão Olhal</strong> em todos os condutores para fixação segura.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-xs space-y-1">
+                    <p className="font-bold text-emerald-900 flex items-center gap-1.5 text-[11px]">
+                      <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+                      Entrada Direta no Disjuntor (1 Condutor por Fase)
+                    </p>
+                    <p className="text-emerald-800 text-[11px] leading-relaxed">
+                      Como chega apenas 1 cabo de {resumoTecnico?.caboFaseMm2} mm² por polo, ele entra diretamente nos bornes do disjuntor com <strong>{tipoTerminalDisjuntor === "COMPRESSAO_OLHAL" ? "Terminal de Compressão Olhal" : "Terminal Pino Maciço"}</strong>, sem necessidade de adaptador bandeira.
+                    </p>
+                  </div>
+                )}
+
+                {/* Ficha Técnica: Disjuntores Soprano & Barramentos Copperbarras */}
+                {resumoTecnico?.sopranoInfo && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+                    {/* Card Disjuntor Soprano */}
+                    <div className="p-3 bg-white rounded-xl border border-slate-200 space-y-2 text-xs">
+                      <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                        <span className="font-black text-slate-800 flex items-center gap-1 text-[11px]">
+                          <ShieldCheck className="w-3.5 h-3.5 text-blue-600" /> Disjuntor Soprano Homologado
+                        </span>
+                        <span className="text-[9px] font-black px-2 py-0.5 bg-blue-50 text-blue-700 rounded border border-blue-200">
+                          {resumoTecnico.sopranoInfo.frame}
+                        </span>
+                      </div>
+                      <div className="space-y-1 text-[11px]">
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Corrente Nominal:</span>
+                          <span className="font-bold text-slate-800">{resumoTecnico.sopranoInfo.correnteNominalA} A</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Largura Máx. Barramento:</span>
+                          <span className="font-black text-emerald-700">{resumoTecnico.sopranoInfo.larguraMaximaBarramentoMm} mm</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Capacidade Icu (400V / 230V):</span>
+                          <span className="font-bold text-slate-800">{resumoTecnico.sopranoInfo.icu400V} kA / {resumoTecnico.sopranoInfo.icu230V} kA</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Tensão Isolação (Ui) / Torque:</span>
+                          <span className="font-bold text-slate-800">{resumoTecnico.sopranoInfo.ui} V | {resumoTecnico.sopranoInfo.torqueMaxNm} N.m</span>
+                        </div>
+                      </div>
+                      <p className="text-[9px] text-slate-400 italic">Conforme NBR IEC 60947-2 e especificação técnica CEMIG PEC-11.</p>
+                    </div>
+
+                    {/* Card Barramento Copperbarras (se CM-18) */}
+                    {resumoTecnico.barramentoCM18Info && categoriaDemanda === "ALTA_DEMANDA_TABELA_4" ? (
+                      <div className="p-3 bg-white rounded-xl border border-slate-200 space-y-2 text-xs">
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                          <span className="font-black text-slate-800 flex items-center gap-1 text-[11px]">
+                            <Layers className="w-3.5 h-3.5 text-amber-600" /> Barra Cobre Copperbarras (CM-18)
+                          </span>
+                          <span className="text-[9px] font-black px-2 py-0.5 bg-amber-50 text-amber-800 rounded border border-amber-200">
+                            {resumoTecnico.barramentoCM18Info.capacidadeAmperes} A
+                          </span>
+                        </div>
+                        <div className="space-y-1 text-[11px]">
+                          <div className="flex justify-between">
+                            <span className="text-slate-500">Dimensões (Pol / mm):</span>
+                            <span className="font-bold text-slate-800">
+                              {resumoTecnico.barramentoCM18Info.larguraPol} x {resumoTecnico.barramentoCM18Info.espessuraPol} ({resumoTecnico.barramentoCM18Info.larguraMm} x {resumoTecnico.barramentoCM18Info.espessuraMm} mm)
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-slate-500">Capacidade de Condução:</span>
+                            <span className="font-black text-emerald-700">
+                              {resumoTecnico.barramentoCM18Info.capacidadeAmperes} A (Densidade: {resumoTecnico.barramentoCM18Info.densidadeCorrente} A/mm²)
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-slate-500">Peso Linear / Área:</span>
+                            <span className="font-bold text-slate-800">
+                              {resumoTecnico.barramentoCM18Info.pesoKgPorMetro.toFixed(3)} kg/m | {resumoTecnico.barramentoCM18Info.areaMm2} mm²
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-slate-500">Compatibilidade do Disjuntor:</span>
+                            <span className="font-bold text-slate-800">
+                              Largura {resumoTecnico.barramentoCM18Info.larguraMm}mm &le; {resumoTecnico.sopranoInfo.larguraMaximaBarramentoMm}mm ({resumoTecnico.sopranoInfo.frame})
+                            </span>
+                          </div>
+                        </div>
+                        <p className="text-[9px] text-slate-400 italic">Dimensionado para caber na largura máxima dos bornes do disjuntor.</p>
+                      </div>
+                    ) : (
+                      <div className="p-3 bg-white rounded-xl border border-slate-200 space-y-2 text-xs flex flex-col justify-center">
+                        <div className="flex items-center gap-1.5 font-black text-slate-700 text-[11px]">
+                          <Info className="w-4 h-4 text-blue-500" /> Montagem em Caixa Padrão
+                        </div>
+                        <p className="text-[11px] text-slate-500 leading-relaxed">
+                          {categoriaDemanda === "ALTA_DEMANDA_TABELA_4"
+                            ? "Caixa CM-9 selecionada: utiliza barramentos compactos internos conforme Desenho 46 CEMIG."
+                            : "Para padrões individuais até 200A, os condutores conectam-se diretamente ao disjuntor geral e borne de neutro na caixa de medição."}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
               {/* Parâmetros Construtivos: Localização, Posição da Rede, Tipo de Saída e Estrutura */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 
@@ -1214,6 +1403,38 @@ export default function PadraoCemigPage() {
                         <span className="text-slate-500">Caixa de Proteção:</span>
                         <span className="font-bold text-slate-800">{resumoTecnico.caixaDisjuntor}</span>
                       </div>
+                      {resumoTecnico.sopranoInfo && (
+                        <div className="flex justify-between items-start text-xs pt-1 border-t border-slate-100">
+                          <span className="text-slate-500">Disjuntor Soprano:</span>
+                          <div className="text-right">
+                            <span className="font-bold text-slate-800 block">{resumoTecnico.sopranoInfo.frame}</span>
+                            <span className="text-[10px] text-slate-500 block">Larg. Máx: {resumoTecnico.sopranoInfo.larguraMaximaBarramentoMm} mm | Icu {resumoTecnico.sopranoInfo.icu400V} kA</span>
+                          </div>
+                        </div>
+                      )}
+                      {resumoTecnico.barramentoCM18Info && categoriaDemanda === "ALTA_DEMANDA_TABELA_4" && (
+                        <div className="flex justify-between items-start text-xs">
+                          <span className="text-slate-500">Barra Copperbarras:</span>
+                          <div className="text-right">
+                            <span className="font-bold text-amber-900 block">{resumoTecnico.barramentoCM18Info.larguraPol} x {resumoTecnico.barramentoCM18Info.espessuraPol}</span>
+                            <span className="text-[10px] text-amber-700 block">{resumoTecnico.barramentoCM18Info.capacidadeAmperes} A ({resumoTecnico.barramentoCM18Info.larguraMm} mm)</span>
+                          </div>
+                        </div>
+                      )}
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-slate-500">Conexão Bornes:</span>
+                        <span className={`text-[10px] font-black px-2 py-0.5 rounded border ${
+                          resumoTecnico.usaTerminalBandeira
+                            ? "bg-amber-100 text-amber-800 border-amber-300"
+                            : "bg-emerald-100 text-emerald-800 border-emerald-300"
+                        }`}>
+                          {resumoTecnico.usaTerminalBandeira
+                            ? "Terminal Bandeira + Olhal"
+                            : tipoTerminalDisjuntor === "PINO_MACICO"
+                              ? "Entrada Direta (Pino Maciço)"
+                              : "Entrada Direta (Olhal)"}
+                        </span>
+                      </div>
                     </div>
 
                     {/* Alertas EV */}
@@ -1314,7 +1535,15 @@ export default function PadraoCemigPage() {
                 </p>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => setIsCotacaoModalOpen(true)}
+                  className="bg-[#E45318] hover:bg-[#c94512] text-white px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 shadow-sm transition active:scale-95"
+                  title="Gerar lista em PDF dos materiais físicos (sem mão de obra) para envio a distribuidores e lojas"
+                >
+                  <FileText className="w-4 h-4" /> PDF p/ Lojas / Distribuidores
+                </button>
                 <button
                   type="button"
                   onClick={() => setIsAddModalOpen(true)}
@@ -1512,15 +1741,23 @@ export default function PadraoCemigPage() {
                 </div>
 
                 {/* Botões de Ação */}
-                <div className="grid grid-cols-2 gap-3 pt-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3">
                   <button
                     type="button"
                     onClick={handleSalvarProposta}
                     disabled={salvandoProposta}
-                    className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white text-xs font-black rounded-xl transition flex items-center justify-center gap-2 shadow-sm disabled:opacity-50"
+                    className="w-full py-3 bg-[#0A192F] hover:bg-slate-800 text-white text-xs font-black rounded-xl transition flex items-center justify-center gap-2 shadow-sm disabled:opacity-50"
                   >
                     <Save className="w-4 h-4 text-[#00BFA5]" />
                     {salvandoProposta ? "Salvando..." : "Salvar Orçamento"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsCotacaoModalOpen(true)}
+                    className="w-full py-3 bg-[#E45318] hover:bg-[#c94512] text-white text-xs font-black rounded-xl transition flex items-center justify-center gap-2 shadow-md active:scale-95"
+                  >
+                    <FileText className="w-4 h-4" /> PDF p/ Distribuidores
                   </button>
 
                   <button
@@ -1763,11 +2000,42 @@ export default function PadraoCemigPage() {
         </div>
       )}
 
+      </div>
+
       {/* Modais */}
       <AdicionarMaterialModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onAdicionarItem={handleAdicionarItemDoModal}
+      />
+
+      <CotacaoDistribuidoresModal
+        isOpen={isCotacaoModalOpen}
+        onClose={() => setIsCotacaoModalOpen(false)}
+        dadosPadrao={{
+          clienteNome,
+          clienteTelefone,
+          clienteEmail,
+          cidade,
+          endereco,
+          tipoPadrao,
+          faixaDemanda: resumoTecnico?.faixaFornecimento,
+          disjuntorAmperes,
+          categoriaDemanda,
+          tipoSaida,
+          localizacao,
+          ladoRede,
+          caixaMedicao: resumoTecnico?.caixaMedicao,
+          caixaDisjuntor: resumoTecnico?.caixaDisjuntor,
+          tipoCaixaSubterranea,
+          posteHomologado: resumoTecnico?.posteHomologado,
+          sopranoInfo: resumoTecnico?.sopranoInfo,
+          barramentoCM18Info: resumoTecnico?.barramentoCM18Info,
+          tipoTerminalDisjuntor,
+          usaTerminalBandeira: resumoTecnico?.usaTerminalBandeira,
+          observacoes
+        }}
+        itens={itens}
       />
 
       {propostaParaModal && (
@@ -1777,6 +2045,6 @@ export default function PadraoCemigPage() {
           proposta={propostaParaModal}
         />
       )}
-    </div>
+    </>
   );
 }

@@ -1,0 +1,37 @@
+{
+  "mcpServers": {
+    "context7": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@context7/mcp-server"
+      ],
+      "description": "Injeta documentações e especificações técnicas de bibliotecas (TailwindCSS, Radix, Lucide Icons, React, NBR) em tempo real."
+    },
+    "shadcn-ui": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "shadcn-ui-mcp"
+      ],
+      "description": "Componentes visuais e blocos interativos para aceleração e consistência de design do painel de recarga veicular."
+    },
+    "test-sprite-automation": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-puppeteer"
+      ],
+      "description": "Automação e testes de interface no navegador integrado, simulando adições e remoções sucessivas de carregadores e verificando recálculos."
+    },
+    "postgres-database": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "postgresql://postgres.eaidkelcmpcbgszakuww:U5m40f28%40%23%40@aws-1-us-east-1.pooler.supabase.com:5432/postgres"
+      ],
+      "description": "Persistência e recuperação dos projetos de dimensionamento EVSE no banco de dados Supabase/PostgreSQL."
+    }
+  }
+}

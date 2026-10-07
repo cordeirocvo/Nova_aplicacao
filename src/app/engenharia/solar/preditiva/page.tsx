@@ -555,8 +555,10 @@ export default function PreditivaSolarPage() {
                 </span>
                 <span className="text-sm font-medium text-slate-400">kWh</span>
               </div>
-              <div className="mt-2 text-xs text-slate-500 flex items-center gap-1.5">
-                <span>Capacidade: 1.400 kWp CC / 1.000 kW CA</span>
+              <div className="mt-2 text-xs text-slate-400 flex items-center gap-1.5">
+                <span>
+                  Capacidade: {preditivaData?.usina?.capacidadeKWp ? `${preditivaData.usina.capacidadeKWp.toLocaleString("pt-BR")} kWp CC` : "--"} / {preditivaData?.usina?.capacidadeCA ? `${preditivaData.usina.capacidadeCA.toLocaleString("pt-BR")} kW CA` : "--"}
+                </span>
               </div>
             </div>
 
@@ -568,15 +570,20 @@ export default function PreditivaSolarPage() {
                   <Sun className="w-5 h-5" />
                 </div>
               </div>
-              <div className="mt-3 flex items-baseline gap-2">
+              <div className="mt-3 flex items-baseline gap-2 flex-wrap">
                 <span className="text-3xl font-extrabold text-cyan-300">
                   {preditivaData?.resumo?.energiaEsperadaKWh?.toLocaleString("pt-BR") || "--"}
                 </span>
                 <span className="text-sm font-medium text-slate-400">kWh</span>
+                {preditivaData?.resumo?.diaEmAndamento && (
+                  <span className="text-xs font-medium text-cyan-400/90 ml-1">
+                    (até {preditivaData.resumo.momentoCorteTelemetria}: {preditivaData.resumo.energiaEsperadaAteMomentoKWh?.toLocaleString("pt-BR")} kWh)
+                  </span>
+                )}
               </div>
-              <div className="mt-2 text-xs text-cyan-400/80 flex items-center gap-1.5">
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>Baseado na Estação Sigma</span>
+              <div className="mt-2 text-xs text-cyan-400/80 flex items-center gap-1.5" title={preditivaData?.usina?.estacaoNome}>
+                <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">Baseado em: {preditivaData?.usina?.estacaoNome || "Estação Climatológica CRESESB"}</span>
               </div>
             </div>
 
@@ -596,8 +603,15 @@ export default function PreditivaSolarPage() {
                   (Esp: {preditivaData?.resumo?.performanceRatioEsperado || "--"}%)
                 </span>
               </div>
-              <div className="mt-2 text-xs text-slate-500">
-                <span>Relação CC/CA = 1,40</span>
+              <div className="mt-2 text-xs text-slate-400 flex items-center justify-between">
+                <span>
+                  Relação CC/CA = {preditivaData?.usina?.razaoCCCA ?? (preditivaData?.usina?.capacidadeKWp && preditivaData?.usina?.capacidadeCA ? (preditivaData.usina.capacidadeKWp / preditivaData.usina.capacidadeCA).toFixed(2) : "--")}
+                </span>
+                {preditivaData?.resumo?.diaEmAndamento && (
+                  <span className="text-[11px] text-amber-400/90 font-mono">
+                    Aferido até {preditivaData.resumo.momentoCorteTelemetria}
+                  </span>
+                )}
               </div>
             </div>
 

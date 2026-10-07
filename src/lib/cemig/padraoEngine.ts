@@ -16,12 +16,43 @@ export type TipoSaida = "AEREA" | "SUBTERRANEA"; // Saída Aérea ou Subterrâne
 export type LocalizacaoPadrao = "URBANO" | "RURAL"; // Localização da Unidade Consumidora
 export type TipoEstrutura = "POSTE_CONCRETO" | "POSTE_ACO" | "PONTALETE" | "MURO";
 export type FinalidadePadrao = "CARREGADOR_VE" | "PADRAO_GERAL" | "AUMENTO_CARGA";
+export type TipoTerminalDisjuntor = "COMPRESSAO_OLHAL" | "PINO_MACICO";
+
+export interface DisjuntorSopranoInfo {
+  frame: "Frame 63" | "Frame 100" | "Frame 250" | "Frame 400" | "Frame 630" | "Frame 800";
+  correnteNominalA: number;
+  larguraMaximaBarramentoMm: number;
+  icu400V: number;
+  ics400V: number;
+  icu230V: number;
+  ics230V: number;
+  ui: number;
+  torqueMaxNm: number;
+  pesoKg: number;
+  modeloReferencia: string;
+}
+
+export interface BarramentoCopperbarrasInfo {
+  larguraPol: string;
+  espessuraPol: string;
+  larguraMm: number;
+  espessuraMm: number;
+  capacidadeAmperes: number;
+  pesoKgPorMetro: number;
+  areaMm2: number;
+  densidadeCorrente: number; // A/mm²
+  frameDisjuntorCompativel: string;
+  codigoMaterial: string;
+  descricaoMaterial: string;
+  precoEstimadoPorMetro: number;
+}
 
 export interface ParametrosPadraoCemig {
   tipoPadrao: TipoPadrao;
   categoriaDemanda?: CategoriaDemandaPadrao; // Tabela 2 (Individual até 75 kVA) ou Tabela 4 (Alta Demanda 75,1 a 304 kVA)
   tipoCaixaDisjuntorTabela4?: CaixaDisjuntorTabela4; // Para F1 e F2: CM-9 ou CM-18
   tipoCaixaSubterranea?: TipoCaixaSubterraneaTabela4; // Caixa de Passagem: ZC (Padrão/Calçada) ou ZD (Pista/Derivação)
+  tipoTerminalDisjuntor?: TipoTerminalDisjuntor; // Terminal de Compressão Olhal ou Pino Maciço
   disjuntorAmperes: number;
   ladoRede: LadoRede;
   tipoSaida?: TipoSaida; // default "AEREA"
@@ -73,10 +104,184 @@ export interface ResultadoDimensionamentoPadrao {
   caixaMedicao: string;
   caixaDisjuntor: string;
   tipoCaixaSubterranea?: TipoCaixaSubterraneaTabela4;
+  sopranoInfo?: DisjuntorSopranoInfo;
+  barramentoCM18Info?: BarramentoCopperbarrasInfo;
+  tipoTerminalDisjuntor: TipoTerminalDisjuntor;
+  usaTerminalBandeira: boolean;
   descricaoResumo: string;
   notasTecnicas: string[];
   alertasEV: string[];
   itensSugeridos: ItemMaterialSugerido[];
+}
+
+export const TABELA_DISJUNTORES_SOPRANO: DisjuntorSopranoInfo[] = [
+  // Frame 63: 10, 16, 20, 25, 32, 40, 50, 63 A - Largura Máx 12,5 mm
+  ...[10, 16, 20, 25, 32, 40, 50, 63].map(amp => ({
+    frame: "Frame 63" as const,
+    correnteNominalA: amp,
+    larguraMaximaBarramentoMm: 12.5,
+    icu400V: 10,
+    ics400V: 5,
+    icu230V: 25,
+    ics230V: 13,
+    ui: 690,
+    torqueMaxNm: 10,
+    pesoKg: 0.67,
+    modeloReferencia: `Soprano Tripolar Frame 63 (${amp}A) - IEC 60947-2`
+  })),
+  // Frame 100: 70, 75, 80, 90, 100, 125 A - Largura Máx 16,5 mm
+  ...[70, 75, 80, 90, 100, 125].map(amp => ({
+    frame: "Frame 100" as const,
+    correnteNominalA: amp,
+    larguraMaximaBarramentoMm: 16.5,
+    icu400V: 50,
+    ics400V: 35,
+    icu230V: 70,
+    ics230V: 50,
+    ui: 690,
+    torqueMaxNm: 10,
+    pesoKg: 1.09,
+    modeloReferencia: `Soprano Caixa Moldada Frame 100 (${amp}A) - IEC 60947-2`
+  })),
+  // Frame 250: 150, 160, 175, 200, 225, 250 A - Largura Máx 23,0 mm
+  ...[150, 160, 175, 200, 225, 250].map(amp => ({
+    frame: "Frame 250" as const,
+    correnteNominalA: amp,
+    larguraMaximaBarramentoMm: 23.0,
+    icu400V: 50,
+    ics400V: 35,
+    icu230V: 70,
+    ics230V: 50,
+    ui: 690,
+    torqueMaxNm: 10,
+    pesoKg: 1.45,
+    modeloReferencia: `Soprano Caixa Moldada Frame 250 (${amp}A) - IEC 60947-2`
+  })),
+  // Frame 400: 225, 250, 275, 300, 315, 350, 400 A - Largura Máx 28,5 mm
+  ...[275, 300, 315, 350, 400].map(amp => ({
+    frame: "Frame 400" as const,
+    correnteNominalA: amp,
+    larguraMaximaBarramentoMm: 28.5,
+    icu400V: 70,
+    ics400V: 50,
+    icu230V: 100,
+    ics230V: 70,
+    ui: 690,
+    torqueMaxNm: 10,
+    pesoKg: 4.55,
+    modeloReferencia: `Soprano Caixa Moldada Frame 400 (${amp}A) - IEC 60947-2`
+  })),
+  // Frame 630: 450, 500, 600, 630 A - Largura Máx 44,0 mm
+  ...[450, 500, 600, 630].map(amp => ({
+    frame: "Frame 630" as const,
+    correnteNominalA: amp,
+    larguraMaximaBarramentoMm: 44.0,
+    icu400V: 70,
+    ics400V: 50,
+    icu230V: 100,
+    ics230V: 70,
+    ui: 690,
+    torqueMaxNm: 10,
+    pesoKg: 6.85,
+    modeloReferencia: `Soprano Caixa Moldada Frame 630 (${amp}A) - IEC 60947-2`
+  })),
+  // Frame 800: 700, 800 A - Largura Máx 44,0 mm
+  ...[700, 800].map(amp => ({
+    frame: "Frame 800" as const,
+    correnteNominalA: amp,
+    larguraMaximaBarramentoMm: 44.0,
+    icu400V: 70,
+    ics400V: 50,
+    icu230V: 100,
+    ics230V: 70,
+    ui: 690,
+    torqueMaxNm: 10,
+    pesoKg: 7.25,
+    modeloReferencia: `Soprano Caixa Moldada Frame 800 (${amp}A) - IEC 60947-2`
+  }))
+];
+
+export function getDisjuntorSoprano(amperes: number): DisjuntorSopranoInfo {
+  const match = TABELA_DISJUNTORES_SOPRANO.find(d => d.correnteNominalA === amperes);
+  if (match) return match;
+  if (amperes <= 63) return TABELA_DISJUNTORES_SOPRANO.find(d => d.frame === "Frame 63" && d.correnteNominalA >= amperes) || TABELA_DISJUNTORES_SOPRANO[7];
+  if (amperes <= 125) return TABELA_DISJUNTORES_SOPRANO.find(d => d.frame === "Frame 100" && d.correnteNominalA >= amperes) || TABELA_DISJUNTORES_SOPRANO[13];
+  if (amperes <= 250) return TABELA_DISJUNTORES_SOPRANO.find(d => d.frame === "Frame 250" && d.correnteNominalA >= amperes) || TABELA_DISJUNTORES_SOPRANO[19];
+  if (amperes <= 400) return TABELA_DISJUNTORES_SOPRANO.find(d => d.frame === "Frame 400" && d.correnteNominalA >= amperes) || TABELA_DISJUNTORES_SOPRANO[24];
+  if (amperes <= 630) return TABELA_DISJUNTORES_SOPRANO.find(d => d.frame === "Frame 630" && d.correnteNominalA >= amperes) || TABELA_DISJUNTORES_SOPRANO[28];
+  return TABELA_DISJUNTORES_SOPRANO[TABELA_DISJUNTORES_SOPRANO.length - 1];
+}
+
+export const TABELA_BARRAMENTOS_COPPERBARRAS: Record<string, BarramentoCopperbarrasInfo> = {
+  "FRAME_250": {
+    larguraPol: "7/8\"",
+    espessuraPol: "1/4\"",
+    larguraMm: 22.22,
+    espessuraMm: 6.35,
+    capacidadeAmperes: 314,
+    pesoKgPorMetro: 1.260,
+    areaMm2: 136.86,
+    densidadeCorrente: 2.40,
+    frameDisjuntorCompativel: "Frame 250 (Largura máx 23,0 mm)",
+    codigoMaterial: "BARRA-CU-78X14",
+    descricaoMaterial: "Barra Chata Cobre Eletrolítico 7/8\" x 1/4\" (22,22 x 6,35 mm) - 314A (Copperbarras - Caixa CM-18)",
+    precoEstimadoPorMetro: 195.00
+  },
+  "FRAME_400": {
+    larguraPol: "1\"",
+    espessuraPol: "5/16\"",
+    larguraMm: 25.40,
+    espessuraMm: 7.93,
+    capacidadeAmperes: 439,
+    pesoKgPorMetro: 1.790,
+    areaMm2: 195.38,
+    densidadeCorrente: 2.25,
+    frameDisjuntorCompativel: "Frame 400 (Largura máx 28,5 mm)",
+    codigoMaterial: "BARRA-CU-1X516",
+    descricaoMaterial: "Barra Chata Cobre Eletrolítico 1\" x 5/16\" (25,40 x 7,93 mm) - 439A (Copperbarras - Caixa CM-18)",
+    precoEstimadoPorMetro: 245.00
+  },
+  "FRAME_630": {
+    larguraPol: "1.3/4\"",
+    espessuraPol: "5/16\"",
+    larguraMm: 44.45,
+    espessuraMm: 7.93,
+    capacidadeAmperes: 769,
+    pesoKgPorMetro: 3.140,
+    areaMm2: 341.91,
+    densidadeCorrente: 2.25,
+    frameDisjuntorCompativel: "Frame 630 (Largura máx 44,0 mm)",
+    codigoMaterial: "BARRA-CU-134X516",
+    descricaoMaterial: "Barra Chata Cobre Eletrolítico 1.3/4\" x 5/16\" (44,45 x 7,93 mm) - 769A (Copperbarras - Caixa CM-18)",
+    precoEstimadoPorMetro: 380.00
+  },
+  "FRAME_800": {
+    larguraPol: "1.3/4\"",
+    espessuraPol: "3/8\"",
+    larguraMm: 44.45,
+    espessuraMm: 9.52,
+    capacidadeAmperes: 903,
+    pesoKgPorMetro: 3.770,
+    areaMm2: 410.47,
+    densidadeCorrente: 2.20,
+    frameDisjuntorCompativel: "Frame 800 (Largura máx 44,0 mm)",
+    codigoMaterial: "BARRA-CU-134X38",
+    descricaoMaterial: "Barra Chata Cobre Eletrolítico 1.3/4\" x 3/8\" (44,45 x 9,52 mm) - 903A (Copperbarras - Caixa CM-18)",
+    precoEstimadoPorMetro: 440.00
+  }
+};
+
+export function selecionarBarramentoCM18(amperes: number): BarramentoCopperbarrasInfo {
+  if (amperes <= 250) {
+    return TABELA_BARRAMENTOS_COPPERBARRAS["FRAME_250"];
+  }
+  if (amperes <= 400) {
+    return TABELA_BARRAMENTOS_COPPERBARRAS["FRAME_400"];
+  }
+  if (amperes <= 630) {
+    return TABELA_BARRAMENTOS_COPPERBARRAS["FRAME_630"];
+  }
+  return TABELA_BARRAMENTOS_COPPERBARRAS["FRAME_800"];
 }
 
 export const FAIXAS_TRIFASICO_TABELA_2 = [
@@ -544,23 +749,26 @@ export function dimensionarPadraoTabela4(
   // NOTA NORMATIVA CEMIG: Os TCs são de fornecimento exclusivo e gratuito pela concessionária CEMIG.
   // Não geram custo de aquisição na lista de materiais do cliente (apenas a Caixa CM-4 para alojá-los).
 
-  // 3. Disjuntor Caixa Moldada Tripolar (PEC-11 CEMIG)
+  // 3. Disjuntor Caixa Moldada Tripolar (PEC-11 CEMIG / NBR IEC 60947-2)
+  const sopranoInfo = getDisjuntorSoprano(disj);
+  const barramentoCM18Info = selecionarBarramentoCM18(disj);
+
   const disjCodigo = `DISJ-CXM-3P-${disj}A`;
   const disjFallbackPreco = disj <= 250 ? 1550 : disj <= 400 ? 2850 : disj <= 500 ? 3800 : disj <= 630 ? 4900 : disj <= 700 ? 5800 : 6900;
   const disjPreco = getPreco(disjCodigo, disjFallbackPreco);
   itensSugeridos.push({
     codigo: disjCodigo,
-    descricao: `Disjuntor Tripolar Caixa Moldada ${disj}A Icu>=25kA/50kA Homologado CEMIG`,
+    descricao: `Disjuntor Tripolar Caixa Moldada ${disj}A Icu>=${sopranoInfo.icu400V}kA Homologado CEMIG (${sopranoInfo.frame})`,
     categoria: "DISJUNTOR",
     unidade: "un",
     quantidade: 1,
     precoUnitarioEstimado: disjPreco,
     precoTotal: disjPreco,
     obrigatorioNorma: true,
-    nota: `Proteção geral termomagnética homologada CEMIG PEC-11 (${disj}A) com alta capacidade de interrupção.`
+    nota: `Proteção geral homologada CEMIG PEC-11 / NBR IEC 60947-2 (${sopranoInfo.frame} - ${disj}A) c/ Icu ${sopranoInfo.icu400V}kA em 400V e largura máx. aceita de barramento de ${sopranoInfo.larguraMaximaBarramentoMm} mm.`
   });
 
-  // 4. Barramentos e Conectores Internos de Cobre (Desenho 46) - Unidade em Metros (m)
+  // 4. Barramentos e Conectores Internos de Cobre (Desenho 46 e Tabela Copperbarras) - Unidade em Metros (m)
   itensSugeridos.push({
     codigo: "BARRAMENTO-NEUTRO-TERRA-ALTA",
     descricao: "Barramento de Neutro e Aterramento em Cobre Eletrolítico c/ Parafusos e Suportes (Desenho 46)",
@@ -573,17 +781,32 @@ export function dimensionarPadraoTabela4(
     nota: "Barramento plano de cobre eletrolítico (medido em metros) para neutro e aterramento na caixa CM-9/18."
   });
 
-  itensSugeridos.push({
-    codigo: "BARRAMENTO-FASE-ISOLADO-ALTA",
-    descricao: "Barramento de Cobre Eletrolítico para Fases c/ Isoladores Epóxi (Desenho 46)",
-    categoria: "ACESSORIO",
-    unidade: "m",
-    quantidade: 3,
-    precoUnitarioEstimado: getPreco("BARRAMENTO-FASE-ISOLADO-ALTA", 195),
-    precoTotal: 3 * getPreco("BARRAMENTO-FASE-ISOLADO-ALTA", 195),
-    obrigatorioNorma: true,
-    nota: "3 metros de barramento de cobre eletrolítico para as fases R, S e T com isoladores epóxi bujão (Desenho 46)."
-  });
+  // Barra Chata para Fases: se CM-18, selecionada diretamente da Tabela Copperbarras
+  if (usaCM9) {
+    itensSugeridos.push({
+      codigo: "BARRAMENTO-FASE-ISOLADO-ALTA",
+      descricao: "Barramento de Cobre Eletrolítico para Fases c/ Isoladores Epóxi (Desenho 46)",
+      categoria: "ACESSORIO",
+      unidade: "m",
+      quantidade: 3,
+      precoUnitarioEstimado: getPreco("BARRAMENTO-FASE-ISOLADO-ALTA", 195),
+      precoTotal: 3 * getPreco("BARRAMENTO-FASE-ISOLADO-ALTA", 195),
+      obrigatorioNorma: true,
+      nota: "3 metros de barramento de cobre eletrolítico para fases R, S e T na caixa CM-9."
+    });
+  } else {
+    itensSugeridos.push({
+      codigo: barramentoCM18Info.codigoMaterial,
+      descricao: barramentoCM18Info.descricaoMaterial,
+      categoria: "ACESSORIO",
+      unidade: "m",
+      quantidade: 3,
+      precoUnitarioEstimado: getPreco(barramentoCM18Info.codigoMaterial, barramentoCM18Info.precoEstimadoPorMetro),
+      precoTotal: 3 * getPreco(barramentoCM18Info.codigoMaterial, barramentoCM18Info.precoEstimadoPorMetro),
+      obrigatorioNorma: true,
+      nota: `3 metros de barra chata ${barramentoCM18Info.larguraPol} x ${barramentoCM18Info.espessuraPol} (${barramentoCM18Info.larguraMm} x ${barramentoCM18Info.espessuraMm} mm) da Copperbarras para fases R, S e T (Capacidade: ${barramentoCM18Info.capacidadeAmperes}A > ${disj}A nominal). Compatível com a largura máx. de ${sopranoInfo.larguraMaximaBarramentoMm} mm do disjuntor ${sopranoInfo.frame}.`
+    });
+  }
 
   // 5. Condutores de Entrada em Cobre 0,6/1kV Subterrâneos (Nunca 750V)
   const caboGauge = match.caboFaseCu;
@@ -662,21 +885,79 @@ export function dimensionarPadraoTabela4(
     nota: `Condutor de proteção PE isolação 0,6/1kV subterrânea (${peGauge} mm²) conforme Tabela 4.`
   });
 
-  // Terminais de Compressão Alta Corrente
-  const qtdeTerminais = 4 * caboVias * 2; // 3F + 1N nas duas extremidades
-  const termCodigo = `TERM-COMPRESSAO-${caboGauge}`;
-  const termPreco = getPreco(termCodigo, caboGauge === 120 ? 18.5 : caboGauge === 150 ? 22 : caboGauge === 185 ? 28 : 36);
-  itensSugeridos.push({
-    codigo: termCodigo,
-    descricao: `Terminal de Compressão Tubular/Olhal em Cobre Estanhado ${caboGauge} mm²`,
-    categoria: "ACESSORIO",
-    unidade: "un",
-    quantidade: qtdeTerminais,
-    precoUnitarioEstimado: termPreco,
-    precoTotal: qtdeTerminais * termPreco,
-    obrigatorioNorma: true,
-    nota: `${qtdeTerminais} terminais de compressão reforçados para conexões do disjuntor e barramentos.`
-  });
+  // Terminais de Conexão no Disjuntor e Barramentos
+  const tipoTerminalDisj: TipoTerminalDisjuntor = params.tipoTerminalDisjuntor || "COMPRESSAO_OLHAL";
+  const isMultiplosCabos = caboVias > 1;
+  const qtdeTerminaisCabos = 4 * caboVias * 2; // 3F + 1N nas duas extremidades
+
+  if (isMultiplosCabos) {
+    // Quando é mais de 1 cabo chegando no disjuntor (caboVias > 1):
+    // Necessário Terminal Bandeira com parafusos proporcional à quantidade de cabos por polo
+    const bandeiraCodigo = caboVias === 2 ? "TERM-BANDEIRA-2CABOS" : "TERM-BANDEIRA-3CABOS";
+    const bandeiraDesc = caboVias === 2
+      ? `Terminal Bandeira Duplo em Cobre Estanhado c/ 2 Parafusos para Disjuntor Caixa Moldada (${sopranoInfo.frame})`
+      : `Terminal Bandeira Triplo em Cobre Estanhado c/ 3 Parafusos para Disjuntor Caixa Moldada (${sopranoInfo.frame})`;
+    const bandeiraPreco = getPreco(bandeiraCodigo, caboVias === 2 ? 145.00 : 195.00);
+
+    itensSugeridos.push({
+      codigo: bandeiraCodigo,
+      descricao: bandeiraDesc,
+      categoria: "ACESSORIO",
+      unidade: "un",
+      quantidade: 3, // 1 por polo do disjuntor tripolar
+      precoUnitarioEstimado: bandeiraPreco,
+      precoTotal: 3 * bandeiraPreco,
+      obrigatorioNorma: true,
+      nota: `3 unidades de terminal bandeira (1 por polo do disjuntor ${sopranoInfo.frame}) com ${caboVias} parafusos para conexão dos ${caboVias} cabos em paralelo por fase.`
+    });
+
+    // E o terminal usado para os cabos é estritamente o terminal de compressão tipo olhal
+    const termOlhalCodigo = `TERM-COMPRESSAO-${caboGauge}`;
+    const termOlhalPreco = getPreco(termOlhalCodigo, caboGauge === 120 ? 18.5 : caboGauge === 150 ? 22 : caboGauge === 185 ? 28 : 36);
+    itensSugeridos.push({
+      codigo: termOlhalCodigo,
+      descricao: `Terminal de Compressão Tubular/Olhal em Cobre Estanhado ${caboGauge} mm²`,
+      categoria: "ACESSORIO",
+      unidade: "un",
+      quantidade: qtdeTerminaisCabos,
+      precoUnitarioEstimado: termOlhalPreco,
+      precoTotal: qtdeTerminaisCabos * termOlhalPreco,
+      obrigatorioNorma: true,
+      nota: `${qtdeTerminaisCabos} terminais de compressão tipo olhal para fixação aparafusada nos terminais bandeira do disjuntor e barramentos da CM-18.`
+    });
+  } else {
+    // Quando chega apenas 1 cabo no disjuntor (caboVias === 1):
+    // Entra direto no disjuntor com terminal de compressão olhal ou pino maciço (depende da conexão do disjuntor)
+    if (tipoTerminalDisj === "PINO_MACICO") {
+      const termPinoCodigo = `TERM-PINO-MACICO-${caboGauge}`;
+      const termPinoPreco = getPreco(termPinoCodigo, caboGauge <= 50 ? 9.8 : caboGauge <= 70 ? 14.5 : caboGauge <= 95 ? 18.0 : caboGauge <= 120 ? 24.0 : caboGauge <= 150 ? 28.0 : caboGauge <= 185 ? 35.0 : 42.0);
+      itensSugeridos.push({
+        codigo: termPinoCodigo,
+        descricao: `Terminal Pino Maciço em Cobre Estanhado ${caboGauge} mm²`,
+        categoria: "ACESSORIO",
+        unidade: "un",
+        quantidade: qtdeTerminaisCabos,
+        precoUnitarioEstimado: termPinoPreco,
+        precoTotal: qtdeTerminaisCabos * termPinoPreco,
+        obrigatorioNorma: true,
+        nota: `${qtdeTerminaisCabos} terminais tipo pino maciço para entrada direta nos bornes túnel do disjuntor e conexões dos barramentos.`
+      });
+    } else {
+      const termOlhalCodigo = `TERM-COMPRESSAO-${caboGauge}`;
+      const termOlhalPreco = getPreco(termOlhalCodigo, caboGauge <= 50 ? 8.5 : caboGauge <= 70 ? 12.0 : caboGauge <= 95 ? 15.0 : caboGauge <= 120 ? 18.5 : caboGauge <= 150 ? 22 : caboGauge <= 185 ? 28 : 36);
+      itensSugeridos.push({
+        codigo: termOlhalCodigo,
+        descricao: `Terminal de Compressão Tubular/Olhal em Cobre Estanhado ${caboGauge} mm²`,
+        categoria: "ACESSORIO",
+        unidade: "un",
+        quantidade: qtdeTerminaisCabos,
+        precoUnitarioEstimado: termOlhalPreco,
+        precoTotal: qtdeTerminaisCabos * termOlhalPreco,
+        obrigatorioNorma: true,
+        nota: `${qtdeTerminaisCabos} terminais de compressão tipo olhal para entrada direta nos bornes aparafusados do disjuntor e barramentos.`
+      });
+    }
+  }
 
   // Terminais Especiais de Aterramento (Solicitados pelo Usuário)
   // 1. 02 terminais de compressão 10 mm² com isolação para o cabo de aterramento da caixa CM-04
@@ -994,7 +1275,13 @@ export function dimensionarPadraoTabela4(
     `Dimensionamento normativo CEMIG ND-5.1 - Tabela 4 (Fornecimento Trifásico Tipo F: Faixa ${faixaDemanda} de ${demandaMinKVA} a ${demandaMaxKVA} kVA).`,
     `Tensão nominal de atendimento: 127/220V em Baixa Tensão (3 Fases + Neutro).`,
     `Medição Indireta em Baixa Tensão: 3 Transformadores de Corrente (TCs) relação ${match.tcRelacao}A com FT=2,0 instalados na Caixa CM-4 (Fornecimento gratuito e exclusivo da CEMIG).`,
-    `Proteção Geral: Disjuntor termomagnético caixa moldada de ${disj}A alojado na ${usaCM9 ? "Caixa CM-9" : "Caixa CM-18"} (Nota 6).`,
+    `Proteção Geral: Disjuntor Caixa Moldada Soprano homologado CEMIG PEC-11 (${sopranoInfo.frame} - ${disj}A), Icu 400V=${sopranoInfo.icu400V}kA, Ui=${sopranoInfo.ui}V, Largura Máx. do Barramento=${sopranoInfo.larguraMaximaBarramentoMm} mm (alojado na ${usaCM9 ? "Caixa CM-9" : "Caixa CM-18"}).`,
+    !usaCM9
+      ? `Barramentos da Caixa CM-18: Barra chata de cobre eletrolítico ${barramentoCM18Info.larguraPol} x ${barramentoCM18Info.espessuraPol} (${barramentoCM18Info.larguraMm} x ${barramentoCM18Info.espessuraMm} mm) com capacidade de condução de ${barramentoCM18Info.capacidadeAmperes} A (Tabela Copperbarras, densidade ${barramentoCM18Info.densidadeCorrente} A/mm²).`
+      : `Barramentos internos da Caixa CM-9 dimensionados conforme Desenho 46 CEMIG.`,
+    isMultiplosCabos
+      ? `Conexão ao Disjuntor: ${caboVias} cabos em paralelo por polo exigem 3x Terminais Bandeira com ${caboVias} parafusos e terminais de compressão tipo olhal em todos os condutores de ${caboGauge} mm².`
+      : `Conexão ao Disjuntor: 1 condutor por polo entra direto no disjuntor com terminais ${tipoTerminalDisj === "PINO_MACICO" ? "pino maciço" : "de compressão tipo olhal"} de ${caboGauge} mm².`,
     `Equipotencialização: Condutor de proteção verde 0,6/1kV de 10 mm² interligando a caixa do disjuntor à caixa CM-4 (Desenho 46 e Nota 3).`,
     `Condutores com isolação 0,6/1kV para instalação subterrânea. Neutro de ${caboVias}x ${caboGauge} mm² igual à fase (Nota 9).`,
     isSubtObrigatorio
@@ -1017,7 +1304,7 @@ export function dimensionarPadraoTabela4(
     alertasEV.push(`Conforme NBR 17019, cada ponto de recarga deve possuir proteção individual com DR Tipo B ou Tipo A (30mA) e DPS coordenado.`);
   }
 
-  const descResumo = `Padrão de Alta Demanda CEMIG ND 5.1 (Tabela 4) | Disjuntor ${disj}A | Faixa ${faixaDemanda} (${demandaMinKVA} a ${demandaMaxKVA} kVA) | Cabos 0,6/1kV ${caboVias}x ${caboGauge}mm² | Caixa Subt. ${usaZD ? "ZD" : "ZC"} | Caixas ${usaCM9 ? "CM-9" : "CM-18"} + CM-4`;
+  const descResumo = `Padrão de Alta Demanda CEMIG ND 5.1 (Tabela 4) | Disjuntor ${disj}A (${sopranoInfo.frame}) | Faixa ${faixaDemanda} (${demandaMinKVA} a ${demandaMaxKVA} kVA) | Cabos 0,6/1kV ${caboVias}x ${caboGauge}mm² | Barra ${barramentoCM18Info.larguraPol}x${barramentoCM18Info.espessuraPol} (${barramentoCM18Info.capacidadeAmperes}A) | Caixas ${usaCM9 ? "CM-9" : "CM-18"} + CM-4`;
 
   return {
     tipoPadrao: "TRIFASICO",
@@ -1045,6 +1332,10 @@ export function dimensionarPadraoTabela4(
     caixaMedicao: "CM-4 Metálica (Medição Indireta c/ TCs)",
     caixaDisjuntor: usaCM9 ? "CM-9 Metálica (Proteção Geral)" : "CM-18 Metálica (Proteção Geral c/ Barramentos)",
     tipoCaixaSubterranea: usaZD ? "ZD" : "ZC",
+    sopranoInfo,
+    barramentoCM18Info,
+    tipoTerminalDisjuntor: isMultiplosCabos ? "COMPRESSAO_OLHAL" : tipoTerminalDisj,
+    usaTerminalBandeira: isMultiplosCabos,
     descricaoResumo: descResumo,
     notasTecnicas,
     alertasEV,
@@ -1508,42 +1799,34 @@ export function dimensionarPadraoCemig(
     obrigatorioNorma: true
   });
 
-  // 7. Terminais Conforme Bitola e Padrão
-  // A1: 6 tubulares | B1: 10 tubulares | C1..C3: 14 tubulares | C4..C5: 14 pino maciço | C6: 6 tubulares 95mm²
+  // 7. Terminais Conforme Seleção e Bitola
+  const tipoTerminalSel: TipoTerminalDisjuntor = params.tipoTerminalDisjuntor || "COMPRESSAO_OLHAL";
+  let termQtde = isBifasico ? 10 : faixaDemanda === "C6" ? 6 : 14;
+
   let termCodigo = "";
   let termDescricao = "";
-  let termQtde = 14;
+  let termPrecoUnit = 0;
 
-  if (isBifasico) {
-    termCodigo = `TERM-TUBULAR-${caboGauge}`;
-    termDescricao = `Terminal Tubular Ilhós ${caboGauge} mm²`;
-    termQtde = 10;
-  } else if (faixaDemanda === "C1" || faixaDemanda === "C2" || faixaDemanda === "C3") {
-    termCodigo = `TERM-TUBULAR-${caboGauge}`;
-    termDescricao = `Terminal Tubular Ilhós ${caboGauge} mm²`;
-    termQtde = 14;
-  } else if (faixaDemanda === "C4" || faixaDemanda === "C5") {
+  if (tipoTerminalSel === "PINO_MACICO") {
     termCodigo = `TERM-PINO-MACICO-${caboGauge}`;
-    termDescricao = `Terminal Pino Maciço ${caboGauge} mm²`;
-    termQtde = 14;
+    termDescricao = `Terminal Pino Maciço em Cobre Estanhado ${caboGauge} mm²`;
+    termPrecoUnit = getPreco(termCodigo, caboGauge <= 16 ? 4.5 : caboGauge <= 25 ? 5.8 : caboGauge <= 35 ? 7.2 : caboGauge <= 50 ? 9.8 : caboGauge <= 70 ? 14.5 : 18.0);
   } else {
-    // C6 (200A)
-    termCodigo = `TERM-TUBULAR-${caboGauge}`;
-    termDescricao = `Terminal Tubular Ilhós ${caboGauge} mm²`;
-    termQtde = 6;
+    termCodigo = `TERM-COMPRESSAO-${caboGauge}`;
+    termDescricao = `Terminal de Compressão Tubular/Olhal em Cobre Estanhado ${caboGauge} mm²`;
+    termPrecoUnit = getPreco(termCodigo, caboGauge <= 16 ? 2.8 : caboGauge <= 25 ? 3.5 : caboGauge <= 35 ? 4.2 : caboGauge <= 50 ? 8.5 : caboGauge <= 70 ? 12.0 : 15.0);
   }
 
-  const termPreco = getPreco(termCodigo, termCodigo.includes("PINO") ? (caboGauge <= 50 ? 9.8 : 14.5) : (caboGauge <= 16 ? 2.8 : caboGauge <= 25 ? 3.5 : caboGauge <= 35 ? 4.2 : 12.0));
   itensSugeridos.push({
     codigo: termCodigo,
     descricao: termDescricao,
     categoria: "ACESSORIO",
     unidade: "un",
     quantidade: termQtde,
-    precoUnitarioEstimado: termPreco,
-    precoTotal: termQtde * termPreco,
+    precoUnitarioEstimado: termPrecoUnit,
+    precoTotal: termQtde * termPrecoUnit,
     obrigatorioNorma: true,
-    nota: `${termQtde} terminais adequados para conexão no disjuntor e medidor.`
+    nota: `${termQtde} terminais de ${tipoTerminalSel === "PINO_MACICO" ? "pino maciço" : "compressão tipo olhal"} para conexão direta no disjuntor e medidor.`
   });
 
   // 8. Conectores Bimetálicos (2 un: 1 para neutro, 1 para terra)
@@ -1777,6 +2060,10 @@ export function dimensionarPadraoCemig(
       : (aFavor ? faixaInfo.posteMesmoLadoAco : faixaInfo.posteLadoOpostoAco),
     caixaMedicao: usaCM3 ? "CM-3 Metálica (Medição Indireta 200A)" : "CM-14 Metálica (Medição Direta até 125A)",
     caixaDisjuntor: usaCM3 ? "Alojamento Metálico CM-3 / Caixa Proteção" : "CM-14 Integrada Metálica",
+    sopranoInfo: getDisjuntorSoprano(disj),
+    barramentoCM18Info: disj >= 150 ? selecionarBarramentoCM18(disj) : undefined,
+    tipoTerminalDisjuntor: tipoTerminalSel,
+    usaTerminalBandeira: false,
     descricaoResumo: descResumo,
     notasTecnicas,
     alertasEV,

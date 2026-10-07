@@ -147,6 +147,7 @@ console.log("Luvas PVC (A Favor + Aérea):", luva4 ? `${luva4.quantidade} un` : 
 const c5 = dimensionarPadraoCemig({
   tipoPadrao: "TRIFASICO",
   disjuntorAmperes: 125,
+  tipoTerminalDisjuntor: "PINO_MACICO",
   ladoRede: "MESMO_LADO",
   tipoEstrutura: "POSTE_CONCRETO"
 });
@@ -246,16 +247,22 @@ const caboVerde_f4 = t4_f4.itensSugeridos.find(i => i.codigo === "CABO-VERDE-50"
 const duto_f4 = t4_f4.itensSugeridos.find(i => i.codigo === "DUTO-CORRUGADO-PEAD-3POL");
 const cxZD_f4 = t4_f4.itensSugeridos.find(i => i.codigo === "CX-SUBTERRANEA-ZD");
 const tampaZD_f4 = t4_f4.itensSugeridos.find(i => i.codigo === "TAMPA-FOFO-ZD");
-const barramentoFase_f4 = t4_f4.itensSugeridos.find(i => i.codigo === "BARRAMENTO-FASE-ISOLADO-ALTA");
+const barramentoFase_f4 = t4_f4.itensSugeridos.find(i => i.codigo === (t4_f4.barramentoCM18Info?.codigoMaterial || "BARRA-CU-1X516"));
 const barramentoNeutro_f4 = t4_f4.itensSugeridos.find(i => i.codigo === "BARRAMENTO-NEUTRO-TERRA-ALTA");
+const bandeira_f4 = t4_f4.itensSugeridos.find(i => i.codigo === "TERM-BANDEIRA-2CABOS");
+const termOlhal_f4 = t4_f4.itensSugeridos.find(i => i.codigo === "TERM-COMPRESSAO-120");
 
 console.log("Cabos Fase (2x 120mm² 0,6/1kV):", caboPreto_f4?.descricao, "| Qtde:", caboPreto_f4?.quantidade, "m (esperado 40m)");
 console.log("Cabo Neutro (2x 120mm² 0,6/1kV):", caboAzul_f4?.quantidade, "m (esperado 14m)");
 console.log("Duto Corrugado 3\" (2 vias = 20m):", duto_f4?.quantidade, "m (esperado 20m)");
 console.log("Caixa Subterrânea ZD (100x75x120cm):", cxZD_f4?.descricao);
 console.log("Tampa Ferro Fundido ZD:", tampaZD_f4?.descricao);
-console.log("Barramento Fase em Metros:", barramentoFase_f4?.quantidade, barramentoFase_f4?.unidade, "(esperado 3 m)");
-console.log("Barramento Neutro/Terra em Metros:", barramentoNeutro_f4?.quantidade, barramentoNeutro_f4?.unidade, "(esperado 1 m)");
+console.log("Barramento Copperbarras (1\" x 5/16\"): ", barramentoFase_f4?.descricao, "| Qtde:", barramentoFase_f4?.quantidade, barramentoFase_f4?.unidade, "(esperado 3 m)");
+console.log("Capacidade Barramento Copperbarras:", t4_f4.barramentoCM18Info?.capacidadeAmperes, "A (esperado 439 A)");
+console.log("Disjuntor Soprano Frame:", t4_f4.sopranoInfo?.frame, "| Largura Máx. Barramento:", t4_f4.sopranoInfo?.larguraMaximaBarramentoMm, "mm (esperado Frame 400 / 28.5 mm)");
+console.log("Usa Terminal Bandeira?:", t4_f4.usaTerminalBandeira ? "SIM (Correto!)" : "NÃO");
+console.log("Terminal Bandeira Duplo no BOM:", bandeira_f4?.descricao, "| Qtde:", bandeira_f4?.quantidade, "un (esperado 3 un)");
+console.log("Terminais Compressão Olhal 120mm²:", termOlhal_f4?.quantidade, "un");
 
 
 // Cenário 9: F9 (800A) - Subterrâneo Obrigatório, 3 condutores por fase (3x 185 mm²), 3 dutos corrugados de 3" (30m)
@@ -277,17 +284,62 @@ const duto_f9 = t4_f9.itensSugeridos.find(i => i.codigo === "DUTO-CORRUGADO-PEAD
 const eletroRigido_f9 = t4_f9.itensSugeridos.find(i => i.codigo.startsWith("ELET-PVC"));
 const curvaRigida_f9 = t4_f9.itensSugeridos.find(i => i.codigo.startsWith("CURVA-90"));
 const cabecote_f9 = t4_f9.itensSugeridos.find(i => i.codigo.startsWith("CABECOTE"));
+const bandeira_f9 = t4_f9.itensSugeridos.find(i => i.codigo === "TERM-BANDEIRA-3CABOS");
+const barra_f9 = t4_f9.itensSugeridos.find(i => i.codigo === "BARRA-CU-134X38");
 
 console.log("Cabos Fase (3x 185mm² 0,6/1kV):", caboPreto_f9?.quantidade, "m (esperado 75m)");
 console.log("Duto Corrugado 3\" (3 vias = 30m):", duto_f9?.quantidade, "m (esperado 30m)");
+console.log("Disjuntor Soprano Frame:", t4_f9.sopranoInfo?.frame, "| Larg. Máx:", t4_f9.sopranoInfo?.larguraMaximaBarramentoMm, "mm (esperado Frame 800 / 44.0 mm)");
+console.log("Barra Copperbarras 1.3/4\" x 3/8\":", barra_f9?.descricao, "| Capacidade:", t4_f9.barramentoCM18Info?.capacidadeAmperes, "A (esperado 903 A)");
+console.log("Terminal Bandeira Triplo:", bandeira_f9?.descricao, "| Qtde:", bandeira_f9?.quantidade, "un (esperado 3 un c/ 3 parafusos)");
 console.log("Eletroduto PVC rígido removido da Tabela 4?:", eletroRigido_f9 === undefined ? "SIM (Correto!)" : "NÃO (Erro)");
 console.log("Curva 90° rígida removida da Tabela 4?:", curvaRigida_f9 === undefined ? "SIM (Correto!)" : "NÃO (Erro)");
 console.log("Cabeçote pingadouro removido da Tabela 4?:", cabecote_f9 === undefined ? "SIM (Correto!)" : "NÃO (Erro)");
 
+
+// Cenário 10: F1 (225A) - 1 Cabo por Fase, Entrada Direta no Disjuntor (Pino Maciço vs Olhal)
+const t4_f1_pino = dimensionarPadraoCemig({
+  tipoPadrao: "TRIFASICO",
+  categoriaDemanda: "ALTA_DEMANDA_TABELA_4",
+  tipoCaixaDisjuntorTabela4: "CM-18",
+  tipoTerminalDisjuntor: "PINO_MACICO",
+  disjuntorAmperes: 225,
+  ladoRede: "MESMO_LADO",
+  tipoEstrutura: "MURO"
+});
+
+console.log("\n--- CENÁRIO 10: Tabela 4 F1 (225A) - 1 Cabo por Fase, Entrada Direta Pino Maciço ---");
+const termPino_f1 = t4_f1_pino.itensSugeridos.find(i => i.codigo === "TERM-PINO-MACICO-120");
+const barra_f1 = t4_f1_pino.itensSugeridos.find(i => i.codigo === "BARRA-CU-78X14");
+console.log("Disjuntor Soprano Frame:", t4_f1_pino.sopranoInfo?.frame, "| Larg. Máx:", t4_f1_pino.sopranoInfo?.larguraMaximaBarramentoMm, "mm (esperado Frame 250 / 23.0 mm)");
+console.log("Barra Copperbarras 7/8\" x 1/4\":", barra_f1?.descricao, "| Capacidade:", t4_f1_pino.barramentoCM18Info?.capacidadeAmperes, "A (esperado 314 A)");
+console.log("Usa Terminal Bandeira?:", t4_f1_pino.usaTerminalBandeira ? "SIM (Erro)" : "NÃO (Correto, entrada direta!)");
+console.log("Terminal Pino Maciço 120mm² no BOM:", termPino_f1?.descricao, "| Qtde:", termPino_f1?.quantidade, "un");
+
+
+// Cenário 11: F7 (630A) - 2 Cabos por Fase (2x 240mm²), Disjuntor Soprano Frame 630 (Larg. 44mm)
+const t4_f7 = dimensionarPadraoCemig({
+  tipoPadrao: "TRIFASICO",
+  categoriaDemanda: "ALTA_DEMANDA_TABELA_4",
+  disjuntorAmperes: 630,
+  ladoRede: "MESMO_LADO",
+  tipoEstrutura: "MURO"
+});
+
+console.log("\n--- CENÁRIO 11: Tabela 4 F7 (630A) - 2x 240mm², Disjuntor Frame 630 (Largura 44mm) ---");
+const barra_f7 = t4_f7.itensSugeridos.find(i => i.codigo === "BARRA-CU-134X516");
+const bandeira_f7 = t4_f7.itensSugeridos.find(i => i.codigo === "TERM-BANDEIRA-2CABOS");
+const termOlhal_f7 = t4_f7.itensSugeridos.find(i => i.codigo === "TERM-COMPRESSAO-240");
+console.log("Disjuntor Soprano Frame:", t4_f7.sopranoInfo?.frame, "| Larg. Máx:", t4_f7.sopranoInfo?.larguraMaximaBarramentoMm, "mm (esperado Frame 630 / 44.0 mm)");
+console.log("Barra Copperbarras 1.3/4\" x 5/16\":", barra_f7?.descricao, "| Capacidade:", t4_f7.barramentoCM18Info?.capacidadeAmperes, "A (esperado 769 A)");
+console.log("Terminal Bandeira Duplo:", bandeira_f7?.descricao, "| Qtde:", bandeira_f7?.quantidade, "un (esperado 3 un)");
+console.log("Terminal Compressão Olhal 240mm²:", termOlhal_f7?.descricao, "| Qtde:", termOlhal_f7?.quantidade, "un");
+
 const totalItens = t4_f9.itensSugeridos.length;
 const totalCapex = t4_f9.itensSugeridos.reduce((acc, curr) => acc + curr.precoTotal, 0);
-console.log(`Total de Itens no BOM F9: ${totalItens} | Capex Total Estimado: R$ ${totalCapex.toFixed(2)}`);
+console.log(`\nTotal de Itens no BOM F9: ${totalItens} | Capex Total Estimado: R$ ${totalCapex.toFixed(2)}`);
 
 console.log("\n==================================================================");
-console.log("TODAS AS REGRAS E TABELAS (1, 2 E 4) CEMIG VALIDADAS COM SUCESSO!");
+console.log("TODAS AS REGRAS, DISJUNTORES SOPRANO E BARRAS COPPERBARRAS VALIDADOS COM SUCESSO!");
 console.log("==================================================================");
+

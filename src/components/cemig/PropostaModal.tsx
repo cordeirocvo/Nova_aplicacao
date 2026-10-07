@@ -53,7 +53,13 @@ export default function PropostaModal({ isOpen, onClose, proposta }: PropostaMod
   if (!isOpen) return null;
 
   const handlePrint = () => {
+    const originalTitle = document.title;
+    const refNome = (proposta.clienteNome || "CEMIG").replace(/[^a-zA-Z0-9_-]/g, "_");
+    document.title = `Proposta_${proposta.numeroProposta || "CEMIG"}_${refNome}`;
     window.print();
+    setTimeout(() => {
+      document.title = originalTitle;
+    }, 1000);
   };
 
   const dataAtual = new Date().toLocaleDateString("pt-BR", {
@@ -72,8 +78,11 @@ export default function PropostaModal({ isOpen, onClose, proposta }: PropostaMod
   const aFavor = proposta.ladoRede === "MESMO_LADO" || proposta.ladoRede === "A_FAVOR";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-5xl w-full max-h-[92vh] flex flex-col overflow-hidden my-auto border border-slate-200">
+    <div
+      id="printable-proposta-modal"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 overflow-y-auto print:p-0 print:m-0 print:static print:bg-white print:overflow-visible print:block print:w-full print:h-auto"
+    >
+      <div className="bg-white rounded-2xl shadow-2xl max-w-5xl w-full max-h-[92vh] flex flex-col overflow-hidden my-auto border border-slate-200 print:border-none print:shadow-none print:max-h-none print:w-full print:max-w-none print:rounded-none print:overflow-visible print:block print:m-0 print:p-0">
         
         {/* Barra Superior de Ações (oculta na impressão) */}
         <div className="p-4 bg-slate-900 text-white flex items-center justify-between print:hidden border-b border-slate-800">

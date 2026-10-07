@@ -37,13 +37,30 @@ export async function POST(req: Request) {
       demandControlLimit
     } = data;
 
-    console.log("POST /api/ev/sizing - Incoming data:", data);
-
-    const charger = await prisma.carregador.findUnique({ where: { id: chargerId } });
+    let charger = chargerId ? await prisma.carregador.findUnique({ where: { id: chargerId } }) : null;
 
     if (!charger) {
-      console.error("Charger not found:", chargerId);
-      return NextResponse.json({ error: "Carregador não encontrado" }, { status: 404 });
+      if (data.chargerModel) {
+        charger = await prisma.carregador.findFirst({
+          where: { model: { contains: String(data.chargerModel).slice(0, 15), mode: 'insensitive' } }
+        });
+      }
+      if (!charger) {
+        charger = await prisma.carregador.findFirst();
+      }
+      if (!charger) {
+        charger = await prisma.carregador.create({
+          data: {
+            brand: data.chargerBrand || "WEG",
+            model: data.chargerModel || "WEMOB Wallbox 7.4kW",
+            power: Number(data.chargerPowerKW) || 7.4,
+            voltage: Number(data.chargerVoltage) || 220,
+            phases: Number(data.chargerPhases) || 1,
+            current: Number(data.chargerCurrentA) || 32,
+            connectorType: "Tipo 2"
+          }
+        });
+      }
     }
 
     // Dimensionar
@@ -171,7 +188,7 @@ export async function POST(req: Request) {
         entranceCategory,
         distance: hasTransformer ? (chargerDistance || distance) : distance,
         installationMethod: installationMethod || "B1",
-        chargerId,
+        chargerId: charger.id,
         calculatedCurrent: result.current,
         calculatedCableGauge: result.cableGauge,
         calculatedBreaker: result.breaker,

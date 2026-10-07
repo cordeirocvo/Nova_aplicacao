@@ -407,13 +407,81 @@ export const CEMIG_MATERIAIS_ATUALIZADOS = [
     observacao: "Item opcional (não padrão na conexão direta CEMIG)."
   },
 
-  // ─── TERMINAIS ESPECÍFICOS (TUBULARES E PINO MACIÇO) ───
-  { codigo: "TERM-TUBULAR-16", descricao: "Terminal Tubular Ilhós 16 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 2.80 },
-  { codigo: "TERM-TUBULAR-25", descricao: "Terminal Tubular Ilhós 25 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 3.50 },
-  { codigo: "TERM-TUBULAR-35", descricao: "Terminal Tubular Ilhós 35 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 4.20 },
-  { codigo: "TERM-PINO-MACICO-50", descricao: "Terminal Pino Maciço 50 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 9.80 },
-  { codigo: "TERM-PINO-MACICO-70", descricao: "Terminal Pino Maciço 70 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 14.50 },
-  { codigo: "TERM-TUBULAR-95", descricao: "Terminal Tubular Ilhós 95 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 12.00 },
+  // ─── TERMINAIS DE COMPRESSÃO OLHAL / TUBULAR EM COBRE ESTANHADO (PADRÃO CEMIG) ───
+  { codigo: "TERM-COMPRESSAO-16", descricao: "Terminal de Compressão Tubular/Olhal em Cobre Estanhado 16 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 2.80 },
+  { codigo: "TERM-COMPRESSAO-25", descricao: "Terminal de Compressão Tubular/Olhal em Cobre Estanhado 25 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 3.50 },
+  { codigo: "TERM-COMPRESSAO-35", descricao: "Terminal de Compressão Tubular/Olhal em Cobre Estanhado 35 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 4.20 },
+  { codigo: "TERM-COMPRESSAO-50", descricao: "Terminal de Compressão Tubular/Olhal em Cobre Estanhado 50 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 8.50 },
+  { codigo: "TERM-COMPRESSAO-70", descricao: "Terminal de Compressão Tubular/Olhal em Cobre Estanhado 70 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 12.00 },
+  { codigo: "TERM-COMPRESSAO-95", descricao: "Terminal de Compressão Tubular/Olhal em Cobre Estanhado 95 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 15.00 },
+  { codigo: "TERM-COMPRESSAO-120", descricao: "Terminal de Compressão Tubular/Olhal em Cobre Estanhado 120 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 18.50 },
+  { codigo: "TERM-COMPRESSAO-150", descricao: "Terminal de Compressão Tubular/Olhal em Cobre Estanhado 150 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 22.00 },
+  { codigo: "TERM-COMPRESSAO-185", descricao: "Terminal de Compressão Tubular/Olhal em Cobre Estanhado 185 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 28.00 },
+  { codigo: "TERM-COMPRESSAO-240", descricao: "Terminal de Compressão Tubular/Olhal em Cobre Estanhado 240 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 36.00 },
+
+  // ─── TERMINAIS PINO MACIÇO EM COBRE ESTANHADO (CONEXÃO DIRETA DISJUNTOR BORNES TÚNEL) ───
+  { codigo: "TERM-PINO-MACICO-16", descricao: "Terminal Pino Maciço em Cobre Estanhado 16 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 4.50 },
+  { codigo: "TERM-PINO-MACICO-25", descricao: "Terminal Pino Maciço em Cobre Estanhado 25 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 5.80 },
+  { codigo: "TERM-PINO-MACICO-35", descricao: "Terminal Pino Maciço em Cobre Estanhado 35 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 7.20 },
+  { codigo: "TERM-PINO-MACICO-50", descricao: "Terminal Pino Maciço em Cobre Estanhado 50 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 9.80 },
+  { codigo: "TERM-PINO-MACICO-70", descricao: "Terminal Pino Maciço em Cobre Estanhado 70 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 14.50 },
+  { codigo: "TERM-PINO-MACICO-95", descricao: "Terminal Pino Maciço em Cobre Estanhado 95 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 18.00 },
+  { codigo: "TERM-PINO-MACICO-120", descricao: "Terminal Pino Maciço em Cobre Estanhado 120 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 24.00 },
+  { codigo: "TERM-PINO-MACICO-150", descricao: "Terminal Pino Maciço em Cobre Estanhado 150 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 28.00 },
+  { codigo: "TERM-PINO-MACICO-185", descricao: "Terminal Pino Maciço em Cobre Estanhado 185 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 35.00 },
+  { codigo: "TERM-PINO-MACICO-240", descricao: "Terminal Pino Maciço em Cobre Estanhado 240 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 42.00 },
+
+  // ─── TERMINAIS BANDEIRA (ADAPTADORES MULTIPLOS CABOS P/ DISJUNTORES CAIXA MOLDADA) ───
+  {
+    codigo: "TERM-BANDEIRA-2CABOS",
+    descricao: "Terminal Bandeira Duplo em Cobre Estanhado c/ 2 Parafusos para Disjuntor Caixa Moldada (Múltiplos Cabos)",
+    categoria: "ACESSORIO",
+    unidade: "un",
+    precoUnitario: 145.00,
+    observacao: "Obrigatório para conexões de 2 cabos em paralelo por polo (Faixas F4, F5, F6 e F7)."
+  },
+  {
+    codigo: "TERM-BANDEIRA-3CABOS",
+    descricao: "Terminal Bandeira Triplo em Cobre Estanhado c/ 3 Parafusos para Disjuntor Caixa Moldada (Múltiplos Cabos)",
+    categoria: "ACESSORIO",
+    unidade: "un",
+    precoUnitario: 195.00,
+    observacao: "Obrigatório para conexões de 3 cabos em paralelo por polo (Faixas F8 e F9)."
+  },
+
+  // ─── BARRAS CHATAS DE COBRE ELETROLÍTICO (COPPERBARRAS - CAIXA CM-18) ───
+  {
+    codigo: "BARRA-CU-78X14",
+    descricao: "Barra Chata Cobre Eletrolítico 7/8\" x 1/4\" (22,22 x 6,35 mm) - 314A (Copperbarras - Caixa CM-18)",
+    categoria: "ACESSORIO",
+    unidade: "m",
+    precoUnitario: 195.00,
+    observacao: "Compatível com disjuntores Soprano Frame 250 (Largura máx 23,0 mm - Disjuntores 150A a 250A)."
+  },
+  {
+    codigo: "BARRA-CU-1X516",
+    descricao: "Barra Chata Cobre Eletrolítico 1\" x 5/16\" (25,40 x 7,93 mm) - 439A (Copperbarras - Caixa CM-18)",
+    categoria: "ACESSORIO",
+    unidade: "m",
+    precoUnitario: 245.00,
+    observacao: "Compatível com disjuntores Soprano Frame 400 (Largura máx 28,5 mm - Disjuntores 275A a 400A)."
+  },
+  {
+    codigo: "BARRA-CU-134X516",
+    descricao: "Barra Chata Cobre Eletrolítico 1.3/4\" x 5/16\" (44,45 x 7,93 mm) - 769A (Copperbarras - Caixa CM-18)",
+    categoria: "ACESSORIO",
+    unidade: "m",
+    precoUnitario: 380.00,
+    observacao: "Compatível com disjuntores Soprano Frame 630 e Frame 800 (Largura máx 44,0 mm - Disjuntores 450A a 700A)."
+  },
+  {
+    codigo: "BARRA-CU-134X38",
+    descricao: "Barra Chata Cobre Eletrolítico 1.3/4\" x 3/8\" (44,45 x 9,52 mm) - 903A (Copperbarras - Caixa CM-18)",
+    categoria: "ACESSORIO",
+    unidade: "m",
+    precoUnitario: 440.00,
+    observacao: "Compatível com disjuntores Soprano Frame 800 (Largura máx 44,0 mm - Disjuntores 700A e 800A)."
+  },
 
   // ─── CONECTORES BIMETÁLICOS ───
   { codigo: "CONECTOR-BIMETALICO-16", descricao: "Conector Bimetálico Perfurante/Compressão para Cabo 16 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 24.00 },

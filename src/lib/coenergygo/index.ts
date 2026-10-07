@@ -17,6 +17,7 @@ export * from './engines/loadCurveEngine';
 export * from './engines/dlmEngine';
 export * from './parsers/loadFileParser';
 export * from './engines/infrastructureEngine';
+export * from '../ev/chargersDatabase';
 
 import { UtilitySizingInput, UtilitySizingOutput } from './types';
 import { evaluateCEMIG } from './engines/cemigEngine';

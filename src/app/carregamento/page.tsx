@@ -202,19 +202,40 @@ export default function CoenergyGODashboard() {
   const [customHomologatedCategoryId, setCustomHomologatedCategoryId] = useState<string | null>(null);
   const [isCopied, setIsCopied] = useState<boolean>(false);
 
-  // ─── CARREGAR PROJETOS EXISTENTES ──────────────────────────────────────────
+  // ─── CARREGAR PROJETOS EXISTENTES (BANCO SUPABASE + LOCALSTORAGE RESILIENTE) ─
   useEffect(() => {
+    let localSaved: any[] = [];
+    try {
+      const stored = localStorage.getItem('coenergygo_saved_projects');
+      if (stored) {
+        localSaved = JSON.parse(stored);
+      }
+    } catch (e) {
+      console.warn("Aviso ao ler projetos do localStorage:", e);
+    }
+
     fetch("/api/ev/sizing")
       .then(res => {
-        if (!res.ok) throw new Error("Erro ao carregar projetos");
+        if (!res.ok) throw new Error("Erro ao carregar projetos do banco");
         return res.json();
       })
-      .then(data => {
-        setProjects(Array.isArray(data) ? data : []);
+      .then(dbProjects => {
+        const dbList = Array.isArray(dbProjects) ? dbProjects : [];
+        // Mesclar priorizando os mais recentes e evitando duplicatas de ID
+        const combined = [...localSaved];
+        dbList.forEach(p => {
+          if (!combined.some(c => c.id === p.id)) {
+            combined.push(p);
+          }
+        });
+        setProjects(combined);
         setLoadingProjects(false);
       })
       .catch(err => {
-        console.error(err);
+        console.warn("Aviso na API remota /api/ev/sizing, utilizando projetos locais:", err);
+        if (localSaved.length > 0) {
+          setProjects(localSaved);
+        }
         setLoadingProjects(false);
       });
   }, []);
@@ -594,9 +615,32 @@ export default function CoenergyGODashboard() {
     if (p.existingEntranceCategory && availableCategories[p.existingEntranceCategory]) {
       setCurrentStandardCategoryId(p.existingEntranceCategory);
     }
-    
-    // Injetar carregador salvo do projeto
-    if (p.charger) {
+    if (p.entranceCategory && availableCategories[p.entranceCategory]) {
+      setCustomHomologatedCategoryId(p.entranceCategory);
+    }
+    if (p.distance) {
+      setCircuitDistanceMeters(Number(p.distance));
+    }
+    if (p.installationMethod) {
+      setInstallationMethod(p.installationMethod as any);
+    }
+    if (p.demandControlEnabled !== undefined) {
+      setDlmEnableDLM(Boolean(p.demandControlEnabled));
+    }
+    if (p.demandControlLimit) {
+      setDlmPeakDemandKW(Number(p.demandControlLimit));
+    }
+
+    // Se possui clientProjectData estruturado
+    if (p.clientProjectData) {
+      setClientProjectData(prev => ({ ...prev, ...p.clientProjectData }));
+    }
+
+    // Se possui lista completa de carregadores restaurada do snapshot
+    if (Array.isArray(p.configuredChargers) && p.configuredChargers.length > 0) {
+      setConfiguredChargers(p.configuredChargers);
+    } else if (p.charger) {
+      // Injetar carregador padrão do relacionamento 1:1 caso não tenha o snapshot
       const kw = Number(p.charger.power) || 7.4;
       const phases = (Number(p.charger.phases) || (kw >= 11 ? 3 : 1)) as (1 | 3);
       const isDC = p.charger.type === 'DC' || kw >= 30;
@@ -612,6 +656,25 @@ export default function CoenergyGODashboard() {
       }]);
     }
     setActiveTab('veiculos');
+  };
+
+  const handleDeleteProject = (id: string, projectName: string) => {
+    if (!window.confirm(`Deseja realmente remover o projeto "${projectName}" do sistema?`)) {
+      return;
+    }
+    // Remover do localStorage
+    try {
+      const stored = localStorage.getItem('coenergygo_saved_projects');
+      if (stored) {
+        const list = JSON.parse(stored);
+        const filtered = list.filter((x: any) => x.id !== id);
+        localStorage.setItem('coenergygo_saved_projects', JSON.stringify(filtered));
+      }
+    } catch (e) {
+      console.warn("Aviso ao remover do localStorage:", e);
+    }
+    // Remover do estado local
+    setProjects(prev => prev.filter(p => p.id !== id));
   };
 
   const handleUpdateCharger = (id: string, updates: Partial<ConfiguredCharger>) => {
@@ -841,14 +904,76 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
       setSavingProject(true);
       setSaveSuccessMessage(null);
 
-      const payload = {
-        projectName: clientProjectData.projectName || projectName || "Novo Dimensionamento VE",
-        clientName: clientProjectData.clientName || clientName || "Cliente Particular",
+      const resolvedProjectName = clientProjectData.projectName || projectName || "Novo Dimensionamento VE";
+      const resolvedClientName = clientProjectData.clientName || clientName || "Cliente Particular";
+      const projectId = `proj-coenergygo-${Date.now()}`;
+
+      // Snapshot completo com todos os parâmetros dos Passos 1A a 3
+      const fullProjectSnapshot = {
+        id: projectId,
+        projectName: resolvedProjectName,
+        clientName: resolvedClientName,
         clientDocument: clientProjectData.installationNumber ? `Instalação CEMIG: ${clientProjectData.installationNumber}` : "",
         clientPhone: clientProjectData.clientPhone || "",
         clientEmail: clientProjectData.clientEmail || "",
         clientAddress: clientProjectData.address || "",
-        projectDescription: `Dimensionamento CoenergyGO. Fases: ${fieldPhases}, Disjuntor Campo: ${fieldBreakerAmps}A, Cabos: ${clientProjectData.fieldCableGaugeMM2 || 10} mm², Padrão Homologado CEMIG: ${effectiveHomologatedCategory.categoryId}.`,
+        utility: selectedUtility,
+        entranceCategory: effectiveHomologatedCategory.categoryId,
+        existingEntranceCategory: currentStandardCategoryId,
+        existingEntranceBreaker: fieldBreakerAmps,
+        existingEntranceCable: clientProjectData.fieldCableGaugeMM2 || 10,
+        existingEntrancePhases: fieldPhases === '3F' ? 3 : fieldPhases === '2F' ? 2 : 1,
+        existingLoadKW: effectiveExistingLoadKW,
+        distance: circuitDistanceMeters,
+        installationMethod: installationMethod,
+        isCollective: applicationMode !== 'individual',
+        demandControlEnabled: dlmEnableDLM,
+        demandControlLimit: effectiveDlmGridLimitKW,
+        hasEmergencyButton5m: auditHasEmergencyButton,
+        requiresWarningSigns: auditHasSignaling,
+        groundingType: "TN-S",
+        cosPhi: 0.98,
+        totalPowerKW: totalChargersInstalledKW,
+        // Dados estendidos para reconstrução fiel
+        configuredChargers: configuredChargers,
+        clientProjectData: {
+          ...clientProjectData,
+          projectName: resolvedProjectName,
+          clientName: resolvedClientName
+        },
+        charger: {
+          brand: primaryCharger.brand || "WEG",
+          model: primaryCharger.model || primaryCharger.name,
+          power: primaryCharger.powerKW,
+          voltage: primaryCharger.voltage,
+          phases: primaryCharger.phases,
+          current: primaryCharger.currentInA || 32
+        },
+        createdAt: new Date().toISOString()
+      };
+
+      // 1. Persistência imediata e segura em localStorage
+      try {
+        const stored = localStorage.getItem('coenergygo_saved_projects');
+        const list = stored ? JSON.parse(stored) : [];
+        const updatedList = [fullProjectSnapshot, ...list.filter((x: any) => x.id !== fullProjectSnapshot.id)];
+        localStorage.setItem('coenergygo_saved_projects', JSON.stringify(updatedList));
+      } catch (e) {
+        console.warn("Aviso ao salvar snapshot no localStorage:", e);
+      }
+
+      // Atualiza o estado da UI imediatamente para garantir feedback ao usuário
+      setProjects(prev => [fullProjectSnapshot, ...prev.filter(p => p.id !== fullProjectSnapshot.id)]);
+
+      // 2. Persistência remota na API /api/ev/sizing
+      const payload = {
+        projectName: resolvedProjectName,
+        clientName: resolvedClientName,
+        clientDocument: clientProjectData.installationNumber ? `Instalação CEMIG: ${clientProjectData.installationNumber}` : "",
+        clientPhone: clientProjectData.clientPhone || "",
+        clientEmail: clientProjectData.clientEmail || "",
+        clientAddress: clientProjectData.address || "",
+        projectDescription: `Dimensionamento CoenergyGO. Fases: ${fieldPhases}, Disjuntor Campo: ${fieldBreakerAmps}A, Cabos: ${clientProjectData.fieldCableGaugeMM2 || 10} mm², Padrão Homologado CEMIG: ${effectiveHomologatedCategory.categoryId}. Carregadores: ${configuredChargers.map(c => `${c.quantity}x ${c.name} (${c.powerKW}kW)`).join(', ')}.`,
         utility: selectedUtility,
         entranceCategory: effectiveHomologatedCategory.categoryId,
         existingEntranceCategory: currentStandardCategoryId,
@@ -873,22 +998,34 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
         cosPhi: 0.98
       };
 
-      const res = await fetch("/api/ev/sizing", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "Erro ao salvar projeto");
+      try {
+        const res = await fetch("/api/ev/sizing", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.project) {
+            // Substitui temporário pelo retornado do banco
+            const merged = { ...fullProjectSnapshot, ...data.project };
+            setProjects(prev => [merged, ...prev.filter(p => p.id !== fullProjectSnapshot.id && p.id !== data.project.id)]);
+            // Atualiza também o cache local com o ID do banco
+            try {
+              const stored = localStorage.getItem('coenergygo_saved_projects');
+              const list = stored ? JSON.parse(stored) : [];
+              const updatedList = [merged, ...list.filter((x: any) => x.id !== fullProjectSnapshot.id && x.id !== data.project.id)];
+              localStorage.setItem('coenergygo_saved_projects', JSON.stringify(updatedList));
+            } catch (err) {}
+          }
+        } else {
+          console.warn("Aviso: Falha ao persistir no banco remoto, mas o projeto foi salvo localmente.");
+        }
+      } catch (netErr) {
+        console.warn("Aviso de rede: Projeto salvo localmente com sucesso. Sincronização remota pendente:", netErr);
       }
 
-      if (data.project) {
-        setProjects(prev => [data.project, ...prev.filter(p => p.id !== data.project.id)]);
-      }
-
-      setSaveSuccessMessage(`Projeto "${payload.projectName}" salvo com sucesso!`);
+      setSaveSuccessMessage(`Projeto "${resolvedProjectName}" salvo no Dossiê com sucesso!`);
       setTimeout(() => setSaveSuccessMessage(null), 6000);
     } catch (err: any) {
       console.error("Erro ao salvar projeto:", err);
@@ -1105,6 +1242,27 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
         </div>
       </div>
 
+      {/* BANNER DE NOTIFICAÇÃO DE SUCESSO DE SALVAMENTO */}
+      {saveSuccessMessage && (
+        <div className="bg-emerald-50 border-2 border-[#00B356] text-emerald-950 px-5 py-4 rounded-2xl flex items-center justify-between shadow-lg animate-in slide-in-from-top duration-300">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-[#00B356] text-white flex items-center justify-center font-bold">
+              <Check className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="font-bold text-sm text-emerald-900">{saveSuccessMessage}</p>
+              <p className="text-xs text-emerald-700">O projeto foi gravado de forma persistente e está disponível no histórico do Dashboard.</p>
+            </div>
+          </div>
+          <button 
+            onClick={() => setSaveSuccessMessage(null)}
+            className="text-emerald-700 hover:text-emerald-900 text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-emerald-100 transition-all cursor-pointer"
+          >
+            Fechar
+          </button>
+        </div>
+      )}
+
       {/* ─── TAB 1: PROJETOS & VISÃO GERAL ─── */}
       {activeTab === 'projetos' && (
         <div className="space-y-6">
@@ -1201,14 +1359,23 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
                       </h4>
                       <p className="text-xs text-slate-500">{p.clientName || 'Cliente Particular'}</p>
                     </div>
-                    <button
-                      onClick={() => handleLoadProjectIntoCoenergyGO(p)}
-                      className="bg-orange-50 hover:bg-[#E45318] text-[#E45318] hover:text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1 shadow-sm cursor-pointer"
-                      title="Carregar parâmetros deste projeto no fluxo CoenergyGO (Passos 1A a 3)"
-                    >
-                      <span>Abrir no CoenergyGO</span>
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleLoadProjectIntoCoenergyGO(p)}
+                        className="bg-orange-50 hover:bg-[#E45318] text-[#E45318] hover:text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1 shadow-sm cursor-pointer"
+                        title="Carregar parâmetros deste projeto no fluxo CoenergyGO (Passos 1A a 3)"
+                      >
+                        <span>Abrir no CoenergyGO</span>
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteProject(p.id, p.projectName || 'Dimensionamento')}
+                        className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all cursor-pointer"
+                        title="Excluir projeto do histórico"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
 
                   <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 font-medium">

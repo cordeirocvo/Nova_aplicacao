@@ -2646,6 +2646,25 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
               setDlmLimitedChargerPowerKW(pKW);
               setIsDlmLimitationAccepted(true);
             }}
+            onSelectRecommendedCharger={(recommended) => {
+              // Substitui o carregador ativo de 80 kW pelo modelo ideal recomendado (ex: 60 kW)
+              setConfiguredChargers([
+                {
+                  id: `ch-rec-${recommended.id}`,
+                  name: `${recommended.brand} ${recommended.model}`,
+                  powerKW: recommended.powerKW,
+                  phases: recommended.phases as (1 | 3),
+                  voltage: recommended.voltageV,
+                  type: recommended.powerKW >= 30 ? 'DC' : 'AC',
+                  quantity: 1,
+                  connector: recommended.connectorType,
+                  targetVehicleId: selectedVehicle?.id || 'ev-generic',
+                  targetVehicleName: selectedVehicle ? `${selectedVehicle.brand} ${selectedVehicle.model}` : 'Veículo Elétrico'
+                }
+              ]);
+              setDlmLimitedChargerPowerKW(recommended.powerKW);
+              setIsDlmLimitationAccepted(true);
+            }}
           />
 
           <LoadCurveChart

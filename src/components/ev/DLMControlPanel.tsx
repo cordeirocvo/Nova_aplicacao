@@ -3,9 +3,10 @@
 import React from "react";
 import { 
   Building, Sun, Zap, Sliders, ShieldCheck, 
-  BatteryCharging, Clock, CheckCircle2, ArrowRight
+  BatteryCharging, Clock, CheckCircle2, ArrowRight, Sparkles
 } from "lucide-react";
 import { TypicalProfileType } from "@/lib/coenergygo/types";
+import { HOMOLOGATED_CHARGERS, ChargerDatasheet } from "@/lib/ev/chargersDatabase";
 
 export interface DLMControlPanelProps {
   profileType: TypicalProfileType;
@@ -50,6 +51,7 @@ export interface DLMControlPanelProps {
   limitedChargerPowerKW?: number;
   onToggleAcceptLimitation?: (accept: boolean, powerKW?: number) => void;
   onUpdateLimitedChargerPowerKW?: (powerKW: number) => void;
+  onSelectRecommendedCharger?: (charger: any) => void;
 }
 
 export default function DLMControlPanel({
@@ -83,7 +85,8 @@ export default function DLMControlPanel({
   isLimitationAccepted = false,
   limitedChargerPowerKW,
   onToggleAcceptLimitation,
-  onUpdateLimitedChargerPowerKW
+  onUpdateLimitedChargerPowerKW,
+  onSelectRecommendedCharger
 }: DLMControlPanelProps) {
   // Cálculo de engenharia solar (Módulos 550Wp e HSP CEMIG/MG = 5.1 kWh/m2/dia)
   const estimatedModuleCount = Math.round((solarPeakKW * 1000) / 550);
@@ -95,6 +98,39 @@ export default function DLMControlPanel({
     : 7.4;
   const safeKW = suggestedSafeChargerPowerKW !== undefined ? suggestedSafeChargerPowerKW : nominalUnitPowerKW;
   const activeLimitedKW = limitedChargerPowerKW ?? safeKW;
+
+  // Lógica de Engenharia: Determinar o Carregador Ideal que melhor atende a capacidade segura do padrão
+  let recommendedCharger: ChargerDatasheet | null = null;
+  let recommendedChargerReason = "";
+
+  if (safeKW < nominalUnitPowerKW || safeKW < 75) {
+    // Filtrar equipamentos homologados de acordo com tipo (DC ou AC)
+    const isDCScheme = configuredChargersSummary.isDC || safeKW >= 25;
+    const candidateChargers = HOMOLOGATED_CHARGERS.filter(c => {
+      if (isDCScheme) {
+        return c.powerKW >= 30; // Modelos DC Comerciais
+      } else {
+        return c.powerKW <= 22; // Modelos AC
+      }
+    });
+
+    // Encontrar o modelo cuja potência nominal é a mais próxima e mais adequada para o teto disponível
+    // Ex: Se teto seguro é ~58.5 kW, o carregador ideal de 60 kW (BENY BDC-60 ou WEG Station 60 kW) aproveita ~98% sem desperdício de capex de um carregador de 80 kW
+    const sorted = [...candidateChargers].sort((a, b) => {
+      const diffA = Math.abs(a.powerKW - safeKW);
+      const diffB = Math.abs(b.powerKW - safeKW);
+      return diffA - diffB;
+    });
+
+    if (sorted.length > 0) {
+      recommendedCharger = sorted[0];
+      if (recommendedCharger.powerKW < nominalUnitPowerKW) {
+        recommendedChargerReason = `O carregador de ${recommendedCharger.powerKW} kW se ajusta perfeitamente à margem segura de ${safeKW} kW do seu padrão atual, evitando pagar por um carregador de ${nominalUnitPowerKW} kW que operaria estrangulado pelo DLM.`;
+      } else {
+        recommendedChargerReason = `Excelente compatibilidade com a margem do padrão (${safeKW} kW), aproveitando a recarga sem risco de desarme.`;
+      }
+    }
+  }
 
   return (
     <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-6">
@@ -455,6 +491,46 @@ export default function DLMControlPanel({
                 <div className="text-[9px] text-slate-500 bg-white/70 p-2 rounded-lg border border-slate-200/60 leading-tight">
                   ⚖️ <strong>Embasamento Normativo:</strong> Conforme <strong>ABNT NBR 17019</strong> e <strong>IEC 61851-1</strong>, com a gestão dinâmica DLM ativada e potência fixada no teto seguro, <em>o disjuntor do padrão não desarma</em> e os alarmes de sobrecarga são anulados.
                 </div>
+
+                {/* SUGESTÃO INTELIGENTE DE CARREGADOR COMERCIAL IDEAL */}
+                {recommendedCharger && (
+                  <div className="bg-gradient-to-br from-slate-900 to-[#0A192F] text-white p-3.5 rounded-2xl border border-emerald-500/30 shadow-md space-y-2 mt-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-black uppercase text-[#00B356] tracking-wider flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                        Carregador Ideal Recomendado
+                      </span>
+                      <span className="text-[10px] font-black bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/40">
+                        {recommendedCharger.powerKW} kW ({recommendedCharger.brand})
+                      </span>
+                    </div>
+
+                    <div>
+                      <strong className="text-xs text-white block">
+                        {recommendedCharger.model}
+                      </strong>
+                      <p className="text-[10px] text-slate-300 leading-snug mt-0.5">
+                        {recommendedChargerReason}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-1 border-t border-slate-700/60 text-[10px]">
+                      <span className="text-slate-300">
+                        Aproveitamento do Padrão: <strong className="text-[#00B356]">{Math.min(100, Math.round((safeKW / recommendedCharger.powerKW) * 100))}%</strong>
+                      </span>
+                      {onSelectRecommendedCharger && (
+                        <button
+                          type="button"
+                          onClick={() => onSelectRecommendedCharger(recommendedCharger)}
+                          className="bg-[#00B356] hover:bg-emerald-600 text-white font-bold px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1 shadow-xs cursor-pointer"
+                        >
+                          <span>Adotar este Carregador</span>
+                          <ArrowRight className="w-3 h-3" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

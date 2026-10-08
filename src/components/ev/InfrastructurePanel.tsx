@@ -49,7 +49,7 @@ export default function InfrastructurePanel({
   onSimulateChargerToggle
 }: InfrastructurePanelProps) {
   const [activeElectrotechnicalTab, setActiveElectrotechnicalTab] = useState<
-    'fluxo_dinamico' | 'cad_unifilar' | 'paineis_segregados' | 'analise_trafo' | 'auxiliares' | 'bom'
+    'fluxo_dinamico' | 'cad_unifilar' | 'paineis_segregados' | 'analise_trafo' | 'auxiliares' | 'nr10_compliance' | 'bom'
   >('fluxo_dinamico');
 
   const [copiedBOM, setCopiedBOM] = useState(false);
@@ -245,6 +245,21 @@ export default function InfrastructurePanel({
         </button>
 
         <button
+          onClick={() => setActiveElectrotechnicalTab('nr10_compliance')}
+          className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-xs ${
+            activeElectrotechnicalTab === 'nr10_compliance'
+              ? "bg-[#0A192F] text-white shadow-md ring-2 ring-[#00B356]"
+              : "bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100"
+          }`}
+        >
+          <ShieldCheck className="w-4 h-4 text-[#00B356]" />
+          <span>6. Conformidade NR-10 & Segurança</span>
+          <span className="text-[9px] bg-[#00B356] text-white px-1.5 py-0.2 rounded-full font-black">
+            Mandatório
+          </span>
+        </button>
+
+        <button
           onClick={() => setActiveElectrotechnicalTab('bom')}
           className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-xs ${
             activeElectrotechnicalTab === 'bom'
@@ -253,7 +268,7 @@ export default function InfrastructurePanel({
           }`}
         >
           <FileSpreadsheet className="w-4 h-4 text-emerald-500" />
-          <span>6. Lista Quantitativa (BOM)</span>
+          <span>7. Lista Quantitativa (BOM)</span>
         </button>
       </div>
 
@@ -828,6 +843,170 @@ export default function InfrastructurePanel({
                   <span className="font-bold text-[#00B356]">Modbus RS485 Ativo</span>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── CONTEÚDO DA ABA 6: CONFORMIDADE MANDATÓRIA NR-10 & SEGURANÇA ELÉTRICA ─── */}
+      {activeElectrotechnicalTab === 'nr10_compliance' && (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          {/* Cabeçalho da NR-10 */}
+          <div className="bg-gradient-to-br from-[#0A192F] to-slate-900 text-white p-6 md:p-8 rounded-3xl border border-slate-800 shadow-xl space-y-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-[#00B356] bg-emerald-950/80 border border-emerald-800 px-2.5 py-0.5 rounded-full">
+                  Portaria MTE nº 3.214/1978 & ABNT NBR 17019
+                </span>
+                <h3 className="text-xl md:text-2xl font-black text-white mt-1.5 flex items-center gap-2">
+                  <ShieldCheck className="w-6 h-6 text-[#00B356]" />
+                  Diretrizes de Segurança NR-10 para Eletropostos & Carregadores EV
+                </h3>
+                <p className="text-xs text-slate-300 max-w-2xl mt-1">
+                  Requisitos técnicos e administrativos obrigatórios para prevenir choques elétricos, queimaduras por arco elétrico e acidentes durante a instalação, comissionamento e manutenção do sistema.
+                </p>
+              </div>
+
+              <div className="bg-white/10 px-4 py-3 rounded-2xl border border-white/10 flex items-center gap-3">
+                <div className="w-3 h-3 rounded-full bg-[#00B356] animate-pulse" />
+                <div>
+                  <span className="text-[10px] font-bold text-slate-300 block">Status de Auditoria</span>
+                  <span className="text-xs font-black text-white">Prontuário das Instalações Requerido</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Alerta de Responsabilidade Técnica */}
+            <div className="bg-orange-500/10 border border-orange-500/30 p-3.5 rounded-2xl flex items-center justify-between gap-4 text-xs">
+              <div className="flex items-center gap-2.5 text-orange-200">
+                <AlertTriangle className="w-4 h-4 text-[#E45318] shrink-0" />
+                <span>
+                  <strong>NR-10.2.7:</strong> Instalações com carga superior a 75 kW (como este projeto com padrão comercial) <strong>devem manter obrigatoriamente o Prontuário de Instalações Elétricas (PIE)</strong> devidamente assinado por Engenheiro Eletricista com ART emitida no CREA.
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Grid de Pilares Mandatórios da NR-10 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Pilar 1: LOTO & Seccionamento Visível */}
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full">
+                  NR-10.5.1 / LOTO
+                </span>
+                <span className="text-xs font-bold text-slate-400">Desenergização</span>
+              </div>
+              <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <Shield className="w-4 h-4 text-red-600" />
+                Seccionamento Visível & Bloqueio (LOTO)
+              </h4>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Chave seccionadora rotativa com travamento por cadeado (Lockout/Tagout) na entrada do QGBT e em cada totem/wallbox. Garante impedimento de reenergização acidental durante serviços técnicos.
+              </p>
+              <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-[11px] text-slate-700 font-medium">
+                🔒 <strong>Dispositivo Exigido:</strong> Manopla externa com trava de cadeado triplo no alimentador principal.
+              </div>
+            </div>
+
+            {/* Pilar 2: Botão de Emergência EPO */}
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+                  NBR 17019 / NR-10.2.8
+                </span>
+                <span className="text-xs font-bold text-slate-400">Proteção Coletiva</span>
+              </div>
+              <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-500" />
+                Botoeira de Parada de Emergência (EPO)
+              </h4>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Botão cogumelo tipo soco com rearme giratório localizado a no máximo <strong>5 metros</strong> da vaga de recarga veicular, acoplado à bobina de disparo do disjuntor geral do eletroposto.
+              </p>
+              <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-[11px] text-slate-700 font-medium">
+                🛑 <strong>Localização:</strong> Fixado no totem ou poste adjacente, altura entre 1,20m e 1,40m com sinalização fotoluminescente.
+              </div>
+            </div>
+
+            {/* Pilar 3: Proteção Contra Arco Elétrico (Arc Flash) */}
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase text-orange-600 bg-orange-50 border border-orange-200 px-2 py-0.5 rounded-full">
+                  NR-10.2.9 / NFPA 70E
+                </span>
+                <span className="text-xs font-bold text-slate-400">Arc Flash Hazard</span>
+              </div>
+              <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <Zap className="w-4 h-4 text-[#E45318]" />
+                Risco de Arco Elétrico & Zonas
+              </h4>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Delimitação obrigatória de <strong>Zona Livre, Zona Controlada e Zona de Risco</strong>. O painel deve portar etiqueta de advertência com corrente de curto-circuito presumida (Icc) e EPI recomendado (categoria de risco).
+              </p>
+              <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-[11px] text-slate-700 font-medium">
+                ⚠️ <strong>Rotulagem:</strong> Etiqueta de advertência com Nível de Tensão (380V/220V) e EPI obrigatório (óculos, luva 1kV e vestimenta ATPV).
+              </div>
+            </div>
+
+            {/* Pilar 4: Barreiras de Proteção e Grau IP */}
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase text-blue-600 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full">
+                  NBR IEC 60529 / NR-10.4
+                </span>
+                <span className="text-xs font-bold text-slate-400">Invólucros</span>
+              </div>
+              <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <Box className="w-4 h-4 text-blue-600" />
+                Grau de Proteção & Barreiras Físicas
+              </h4>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Proteção interna mínima <strong>IP2X / IPXXB</strong> (impede toque acidental com os dedos em barramentos energizados mesmo com porta aberta) e <strong>IP54 / IP65</strong> externo contra intempéries e jatos de água.
+              </p>
+              <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-[11px] text-slate-700 font-medium">
+                🛡️ <strong>Barreira:</strong> Policarbonato transparente cobrindo barramentos de cobre e bornes de conexão.
+              </div>
+            </div>
+
+            {/* Pilar 5: Sistema de Aterramento e Equipotencialização */}
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                  NBR 5410 / NR-10.2.8.3
+                </span>
+                <span className="text-xs font-bold text-slate-400">Equipotencialização</span>
+              </div>
+              <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-[#00B356]" />
+                Malha de Terra & Barramento BEP
+              </h4>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Todas as massas metálicas (carcaça do carregador, corpo do trafo elevador, portas de painel e estruturas de suporte) devem ser solidariamente aterradas ao Barramento de Equipotencialização Principal (BEP).
+              </p>
+              <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-[11px] text-slate-700 font-medium">
+                ⚡ <strong>Resistência:</strong> Recomenda-se resistência de aterramento $\le 10\,\Omega$ comprovada por laudo com terrômetro.
+              </div>
+            </div>
+
+            {/* Pilar 6: Prontuário PIE e Documentação Técnica */}
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase text-purple-600 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-full">
+                  NR-10.2.4 / CREA
+                </span>
+                <span className="text-xs font-bold text-slate-400">Prontuário PIE</span>
+              </div>
+              <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <FileSpreadsheet className="w-4 h-4 text-purple-600" />
+                Prontuário Elétrico & ART Obrigatória
+              </h4>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Conjunto de documentos que compõem o dossiê: diagrama unifilar atualizado, especificações do sistema de proteção contra descargas atmosféricas (SPDA), certificados dos equipamentos e relatórios de comissionamento.
+              </p>
+              <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-[11px] text-slate-700 font-medium">
+                📋 <strong>Dossiê CoenergyGO:</strong> Todos os dados emitidos por este sistema integram nativamente o PIE para apresentação à fiscalização.
+              </div>
             </div>
           </div>
         </div>

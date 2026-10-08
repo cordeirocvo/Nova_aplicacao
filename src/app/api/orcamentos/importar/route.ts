@@ -94,19 +94,32 @@ Formato JSON esperado:
 
       let parsedItems = [];
       try {
-        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-        let result;
-        if (parsedSuccessfully) {
-          // Enviar apenas o texto extraído (extremamente leve, rápido e livre de 429)
-          const textPrompt = `${prompt}\n\nTexto extraído do PDF:\n${pdfText.slice(0, 45000)}`;
-          result = await model.generateContent(textPrompt);
-        } else {
-          // Fallback Multimodal (para PDFs escaneados ou imagens)
-          const base64 = buffer.toString("base64");
-          result = await model.generateContent([
-            { inlineData: { mimeType: file.type || "application/pdf", data: base64 } },
-            prompt,
-          ]);
+        const candidateModels = ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-flash-latest", "gemini-1.5-flash"];
+        let result: any = null;
+        let lastErr: any = null;
+
+        for (const mName of candidateModels) {
+          try {
+            const model = genAI.getGenerativeModel({ model: mName });
+            if (parsedSuccessfully) {
+              const textPrompt = `${prompt}\n\nTexto extraído do PDF:\n${pdfText.slice(0, 45000)}`;
+              result = await model.generateContent(textPrompt);
+            } else {
+              const base64 = buffer.toString("base64");
+              result = await model.generateContent([
+                { inlineData: { mimeType: file.type || "application/pdf", data: base64 } },
+                prompt,
+              ]);
+            }
+            if (result) break;
+          } catch (mErr: any) {
+            lastErr = mErr;
+            continue;
+          }
+        }
+
+        if (!result) {
+          throw lastErr || new Error("Falha ao comunicar com os modelos Gemini disponíveis.");
         }
 
         const textResponse = result.response.text().trim();

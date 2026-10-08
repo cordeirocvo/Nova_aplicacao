@@ -59,7 +59,19 @@ export async function POST(req: NextRequest) {
          return NextResponse.json({ error: 'Para faturas com senha, apenas a extração nativa está disponível, e ela falhou para este arquivo.' }, { status: 400 });
       }
 
-      const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+      const candidateModels = ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-flash-latest", "gemini-1.5-flash"];
+      let model = null;
+      for (const mName of candidateModels) {
+        try {
+          model = genAI.getGenerativeModel({ model: mName });
+          if (model) break;
+        } catch {
+          // continuar procurando
+        }
+      }
+      if (!model) {
+        model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      }
 
     const prompt = `Você é um especialista em análise de faturas de energia elétrica brasileiras.
 Analise esta fatura e extraia TODOS os dados possíveis no formato JSON exato abaixo.

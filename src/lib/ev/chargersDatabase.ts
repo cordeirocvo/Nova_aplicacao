@@ -7,6 +7,7 @@
  */
 
 import { ChargerDatasheet } from '../coenergygo/types';
+export type { ChargerDatasheet };
 
 export const HOMOLOGATED_CHARGERS: ChargerDatasheet[] = [
   // ─── 1. LINHA WEG AC RESIDENCIAL & COMERCIAL ─────────────────────────────

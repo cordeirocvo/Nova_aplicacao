@@ -544,30 +544,35 @@ export function sizeElectricalInfrastructure(
   }
 
   // ─── ESPECIFICAÇÃO DOS PAINÉIS SEGREGADOS LADO 220V & LADO 380V ─────────────
-  const isTransformerActive = transformerDetails.needed && transformerDetails.type === 'elevador_seco';
+  const isTransformerActive = transformerDetails.needed && (transformerDetails.type === 'elevador_seco' || transformerDetails.type === 'subestacao_mt');
+  const isElevadorSeco = transformerDetails.needed && transformerDetails.type === 'elevador_seco';
 
   // Painel Lado 220V (Entrada / Primário do Trafo & Auxiliares)
-  const primaryBreakerRatingA = isTransformerActive
+  const primaryBreakerRatingA = isElevadorSeco
     ? (STANDARD_BREAKERS.find(b => b >= transformerDetails.primaryCurrentA * 1.25) || 80)
     : qgbtMainBreakerA;
 
   const panel220VSpec: Panel220VSpec = {
-    name: isTransformerActive ? 'Painel de Proteção Lado 220V (Entrada & Primário)' : 'Quadro Geral QGBT 220V (Unificado)',
-    mainBreakerA: primaryBreakerRatingA,
-    mainBreakerPoles: isTransformerActive ? 3 : (isThreePhase ? 3 : 2),
-    mainBreakerCurve: isTransformerActive ? 'D' : 'C', // Curva D suporta o inrush do transformador
+    name: isElevadorSeco
+      ? 'Painel de Proteção Lado 220V (Entrada & Primário)'
+      : transformerDetails.type === 'subestacao_mt'
+      ? 'Painel Auxiliar 220V (Serviços Gerais)'
+      : 'Quadro Geral QGBT 220V (Unificado)',
+    mainBreakerA: isElevadorSeco ? primaryBreakerRatingA : Math.max(63, STANDARD_BREAKERS.find(b => b >= (auxTotalPowerKW * 1000 / 220) * 1.25) || 63),
+    mainBreakerPoles: isElevadorSeco ? 3 : (isThreePhase ? 3 : 2),
+    mainBreakerCurve: isElevadorSeco ? 'D' : 'C', // Curva D suporta o inrush do transformador elevador
     dpsSpec: 'Classe II Uc=275V In=20kA Imax=40kA (3 Fases + Terra / Neutro)',
     busbarRatingA: busbar220VRatingA,
     dinModulesCount: Math.max(18, Math.ceil((auxiliaryCircuits.length * 2 + 10) * 1.3)),
-    cableGaugeMM2: isTransformerActive
+    cableGaugeMM2: isElevadorSeco
       ? (AMPACITY_TABLE_PVC.find(e => e.b1_3cond >= primaryBreakerRatingA)?.gaugeMM2 || 25)
-      : cableGaugePhaseMM2,
-    circuitsCount: auxiliaryCircuits.length + (isTransformerActive ? 1 : 1),
+      : 16,
+    circuitsCount: auxiliaryCircuits.length + (isElevadorSeco ? 1 : 1),
     voltageV: 220,
-    phases: isTransformerActive ? 3 : (isThreePhase ? 3 : 2),
-    description: isTransformerActive
+    phases: isElevadorSeco ? 3 : (isThreePhase ? 3 : 2),
+    description: isElevadorSeco
       ? 'Acomoda a proteção primária do transformador elevador com disjuntor curva D contra inrush, DPS 275V, multimedidor Modbus e circuitos auxiliares de 220V (iluminação, tomadas, totem).'
-      : 'Quadro unificado que atende diretamente a alimentação do carregador 220V e seus circuitos auxiliares.'
+      : 'Quadro de serviços auxiliares em 220V/127V alimentando iluminação, tomadas de manutenção e periféricos do eletroposto.'
   };
 
   // Painel Lado 380V (Secundário do Trafo & Potência dos Carregadores VE)

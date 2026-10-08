@@ -284,13 +284,19 @@ export default function CoenergyGODashboard() {
 
   const availableCategories = getCategoriesForUtility(selectedUtility);
 
-  // Garantir categoria padrão válida ao trocar de concessionária
+  // Garantir categoria padrão válida e sincronização automática entre Passo 1A e Passo 1B
   useEffect(() => {
-    const keys = Object.keys(availableCategories);
-    if (!availableCategories[currentStandardCategoryId]) {
-      setCurrentStandardCategoryId(keys.includes('C3') ? 'C3' : keys.includes('T1') ? 'T1' : keys[0] || 'C3');
+    if (clientProjectData.standardCategory && availableCategories[clientProjectData.standardCategory]) {
+      if (currentStandardCategoryId !== clientProjectData.standardCategory) {
+        setCurrentStandardCategoryId(clientProjectData.standardCategory);
+      }
+    } else {
+      const keys = Object.keys(availableCategories);
+      if (!availableCategories[currentStandardCategoryId]) {
+        setCurrentStandardCategoryId(keys.includes('C3') ? 'C3' : keys.includes('T1') ? 'T1' : keys[0] || 'C3');
+      }
     }
-  }, [selectedUtility]);
+  }, [selectedUtility, clientProjectData.standardCategory]);
 
   // ─── MOTOR DE CONCESSIONÁRIA CENTRAL (Passo 1B) ────────────────────────────
   const utilityAnalysis = evaluateUtility({

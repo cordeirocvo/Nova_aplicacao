@@ -564,19 +564,43 @@ export default function ClientProjectForm({
                 value={data.standardCategory}
                 onChange={(e) => {
                   const newCat = e.target.value;
-                  const defaultBreaker = (newCat === 'B1' || newCat === 'A' || newCat === 'A1') ? 63 : newCat === 'C1' ? 63 : newCat === 'C2' ? 80 : newCat === 'C3' ? 100 : newCat === 'C4' ? 125 : newCat === 'C5' ? 150 : newCat === 'C6' ? 200 : newCat.startsWith('F') ? 225 : data.standardBreakerA;
+                  const catBreakerMap: Record<string, number> = {
+                    'A1': 63, 'A_LEGADO_40A': 40, 'B1': 63, 'B2': 63,
+                    'C1': 63, 'C2': 80, 'C3': 100, 'C4': 125, 'C5': 150, 'C6': 200,
+                    'F1': 225, 'F2': 250, 'F3': 300, 'F4': 400, 'F5': 450, 'F6': 500, 'F7': 630, 'F8': 700, 'F9': 800
+                  };
+                  const defaultBreaker = catBreakerMap[newCat] || (newCat.startsWith('F') ? 225 : (newCat.startsWith('C') ? 63 : 63));
+                  const defaultGaugeMap: Record<string, number> = {
+                    'A1': 16, 'A_LEGADO_40A': 10, 'B1': 16, 'B2': 16,
+                    'C1': 16, 'C2': 25, 'C3': 35, 'C4': 50, 'C5': 70, 'C6': 95,
+                    'F1': 120, 'F2': 150, 'F3': 240, 'F4': 120, 'F5': 150, 'F6': 185, 'F7': 240, 'F8': 150, 'F9': 185
+                  };
+                  const suggestedGauge = defaultGaugeMap[newCat] || 16;
+                  const confirmedPhases = (newCat.startsWith('C') || newCat.startsWith('F')) ? '3F' : (newCat.startsWith('B') ? '2F' : '1F');
                   onChange({ 
                     standardCategory: newCat,
-                    standardBreakerA: defaultBreaker
+                    standardBreakerA: defaultBreaker,
+                    fieldBreakerConfirmedA: defaultBreaker,
+                    fieldCableGaugeMM2: suggestedGauge,
+                    fieldPhasesConfirmed: confirmedPhases
                   });
                 }}
                 className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#00B356]"
               >
-                {availableCategories.map(cat => (
-                  <option key={cat} value={cat}>
-                    {cat} {cat.startsWith('C') ? '(Trifásico BT)' : cat.startsWith('B') ? '(Bifásico BT)' : cat.startsWith('F') ? '(Alta Demanda BT)' : ''}
-                  </option>
-                ))}
+                {availableCategories.map(cat => {
+                  const catBreakerMap: Record<string, number> = {
+                    'A1': 63, 'A_LEGADO_40A': 40, 'B1': 63, 'B2': 63,
+                    'C1': 63, 'C2': 80, 'C3': 100, 'C4': 125, 'C5': 150, 'C6': 200,
+                    'F1': 225, 'F2': 250, 'F3': 300, 'F4': 400, 'F5': 450, 'F6': 500, 'F7': 630, 'F8': 700, 'F9': 800
+                  };
+                  const brk = catBreakerMap[cat] || (cat.startsWith('F') ? 225 : 63);
+                  const typeLabel = cat.startsWith('C') ? 'Trifásico BT' : cat.startsWith('B') ? 'Bifásico BT' : cat.startsWith('F') ? 'Alta Demanda BT' : 'Monofásico BT';
+                  return (
+                    <option key={cat} value={cat}>
+                      {cat} ({typeLabel} — Disjuntor {brk}A)
+                    </option>
+                  );
+                })}
               </select>
             </div>
 
@@ -684,29 +708,65 @@ export default function ClientProjectForm({
                 value={data.fieldBreakerConfirmedA || data.standardBreakerA || 63}
                 onChange={(e) => {
                   const val = Number(e.target.value);
-                  const suggestedGauge = val >= 225 ? 120 : val >= 200 ? 95 : val >= 150 ? 70 : val >= 125 ? 50 : val >= 100 ? 35 : val >= 80 ? 25 : val >= 63 ? 16 : 10;
+                  // Mapeamento de categoria e cabo por amperagem de disjuntor
+                  const breakerMap: Record<number, { cat: string; gauge: number; phases: '1F' | '2F' | '3F' }> = {
+                    40: { cat: 'A_LEGADO_40A', gauge: 10, phases: '1F' },
+                    50: { cat: 'B1', gauge: 16, phases: '2F' },
+                    63: { cat: 'C1', gauge: 16, phases: '3F' },
+                    70: { cat: 'C1', gauge: 16, phases: '3F' },
+                    80: { cat: 'C2', gauge: 25, phases: '3F' },
+                    100: { cat: 'C3', gauge: 35, phases: '3F' },
+                    125: { cat: 'C4', gauge: 50, phases: '3F' },
+                    150: { cat: 'C5', gauge: 70, phases: '3F' },
+                    200: { cat: 'C6', gauge: 95, phases: '3F' },
+                    225: { cat: 'F1', gauge: 120, phases: '3F' },
+                    250: { cat: 'F2', gauge: 150, phases: '3F' },
+                    300: { cat: 'F3', gauge: 240, phases: '3F' },
+                    400: { cat: 'F4', gauge: 120, phases: '3F' },
+                    450: { cat: 'F5', gauge: 150, phases: '3F' },
+                    500: { cat: 'F6', gauge: 185, phases: '3F' },
+                    630: { cat: 'F7', gauge: 240, phases: '3F' },
+                    700: { cat: 'F8', gauge: 150, phases: '3F' },
+                    800: { cat: 'F9', gauge: 185, phases: '3F' }
+                  };
+                  const matched = breakerMap[val] || {
+                    cat: val >= 225 ? 'F1' : val >= 80 ? 'C2' : 'C1',
+                    gauge: val >= 225 ? 120 : val >= 200 ? 95 : val >= 150 ? 70 : val >= 125 ? 50 : val >= 100 ? 35 : val >= 80 ? 25 : val >= 63 ? 16 : 10,
+                    phases: '3F'
+                  };
+
                   onChange({
                     fieldBreakerConfirmedA: val,
                     standardBreakerA: val,
-                    fieldCableGaugeMM2: suggestedGauge
+                    standardCategory: matched.cat,
+                    fieldCableGaugeMM2: matched.gauge,
+                    fieldPhasesConfirmed: matched.phases
                   });
                 }}
                 className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#E45318]"
               >
                 <option value={40}>40A (Padrão Monofásico Antigo CEMIG)</option>
                 <option value={50}>50A (Padrão Bifásico Legado)</option>
-                <option value={63}>63A (Padrão Atual ND-5.1 MAR/2026)</option>
+                <option value={63}>63A (Padrão Atual ND-5.1 C1/B1/A1)</option>
                 <option value={70}>70A (Disjuntor Caixa Moldada/Comum)</option>
-                <option value={80}>80A (Padrão C2)</option>
-                <option value={100}>100A (Padrão C3)</option>
-                <option value={125}>125A (Padrão C4)</option>
-                <option value={150}>150A (Padrão C5)</option>
+                <option value={80}>80A (Padrão C2 — 25 mm²)</option>
+                <option value={100}>100A (Padrão C3 — 35 mm²)</option>
+                <option value={125}>125A (Padrão C4 — 50 mm²)</option>
+                <option value={150}>150A (Padrão C5 — 70 mm²)</option>
                 <option value={200}>200A (Padrão C6 — 95 mm²)</option>
-                <option value={225}>225A+ (Alta Demanda F1..F9)</option>
+                <option value={225}>225A (Alta Demanda F1 — 120 mm²)</option>
+                <option value={250}>250A (Alta Demanda F2 — 150 mm²)</option>
+                <option value={300}>300A (Alta Demanda F3 — 240 mm²)</option>
+                <option value={400}>400A (Alta Demanda F4 — 2x120 mm²)</option>
+                <option value={450}>450A (Alta Demanda F5 — 2x150 mm²)</option>
+                <option value={500}>500A (Alta Demanda F6 — 2x185 mm²)</option>
+                <option value={630}>630A (Alta Demanda F7 — 2x240 mm²)</option>
+                <option value={700}>700A (Alta Demanda F8 — 3x150 mm²)</option>
+                <option value={800}>800A (Alta Demanda F9 — 3x185 mm²)</option>
               </select>
             </div>
             <span className="text-[10px] text-slate-400 block">
-              Valor impresso na carcaça do disjuntor dentro da caixa
+              Valor impresso na carcaça do disjuntor dentro da caixa (atribui automaticamente categoria e cabo sugerido)
             </span>
           </div>
 

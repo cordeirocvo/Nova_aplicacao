@@ -46,13 +46,14 @@ export default function DynamicPowerFlow({
   const [accumulatedKWh, setAccumulatedKWh] = useState<number>(3.84);
 
   const { transformerDetails, panel220VSpec, panel380VSpec } = sizing;
-  const isTrafoActive = transformerDetails.needed && transformerDetails.type === 'elevador_seco';
+  const isTrafoActive = Boolean(transformerDetails.needed && (transformerDetails.type === 'elevador_seco' || transformerDetails.type === 'subestacao_mt'));
+  const isSubstationMT = transformerDetails.type === 'subestacao_mt';
   const analysis = sizing.transformerBeforeAfter || transformerDetails.beforeAfterAnalysis;
 
   // Simular potência real entregue conforme a corrente modulada
   const activePowerMultiplier = simulatedCurrentA / 32;
   const activeDeliveredKW = Number((chargerPowerKW * activePowerMultiplier).toFixed(1));
-  const trafoLossesKW = isTrafoActive ? Number(((transformerDetails.lossesEstimatedKW || 0.6) * activePowerMultiplier).toFixed(2)) : 0;
+  const trafoLossesKW = isTrafoActive ? Number(((transformerDetails.lossesEstimatedKW || (chargerPowerKW * 0.025)) * activePowerMultiplier).toFixed(2)) : 0;
   const totalGridPowerKW = Number((activeDeliveredKW + trafoLossesKW).toFixed(1));
 
   // Animação gradual do SOC da bateria e acúmulo contínuo de kWh quando o fluxo está ativo
@@ -183,10 +184,14 @@ export default function DynamicPowerFlow({
               <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
                 isTrafoActive ? "bg-orange-500/30 text-orange-200" : "bg-emerald-500/30 text-emerald-200"
               }`}>
-                {isTrafoActive ? "Transformador Elevador Obrigatório" : "Transformador Dispensado • Ligação Direta"}
+                {isSubstationMT
+                  ? "Subestação Particular de Média Tensão (MT)"
+                  : isTrafoActive
+                  ? "Transformador Elevador Obrigatório"
+                  : "Transformador Dispensado • Ligação Direta"}
               </span>
               <span className="text-xs text-slate-300 font-semibold">
-                Rede: {utility} ({gridVoltageStr}) ⇄ Carregador: {chargerVoltage}V ({chargerPhases === 3 ? 'Trifásico' : 'Bifásico/F+N'})
+                Rede: {utility} ({isSubstationMT ? '13,8 kV MT / ' : ''}{gridVoltageStr}) ⇄ Carregador: {chargerVoltage}V ({chargerPhases === 3 ? 'Trifásico' : 'Bifásico/F+N'})
               </span>
             </div>
             <p className="text-xs md:text-sm text-white font-medium leading-relaxed">
@@ -294,7 +299,7 @@ export default function DynamicPowerFlow({
               <span className={`text-[9px] font-black uppercase tracking-wider ${
                 isTrafoActive ? "text-[#E45318]" : "text-[#00B356]"
               }`}>
-                {isTrafoActive ? "Trafo Ativo" : "Bypass Direto"}
+                {isSubstationMT ? "Subestação MT" : isTrafoActive ? "Trafo Ativo" : "Bypass Direto"}
               </span>
               <Activity className={`w-3.5 h-3.5 ${isTrafoActive ? "text-[#E45318]" : "text-[#00B356]"}`} />
             </div>
@@ -306,22 +311,30 @@ export default function DynamicPowerFlow({
               </div>
               <div>
                 <h4 className="text-xs font-bold text-white">
-                  {isTrafoActive ? `${transformerDetails.nominalKVA} kVA a Seco` : "Sem Trafo (220V)"}
+                  {isSubstationMT
+                    ? `Subestação ${transformerDetails.nominalKVA} kVA`
+                    : isTrafoActive
+                    ? `${transformerDetails.nominalKVA} kVA a Seco`
+                    : "Sem Trafo (220V)"}
                 </h4>
                 <p className="text-[10px] text-slate-400">
-                  {isTrafoActive ? "Elevação 220V → 380V" : "Tensão Direta"}
+                  {isSubstationMT
+                    ? "Média Tensão 13.8kV → 380V"
+                    : isTrafoActive
+                    ? "Elevação 220V → 380V"
+                    : "Tensão Direta"}
                 </p>
               </div>
             </div>
             <div className="pt-2 border-t border-slate-800/80 text-[11px] space-y-1">
               {isTrafoActive ? (
                 <>
-                  <p className="text-slate-300">Primário: <strong className="text-orange-300">220V Δ ({trafoPrimaryCurrentA}A)</strong></p>
-                  <p className="text-slate-300">Secundário: <strong className="text-emerald-300">380V Y ({trafoSecondaryCurrentA}A)</strong></p>
+                  <p className="text-slate-300">Primário: <strong className="text-orange-300">{isSubstationMT ? '13.8 kV' : '220V Δ'} ({trafoPrimaryCurrentA || transformerDetails.primaryCurrentA}A)</strong></p>
+                  <p className="text-slate-300">Secundário: <strong className="text-emerald-300">380V Y ({trafoSecondaryCurrentA || transformerDetails.secondaryCurrentA}A)</strong></p>
                   <p className="text-[10px] text-emerald-400 font-bold">Neutro Aterrado (TN-S)</p>
                   <div className="pt-1.5 flex items-center gap-1 text-[10px] text-orange-400 font-bold group-hover:text-orange-300">
                     <Sparkles className="w-3 h-3 text-[#E45318]" />
-                    <span>Ver Análise Antes e Depois ➔</span>
+                    <span>Ver Análise Detalhada ➔</span>
                   </div>
                 </>
               ) : (

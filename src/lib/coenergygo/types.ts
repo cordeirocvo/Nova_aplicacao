@@ -806,6 +806,7 @@ export interface Panel220VTopologyState {
   mainBreakerCurve: 'C' | 'D';
   busbarRatingA: number;       // Dimensionado exatamente pelo disjuntor geral
   requiresBusbar: boolean;
+  totalAuxKW: number;          // Potência total ativa das cargas auxiliares habilitadas
   auxiliaryLoads: AuxiliaryLoadsState;
 }
 

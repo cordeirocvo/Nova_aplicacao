@@ -488,6 +488,7 @@ export function calculateChainTopology(params: ChainTopologyInputParams): ChainT
     mainBreakerCurve: isTransformerNeeded ? 'D' : 'C', // Curva D se houver trafo a jusante
     busbarRatingA: panel220VMainBreakerA,
     requiresBusbar: true,
+    totalAuxKW: Number(totalAuxKW.toFixed(2)),
     auxiliaryLoads
   };
 

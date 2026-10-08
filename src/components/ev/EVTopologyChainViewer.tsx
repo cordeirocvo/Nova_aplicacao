@@ -416,8 +416,8 @@ export function EVTopologyChainViewer({
 
                 <div className="mt-3 pt-2 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
                   <span>Cargas Auxiliares</span>
-                  <span className="font-mono font-bold text-amber-400">
-                    {((auxiliaryConfig.cctvPowerW + auxiliaryConfig.outletPowerW + auxiliaryConfig.lightingPowerW) / 1000).toFixed(2)} kW
+                  <span className={`font-mono font-bold ${panel220V.totalAuxKW > 0 ? 'text-amber-400' : 'text-slate-500'}`}>
+                    {panel220V.totalAuxKW.toFixed(2)} kW
                   </span>
                 </div>
               </div>
@@ -984,7 +984,7 @@ export function EVTopologyChainViewer({
                         <div className="flex justify-between text-slate-300">
                           <span>• Cargas Auxiliares do Hub (Luz/CFTV/Tomada):</span>
                           <span className="text-slate-300 font-bold">
-                            {((auxiliaryConfig.cctvPowerW + auxiliaryConfig.outletPowerW + auxiliaryConfig.lightingPowerW) / 1000).toFixed(2)} kW
+                            {panel220V.totalAuxKW.toFixed(2)} kW
                           </span>
                         </div>
                         {transformer.needed && (
@@ -1045,9 +1045,24 @@ export function EVTopologyChainViewer({
                             onChange={(e) => updateAuxiliaryConfig({ cctvEnabled: e.target.checked })}
                             className="rounded accent-[#E45318]"
                           />
-                          <span>CFTV & Wi-Fi (127V mono)</span>
+                          <span className={auxiliaryConfig.cctvEnabled ? 'text-white' : 'text-slate-500'}>
+                            CFTV & Wi-Fi (127V mono)
+                          </span>
                         </label>
-                        <span className="font-mono text-slate-400">{auxiliaryConfig.cctvPowerW}W</span>
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="number"
+                            min="0"
+                            step="50"
+                            disabled={!auxiliaryConfig.cctvEnabled}
+                            value={auxiliaryConfig.cctvPowerW}
+                            onChange={(e) => updateAuxiliaryConfig({ cctvPowerW: Number(e.target.value) || 0 })}
+                            className={`w-16 bg-slate-800 border border-slate-700 rounded px-1 text-center font-mono ${
+                              auxiliaryConfig.cctvEnabled ? 'text-white' : 'text-slate-600 opacity-50'
+                            }`}
+                          />
+                          <span className="text-slate-400">W</span>
+                        </div>
                       </div>
 
                       {/* Tomada de Manutenção */}
@@ -1059,9 +1074,24 @@ export function EVTopologyChainViewer({
                             onChange={(e) => updateAuxiliaryConfig({ outletEnabled: e.target.checked })}
                             className="rounded accent-[#E45318]"
                           />
-                          <span>Tomada Manutenção 20A (127V)</span>
+                          <span className={auxiliaryConfig.outletEnabled ? 'text-white' : 'text-slate-500'}>
+                            Tomada Manutenção 20A (127V)
+                          </span>
                         </label>
-                        <span className="font-mono text-slate-400">{auxiliaryConfig.outletPowerW}W</span>
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="number"
+                            min="0"
+                            step="100"
+                            disabled={!auxiliaryConfig.outletEnabled}
+                            value={auxiliaryConfig.outletPowerW}
+                            onChange={(e) => updateAuxiliaryConfig({ outletPowerW: Number(e.target.value) || 0 })}
+                            className={`w-16 bg-slate-800 border border-slate-700 rounded px-1 text-center font-mono ${
+                              auxiliaryConfig.outletEnabled ? 'text-white' : 'text-slate-600 opacity-50'
+                            }`}
+                          />
+                          <span className="text-slate-400">W</span>
+                        </div>
                       </div>
 
                       {/* Iluminação */}
@@ -1073,14 +1103,21 @@ export function EVTopologyChainViewer({
                             onChange={(e) => updateAuxiliaryConfig({ lightingEnabled: e.target.checked })}
                             className="rounded accent-[#E45318]"
                           />
-                          <span>Iluminação LED Pátio</span>
+                          <span className={auxiliaryConfig.lightingEnabled ? 'text-white' : 'text-slate-500'}>
+                            Iluminação LED Pátio
+                          </span>
                         </label>
                         <div className="flex items-center gap-1">
                           <input
                             type="number"
+                            min="0"
+                            step="50"
+                            disabled={!auxiliaryConfig.lightingEnabled}
                             value={auxiliaryConfig.lightingPowerW}
                             onChange={(e) => updateAuxiliaryConfig({ lightingPowerW: Number(e.target.value) || 0 })}
-                            className="w-16 bg-slate-800 border border-slate-700 rounded px-1 text-center text-white font-mono"
+                            className={`w-16 bg-slate-800 border border-slate-700 rounded px-1 text-center font-mono ${
+                              auxiliaryConfig.lightingEnabled ? 'text-white' : 'text-slate-600 opacity-50'
+                            }`}
                           />
                           <span className="text-slate-400">W</span>
                         </div>

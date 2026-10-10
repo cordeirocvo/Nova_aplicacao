@@ -331,7 +331,8 @@ export type TypicalProfileType =
   | 'edificio_comercial' 
   | 'centro_comercial' 
   | 'industrial'
-  | 'posto_combustivel_constante';
+  | 'posto_combustivel_constante'
+  | 'custom_usuario';
 
 export interface HourlyLoadPoint {
   hour: number;                      // 0 a 23

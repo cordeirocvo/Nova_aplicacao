@@ -561,7 +561,11 @@ export default function ClientProjectForm({
             <div>
               <label className="text-slate-600 font-semibold block mb-1">Categoria Atual do Padrão:</label>
               <select
-                value={data.standardCategory}
+                value={
+                  data.standardCategory === 'F7'
+                    ? ((data.standardBreakerA === 600 || data.fieldBreakerConfirmedA === 600) ? 'F7_600' : 'F7_630')
+                    : (data.standardCategory || 'A1')
+                }
                 onChange={(e) => {
                   const rawCat = e.target.value;
                   let newCat = rawCat;
@@ -610,7 +614,8 @@ export default function ClientProjectForm({
                     'C1': 63, 'C2': 80, 'C3': 100, 'C4': 125, 'C5': 150, 'C6': 200,
                     'F1': 225, 'F2': 250, 'F3': 300, 'F4': 400, 'F5': 450, 'F6': 500, 'F7': 630, 'F8': 700, 'F9': 800
                   };
-                  if (cat === 'F7') {
+                  if (cat === 'F7' || cat === 'F7_600' || cat === 'F7_630') {
+                    if (cat === 'F7_600' || cat === 'F7_630') return []; // Já renderizados agrupados sob F7
                     return [
                       <option key="F7_600" value="F7_600">
                         F7 (Alta Demanda BT — Disjuntor 600A | Limite 217 kW)

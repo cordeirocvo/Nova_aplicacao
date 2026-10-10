@@ -54,8 +54,16 @@ export const TYPICAL_PROFILES_NORMALIZED: Record<TypicalProfileType, number[]> =
     0.80, 0.75, 0.70, 0.68, 0.65, 0.62  // 18h - 23h
   ],
 
-  // Posto de Combustível / Demanda Contratada Constante (Linha Plana Contínua 24h)
+  // Carga Constante Genérica 24h (Linha Plana sem oscilação para qualquer tipo de imóvel)
   posto_combustivel_constante: [
+    1.00, 1.00, 1.00, 1.00, 1.00, 1.00, // 00h - 05h
+    1.00, 1.00, 1.00, 1.00, 1.00, 1.00, // 06h - 11h
+    1.00, 1.00, 1.00, 1.00, 1.00, 1.00, // 12h - 17h
+    1.00, 1.00, 1.00, 1.00, 1.00, 1.00  // 18h - 23h
+  ],
+
+  // Perfil Customizado pelo Projetista (Editável hora a hora)
+  custom_usuario: [
     1.00, 1.00, 1.00, 1.00, 1.00, 1.00, // 00h - 05h
     1.00, 1.00, 1.00, 1.00, 1.00, 1.00, // 06h - 11h
     1.00, 1.00, 1.00, 1.00, 1.00, 1.00, // 12h - 17h
@@ -77,9 +85,12 @@ export const SOLAR_GENERATION_NORMALIZED: number[] = [
 export function generateScaledHourlyCurve(
   profileType: TypicalProfileType,
   peakDemandKW: number,
-  solarPeakKW: number = 0
+  solarPeakKW: number = 0,
+  customHourlyFactors?: number[]
 ): TypicalHourlyPoint[] {
-  const normLoad = TYPICAL_PROFILES_NORMALIZED[profileType] || TYPICAL_PROFILES_NORMALIZED.condominio_residencial;
+  const normLoad = (profileType === 'custom_usuario' && customHourlyFactors && customHourlyFactors.length === 24)
+    ? customHourlyFactors
+    : (TYPICAL_PROFILES_NORMALIZED[profileType] || TYPICAL_PROFILES_NORMALIZED.condominio_residencial);
   const result: TypicalHourlyPoint[] = [];
 
   for (let hour = 0; hour < 24; hour++) {

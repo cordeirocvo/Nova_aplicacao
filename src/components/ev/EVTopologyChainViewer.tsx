@@ -1055,7 +1055,9 @@ export function EVTopologyChainViewer({
                           <option value="F4">F4 — Alta Demanda 152 kVA / Disjuntor 400A (TC 400/5)</option>
                           <option value="F5">F5 — Alta Demanda 171 kVA / Disjuntor 450A (TC 400/5)</option>
                           <option value="F6">F6 — Alta Demanda 188 kVA / Disjuntor 500A (TC 400/5)</option>
-                          <option value="F7">F7 — Alta Demanda 228 kVA / Disjuntor 600A ou 630A (TC 600/5)</option>
+                          <option value="F7">F7 — Alta Demanda 228 kVA / Disjuntor 630A (TC 600/5)</option>
+                          <option value="F7_600">F7 (600A) — Alta Demanda 217 kW / Disjuntor 600A (TC 600/5)</option>
+                          <option value="F7_630">F7 (630A) — Alta Demanda 228 kVA / Disjuntor 630A (TC 600/5)</option>
                           <option value="F8">F8 — Alta Demanda 266 kVA / Disjuntor 700A (TC 800/5)</option>
                           <option value="F9">F9 — Alta Demanda 304 kVA / Disjuntor 800A (TC 800/5)</option>
                         </optgroup>

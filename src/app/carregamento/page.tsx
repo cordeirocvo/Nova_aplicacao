@@ -200,6 +200,8 @@ export default function CoenergyGODashboard() {
   const [isDlmLimitationAccepted, setIsDlmLimitationAccepted] = useState<boolean>(false);
   const [dlmLimitedChargerPowerKW, setDlmLimitedChargerPowerKW] = useState<number | null>(null);
   const [customHomologatedCategoryId, setCustomHomologatedCategoryId] = useState<string | null>(null);
+  const [customHourlyFactors, setCustomHourlyFactors] = useState<number[]>(Array(24).fill(1.0));
+  const [customProfileName, setCustomProfileName] = useState<string>("Perfil do Projetista");
   const [isCopied, setIsCopied] = useState<boolean>(false);
 
   // ─── CARREGAR PROJETOS EXISTENTES (BANCO SUPABASE + LOCALSTORAGE RESILIENTE) ─
@@ -389,7 +391,8 @@ export default function CoenergyGODashboard() {
   const baseCurve = customCurvePoints || generateScaledHourlyCurve(
     dlmProfileType,
     dlmPeakDemandKW,
-    dlmEnableSolarSurplus ? dlmSolarPeakKW : 0
+    dlmEnableSolarSurplus ? dlmSolarPeakKW : 0,
+    dlmProfileType === 'custom_usuario' ? customHourlyFactors : undefined
   );
 
   const dlmResult: DLMSimulationResult = simulateDLM(baseCurve, {
@@ -653,6 +656,15 @@ export default function CoenergyGODashboard() {
     }
     if (p.dlmSimulationScenario) {
       setDlmSimulationScenario(p.dlmSimulationScenario);
+    }
+    if (p.isOutdoor !== undefined) {
+      setIsOutdoor(Boolean(p.isOutdoor));
+    }
+    if (p.customHourlyFactors && Array.isArray(p.customHourlyFactors)) {
+      setCustomHourlyFactors(p.customHourlyFactors);
+    }
+    if (p.customProfileName) {
+      setCustomProfileName(p.customProfileName);
     }
     if (p.commercialHub) {
       setCommercialHub(prev => ({ ...prev, ...p.commercialHub }));
@@ -955,12 +967,15 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
         installationMethod: installationMethod,
         applicationMode: applicationMode,
         isCollective: applicationMode !== 'individual',
+        isOutdoor: isOutdoor,
         demandControlEnabled: dlmEnableDLM,
         demandControlLimit: effectiveDlmGridLimitKW,
         dlmProfileType: dlmProfileType,
         dlmChargeStartHour: dlmChargeStartHour,
         dlmChargeDurationHours: dlmChargeDurationHours,
         dlmSimulationScenario: dlmSimulationScenario,
+        customHourlyFactors: customHourlyFactors,
+        customProfileName: customProfileName,
         hasEmergencyButton5m: auditHasEmergencyButton,
         requiresWarningSigns: auditHasSignaling,
         groundingType: "TN-S",
@@ -2202,18 +2217,27 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
                         <strong className="text-slate-900 font-bold">{effectiveExistingLoadKW.toFixed(1)} kW</strong>
                       </div>
                       <div className="flex justify-between border-b border-slate-100 pb-1.5">
-                        <span className="text-slate-500 font-medium">3. Nova Carga dos Carregadores:</span>
+                        <span className="text-slate-500 font-medium">3. Nova Carga dos Carregadores VE:</span>
                         <strong className="text-amber-600 font-bold">+{totalChargersInstalledKW.toFixed(1)} kW</strong>
                       </div>
+                      {totalAuxiliaryPowerKW > 0 && (
+                        <div className="flex justify-between border-b border-slate-100 pb-1.5 text-slate-600">
+                          <span className="font-medium">• Cargas Auxiliares (Ilum/CFTV/Tomadas):</span>
+                          <strong className="font-bold">+{totalAuxiliaryPowerKW.toFixed(2)} kW</strong>
+                        </div>
+                      )}
                       <div className="flex justify-between border-b border-slate-100 pb-1.5 bg-slate-50/80 p-1.5 rounded-lg">
                         <span className="text-slate-700 font-bold">Demanda Total Simultânea:</span>
-                        <strong className="text-[#E45318] font-black">{utilityAnalysis.totalInstallationLoadKW.toFixed(1)} kW</strong>
+                        <strong className="text-[#E45318] font-black">
+                          {(utilityAnalysis.totalInstallationLoadKW + totalAuxiliaryPowerKW).toFixed(1)} kW
+                        </strong>
                       </div>
 
                       {/* Saldo: Sobra ou Falta de Carga */}
                       {(() => {
                         const standardLimit = utilityAnalysis.currentCategory?.maxLimitKW || 0;
-                        const diffKW = Number((standardLimit - utilityAnalysis.totalInstallationLoadKW).toFixed(1));
+                        const totalLoad = Number((utilityAnalysis.totalInstallationLoadKW + totalAuxiliaryPowerKW).toFixed(1));
+                        const diffKW = Number((standardLimit - totalLoad).toFixed(1));
                         const isSurplus = diffKW >= 0;
                         return (
                           <div className={`flex justify-between items-center p-2 rounded-xl border ${
@@ -2234,6 +2258,10 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
                       <div className="flex justify-between pt-1 border-t border-slate-100 text-[11px]">
                         <span className="text-slate-500 font-medium">Padrão Homologado Requerido:</span>
                         <strong className="text-[#00B356] font-black">{utilityAnalysis.category.categoryId} ({utilityAnalysis.category.maxLimitKW} {utilityAnalysis.category.categoryId.startsWith('F') ? 'kVA' : 'kW'})</strong>
+                      </div>
+
+                      <div className="pt-1.5 border-t border-slate-100 text-[10px] text-slate-500 leading-tight italic bg-amber-50/60 p-2 rounded-lg border border-amber-200/50">
+                        ℹ️ <strong>Nota de Dimensionamento:</strong> O dimensionamento global consolida a Demanda Base com os Carregadores VE e as Cargas Auxiliares do QGBT (iluminação, CFTV, tomadas de serviço e perdas de transformação). Caso haja déficit, no <strong>Passo 2</strong> é possível acionar o <strong>DLM (Gestão Dinâmica)</strong> para operar sem trocar o padrão, ou adequar o padrão no <strong>Passo 3</strong>.
                       </div>
                     </div>
                   </div>
@@ -2714,6 +2742,10 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
               setDlmLimitedChargerPowerKW(recommended.powerKW);
               setIsDlmLimitationAccepted(true);
             }}
+            customHourlyFactors={customHourlyFactors}
+            onUpdateCustomHourlyFactors={setCustomHourlyFactors}
+            customProfileName={customProfileName}
+            onUpdateCustomProfileName={setCustomProfileName}
           />
 
           <LoadCurveChart

@@ -563,13 +563,29 @@ export default function ClientProjectForm({
               <select
                 value={data.standardCategory}
                 onChange={(e) => {
-                  const newCat = e.target.value;
-                  const catBreakerMap: Record<string, number> = {
-                    'A1': 63, 'A_LEGADO_40A': 40, 'B1': 63, 'B2': 63,
-                    'C1': 63, 'C2': 80, 'C3': 100, 'C4': 125, 'C5': 150, 'C6': 200,
-                    'F1': 225, 'F2': 250, 'F3': 300, 'F4': 400, 'F5': 450, 'F6': 500, 'F7': 630, 'F8': 700, 'F9': 800
-                  };
-                  const defaultBreaker = catBreakerMap[newCat] || (newCat.startsWith('F') ? 225 : (newCat.startsWith('C') ? 63 : 63));
+                  const rawCat = e.target.value;
+                  let newCat = rawCat;
+                  let defaultBreaker = 63;
+                  let contractedKW = data.contractedDemandKW;
+
+                  if (rawCat === 'F7_600') {
+                    newCat = 'F7';
+                    defaultBreaker = 600;
+                    contractedKW = 217;
+                  } else if (rawCat === 'F7_630') {
+                    newCat = 'F7';
+                    defaultBreaker = 630;
+                    contractedKW = 228;
+                  } else {
+                    const catBreakerMap: Record<string, number> = {
+                      'A1': 63, 'A_LEGADO_40A': 40, 'B1': 63, 'B2': 63,
+                      'C1': 63, 'C2': 80, 'C3': 100, 'C4': 125, 'C5': 150, 'C6': 200,
+                      'F1': 225, 'F2': 250, 'F3': 300, 'F4': 400, 'F5': 450, 'F6': 500, 'F7': 630, 'F8': 700, 'F9': 800
+                    };
+                    defaultBreaker = catBreakerMap[newCat] || (newCat.startsWith('F') ? 225 : 63);
+                    if (newCat === 'F7') contractedKW = 228;
+                  }
+
                   const defaultGaugeMap: Record<string, number> = {
                     'A1': 16, 'A_LEGADO_40A': 10, 'B1': 16, 'B2': 16,
                     'C1': 16, 'C2': 25, 'C3': 35, 'C4': 50, 'C5': 70, 'C6': 95,
@@ -582,24 +598,35 @@ export default function ClientProjectForm({
                     standardBreakerA: defaultBreaker,
                     fieldBreakerConfirmedA: defaultBreaker,
                     fieldCableGaugeMM2: suggestedGauge,
-                    fieldPhasesConfirmed: confirmedPhases
+                    fieldPhasesConfirmed: confirmedPhases,
+                    contractedDemandKW: contractedKW
                   });
                 }}
                 className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#00B356]"
               >
-                {availableCategories.map(cat => {
+                {availableCategories.flatMap(cat => {
                   const catBreakerMap: Record<string, number> = {
                     'A1': 63, 'A_LEGADO_40A': 40, 'B1': 63, 'B2': 63,
                     'C1': 63, 'C2': 80, 'C3': 100, 'C4': 125, 'C5': 150, 'C6': 200,
                     'F1': 225, 'F2': 250, 'F3': 300, 'F4': 400, 'F5': 450, 'F6': 500, 'F7': 630, 'F8': 700, 'F9': 800
                   };
+                  if (cat === 'F7') {
+                    return [
+                      <option key="F7_600" value="F7_600">
+                        F7 (Alta Demanda BT — Disjuntor 600A | Limite 217 kW)
+                      </option>,
+                      <option key="F7_630" value="F7_630">
+                        F7 (Alta Demanda BT — Disjuntor 630A | Limite 228 kW)
+                      </option>
+                    ];
+                  }
                   const brk = catBreakerMap[cat] || (cat.startsWith('F') ? 225 : 63);
                   const typeLabel = cat.startsWith('C') ? 'Trifásico BT' : cat.startsWith('B') ? 'Bifásico BT' : cat.startsWith('F') ? 'Alta Demanda BT' : 'Monofásico BT';
-                  return (
+                  return [
                     <option key={cat} value={cat}>
                       {cat} ({typeLabel} — Disjuntor {brk}A)
                     </option>
-                  );
+                  ];
                 })}
               </select>
             </div>
@@ -736,12 +763,15 @@ export default function ClientProjectForm({
                     phases: '3F'
                   };
 
+                  const contractedKW = val === 600 ? 217 : val === 630 ? 228 : (val >= 225 ? Math.round(Math.sqrt(3) * 220 * val * 0.95 / 1000) : data.contractedDemandKW);
+
                   onChange({
                     fieldBreakerConfirmedA: val,
                     standardBreakerA: val,
                     standardCategory: matched.cat,
                     fieldCableGaugeMM2: matched.gauge,
-                    fieldPhasesConfirmed: matched.phases
+                    fieldPhasesConfirmed: matched.phases,
+                    contractedDemandKW: contractedKW
                   });
                 }}
                 className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#E45318]"

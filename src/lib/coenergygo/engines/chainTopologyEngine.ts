@@ -492,10 +492,12 @@ export function calculateChainTopology(params: ChainTopologyInputParams): ChainT
   const hubDirectLoadKW = isTransformerNeeded ? (trafoPrimaryCurrentA * Math.sqrt(3) * 220 * 0.98 * 0.97) / 1000 : totalChargersKW;
   const hubAggregatedLoadKW = Number((hubDirectLoadKW + totalAuxKW).toFixed(2));
 
+  const isGrid380V = gridSupplyVoltage === 380;
+
   const auxiliaryLoads: AuxiliaryLoadsState = {
     cctv: {
       enabled: auxiliaryConfig.cctvEnabled,
-      voltageV: 127,
+      voltageV: isGrid380V ? 220 : 127,
       powerW: cctvPowerW,
       phases: 1,
       breakerA: 10,
@@ -503,7 +505,7 @@ export function calculateChainTopology(params: ChainTopologyInputParams): ChainT
     },
     maintenanceOutlet: {
       enabled: auxiliaryConfig.outletEnabled,
-      voltageV: 127,
+      voltageV: isGrid380V ? 220 : 127,
       powerW: outletPowerW,
       phases: 1,
       breakerA: 20,
@@ -511,7 +513,7 @@ export function calculateChainTopology(params: ChainTopologyInputParams): ChainT
     },
     lighting: {
       enabled: auxiliaryConfig.lightingEnabled,
-      voltageV: 127,
+      voltageV: isGrid380V ? 220 : 127,
       powerW: lightingPowerW,
       phases: 1,
       breakerA: 10,
@@ -520,8 +522,8 @@ export function calculateChainTopology(params: ChainTopologyInputParams): ChainT
     dps220V: {
       enabled: true,
       classType: 'Classe II',
-      rating: 'Uc=275V, In=20kA, Imax=40kA',
-      quantity: 3
+      rating: isGrid380V ? 'Uc=385V, In=20kA, Imax=40kA' : 'Uc=275V, In=20kA, Imax=40kA',
+      quantity: isGrid380V ? 4 : 3 // 3 Fases + Neutro se 380V
     },
     energyMeter: {
       enabled: true,
@@ -531,22 +533,47 @@ export function calculateChainTopology(params: ChainTopologyInputParams): ChainT
     }
   };
 
-  // 4. Painel 220V
-  // Corrente total no Painel 220V = corrente primária do trafo (ou dos carregadores 220V) + auxiliares
-  const auxCurrent220VA = totalAuxKW > 0 ? (totalAuxKW * 1000) / 127 : 0;
-  const panel220VCurrentA = (isTransformerNeeded ? trafoPrimaryCurrentA : (totalChargersKW * 1000) / (Math.sqrt(3) * 220 * 0.98)) + (auxCurrent220VA / 3);
-  const panel220VMainBreakerRating = panel220VCurrentA * 1.15;
-  const panel220VMainBreakerA = STANDARD_BREAKERS.find(b => b >= panel220VMainBreakerRating) || 80;
+  // 4. Painel de Entrada / Proteção Geral (220V ou 380V)
+  // Corrente dos carregadores na tensão da rede (220V ou 380V)
+  const chargersCurrentInGridA = isGrid380V
+    ? (totalChargersKW * 1000) / (Math.sqrt(3) * 380 * 0.98)
+    : (isTransformerNeeded ? trafoPrimaryCurrentA : (totalChargersKW * 1000) / (Math.sqrt(3) * 220 * 0.98));
+
+  const auxCurrentA = totalAuxKW > 0
+    ? (isGrid380V ? (totalAuxKW * 1000) / 220 : (totalAuxKW * 1000) / 127)
+    : 0;
+
+  const panelMainCurrentA = chargersCurrentInGridA + (auxCurrentA / 3);
+  const panelMainBreakerRating = panelMainCurrentA * 1.15;
+  const panelMainBreakerA = STANDARD_BREAKERS.find(b => b >= panelMainBreakerRating) || (isGrid380V ? 63 : 80);
+
+  // Disjuntores dos carregadores (para uso no painel secundário 380V OU direto no painel geral 380V)
+  const individualChargerBreakers = chargers.map(c => {
+    const inrushFactor = 1.15;
+    const v = c.voltageV >= 380 ? 380 : (isGrid380V ? 380 : 220);
+    const calcA = (c.powerKW * 1000) / (Math.sqrt(c.phases === 3 ? 3 : 1) * v * 0.98) * inrushFactor;
+    const breakerA = STANDARD_BREAKERS.find(b => b >= calcA) || 40;
+    return {
+      chargerId: c.id,
+      breakerA,
+      poles: c.phases === 3 ? 3 : 2,
+      curve: 'C' as const,
+      drType: c.phases === 3 ? 'Tetrapolar 40A / 30mA Tipo B' : 'Bipolar 40A / 30mA Tipo B'
+    };
+  });
 
   const panel220V: Panel220VTopologyState = {
-    mainBreakerA: panel220VMainBreakerA,
+    voltageV: isGrid380V ? 380 : 220,
+    panelName: isGrid380V ? 'Painel Geral de Proteção 380V (QGBT)' : 'Painel de Proteção e Medição 220V',
+    mainBreakerA: panelMainBreakerA,
     mainBreakerPoles: 3,
     mainBreakerCurve: isTransformerNeeded ? 'D' : 'C', // Curva D se houver trafo a jusante
-    busbarRatingA: panel220VMainBreakerA,
+    busbarRatingA: panelMainBreakerA,
     requiresBusbar: true,
     totalAuxKW: Number(totalAuxKW.toFixed(2)),
     auxiliaryLoads,
-    customCircuits: customCircuits220V
+    customCircuits: customCircuits220V,
+    individualChargerBreakers: isGrid380V ? individualChargerBreakers : undefined
   };
 
   // 5. Painel 380V (Secundário)
@@ -601,17 +628,17 @@ export function calculateChainTopology(params: ChainTopologyInputParams): ChainT
   const standardConductorsPerPhase = (activeStd as any).caboFaseVias || 1;
 
   // 6. Dimensionamento dos 4 Trechos de Cabos e Eletrodutos
-  // Trecho 1: Padrão Concessionária -> Painel 220V
+  // Trecho 1: Padrão Concessionária -> Painel Geral (220V ou 380V)
   const section1 = sizeCableAndConduitSection({
     sectionId: 'trecho_1',
-    name: 'Trecho 1: Padrão Concessionária ➔ Painel Geral 220V',
-    fromNode: `Padrão CEMIG (${activeStd.categoryId} - ${activeStd.breakerCurrentA}A)`,
-    toNode: 'Painel Geral 220V',
+    name: `Trecho 1: Padrão Concessionária ➔ ${panel220V.panelName}`,
+    fromNode: `Padrão CEMIG (${activeStd.categoryId} - ${currentStandardBreakerA || activeStd.breakerCurrentA}A)`,
+    toNode: panel220V.panelName,
     distanceNominalM: section1DistanceM,
     marginPercent: section1MarginPercent,
-    designCurrentA: panel220VCurrentA,
+    designCurrentA: panelMainCurrentA,
     phases: 3,
-    voltageV: 220,
+    voltageV: gridSupplyVoltage,
     conductorMaterial: section1ConductorMaterial,
     installationMethod: section1InstallationMethod,
     maxAllowedVoltageDropPercent: 1.5,
@@ -670,10 +697,10 @@ export function calculateChainTopology(params: ChainTopologyInputParams): ChainT
     });
   }
 
-  // Trecho 4: Alimentadores individuais para cada Carregador (Painel 380V -> Carregador_i ou Painel 220V -> Carregador_i)
+  // Trecho 4: Alimentadores individuais para cada Carregador (Painel 380V -> Carregador_i ou Painel Geral -> Carregador_i)
   const section4_feeders: SectionCableConduitSizing[] = chargers.map((charger, index) => {
     const is380 = charger.voltageV >= 380;
-    const fromPanel = is380 ? 'Painel 380V' : 'Painel 220V';
+    const fromPanel = isGrid380V ? panel220V.panelName : (is380 ? 'Painel 380V' : 'Painel 220V');
     const chargerDesignA = (charger.powerKW * 1000) / (Math.sqrt(charger.phases === 3 ? 3 : 1) * charger.voltageV * 0.98);
 
     return sizeCableAndConduitSection({
@@ -696,7 +723,13 @@ export function calculateChainTopology(params: ChainTopologyInputParams): ChainT
 
   // 7. Alerta de Capacidade do Padrão de Entrada
   const activeBreakerA = currentStandardBreakerA || activeStd.breakerCurrentA;
-  const activeLimitKW = activeStd.maxLimitKW;
+  // Cálculo exato da capacidade física em kW do disjuntor instalado (ND-5.1: P = √3 * V * I * cosφ)
+  // Para 600A em 220V trifásico: √3 * 220 * 600 * 0.95 = 217.2 kW
+  // Para 630A em 220V trifásico: √3 * 220 * 630 * 0.95 = 228.0 kW
+  const calculatedBreakerLimitKW = Number(((Math.sqrt(3) * 220 * activeBreakerA * 0.95) / 1000).toFixed(1));
+  const activeLimitKW = (currentStandardCategory.startsWith('F') && activeBreakerA)
+    ? calculatedBreakerLimitKW
+    : activeStd.maxLimitKW;
 
   // Se houver limitação de potência aceita/aplicada por DLM aos carregadores, recalculamos a demanda efetiva do hub
   const effectiveChargersPowerKW = (hasSmartChargingDLM && maxChargerCapKW !== undefined && maxChargerCapKW > 0)

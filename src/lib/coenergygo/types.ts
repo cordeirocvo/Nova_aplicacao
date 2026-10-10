@@ -802,6 +802,8 @@ export interface AuxiliaryLoadsState {
 }
 
 export interface Panel220VTopologyState {
+  voltageV: 220 | 380;
+  panelName: string;           // "Painel de Proteção e Medição 220V" ou "Painel Geral de Proteção 380V (QGBT)"
   mainBreakerA: number;
   mainBreakerPoles: number;
   mainBreakerCurve: 'C' | 'D';
@@ -810,6 +812,13 @@ export interface Panel220VTopologyState {
   totalAuxKW: number;          // Potência total ativa das cargas auxiliares habilitadas
   auxiliaryLoads: AuxiliaryLoadsState;
   customCircuits?: CustomAuxiliaryCircuit[];
+  individualChargerBreakers?: Array<{
+    chargerId: string;
+    breakerA: number;
+    poles: number;
+    curve: 'C';
+    drType: string;
+  }>;
 }
 
 export interface Panel380VTopologyState {

@@ -609,7 +609,13 @@ export default function CoenergyGODashboard() {
     setProjectName(p.projectName || 'Dimensionamento Carregado');
     setClientName(p.clientName || 'Cliente Particular');
     if (p.utility) setSelectedUtility(p.utility as UtilityId);
-    if (p.isCollective) {
+    
+    // Restaurar Modo de Aplicação exato selecionado no projeto
+    if (p.applicationMode) {
+      setApplicationMode(p.applicationMode);
+    } else if (p.clientProjectData?.applicationMode) {
+      setApplicationMode(p.clientProjectData.applicationMode);
+    } else if (p.isCollective) {
       setApplicationMode('condominio_frota');
     } else {
       setApplicationMode('individual');
@@ -635,6 +641,21 @@ export default function CoenergyGODashboard() {
     }
     if (p.demandControlLimit) {
       setDlmPeakDemandKW(Number(p.demandControlLimit));
+    }
+    if (p.dlmProfileType) {
+      setDlmProfileType(p.dlmProfileType);
+    }
+    if (p.dlmChargeStartHour !== undefined) {
+      setDlmChargeStartHour(Number(p.dlmChargeStartHour));
+    }
+    if (p.dlmChargeDurationHours !== undefined) {
+      setDlmChargeDurationHours(Number(p.dlmChargeDurationHours));
+    }
+    if (p.dlmSimulationScenario) {
+      setDlmSimulationScenario(p.dlmSimulationScenario);
+    }
+    if (p.commercialHub) {
+      setCommercialHub(prev => ({ ...prev, ...p.commercialHub }));
     }
 
     // Se possui clientProjectData estruturado
@@ -932,9 +953,14 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
         existingLoadKW: effectiveExistingLoadKW,
         distance: circuitDistanceMeters,
         installationMethod: installationMethod,
+        applicationMode: applicationMode,
         isCollective: applicationMode !== 'individual',
         demandControlEnabled: dlmEnableDLM,
         demandControlLimit: effectiveDlmGridLimitKW,
+        dlmProfileType: dlmProfileType,
+        dlmChargeStartHour: dlmChargeStartHour,
+        dlmChargeDurationHours: dlmChargeDurationHours,
+        dlmSimulationScenario: dlmSimulationScenario,
         hasEmergencyButton5m: auditHasEmergencyButton,
         requiresWarningSigns: auditHasSignaling,
         groundingType: "TN-S",
@@ -942,6 +968,7 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
         totalPowerKW: totalChargersInstalledKW,
         // Dados estendidos para reconstrução fiel
         configuredChargers: configuredChargers,
+        commercialHub: commercialHub,
         clientProjectData: {
           ...clientProjectData,
           projectName: resolvedProjectName,
@@ -2736,6 +2763,9 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
             externalMaxChargerCapKW={(dlmEnableDLM && isDlmLimitationAccepted && dlmLimitedChargerPowerKW !== null)
               ? dlmLimitedChargerPowerKW
               : undefined}
+            onUpdateChargerPower={(id, newPowerKW) => {
+              handleUpdateCharger(id, { powerKW: newPowerKW });
+            }}
           />
 
           {/* Painel de Identificação e Integração dos Parâmetros */}

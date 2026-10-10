@@ -418,6 +418,20 @@ export default function InstallationEnvironmentSelector({
             </div>
           </div>
 
+          {/* NOTA TÉCNICA DIDÁTICA: O QUE INTERFERE NO DIMENSIONAMENTO? */}
+          <div className="p-3.5 rounded-xl bg-blue-50/80 border border-blue-200/80 flex items-start gap-3">
+            <Info className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+            <div className="text-xs text-blue-950 space-y-1">
+              <p className="font-bold">
+                Como as variáveis operacionais (Recargas/Dia e Tempo de Recarga) influenciam no projeto?
+              </p>
+              <p className="text-blue-900 leading-relaxed text-[11px]">
+                • <strong>Dimensionamento Eletrotécnico Instantâneo (Cabos, Disjuntores e Transformador):</strong> É determinado <strong>exclusivamente pela potência nominal máxima contínua em kW</strong> dos carregadores ativos simultaneamente (critério da ABNT NBR 5410 e NBR 17019 com fator de carga contínua = 1,00).<br />
+                • <strong>Consumo Acumulado de Energia (kWh/mês) & Curva Horária (Passo 2):</strong> O número de recargas/dia e a duração de cada sessão determinam a <strong>energia faturada em kWh/mês</strong> e a dispersão probabilística da demanda ao longo das 24 horas, permitindo avaliar a rentabilidade do eletroposto e o comportamento do pico.
+              </p>
+            </div>
+          </div>
+
           {/* Opcionais de Infraestrutura do Eletroposto */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
             <label className="flex items-center gap-2.5 p-3 rounded-xl border bg-white border-slate-200 cursor-pointer hover:border-slate-300">

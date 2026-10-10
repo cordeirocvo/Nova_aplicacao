@@ -44,6 +44,7 @@ export interface EVTopologyChainViewerProps {
   onUpdateStandard?: (categoryId: string, breakerA?: number) => void;
   externalHasSmartChargingDLM?: boolean;
   externalMaxChargerCapKW?: number;
+  onUpdateChargerPower?: (id: string, newPowerKW: number) => void;
 }
 
 export function EVTopologyChainViewer({
@@ -54,7 +55,8 @@ export function EVTopologyChainViewer({
   externalChargers,
   onUpdateStandard,
   externalHasSmartChargingDLM,
-  externalMaxChargerCapKW
+  externalMaxChargerCapKW,
+  onUpdateChargerPower
 }: EVTopologyChainViewerProps = {}) {
   const {
     chargers,
@@ -262,6 +264,55 @@ export function EVTopologyChainViewer({
           <p className="text-xs mt-1 text-slate-300 leading-relaxed">
             {standardAlert.message}
           </p>
+
+          {/* Destaque Didático para Leigos: Quanto de potência precisa reduzir ou folga disponível */}
+          <div className="mt-2 p-2.5 rounded-xl bg-slate-950/80 border border-slate-800 flex flex-wrap items-center justify-between gap-2">
+            <div className="text-xs">
+              {standardAlert.isOverloaded ? (
+                <div className="text-rose-300 flex items-center gap-2">
+                  <span className="font-bold">⚠️ Redução Necessária no Carregador:</span>
+                  <span className="font-mono font-black text-rose-400 bg-rose-950/60 px-2 py-0.5 rounded border border-rose-800">
+                    -{(standardAlert.totalRequiredLoadKW - standardAlert.currentStandardLimitKW).toFixed(1)} kW
+                  </span>
+                  <span className="text-[11px] text-slate-400">
+                    (Diminua a potência no card do carregador ou ative o DLM para o padrão não desarmar)
+                  </span>
+                </div>
+              ) : (
+                <div className="text-emerald-300 flex items-center gap-2">
+                  <span className="font-bold">✓ Operação Segura:</span>
+                  <span className="font-mono font-black text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800">
+                    +{(standardAlert.currentStandardLimitKW - standardAlert.totalRequiredLoadKW).toFixed(1)} kW de Sobra
+                  </span>
+                  <span className="text-[11px] text-slate-400">
+                    (O disjuntor de {standardAlert.currentStandardBreakerA}A suporta a carga com folga)
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {standardAlert.isOverloaded && chargers.length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  const excessKW = standardAlert.totalRequiredLoadKW - standardAlert.currentStandardLimitKW;
+                  const perChargerCut = excessKW / chargers.length;
+                  chargers.forEach((c) => {
+                    const safeP = Math.max(3.7, Number((c.powerKW - perChargerCut - 0.5).toFixed(1)));
+                    updateCharger(c.id, { powerKW: safeP });
+                    if (onUpdateChargerPower) {
+                      onUpdateChargerPower(c.id, safeP);
+                    }
+                  });
+                }}
+                className="px-2.5 py-1 bg-[#E45318] hover:bg-[#c24310] text-white rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer"
+                title="Ajusta automaticamente a potência dos carregadores para caber no limite do disjuntor"
+              >
+                ⚡ Adequar ao Padrão Atual
+              </button>
+            )}
+          </div>
+
           <div className="flex items-center gap-4 mt-2 text-xs font-mono text-slate-300">
             <span>Cliente Base: <b>{standardAlert.clientBaseLoadKW} kW</b></span>
             <span>+ Hub VE & Aux: <b>{standardAlert.hubAdditionalLoadKW} kW</b></span>
@@ -384,7 +435,7 @@ export function EVTopologyChainViewer({
                 </div>
               </div>
 
-              {/* ─── BLOCO 2: PAINEL 220V ─── */}
+              {/* ─── BLOCO 2: PAINEL GERAL (220V ou 380V) ─── */}
               <div
                 onClick={() => setSelectedDrawerNodeId('panel220v')}
                 className="w-64 flex-shrink-0 bg-slate-900/90 border border-slate-700/80 hover:border-[#E45318] rounded-xl p-4 shadow-xl hover:shadow-[#E45318]/10 transition-all cursor-pointer flex flex-col justify-between group"
@@ -392,31 +443,38 @@ export function EVTopologyChainViewer({
                 <div>
                   <div className="flex items-center justify-between text-xs text-slate-400 mb-2">
                     <span className="font-mono uppercase font-bold text-[#E45318]">Passo 2</span>
-                    <span className="bg-slate-800 px-2 py-0.5 rounded text-[10px]">QGBT 220V</span>
+                    <span className="bg-slate-800 px-2 py-0.5 rounded text-[10px] text-amber-400 font-bold">
+                      {gridSupplyVoltage === 380 ? 'QGBT 380V' : 'QGBT 220V'}
+                    </span>
                   </div>
 
                   <div className="w-full h-24 bg-gradient-to-b from-slate-800 to-slate-900/90 rounded-lg border border-slate-700/60 flex flex-col items-center justify-center p-2 mb-3 group-hover:border-[#E45318]/50 transition-all">
-                    <div className="w-32 bg-slate-800 border-2 border-slate-600 rounded p-1.5 flex flex-col gap-1 shadow-inner">
+                    <div className="w-36 bg-slate-800 border-2 border-slate-600 rounded p-1.5 flex flex-col gap-1 shadow-inner">
                       {/* Barramento Superior Representativo */}
-                      <div className="h-1.5 bg-amber-600 rounded-sm w-full" title="Barramento de Cobre 220V" />
+                      <div className="h-1.5 bg-amber-600 rounded-sm w-full" title={`Barramento de Cobre ${gridSupplyVoltage}V`} />
                       <div className="flex items-center justify-between text-[8px] font-mono text-slate-300">
                         <span className="bg-slate-950 px-1 rounded text-amber-400">Geral {panel220V.mainBreakerA}A</span>
-                        <span className="text-emerald-400 font-bold">3x DPS 275V</span>
+                        <span className="text-emerald-400 font-bold">
+                          {gridSupplyVoltage === 380 ? '4x DPS 385V' : '3x DPS 275V'}
+                        </span>
                       </div>
                       <div className="flex items-center justify-between text-[7px] text-slate-400">
-                        <span>CFTV: {auxiliaryConfig.cctvEnabled ? 'ON' : 'OFF'}</span>
-                        <span>Tomada: {auxiliaryConfig.outletEnabled ? 'ON' : 'OFF'}</span>
-                        <span>Luz: {auxiliaryConfig.lightingEnabled ? `${auxiliaryConfig.lightingPowerW}W` : 'OFF'}</span>
+                        <span>Aux: {auxiliaryConfig.cctvEnabled || auxiliaryConfig.outletEnabled || auxiliaryConfig.lightingEnabled ? 'ON' : 'OFF'}</span>
+                        <span>{gridSupplyVoltage === 380 ? `${chargers.length}x Disj. VE` : 'Alim. Trafo'}</span>
+                        <span className="text-emerald-400 font-bold">DR 30mA</span>
                       </div>
                     </div>
-                    <span className="text-[10px] text-slate-400 mt-1 font-mono">Medição Exclusiva do Hub Integrada</span>
+                    <span className="text-[10px] text-slate-400 mt-1 font-mono">
+                      {gridSupplyVoltage === 380 ? 'Alimentadores Diretos 380V' : 'Medição Exclusiva do Hub'}
+                    </span>
                   </div>
 
                   <h3 className="font-bold text-sm text-white group-hover:text-[#E45318] transition-colors">
-                    Painel Proteção 220V
+                    {gridSupplyVoltage === 380 ? 'Painel Geral de Proteção 380V' : 'Painel Proteção 220V'}
                   </h3>
                   <p className="text-xs text-slate-400 mt-1 leading-snug">
                     Disjuntor Geral {panel220V.mainBreakerA}A (Curva {panel220V.mainBreakerCurve}) + Barramento {panel220V.busbarRatingA}A
+                    {gridSupplyVoltage === 380 && ` • Protege ${chargers.length} Carregadores + Cargas Auxiliares`}
                   </p>
                 </div>
 
@@ -575,16 +633,14 @@ export function EVTopologyChainViewer({
                     </div>
                   </div>
                 </>
-              ) : (
-                /* CASO B: BYPASS DO TRANSFORMADOR E PAINEL 380V */
+              ) : gridSupplyVoltage === 380 ? null : (
+                /* CASO B: BYPASS DO TRANSFORMADOR QUANDO TODOS OS CARREGADORES SÃO 220V */
                 <div className="flex items-center px-4 py-2 bg-emerald-950/20 border border-emerald-500/30 rounded-xl my-auto text-xs text-emerald-300 gap-3">
                   <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
                   <div>
                     <div className="font-bold uppercase tracking-wider text-[10px] text-emerald-400">Bypass Automático Ativo</div>
                     <span>
-                      {gridSupplyVoltage === 380
-                        ? 'Rede da concessionária já fornece 380V. Transformador e painel elevador dispensados!'
-                        : 'Todos os carregadores operam em 220V. Sem necessidade de transformador elevador!'}
+                      Todos os carregadores operam em 220V. Sem necessidade de transformador elevador!
                     </span>
                   </div>
                 </div>
@@ -635,13 +691,50 @@ export function EVTopologyChainViewer({
                         <span className="bg-slate-800 px-2 py-0.5 rounded text-[10px]">{charger.brand}</span>
                       </div>
 
-                      {/* Mockup / Ícone do Carregador */}
-                      <div className="w-full h-24 bg-gradient-to-b from-slate-800 to-slate-900/90 rounded-lg border border-slate-700/60 flex flex-col items-center justify-center p-2 mb-3 group-hover:border-[#E45318]/50 transition-all">
-                        <div className="w-12 h-14 bg-slate-950 border-2 border-[#E45318]/60 rounded-lg flex flex-col items-center justify-around p-1 shadow-md">
-                          <Zap className="w-5 h-5 text-[#E45318]" />
-                          <span className="text-[8px] font-bold text-white font-mono">{charger.powerKW}kW</span>
+                      {/* Mockup / Ícone do Carregador com Seletor Interativo de Potência */}
+                      <div className="w-full bg-gradient-to-b from-slate-800 to-slate-900/90 rounded-lg border border-slate-700/60 flex flex-col items-center justify-center p-2 mb-3 group-hover:border-[#E45318]/50 transition-all">
+                        <div className="w-14 h-12 bg-slate-950 border-2 border-[#E45318]/60 rounded-lg flex flex-col items-center justify-around p-1 shadow-md mb-2">
+                          <Zap className="w-4 h-4 text-[#E45318]" />
+                          <span className="text-[9px] font-bold text-white font-mono">{charger.powerKW} kW</span>
                         </div>
-                        <span className="text-[10px] text-slate-400 mt-1 font-mono">{charger.voltageV}V | {charger.connector}</span>
+
+                        {/* Seletor rápido de Potência (Aumentar / Diminuir kW) */}
+                        <div className="flex items-center gap-1.5 bg-slate-950/90 px-2 py-1 rounded-lg border border-slate-700/80" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const step = charger.powerKW > 30 ? 10 : 3.7;
+                              const newP = Math.max(3.7, Number((charger.powerKW - step).toFixed(1)));
+                              updateCharger(charger.id, { powerKW: newP });
+                              if (onUpdateChargerPower) {
+                                onUpdateChargerPower(charger.id, newP);
+                              }
+                            }}
+                            className="w-5 h-5 flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-white rounded text-xs font-bold transition-all cursor-pointer"
+                            title="Diminuir potência"
+                          >
+                            -
+                          </button>
+                          <span className="text-[10px] font-mono font-bold text-amber-400 min-w-[40px] text-center">
+                            {charger.powerKW} kW
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const step = charger.powerKW >= 30 ? 10 : 3.7;
+                              const newP = Math.min(240, Number((charger.powerKW + step).toFixed(1)));
+                              updateCharger(charger.id, { powerKW: newP });
+                              if (onUpdateChargerPower) {
+                                onUpdateChargerPower(charger.id, newP);
+                              }
+                            }}
+                            className="w-5 h-5 flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-white rounded text-xs font-bold transition-all cursor-pointer"
+                            title="Aumentar potência"
+                          >
+                            +
+                          </button>
+                        </div>
+                        <span className="text-[9px] text-slate-400 mt-1 font-mono">{charger.voltageV}V | {charger.connector}</span>
                       </div>
 
                       <h4 className="font-bold text-sm text-white group-hover:text-[#E45318] transition-colors line-clamp-1">

@@ -725,6 +725,7 @@ export default function ClientProjectForm({
                     400: { cat: 'F4', gauge: 120, phases: '3F' },
                     450: { cat: 'F5', gauge: 150, phases: '3F' },
                     500: { cat: 'F6', gauge: 185, phases: '3F' },
+                    600: { cat: 'F7', gauge: 240, phases: '3F' },
                     630: { cat: 'F7', gauge: 240, phases: '3F' },
                     700: { cat: 'F8', gauge: 150, phases: '3F' },
                     800: { cat: 'F9', gauge: 185, phases: '3F' }
@@ -760,6 +761,7 @@ export default function ClientProjectForm({
                 <option value={400}>400A (Alta Demanda F4 — 2x120 mm²)</option>
                 <option value={450}>450A (Alta Demanda F5 — 2x150 mm²)</option>
                 <option value={500}>500A (Alta Demanda F6 — 2x185 mm²)</option>
+                <option value={600}>600A (Alta Demanda F7 — 2x240 mm²)</option>
                 <option value={630}>630A (Alta Demanda F7 — 2x240 mm²)</option>
                 <option value={700}>700A (Alta Demanda F8 — 3x150 mm²)</option>
                 <option value={800}>800A (Alta Demanda F9 — 3x185 mm²)</option>

@@ -6,6 +6,8 @@ import {
 } from '../types';
 import { calculateChainTopology } from '../engines/chainTopologyEngine';
 
+const STANDARD_BREAKERS = [10, 16, 20, 25, 32, 40, 50, 63, 70, 80, 100, 125, 150, 160, 175, 200, 225, 250, 300, 350, 400, 500, 630];
+
 interface EVTopologyStoreState {
   // Estado dos Carregadores na Ponta
   chargers: TopologyChargerNode[];
@@ -38,6 +40,27 @@ interface EVTopologyStoreState {
     lightingPowerW: number;
   };
 
+  // Customização do Transformador
+  customTransformerKVA?: number;
+
+  // Circuitos Customizados dos Painéis
+  customCircuits220V: Array<{
+    id: string;
+    name: string;
+    powerW: number;
+    voltageV: 127 | 220;
+    breakerA: number;
+    cableMM2: number;
+  }>;
+  customCircuits380V: Array<{
+    id: string;
+    name: string;
+    powerW: number;
+    voltageV: 220 | 380;
+    breakerA: number;
+    cableMM2: number;
+  }>;
+
   // Gaveta/Modal de Inspeção do Componente Selecionado
   selectedDrawerNodeId: string | null;
 
@@ -59,6 +82,9 @@ interface EVTopologyStoreState {
     maxChargerCapKW?: number;
   }) => void;
   setDLMSettings: (hasDLM: boolean, maxCapKW?: number) => void;
+  setCustomTransformerKVA: (kva: number | undefined) => void;
+  addCustomCircuit: (panel: '220v' | '380v', circuit: { name: string; powerW: number; voltageV: 127 | 220 | 380 }) => void;
+  removeCustomCircuit: (panel: '220v' | '380v', id: string) => void;
   addCharger: (charger: Omit<TopologyChargerNode, 'id'>) => void;
   removeCharger: (id: string) => void;
   updateCharger: (id: string, updates: Partial<TopologyChargerNode>) => void;
@@ -123,6 +149,9 @@ export const useEVTopologyStore = create<EVTopologyStoreState>((set, get) => {
         lightingEnabled: true,
         lightingPowerW: 400
       },
+      customCircuits220V: currentState.customCircuits220V || [],
+      customCircuits380V: currentState.customCircuits380V || [],
+      customTransformerKVA: currentState.customTransformerKVA,
       hasSmartChargingDLM: currentState.hasSmartChargingDLM,
       maxChargerCapKW: currentState.maxChargerCapKW
     });
@@ -151,7 +180,9 @@ export const useEVTopologyStore = create<EVTopologyStoreState>((set, get) => {
       outletPowerW: 1000,
       lightingEnabled: true,
       lightingPowerW: 400
-    }
+    },
+    customCircuits220V: [],
+    customCircuits380V: []
   });
 
   return {
@@ -171,6 +202,10 @@ export const useEVTopologyStore = create<EVTopologyStoreState>((set, get) => {
     section3DistanceM: 5,
     section3MarginPercent: 10,
     section3ConductorMaterial: 'copper',
+
+    customCircuits220V: [],
+    customCircuits380V: [],
+    customTransformerKVA: undefined,
 
     auxiliaryConfig: {
       cctvEnabled: true,
@@ -208,6 +243,55 @@ export const useEVTopologyStore = create<EVTopologyStoreState>((set, get) => {
           hasSmartChargingDLM: hasDLM,
           maxChargerCapKW: maxCapKW
         };
+        return {
+          ...nextState,
+          topologyOutput: computeOutput(nextState)
+        };
+      });
+    },
+
+    setCustomTransformerKVA: (kva) => {
+      set((state) => {
+        const nextState: Partial<EVTopologyStoreState> = {
+          customTransformerKVA: kva
+        };
+        return {
+          ...nextState,
+          topologyOutput: computeOutput(nextState)
+        };
+      });
+    },
+
+    addCustomCircuit: (panel, circuit) => {
+      set((state) => {
+        const calcBreaker = STANDARD_BREAKERS.find(b => b >= (circuit.powerW / (circuit.voltageV === 380 ? (Math.sqrt(3) * 380 * 0.92) : circuit.voltageV)) * 1.25) || 16;
+        const calcCable = calcBreaker <= 16 ? 2.5 : calcBreaker <= 25 ? 4.0 : 6.0;
+        const newCircuit = {
+          id: `circ-${Date.now()}`,
+          name: circuit.name,
+          powerW: circuit.powerW,
+          voltageV: circuit.voltageV as any,
+          breakerA: calcBreaker,
+          cableMM2: calcCable
+        };
+
+        const nextState: Partial<EVTopologyStoreState> = panel === '220v'
+          ? { customCircuits220V: [...state.customCircuits220V, newCircuit] }
+          : { customCircuits380V: [...state.customCircuits380V, newCircuit] };
+
+        return {
+          ...nextState,
+          topologyOutput: computeOutput(nextState)
+        };
+      });
+    },
+
+    removeCustomCircuit: (panel, id) => {
+      set((state) => {
+        const nextState: Partial<EVTopologyStoreState> = panel === '220v'
+          ? { customCircuits220V: state.customCircuits220V.filter(c => c.id !== id) }
+          : { customCircuits380V: state.customCircuits380V.filter(c => c.id !== id) };
+
         return {
           ...nextState,
           topologyOutput: computeOutput(nextState)

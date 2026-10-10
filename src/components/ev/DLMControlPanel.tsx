@@ -184,15 +184,21 @@ export default function DLMControlPanel({
 
       {/* 1. Seleção de Perfil Típico Pré-Calibrado */}
       <div className="space-y-2">
-        <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">
-          Perfil de Carga Típico da Edificação
-        </label>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+        <div className="flex items-center justify-between">
+          <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">
+            Perfil de Carga da Edificação (Estimativa ou Contratada)
+          </label>
+          <span className="text-[10px] text-slate-400">
+            💡 <strong>Padrão Ouro:</strong> Para projetos definitivos, recomenda-se monitorar no mínimo <strong>7 dias</strong> com SmartMeter.
+          </span>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
           {[
+            { id: 'posto_combustivel_constante', label: 'Posto de Combustível', desc: 'Demanda fixa/plana 24h contínua' },
             { id: 'condominio_residencial', label: 'Condomínio Residencial', desc: 'Pico noturno 18h-22h' },
             { id: 'edificio_comercial', label: 'Edifício Comercial', desc: 'Pico diurno 09h-17h' },
             { id: 'centro_comercial', label: 'Shopping / Varejo', desc: 'Pico estendido 14h-21h' },
-            { id: 'industrial', label: 'Indústria / Turnos', desc: 'Carga contínua 24h' },
+            { id: 'industrial', label: 'Indústria / Turnos', desc: 'Oscilação por turnos' },
           ].map((p) => {
             const isSelected = profileType === p.id;
             return (
@@ -201,7 +207,7 @@ export default function DLMControlPanel({
                 onClick={() => setProfileType(p.id as any)}
                 className={`p-3 rounded-2xl border text-left transition-all ${
                   isSelected
-                    ? 'border-[#E45318] bg-orange-50/50 shadow-sm'
+                    ? 'border-[#E45318] bg-orange-50/50 shadow-sm ring-1 ring-[#E45318]'
                     : 'border-slate-100 hover:border-slate-200 bg-slate-50/50'
                 }`}
               >

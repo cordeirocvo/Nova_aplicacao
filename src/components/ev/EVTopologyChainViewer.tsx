@@ -72,9 +72,15 @@ export function EVTopologyChainViewer({
     section3MarginPercent,
     section3ConductorMaterial,
     auxiliaryConfig,
+    customTransformerKVA,
+    customCircuits220V,
+    customCircuits380V,
     selectedDrawerNodeId,
     topologyOutput,
     syncFromProjectData,
+    setCustomTransformerKVA,
+    addCustomCircuit,
+    removeCustomCircuit,
     addCharger,
     removeCharger,
     updateCharger,
@@ -956,7 +962,7 @@ export function EVTopologyChainViewer({
                           <option value="F4">F4 — Alta Demanda 152 kVA / Disjuntor 400A (TC 400/5)</option>
                           <option value="F5">F5 — Alta Demanda 171 kVA / Disjuntor 450A (TC 400/5)</option>
                           <option value="F6">F6 — Alta Demanda 188 kVA / Disjuntor 500A (TC 400/5)</option>
-                          <option value="F7">F7 — Alta Demanda 228 kVA / Disjuntor 630A (TC 600/5)</option>
+                          <option value="F7">F7 — Alta Demanda 228 kVA / Disjuntor 600A ou 630A (TC 600/5)</option>
                           <option value="F8">F8 — Alta Demanda 266 kVA / Disjuntor 700A (TC 800/5)</option>
                           <option value="F9">F9 — Alta Demanda 304 kVA / Disjuntor 800A (TC 800/5)</option>
                         </optgroup>
@@ -1124,10 +1130,82 @@ export function EVTopologyChainViewer({
                       </div>
                     </div>
 
+                    {/* Circuitos Auxiliares Extras Customizados */}
+                    <div className="bg-slate-900 p-3 rounded-lg border border-slate-800 space-y-2">
+                      <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                        <h4 className="font-bold text-white text-xs">Circuitos Adicionais no Painel 220V:</h4>
+                        <span className="text-[10px] text-slate-400">{customCircuits220V.length} cadastrado(s)</span>
+                      </div>
+
+                      {customCircuits220V.map((circ) => (
+                        <div key={circ.id} className="flex items-center justify-between bg-slate-950 p-2 rounded border border-slate-800 text-xs">
+                          <div>
+                            <span className="text-white font-medium block">{circ.name}</span>
+                            <span className="text-[10px] text-slate-400 font-mono">
+                              {circ.powerW}W ({circ.voltageV}V) • Disj. {circ.breakerA}A • Cabo {circ.cableMM2}mm²
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeCustomCircuit('220v', circ.id)}
+                            className="p-1 text-slate-500 hover:text-rose-400 hover:bg-slate-800 rounded transition-all"
+                            title="Remover circuito"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ))}
+
+                      {/* Formulário Inline de Adição Rápida */}
+                      <form
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          const form = e.currentTarget;
+                          const name = (form.elements.namedItem('circName') as HTMLInputElement).value;
+                          const watts = Number((form.elements.namedItem('circPower') as HTMLInputElement).value);
+                          const volt = Number((form.elements.namedItem('circVolt') as HTMLSelectElement).value) as 127 | 220;
+                          if (name && watts > 0) {
+                            addCustomCircuit('220v', { name, powerW: watts, voltageV: volt });
+                            form.reset();
+                          }
+                        }}
+                        className="flex flex-wrap gap-2 pt-2 border-t border-slate-800/80"
+                      >
+                        <input
+                          name="circName"
+                          placeholder="Nome (Ex: Totem, Sensor)"
+                          required
+                          className="flex-1 min-w-[120px] bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#E45318]"
+                        />
+                        <input
+                          name="circPower"
+                          type="number"
+                          placeholder="Potência (W)"
+                          min="1"
+                          required
+                          className="w-24 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white text-center placeholder-slate-500 focus:outline-none focus:border-[#E45318]"
+                        />
+                        <select
+                          name="circVolt"
+                          defaultValue="127"
+                          className="w-20 bg-slate-800 border border-slate-700 rounded px-1.5 py-1 text-xs text-white focus:outline-none focus:border-[#E45318]"
+                        >
+                          <option value="127">127V</option>
+                          <option value="220">220V</option>
+                        </select>
+                        <button
+                          type="submit"
+                          className="px-2.5 py-1 bg-[#E45318] hover:bg-[#c24310] text-white rounded text-xs font-bold transition-all"
+                        >
+                          + Adicionar
+                        </button>
+                      </form>
+                    </div>
+
                     <div className="p-3 bg-slate-800/40 rounded-lg border border-slate-700/60 font-mono text-[11px] space-y-1">
                       <div className="text-emerald-400 font-bold">Medidor Exclusivo do Hub: Ativo</div>
-                      <div className="text-slate-300">Agrega apenas: Trafo/VEs + CFTV + Tomadas + Luz</div>
-                      <div className="text-slate-500">Exclui expressamente a carga base do cliente!</div>
+                      <div className="text-slate-300">Agrega apenas: Trafo/VEs + Cargas Auxiliares ({panel220V.totalAuxKW} kW)</div>
+                      <div className="text-slate-500">Disjuntor Geral 220V: {panel220V.mainBreakerA}A (Curva {panel220V.mainBreakerCurve})</div>
                     </div>
                   </div>
                 )}
@@ -1262,7 +1340,7 @@ export function EVTopologyChainViewer({
                             </div>
                             <div className="text-[10px] text-slate-300 mt-1 flex flex-wrap gap-2">
                               <span>Vias em paralelo: <b className="text-white">{sec.conductorsPerPhase} condutor(es)/fase</b></span>
-                              <span>• Bitola: <b className="text-[#00B356]">{sec.conductorsPerPhase > 1 ? `${sec.conductorsPerPhase}x ` : ''}{sec.cableGaugePhaseMM2} mm² Cu</b></span>
+                              <span>• Bitola: <b className="text-[#00B356]">{sec.conductorsPerPhase > 1 ? `${sec.conductorsPerPhase}x ` : ''}{sec.cableGaugePhaseMM2} mm² {sec.conductorMaterial === 'aluminum' ? (sec.phases === 1 ? 'Al (Biplex)' : sec.phases === 2 ? 'Al (Triplex)' : 'Al (Quadruplex)') : 'Cu'}</b></span>
                               <span>• Neutro: <b className="text-blue-400">{sec.cableGaugeNeutralMM2 ? `${sec.conductorsPerPhase > 1 ? `${sec.conductorsPerPhase}x ` : ''}${sec.cableGaugeNeutralMM2} mm²` : 'N/A'}</b></span>
                               <span>• PE: <b className="text-emerald-400">{sec.cableGaugeGroundMM2} mm²</b></span>
                             </div>
@@ -1315,14 +1393,80 @@ export function EVTopologyChainViewer({
                         <span className="text-amber-400 text-[11px]">ABNT NBR 5356</span>
                       </h5>
 
-                      {/* 1. Cálculo da Potência do Trafo */}
-                      <div className="bg-slate-950/80 p-2.5 rounded-lg border border-slate-800 space-y-1">
-                        <span className="text-slate-400 font-sans font-semibold text-[11px] block">1. Potência Nominal do Trafo (kVA):</span>
+                      {/* 1. Cálculo da Potência do Trafo com Opção Manual */}
+                      <div className="bg-slate-950/80 p-2.5 rounded-lg border border-slate-800 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-400 font-sans font-semibold text-[11px] block">1. Potência Nominal do Trafo (kVA):</span>
+                          {customTransformerKVA && (
+                            <button
+                              type="button"
+                              onClick={() => setCustomTransformerKVA(undefined)}
+                              className="text-[10px] text-amber-400 underline hover:text-amber-300"
+                            >
+                              Restaurar Automático
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Input de kVA e presets comerciais */}
+                        <div className="flex flex-wrap items-center gap-2">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[11px] text-slate-300">Potência:</span>
+                            <input
+                              type="number"
+                              min="10"
+                              max="1000"
+                              step="5"
+                              value={transformer.nominalKVA}
+                              onChange={(e) => {
+                                const val = Number(e.target.value);
+                                if (val > 0) setCustomTransformerKVA(val);
+                              }}
+                              className={`w-20 bg-slate-900 border rounded px-2 py-1 text-center font-bold text-xs ${
+                                transformer.calculationBreakdown?.isOverloaded
+                                  ? 'border-rose-500 text-rose-400 animate-pulse'
+                                  : 'border-amber-500 text-amber-400'
+                              }`}
+                            />
+                            <span className="text-slate-400 text-xs">kVA</span>
+                          </div>
+
+                          {/* Presets comerciais redondos */}
+                          <div className="flex items-center gap-1 text-[10px]">
+                            {[50, 75, 100, 150, 225].map((k) => (
+                              <button
+                                key={k}
+                                type="button"
+                                onClick={() => setCustomTransformerKVA(k)}
+                                className={`px-1.5 py-0.5 rounded border transition-all ${
+                                  transformer.nominalKVA === k
+                                    ? 'bg-amber-500/20 border-amber-500 text-amber-300 font-bold'
+                                    : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white'
+                                }`}
+                              >
+                                {k}kVA
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Alerta de Sobrecarga do Trafo se o usuário digitar valor inferior */}
+                        {transformer.calculationBreakdown?.isOverloaded && (
+                          <div className="p-2 rounded bg-rose-950/60 border border-rose-600 text-rose-300 text-[11px] space-y-1">
+                            <div className="font-bold flex items-center gap-1">
+                              ⚠️ ALERTA: SUBDIMENSIONAMENTO DO TRANSFORMADOR!
+                            </div>
+                            <div>
+                              A carga necessária é de <b>{transformer.calculationBreakdown.calculatedRawKVA} kVA</b>. O valor digitado ({transformer.nominalKVA} kVA) provocará aquecimento e desarme contínuo.
+                            </div>
+                          </div>
+                        )}
+
                         <div className="text-amber-400 text-[11px] font-bold">
                           {transformer.calculationBreakdown?.formulaKVA || `S = ${transformer.nominalKVA} kVA`}
                         </div>
                         <div className="text-[10px] text-slate-400">
-                          Carga total dos carregadores 380V: <b>{transformer.calculationBreakdown?.totalLoadChargersKW} kW</b> | cos φ = 0.98 | η = 0.97 | Margem regime contínuo: +15%
+                          Carga total dos carregadores 380V: <b>{transformer.calculationBreakdown?.totalLoadChargersKW} kW</b> | cos φ = 0.98 | η = 0.97 | Margem recomendada: +15%
                         </div>
                       </div>
 
@@ -1392,6 +1536,78 @@ export function EVTopologyChainViewer({
                         <span className="text-slate-400">Dispositivo DR:</span>
                         <span className="text-emerald-400 font-bold">Tetrapolar 40A / 30mA Tipo B</span>
                       </div>
+                    </div>
+
+                    {/* Circuitos Adicionais no Painel 380V */}
+                    <div className="bg-slate-900 p-3 rounded-lg border border-slate-800 space-y-2">
+                      <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                        <h4 className="font-bold text-white text-xs">Circuitos Auxiliares no Painel 380V:</h4>
+                        <span className="text-[10px] text-slate-400">{customCircuits380V.length} cadastrado(s)</span>
+                      </div>
+
+                      {customCircuits380V.map((circ) => (
+                        <div key={circ.id} className="flex items-center justify-between bg-slate-950 p-2 rounded border border-slate-800 text-xs">
+                          <div>
+                            <span className="text-white font-medium block">{circ.name}</span>
+                            <span className="text-[10px] text-slate-400 font-mono">
+                              {circ.powerW}W ({circ.voltageV}V) • Disj. {circ.breakerA}A • Cabo {circ.cableMM2}mm²
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeCustomCircuit('380v', circ.id)}
+                            className="p-1 text-slate-500 hover:text-rose-400 hover:bg-slate-800 rounded transition-all"
+                            title="Remover circuito"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ))}
+
+                      {/* Formulário Inline de Adição Rápida */}
+                      <form
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          const form = e.currentTarget;
+                          const name = (form.elements.namedItem('circName380') as HTMLInputElement).value;
+                          const watts = Number((form.elements.namedItem('circPower380') as HTMLInputElement).value);
+                          const volt = Number((form.elements.namedItem('circVolt380') as HTMLSelectElement).value) as 220 | 380;
+                          if (name && watts > 0) {
+                            addCustomCircuit('380v', { name, powerW: watts, voltageV: volt });
+                            form.reset();
+                          }
+                        }}
+                        className="flex flex-wrap gap-2 pt-2 border-t border-slate-800/80"
+                      >
+                        <input
+                          name="circName380"
+                          placeholder="Nome (Ex: Ar-condicionado, Painel Sec)"
+                          required
+                          className="flex-1 min-w-[120px] bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#00B356]"
+                        />
+                        <input
+                          name="circPower380"
+                          type="number"
+                          placeholder="Potência (W)"
+                          min="1"
+                          required
+                          className="w-24 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white text-center placeholder-slate-500 focus:outline-none focus:border-[#00B356]"
+                        />
+                        <select
+                          name="circVolt380"
+                          defaultValue="380"
+                          className="w-20 bg-slate-800 border border-slate-700 rounded px-1.5 py-1 text-xs text-white focus:outline-none focus:border-[#00B356]"
+                        >
+                          <option value="380">380V (3F)</option>
+                          <option value="220">220V (F-N)</option>
+                        </select>
+                        <button
+                          type="submit"
+                          className="px-2.5 py-1 bg-[#00B356] hover:bg-[#009647] text-white rounded text-xs font-bold transition-all"
+                        >
+                          + Adicionar
+                        </button>
+                      </form>
                     </div>
                   </div>
                 )}

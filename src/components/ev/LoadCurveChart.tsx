@@ -85,11 +85,11 @@ export default function LoadCurveChart({
             <span className="w-3 h-0.5 bg-red-500 rounded border-dashed"></span> Limite Padrão ({gridLimitKW} kW)
           </span>
           <span className="flex items-center gap-1.5 text-red-500">
-            <span className="w-3 h-1 bg-red-400 rounded"></span> Sem DLM (Sobrecarga)
+            <span className="w-3 h-1 bg-red-400 rounded"></span> Carga Total Sem DLM
           </span>
           {enableDLM && (
             <span className="flex items-center gap-1.5 text-[#00B356]">
-              <span className="w-3 h-1 bg-[#00B356] rounded"></span> Com DLM Seguro
+              <span className="w-3 h-1 bg-[#00B356] rounded"></span> Carga Total Com DLM Seguro
             </span>
           )}
           {enableSolar && (
@@ -301,12 +301,12 @@ export default function LoadCurveChart({
 
               <div className="col-span-2 border-t border-slate-700/80 my-1"></div>
 
-              <span className="text-slate-300">Demanda da Rede (Sem DLM):</span>
+              <span className="text-slate-300">Carga Total (Carregador + Imóvel):</span>
               <strong className="text-right text-slate-200">{hoveredPoint.totalUncontrolledKW} kW</strong>
 
               {enableDLM && (
                 <>
-                  <span className="text-[#00B356] font-bold">Demanda da Rede (Com DLM):</span>
+                  <span className="text-[#00B356] font-bold">Carga Total (Com DLM Seguro):</span>
                   <strong className="text-right text-[#00B356] font-black">{hoveredPoint.totalControlledKW} kW</strong>
 
                   {hoveredPoint.evLoadUncontrolledKW > 0 && (

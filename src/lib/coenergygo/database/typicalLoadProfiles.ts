@@ -52,6 +52,14 @@ export const TYPICAL_PROFILES_NORMALIZED: Record<TypicalProfileType, number[]> =
     0.95, 1.00, 0.98, 0.95, 0.95, 0.90, // 06h - 11h
     0.85, 0.95, 0.98, 0.96, 0.92, 0.85, // 12h - 17h
     0.80, 0.75, 0.70, 0.68, 0.65, 0.62  // 18h - 23h
+  ],
+
+  // Posto de Combustível / Demanda Contratada Constante (Linha Plana Contínua 24h)
+  posto_combustivel_constante: [
+    1.00, 1.00, 1.00, 1.00, 1.00, 1.00, // 00h - 05h
+    1.00, 1.00, 1.00, 1.00, 1.00, 1.00, // 06h - 11h
+    1.00, 1.00, 1.00, 1.00, 1.00, 1.00, // 12h - 17h
+    1.00, 1.00, 1.00, 1.00, 1.00, 1.00  // 18h - 23h
   ]
 };
 

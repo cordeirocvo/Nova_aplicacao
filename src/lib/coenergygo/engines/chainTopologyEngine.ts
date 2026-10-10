@@ -112,6 +112,27 @@ export interface ChainTopologyInputParams {
     lightingPowerW: number;
   };
 
+  // Circuitos Customizados Adicionais
+  customCircuits220V?: Array<{
+    id: string;
+    name: string;
+    powerW: number;
+    voltageV: 127 | 220;
+    breakerA: number;
+    cableMM2: number;
+  }>;
+  customCircuits380V?: Array<{
+    id: string;
+    name: string;
+    powerW: number;
+    voltageV: 220 | 380;
+    breakerA: number;
+    cableMM2: number;
+  }>;
+
+  // Customização de Transformador Elevador
+  customTransformerKVA?: number;
+
   // Gestão Dinâmica de Carga DLM
   hasSmartChargingDLM?: boolean;
   maxChargerCapKW?: number;
@@ -356,6 +377,9 @@ export function calculateChainTopology(params: ChainTopologyInputParams): ChainT
     section3ConductorMaterial = 'copper',
     section3InstallationMethod = 'B1',
     auxiliaryConfig,
+    customCircuits220V = [],
+    customCircuits380V = [],
+    customTransformerKVA,
     hasSmartChargingDLM,
     maxChargerCapKW
   } = params;
@@ -373,6 +397,8 @@ export function calculateChainTopology(params: ChainTopologyInputParams): ChainT
   let trafoPrimaryCurrentA = 0;
   let trafoSecondaryCurrentA = 0;
   let trafoLossesKW = 0;
+  let isTrafoOverloaded = false;
+  let trafoOverloadPercent = 0;
   let trafoBreakdown: TransformerTopologyState['calculationBreakdown'] | undefined;
 
   if (isTransformerNeeded) {
@@ -385,9 +411,31 @@ export function calculateChainTopology(params: ChainTopologyInputParams): ChainT
     const safetyMarginFactor = 1.15;
     const requiredKVA = loadApparentKVA * safetyMarginFactor;
 
-    // Seleciona a potência nominal padronizada ABNT NBR 5356 mais próxima
-    // Exemplos: 240 kW -> S = 240/(0.98*0.97) = 252.4 kVA * 1.15 = 290.3 kVA -> TRAFO 300 kVA!
-    transformerKVA = STANDARD_TRAFOS_KVA.find(k => k >= requiredKVA) || 300;
+    // Tabela Prática Comercial por faixa de carregador:
+    // 40 kW -> Trafo 50 kVA
+    // 60 kW -> Trafo 75 kVA
+    // 80 kW -> Trafo 100 kVA
+    // 120 kW -> Trafo 150 kVA
+    // 160 kW -> Trafo 200 kVA ou 225 kVA
+    let autoSelectedKVA = 300;
+    if (chargers380VKW <= 40) autoSelectedKVA = 50;
+    else if (chargers380VKW <= 60) autoSelectedKVA = 75;
+    else if (chargers380VKW <= 80) autoSelectedKVA = 100;
+    else if (chargers380VKW <= 120) autoSelectedKVA = 150;
+    else if (chargers380VKW <= 180) autoSelectedKVA = 225;
+    else {
+      autoSelectedKVA = STANDARD_TRAFOS_KVA.find(k => k >= requiredKVA) || 300;
+    }
+
+    if (customTransformerKVA && customTransformerKVA > 0) {
+      transformerKVA = customTransformerKVA;
+      if (customTransformerKVA < loadApparentKVA) {
+        isTrafoOverloaded = true;
+        trafoOverloadPercent = Number((((loadApparentKVA - customTransformerKVA) / customTransformerKVA) * 100).toFixed(1));
+      }
+    } else {
+      transformerKVA = autoSelectedKVA;
+    }
 
     // Corrente primária nominal em 220V (Δ trifásico)
     trafoPrimaryCurrentA = Number(((chargers380VKW * 1000) / (Math.sqrt(3) * 220 * cosPhiTrafo * effTrafo)).toFixed(1));
@@ -403,10 +451,17 @@ export function calculateChainTopology(params: ChainTopologyInputParams): ChainT
       safetyMarginFactor,
       calculatedRawKVA: Number(requiredKVA.toFixed(1)),
       standardSelectedKVA: transformerKVA,
-      formulaKVA: `S_trafo = (P_ve / (cos φ × η)) × 1.15 = (${chargers380VKW} kW / (${cosPhiTrafo} × ${effTrafo})) × 1.15 = ${requiredKVA.toFixed(1)} kVA ➔ Trafo Padronizado Comercial: ${transformerKVA} kVA`,
+      isCustomSelected: Boolean(customTransformerKVA && customTransformerKVA > 0),
+      isOverloaded: isTrafoOverloaded,
+      overloadPercentage: trafoOverloadPercent,
+      formulaKVA: customTransformerKVA
+        ? `S_trafo (Definido pelo Usuário) = ${customTransformerKVA} kVA (Demanda necessária da carga: ${loadApparentKVA.toFixed(1)} kVA ${isTrafoOverloaded ? `⚠️ SOBRECARGA DE +${trafoOverloadPercent}%!` : '✓ ADEQUADO'})`
+        : `S_trafo = (P_ve / (cos φ × η)) × 1.15 = (${chargers380VKW} kW / (${cosPhiTrafo} × ${effTrafo})) × 1.15 = ${requiredKVA.toFixed(1)} kVA ➔ Trafo Comercial Prático: ${transformerKVA} kVA`,
       formulaPrimaryCurrent: `I_prim (220V) = P_ve / (√3 × 220V × cos φ × η) = (${chargers380VKW} × 1000) / (1.732 × 220 × ${cosPhiTrafo} × ${effTrafo}) = ${trafoPrimaryCurrentA} A`,
       formulaSecondaryCurrent: `I_sec (380V) = P_ve / (√3 × 380V × cos φ) = (${chargers380VKW} × 1000) / (1.732 × 380 × ${cosPhiTrafo}) = ${trafoSecondaryCurrentA} A`,
-      notes: `Transformador elevador a seco com fator K-4 para suportar harmônicas de retificadores VE. Ligação Dyn1 (Δ 220V primário / Y 380V secundário com Neutro acessível aterrado no BEP).`
+      notes: isTrafoOverloaded
+        ? `ALERTA DE ENGENHARIA: A potência digitada (${customTransformerKVA} kVA) é inferior à demanda da carga dos carregadores (${loadApparentKVA.toFixed(1)} kVA). Risco de aquecimento excessivo e desligamento por relé térmico.`
+        : `Transformador elevador a seco com fator K-4 para suportar harmônicas de retificadores VE. Ligação Dyn1 (Δ 220V primário / Y 380V secundário com Neutro acessível aterrado no BEP).`
     };
   }
 
@@ -430,7 +485,8 @@ export function calculateChainTopology(params: ChainTopologyInputParams): ChainT
   const cctvPowerW = auxiliaryConfig.cctvEnabled ? auxiliaryConfig.cctvPowerW : 0;
   const outletPowerW = auxiliaryConfig.outletEnabled ? auxiliaryConfig.outletPowerW : 0;
   const lightingPowerW = auxiliaryConfig.lightingEnabled ? auxiliaryConfig.lightingPowerW : 0;
-  const totalAuxKW = (cctvPowerW + outletPowerW + lightingPowerW) / 1000;
+  const customAux220VKW = customCircuits220V.reduce((sum, c) => sum + (c.powerW || 0), 0) / 1000;
+  const totalAuxKW = (cctvPowerW + outletPowerW + lightingPowerW) / 1000 + customAux220VKW;
 
   // Medidor Exclusivo do Hub: Mede trafo/carregadores + auxiliares (NÃO mede carga de base do cliente)
   const hubDirectLoadKW = isTransformerNeeded ? (trafoPrimaryCurrentA * Math.sqrt(3) * 220 * 0.98 * 0.97) / 1000 : totalChargersKW;
@@ -489,17 +545,19 @@ export function calculateChainTopology(params: ChainTopologyInputParams): ChainT
     busbarRatingA: panel220VMainBreakerA,
     requiresBusbar: true,
     totalAuxKW: Number(totalAuxKW.toFixed(2)),
-    auxiliaryLoads
+    auxiliaryLoads,
+    customCircuits: customCircuits220V
   };
 
   // 5. Painel 380V (Secundário)
   // Regra de Ouro:
   // - Inativo/bypassed se não houver carregadores 380V na rede 220V
-  // - Se ativo e houver APENAS 1 carregador: 1 único disjuntor de proteção, ZERO barramento!
-  // - Se ativo e houver >= 2 carregadores: barramento de cobre dimensionado pelo disjuntor geral
+  // - Se ativo e houver APENAS 1 carregador e nenhum circuito extra: 1 único disjuntor de proteção, ZERO barramento!
+  // - Se houver >= 2 circuitos: barramento de cobre dimensionado pelo disjuntor geral
   const isPanel380VActive = isTransformerNeeded;
   const chargersCount = chargers.length;
-  const requires380VBusbar = isPanel380VActive && chargersCount > 1;
+  const totalCircuits380V = chargersCount + customCircuits380V.length;
+  const requires380VBusbar = isPanel380VActive && totalCircuits380V > 1;
 
   const individualBreakers = chargers.map(c => {
     const inrushFactor = 1.15;
@@ -514,7 +572,9 @@ export function calculateChainTopology(params: ChainTopologyInputParams): ChainT
     };
   });
 
-  const panel380VMainBreakerRating = trafoSecondaryCurrentA * 1.15;
+  const customCircuits380VKW = customCircuits380V.reduce((sum, c) => sum + (c.powerW || 0), 0) / 1000;
+  const customCircuits380VA = (customCircuits380VKW * 1000) / (Math.sqrt(3) * 380 * 0.98);
+  const panel380VMainBreakerRating = (trafoSecondaryCurrentA + customCircuits380VA) * 1.15;
   const panel380VMainBreakerA = STANDARD_BREAKERS.find(b => b >= panel380VMainBreakerRating) || 40;
 
   const panel380V: Panel380VTopologyState = {
@@ -524,7 +584,14 @@ export function calculateChainTopology(params: ChainTopologyInputParams): ChainT
     mainBreakerCurve: 'C',
     requiresBusbar: requires380VBusbar,
     busbarRatingA: requires380VBusbar ? panel380VMainBreakerA : 0,
-    individualBreakers: requires380VBusbar ? individualBreakers : []
+    dps380V: {
+      enabled: isPanel380VActive,
+      classType: 'Classe II',
+      rating: 'Uc=385V, In=20kA, Imax=40kA',
+      quantity: 4 // 3 Fases + Neutro
+    },
+    customCircuits: customCircuits380V,
+    individualBreakers
   };
 
   // Identificação das especificações normatizadas do padrão selecionado
@@ -572,9 +639,9 @@ export function calculateChainTopology(params: ChainTopologyInputParams): ChainT
       installationMethod: section2InstallationMethod,
       maxAllowedVoltageDropPercent: 1.0,
       includeNeutral: false, // Primário em triângulo Dyn1
-      minGaugeMM2: section2ConductorMaterial === 'aluminum' ? 150 : 120,      // Garantia de bitola industrial para correntes de trafo de alta potência
+      minGaugeMM2: section2ConductorMaterial === 'aluminum' ? 16 : 10, // Seção mínima técnica da NBR 5410 para cabo de força (Al min 16mm², Cu min 10mm²)
       minConductorsPerPhase: trafoPrimaryCurrentA > 360 ? (trafoPrimaryCurrentA > 600 ? 3 : 2) : 1,
-      standardOriginNote: `Alimentação primária do Trafo de ${transformerKVA} kVA em 220V com ${trafoPrimaryCurrentA}A • Condutor ${section2ConductorMaterial === 'aluminum' ? 'Alumínio' : 'Cobre'}`,
+      standardOriginNote: `Alimentação primária em 220V baseada na corrente de carga dos carregadores (${trafoPrimaryCurrentA}A) • Trafo de ${transformerKVA} kVA • Condutor ${section2ConductorMaterial === 'aluminum' ? 'Alumínio' : 'Cobre'}`,
       powerKW: chargers.filter(c => c.voltageV >= 380).reduce((sum, c) => sum + c.powerKW, 0)
     });
   }
@@ -679,18 +746,54 @@ export function calculateChainTopology(params: ChainTopologyInputParams): ChainT
     message: standardAlertMessage
   };
 
+  // Função auxiliar para descrição normativa do condutor
+  const formatCableBOMDescription = (
+    sec: SectionCableConduitSizing,
+    circuitRole: string
+  ): { desc: string; norm: string } => {
+    const isAl = sec.conductorMaterial === 'aluminum';
+    const gauge = sec.cableGaugePhaseMM2;
+    const viasFase = sec.conductorsPerPhase;
+    const viasPrefix = viasFase > 1 ? `${viasFase}x ` : '';
+
+    if (isAl) {
+      if (sec.phases === 1) {
+        return {
+          desc: `Cabo de Alumínio Multiplexado Biplex 0,6/1kV XLPE 90°C ${viasPrefix}(1x${gauge} + 1x${gauge} N) mm² (${circuitRole})`,
+          norm: 'ABNT NBR 8182 / NBR 5410'
+        };
+      } else if (sec.phases === 2) {
+        return {
+          desc: `Cabo de Alumínio Multiplexado Triplex 0,6/1kV XLPE 90°C ${viasPrefix}(2x${gauge} + 1x${gauge} N) mm² (${circuitRole})`,
+          norm: 'ABNT NBR 8182 / NBR 5410'
+        };
+      } else {
+        return {
+          desc: `Cabo de Alumínio Multiplexado Quadruplex 0,6/1kV XLPE 90°C ${viasPrefix}(3x${gauge} + 1x${gauge} N) mm² (${circuitRole})`,
+          norm: 'ABNT NBR 8182 / NBR 5410'
+        };
+      }
+    }
+
+    return {
+      desc: `Cabo de Cobre 750V/1kV PVC 70°C ${viasPrefix}${gauge}mm² (${circuitRole})`,
+      norm: 'ABNT NBR 5410 / NBR 7288'
+    };
+  };
+
   // 8. Lista de Materiais Quantitativa (BOM)
   const totalBOM: BillOfMaterialItem[] = [];
 
   // Cabos do Trecho 1
+  const t1Cable = formatCableBOMDescription(section1, 'Fases + N + PE');
   totalBOM.push({
     id: 'bom-cabo-t1',
     category: 'condutores',
-    description: `Cabo de Cobre 750V/1kV PVC 70°C ${section1.cableGaugePhaseMM2}mm² (Fases + N + PE)`,
+    description: t1Cable.desc,
     quantity: Math.ceil(section1.distanceTotalM * section1.totalConductorsCount),
     unit: 'm',
     spec: `${section1.totalConductorsCount} vias de ${section1.cableGaugePhaseMM2}mm² com ${section1.marginPercent}% de margem`,
-    normReference: 'NBR 5410 / NBR 7288'
+    normReference: t1Cable.norm
   });
 
   // Eletroduto do Trecho 1
@@ -706,14 +809,15 @@ export function calculateChainTopology(params: ChainTopologyInputParams): ChainT
 
   // Trecho 2 (se houver)
   if (section2) {
+    const t2Cable = formatCableBOMDescription(section2, 'Primário Trafo');
     totalBOM.push({
       id: 'bom-cabo-t2',
       category: 'condutores',
-      description: `Cabo de Cobre 750V/1kV PVC 70°C ${section2.cableGaugePhaseMM2}mm² (Primário Trafo)`,
+      description: t2Cable.desc,
       quantity: Math.ceil(section2.distanceTotalM * section2.totalConductorsCount),
       unit: 'm',
       spec: `${section2.totalConductorsCount} vias com ${section2.marginPercent}% margem`,
-      normReference: 'NBR 5410'
+      normReference: t2Cable.norm
     });
     totalBOM.push({
       id: 'bom-duto-t2',
@@ -728,14 +832,15 @@ export function calculateChainTopology(params: ChainTopologyInputParams): ChainT
 
   // Trecho 3 (se houver)
   if (section3) {
+    const t3Cable = formatCableBOMDescription(section3, 'Secundário Trafo 380V');
     totalBOM.push({
       id: 'bom-cabo-t3',
       category: 'condutores',
-      description: `Cabo de Cobre 750V/1kV PVC 70°C ${section3.cableGaugePhaseMM2}mm² (Secundário Trafo 380V)`,
+      description: t3Cable.desc,
       quantity: Math.ceil(section3.distanceTotalM * section3.totalConductorsCount),
       unit: 'm',
       spec: `${section3.totalConductorsCount} vias (${section3.conductorsPerPhase} por fase) com ${section3.marginPercent}% margem`,
-      normReference: 'NBR 5410'
+      normReference: t3Cable.norm
     });
     totalBOM.push({
       id: 'bom-duto-t3',
@@ -750,14 +855,15 @@ export function calculateChainTopology(params: ChainTopologyInputParams): ChainT
 
   // Trechos 4 (Alimentadores dos Carregadores)
   section4_feeders.forEach((feeder, i) => {
+    const t4Cable = formatCableBOMDescription(feeder, feeder.toNode);
     totalBOM.push({
       id: `bom-cabo-t4-${i}`,
       category: 'condutores',
-      description: `Cabo Cobre ${feeder.cableGaugePhaseMM2}mm² p/ ${feeder.toNode}`,
+      description: t4Cable.desc,
       quantity: Math.ceil(feeder.distanceTotalM * feeder.totalConductorsCount),
       unit: 'm',
       spec: `${feeder.totalConductorsCount} vias (L=${feeder.distanceTotalM}m com ${feeder.marginPercent}% margem)`,
-      normReference: 'NBR 5410 / NBR 17019'
+      normReference: t4Cable.norm
     });
     totalBOM.push({
       id: `bom-duto-t4-${i}`,

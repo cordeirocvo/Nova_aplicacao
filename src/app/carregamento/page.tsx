@@ -2164,25 +2164,47 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
                       </p>
                     </div>
 
-                    {/* Comparativo de Números com Todas as Grandezas */}
-                    <div className="bg-white/90 backdrop-blur-sm border border-slate-200 p-4 rounded-2xl min-w-[260px] space-y-2 text-xs shadow-xs">
+                    {/* Comparativo de Números com Todas as Grandezas - Claro e Transparente */}
+                    <div className="bg-white/95 backdrop-blur-sm border border-slate-200 p-4 rounded-2xl min-w-[280px] space-y-2 text-xs shadow-xs">
                       <div className="flex justify-between border-b border-slate-100 pb-1.5">
-                        <span className="text-slate-500 font-medium">Carga Bruta Total (sem Fsim):</span>
-                        <strong className={`font-black ${isOverBT ? 'text-[#E45318]' : 'text-slate-900'}`}>{nominalSumKW} kW</strong>
+                        <span className="text-slate-500 font-medium">1. Capacidade do Padrão Atual ({currentStandardCategoryId}):</span>
+                        <strong className="text-slate-900 font-bold">{utilityAnalysis.currentCategory?.maxLimitKW || 0} kW ({utilityAnalysis.currentCategory?.breakerCurrentA || 0}A)</strong>
                       </div>
                       <div className="flex justify-between border-b border-slate-100 pb-1.5">
-                        <span className="text-slate-500 font-medium">Demanda Diversificada (Fsim {(utilityAnalysis.simultaneityFactorApplied * 100).toFixed(0)}%):</span>
-                        <strong className="text-slate-900 font-black">{utilityAnalysis.totalInstallationLoadKW.toFixed(1)} kW</strong>
+                        <span className="text-slate-500 font-medium">2. Demanda Base do Imóvel:</span>
+                        <strong className="text-slate-900 font-bold">{effectiveExistingLoadKW.toFixed(1)} kW</strong>
                       </div>
                       <div className="flex justify-between border-b border-slate-100 pb-1.5">
-                        <span className="text-slate-500 font-medium">Limite Padrão Atual ({currentStandardCategoryId}):</span>
-                        <strong className="text-slate-900">{utilityAnalysis.currentCategory?.maxLimitKW || 0} kW</strong>
+                        <span className="text-slate-500 font-medium">3. Nova Carga dos Carregadores:</span>
+                        <strong className="text-amber-600 font-bold">+{totalChargersInstalledKW.toFixed(1)} kW</strong>
                       </div>
-                      <div className="flex justify-between border-b border-slate-100 pb-1.5">
-                        <span className="text-slate-500 font-medium">Teto Regulatório BT ({selectedUtility}):</span>
-                        <strong className="text-blue-700">75.0 kW (Tipo C6 / 200A)</strong>
+                      <div className="flex justify-between border-b border-slate-100 pb-1.5 bg-slate-50/80 p-1.5 rounded-lg">
+                        <span className="text-slate-700 font-bold">Demanda Total Simultânea:</span>
+                        <strong className="text-[#E45318] font-black">{utilityAnalysis.totalInstallationLoadKW.toFixed(1)} kW</strong>
                       </div>
-                      <div className="flex justify-between pt-0.5">
+
+                      {/* Saldo: Sobra ou Falta de Carga */}
+                      {(() => {
+                        const standardLimit = utilityAnalysis.currentCategory?.maxLimitKW || 0;
+                        const diffKW = Number((standardLimit - utilityAnalysis.totalInstallationLoadKW).toFixed(1));
+                        const isSurplus = diffKW >= 0;
+                        return (
+                          <div className={`flex justify-between items-center p-2 rounded-xl border ${
+                            isSurplus 
+                              ? 'bg-emerald-50 border-emerald-200 text-emerald-900' 
+                              : 'bg-rose-50 border-rose-200 text-rose-900'
+                          }`}>
+                            <span className="font-bold flex items-center gap-1">
+                              {isSurplus ? '✅ Sobra de Carga (Folga):' : '⚠️ Falta de Carga (Déficit):'}
+                            </span>
+                            <strong className={`text-sm font-black ${isSurplus ? 'text-[#00B356]' : 'text-rose-600'}`}>
+                              {isSurplus ? `+${diffKW} kW` : `${diffKW} kW`}
+                            </strong>
+                          </div>
+                        );
+                      })()}
+
+                      <div className="flex justify-between pt-1 border-t border-slate-100 text-[11px]">
                         <span className="text-slate-500 font-medium">Padrão Homologado Requerido:</span>
                         <strong className="text-[#00B356] font-black">{utilityAnalysis.category.categoryId} ({utilityAnalysis.category.maxLimitKW} {utilityAnalysis.category.categoryId.startsWith('F') ? 'kVA' : 'kW'})</strong>
                       </div>

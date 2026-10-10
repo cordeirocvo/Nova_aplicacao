@@ -330,7 +330,8 @@ export type TypicalProfileType =
   | 'condominio_residencial' 
   | 'edificio_comercial' 
   | 'centro_comercial' 
-  | 'industrial';
+  | 'industrial'
+  | 'posto_combustivel_constante';
 
 export interface HourlyLoadPoint {
   hour: number;                      // 0 a 23
@@ -808,6 +809,7 @@ export interface Panel220VTopologyState {
   requiresBusbar: boolean;
   totalAuxKW: number;          // Potência total ativa das cargas auxiliares habilitadas
   auxiliaryLoads: AuxiliaryLoadsState;
+  customCircuits?: CustomAuxiliaryCircuit[];
 }
 
 export interface Panel380VTopologyState {
@@ -817,6 +819,13 @@ export interface Panel380VTopologyState {
   mainBreakerCurve: 'C';
   requiresBusbar: boolean;     // False se apenas 1 carregador (1 disjuntor unificado, zero barramento)
   busbarRatingA: number;
+  dps380V?: {
+    enabled: boolean;
+    classType: string;
+    rating: string;
+    quantity: number;
+  };
+  customCircuits?: CustomAuxiliaryCircuit[];
   individualBreakers: Array<{
     chargerId: string;
     breakerA: number;
@@ -850,7 +859,19 @@ export interface TransformerTopologyState {
     formulaPrimaryCurrent: string;
     formulaSecondaryCurrent: string;
     notes: string;
+    isCustomSelected?: boolean;
+    isOverloaded?: boolean;
+    overloadPercentage?: number;
   };
+}
+
+export interface CustomAuxiliaryCircuit {
+  id: string;
+  name: string;
+  powerW: number;
+  voltageV: 127 | 220 | 380;
+  breakerA: number;
+  cableMM2: number;
 }
 
 export interface StandardCapacityAlert {

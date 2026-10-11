@@ -77,12 +77,15 @@ export function EVTopologyChainViewer({
     section3ConductorMaterial,
     auxiliaryConfig,
     customTransformerKVA,
+    customTransformerEfficiencyPercent,
+    customTransformerLossesKW,
     customCircuits220V,
     customCircuits380V,
     selectedDrawerNodeId,
     topologyOutput,
     syncFromProjectData,
     setCustomTransformerKVA,
+    setTransformerEfficiencyAndLosses,
     addCustomCircuit,
     removeCustomCircuit,
     addCharger,
@@ -1757,9 +1760,27 @@ export function EVTopologyChainViewer({
                             </div>
                           </div>
 
-                          {/* 4. Critério de Ocupação de Eletroduto */}
+                          {/* 4. Perdas Joule nos Cabos (Efeito Joule NBR 5410) */}
                           <div className="bg-slate-950/80 p-2.5 rounded-lg border border-slate-800 space-y-1">
-                            <span className="text-slate-400 font-sans font-semibold text-[11px] block">4. Eletrodutos & Taxa de Ocupação:</span>
+                            <div className="flex items-center justify-between">
+                              <span className="text-slate-400 font-sans font-semibold text-[11px] block">4. Perdas por Efeito Joule nos Condutores:</span>
+                              <span className="text-[10px] text-amber-400 font-bold">
+                                {sec.calculationBreakdown?.jouleLossesKW !== undefined ? `${sec.calculationBreakdown.jouleLossesKW} kW` : `${sec.calculationBreakdown?.jouleLossesWatts ?? 0} W`}
+                                {sec.calculationBreakdown?.jouleLossesPercent !== undefined ? ` (${sec.calculationBreakdown.jouleLossesPercent}%)` : ''}
+                              </span>
+                            </div>
+                            <div className="text-amber-300 text-[11px] font-bold">
+                              {sec.calculationBreakdown?.formulaJouleLosses || `P_perda = 3 · R · I²`}
+                            </div>
+                            <div className="text-[10px] text-slate-400 flex flex-wrap gap-2">
+                              <span>Resistência de Fase: <b className="text-white">{sec.calculationBreakdown?.cableResistanceOhm !== undefined ? `${sec.calculationBreakdown.cableResistanceOhm.toFixed(4)} Ω` : 'N/A'}</b></span>
+                              <span>• Perda Total do Trecho: <b className="text-amber-400">{sec.calculationBreakdown?.jouleLossesWatts ?? 0} W</b></span>
+                            </div>
+                          </div>
+
+                          {/* 5. Critério de Ocupação de Eletroduto */}
+                          <div className="bg-slate-950/80 p-2.5 rounded-lg border border-slate-800 space-y-1">
+                            <span className="text-slate-400 font-sans font-semibold text-[11px] block">5. Eletrodutos & Taxa de Ocupação:</span>
                             <div className="text-slate-200 text-[11px]">
                               Eletroduto: <b className="text-amber-400">{sec.conduitInches} ({sec.conduitDiameterMM}mm interno)</b>
                             </div>
@@ -1826,7 +1847,7 @@ export function EVTopologyChainViewer({
                             <span className="text-slate-400 text-xs">kVA</span>
                           </div>
 
-                          {/* Presets comerciais redondos */}
+                        {/* Presets comerciais redondos */}
                           <div className="flex items-center gap-1 text-[10px]">
                             {[50, 75, 100, 150, 225].map((k) => (
                               <button
@@ -1845,6 +1866,71 @@ export function EVTopologyChainViewer({
                           </div>
                         </div>
 
+                        {/* Configuração de Rendimento e Perdas Internas do Trafo */}
+                        <div className="pt-2 border-t border-slate-800/80 grid grid-cols-2 gap-2">
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-[10px] text-slate-400 font-sans">Rendimento (η %):</span>
+                              {customTransformerEfficiencyPercent !== undefined && (
+                                <button
+                                  type="button"
+                                  onClick={() => setTransformerEfficiencyAndLosses(undefined, customTransformerLossesKW)}
+                                  className="text-[9px] text-amber-400 underline"
+                                >
+                                  Padrão
+                                </button>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <input
+                                type="number"
+                                min="85"
+                                max="99.9"
+                                step="0.1"
+                                placeholder="97.5"
+                                value={customTransformerEfficiencyPercent ?? transformer.efficiencyPercent ?? 97.5}
+                                onChange={(e) => {
+                                  const val = Number(e.target.value);
+                                  setTransformerEfficiencyAndLosses(val > 0 ? val : undefined, customTransformerLossesKW);
+                                }}
+                                className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-center font-bold text-xs text-white"
+                              />
+                              <span className="text-slate-400 text-[10px] font-mono">%</span>
+                            </div>
+                          </div>
+
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-[10px] text-slate-400 font-sans">Perdas Totais (kW):</span>
+                              {customTransformerLossesKW !== undefined && (
+                                <button
+                                  type="button"
+                                  onClick={() => setTransformerEfficiencyAndLosses(customTransformerEfficiencyPercent, undefined)}
+                                  className="text-[9px] text-amber-400 underline"
+                                >
+                                  Padrão
+                                </button>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <input
+                                type="number"
+                                min="0"
+                                max="100"
+                                step="0.1"
+                                placeholder="Ex: 1.5"
+                                value={customTransformerLossesKW ?? transformer.lossesKW ?? ''}
+                                onChange={(e) => {
+                                  const val = Number(e.target.value);
+                                  setTransformerEfficiencyAndLosses(customTransformerEfficiencyPercent, val > 0 ? val : undefined);
+                                }}
+                                className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-center font-bold text-xs text-amber-400"
+                              />
+                              <span className="text-slate-400 text-[10px] font-mono">kW</span>
+                            </div>
+                          </div>
+                        </div>
+
                         {/* Alerta de Sobrecarga do Trafo se o usuário digitar valor inferior */}
                         {transformer.calculationBreakdown?.isOverloaded && (
                           <div className="p-2 rounded bg-rose-950/60 border border-rose-600 text-rose-300 text-[11px] space-y-1">
@@ -1860,8 +1946,18 @@ export function EVTopologyChainViewer({
                         <div className="text-amber-400 text-[11px] font-bold">
                           {transformer.calculationBreakdown?.formulaKVA || `S = ${transformer.nominalKVA} kVA`}
                         </div>
-                        <div className="text-[10px] text-slate-400">
-                          Carga total dos carregadores 380V: <b>{transformer.calculationBreakdown?.totalLoadChargersKW} kW</b> | cos φ = 0.98 | η = 0.97 | Margem recomendada: +15%
+                        {transformer.calculationBreakdown?.formulaLosses && (
+                          <div className="text-emerald-400 text-[11px]">
+                            {transformer.calculationBreakdown.formulaLosses}
+                          </div>
+                        )}
+                        <div className="text-[10px] text-slate-400 space-y-0.5">
+                          <div>
+                            Carga nos carregadores 380V: <b>{transformer.calculationBreakdown?.totalLoadChargersKW} kW</b> | Perdas nos alimentadores: <b>{transformer.calculationBreakdown?.totalFeedersLossKW ?? 0} kW</b>
+                          </div>
+                          <div>
+                            Potência secundária total: <b>{transformer.calculationBreakdown?.totalSecondaryPowerKW} kW</b> | Primário com perdas: <b>{transformer.calculationBreakdown?.totalPrimaryPowerKW} kW</b>
+                          </div>
                         </div>
                       </div>
 
@@ -2076,24 +2172,73 @@ export function EVTopologyChainViewer({
                               />
                             </div>
                           </div>
+
+                          {/* Perdas Internas e Rendimento do Carregador */}
+                          <div className="p-2.5 rounded-lg bg-slate-950/80 border border-slate-800 space-y-2">
+                            <span className="text-[10px] text-slate-300 font-bold uppercase block">
+                              Parâmetros de Eficiência e Perdas Internas (Datasheet / Medição):
+                            </span>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <label className="block text-slate-400 text-[10px] font-sans mb-0.5">Rendimento Interno (η %):</label>
+                                <div className="flex items-center gap-1">
+                                  <input
+                                    type="number"
+                                    min="70"
+                                    max="99.9"
+                                    step="0.1"
+                                    placeholder={c.type === 'DC' ? '95.0' : '98.5'}
+                                    value={c.efficiencyPercent ?? (c.type === 'DC' ? 95 : 98.5)}
+                                    onChange={(e) => {
+                                      const val = Number(e.target.value);
+                                      updateCharger(c.id, { efficiencyPercent: val > 0 ? val : undefined });
+                                    }}
+                                    className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white text-xs font-mono text-center"
+                                  />
+                                  <span className="text-slate-400 text-[10px] font-mono">%</span>
+                                </div>
+                              </div>
+                              <div>
+                                <label className="block text-slate-400 text-[10px] font-sans mb-0.5">Perdas Internas (kW):</label>
+                                <div className="flex items-center gap-1">
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    max="50"
+                                    step="0.05"
+                                    placeholder="Ex: 0.8"
+                                    value={c.internalLossesKW ?? ''}
+                                    onChange={(e) => {
+                                      const val = Number(e.target.value);
+                                      updateCharger(c.id, { internalLossesKW: val > 0 ? val : undefined });
+                                    }}
+                                    className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-amber-400 text-xs font-mono text-center"
+                                  />
+                                  <span className="text-slate-400 text-[10px] font-mono">kW</span>
+                                </div>
+                              </div>
+                            </div>
+                            <p className="text-[9px] text-slate-400">
+                              A potência demandada da rede incorpora as perdas de conversão (P_in = P_out / η ou P_out + P_perdas).
+                            </p>
+                          </div>
                         </div>
 
-                        {/* Dados Eletrotécnicos do Alimentador Individual */}
+                        {/* Dados Eletrotécnicos do Alimentador Individual com Memorial Completo */}
                         {feeder && (
                           <div className="bg-slate-900/90 rounded-xl p-3 border border-slate-800 space-y-2 text-xs font-mono">
                             <div className="flex items-center justify-between border-b border-slate-800 pb-1">
                               <h5 className="font-sans font-bold text-white text-xs">
-                                Memorial Alimentador Individual (Trecho 4):
+                                Memorial de Cálculo Matemático Passo a Passo:
                               </h5>
                               <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-sans font-bold">
-                                Conforme NBR 5410 & Fabricante
+                                NBR 5410 & NBR 17019
                               </span>
                             </div>
 
                             {/* Verificação do Cabo Mínimo Exigido pelo Manual do Fabricante */}
                             {(() => {
-                              // Requisitos típicos de manual de instalação (ex: WEG WEMOB / BENY)
-                              let minManufacturerGauge = 6; // default 7.4kW / 22kW
+                              let minManufacturerGauge = 6;
                               if (c.powerKW >= 80) minManufacturerGauge = 50;
                               else if (c.powerKW >= 60) minManufacturerGauge = 35;
                               else if (c.powerKW >= 40) minManufacturerGauge = 25;
@@ -2115,38 +2260,71 @@ export function EVTopologyChainViewer({
                                       {feeder.cableGaugePhaseMM2} mm² {satisfiesManufacturer ? '✅ Atende' : '⚠️ Abaixo do recomendado'}
                                     </span>
                                   </div>
-                                  <p className="text-[10px] text-slate-400 font-sans">
-                                    {satisfiesManufacturer
-                                      ? `O condutor projetado (${feeder.cableGaugePhaseMM2} mm²) é compatível ou superior à bitola mínima de ${minManufacturerGauge} mm² exigida pelo fabricante para garantia do equipamento.`
-                                      : `Atenção: O fabricante exige bitola mínima de ${minManufacturerGauge} mm² nos bornes de conexão.`}
-                                  </p>
                                 </div>
                               );
                             })()}
 
-                            <div className="flex justify-between">
-                              <span className="text-slate-400">Distância Total (+margem):</span>
-                              <span className="text-white font-bold">{feeder.distanceTotalM} m</span>
+                            {/* 1. Corrente de Projeto */}
+                            <div className="bg-slate-950/80 p-2 rounded border border-slate-800 space-y-1">
+                              <span className="text-slate-400 font-sans font-semibold text-[11px] block">1. Corrente de Projeto (Ib):</span>
+                              <div className="text-amber-400 text-[11px] font-bold">
+                                {feeder.calculationBreakdown?.formulaDesignCurrent || `Ib = ${feeder.designCurrentA} A`}
+                              </div>
+                              <div className="text-[10px] text-slate-400">
+                                Distância: {feeder.distanceNominalM}m + {feeder.marginPercent}% folga = <b>{feeder.distanceTotalM}m</b>
+                              </div>
                             </div>
-                            <div className="flex justify-between">
-                              <span className="text-slate-400">Corrente de Entrada (In):</span>
-                              <span className="text-amber-400 font-bold">{feeder.designCurrentA} A</span>
+
+                            {/* 2. Critério de Ampacidade */}
+                            <div className="bg-slate-950/80 p-2 rounded border border-slate-800 space-y-1">
+                              <span className="text-slate-400 font-sans font-semibold text-[11px] block">2. Critério de Ampacidade (NBR 5410):</span>
+                              <div className="text-emerald-400 text-[11px]">
+                                {feeder.calculationBreakdown?.formulaAmpacity || `Iz = ${feeder.totalAmpacityA} A ≥ Ib (${feeder.designCurrentA} A)`}
+                              </div>
+                              <div className="text-[10px] text-slate-300 flex flex-wrap gap-2">
+                                <span>Bitola Fase: <b className="text-[#00B356]">{feeder.cableGaugePhaseMM2} mm² Cu</b></span>
+                                <span>• Neutro: <b className="text-blue-400">{feeder.cableGaugeNeutralMM2 ? `${feeder.cableGaugeNeutralMM2} mm²` : 'N/A'}</b></span>
+                                <span>• PE: <b className="text-emerald-400">{feeder.cableGaugeGroundMM2} mm²</b></span>
+                              </div>
                             </div>
-                            <div className="flex justify-between">
-                              <span className="text-slate-400">Cabo de Fase Recomendado:</span>
-                              <span className="text-emerald-400 font-bold">{feeder.cableGaugePhaseMM2} mm²</span>
+
+                            {/* 3. Critério de Queda de Tensão */}
+                            <div className="bg-slate-950/80 p-2 rounded border border-slate-800 space-y-1">
+                              <span className="text-slate-400 font-sans font-semibold text-[11px] block">3. Queda de Tensão (NBR 5410 / NBR 17019):</span>
+                              <div className={`text-[11px] font-bold ${feeder.isVoltageDropCompliant ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                {feeder.calculationBreakdown?.formulaVoltageDrop || `ΔV = ${feeder.voltageDropVolts}V (${feeder.voltageDropPercent}%)`}
+                              </div>
+                              <div className="text-[10px] text-slate-400">
+                                Limite normativo do trecho: &le; 2.0% (Status: <b>{feeder.isVoltageDropCompliant ? 'APROVADO' : 'REPROVADO'}</b>)
+                              </div>
                             </div>
-                            <div className="flex justify-between">
-                              <span className="text-slate-400">Condutor Proteção (PE):</span>
-                              <span className="text-emerald-400 font-bold">{feeder.cableGaugeGroundMM2} mm²</span>
+
+                            {/* 4. Perdas Joule no Cabo do Alimentador */}
+                            <div className="bg-slate-950/80 p-2 rounded border border-slate-800 space-y-1">
+                              <div className="flex items-center justify-between">
+                                <span className="text-slate-400 font-sans font-semibold text-[11px] block">4. Perdas Joule no Cabo:</span>
+                                <span className="text-[10px] text-amber-400 font-bold">
+                                  {feeder.calculationBreakdown?.jouleLossesKW !== undefined ? `${feeder.calculationBreakdown.jouleLossesKW} kW` : `${feeder.calculationBreakdown?.jouleLossesWatts ?? 0} W`}
+                                  {feeder.calculationBreakdown?.jouleLossesPercent !== undefined ? ` (${feeder.calculationBreakdown.jouleLossesPercent}%)` : ''}
+                                </span>
+                              </div>
+                              <div className="text-amber-300 text-[11px]">
+                                {feeder.calculationBreakdown?.formulaJouleLosses || `P_perda = 3 · R · I²`}
+                              </div>
+                              <div className="text-[10px] text-slate-400">
+                                Resistência: <b>{feeder.calculationBreakdown?.cableResistanceOhm !== undefined ? `${feeder.calculationBreakdown.cableResistanceOhm.toFixed(4)} Ω` : 'N/A'}</b> | Perda: <b>{feeder.calculationBreakdown?.jouleLossesWatts ?? 0} W</b>
+                              </div>
                             </div>
-                            <div className="flex justify-between">
-                              <span className="text-slate-400">Queda de Tensão (ΔV):</span>
-                              <span className="text-emerald-400 font-bold">{feeder.voltageDropPercent}% ({feeder.voltageDropVolts}V)</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-slate-400">Eletroduto & Ocupação:</span>
-                              <span className="text-white font-bold">{feeder.conduitInches} ({feeder.conduitFillingRatePercent}% ocup.)</span>
+
+                            {/* 5. Eletrodutos & Ocupação */}
+                            <div className="bg-slate-950/80 p-2 rounded border border-slate-800 space-y-1">
+                              <span className="text-slate-400 font-sans font-semibold text-[11px] block">5. Eletrodutos & Taxa de Ocupação:</span>
+                              <div className="text-slate-200 text-[11px]">
+                                Eletroduto: <b className="text-amber-400">{feeder.conduitInches} ({feeder.conduitDiameterMM}mm interno)</b>
+                              </div>
+                              <div className="text-[10px] text-slate-400">
+                                Taxa de ocupação calculada: <b className="text-emerald-400">{feeder.conduitFillingRatePercent}%</b> (&le; 40% NBR 5410)
+                              </div>
                             </div>
                           </div>
                         )}
@@ -2216,6 +2394,13 @@ export function EVTopologyChainViewer({
                                   <div className="flex justify-between">
                                     <span className="text-slate-400">Queda de Tensão (ΔV):</span>
                                     <span className="text-emerald-400 font-bold">{feeder.voltageDropPercent}% ({feeder.voltageDropVolts}V)</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-slate-400">Perdas Joule no Cabo:</span>
+                                    <span className="text-amber-400 font-bold">
+                                      {feeder.calculationBreakdown?.jouleLossesKW !== undefined ? `${feeder.calculationBreakdown.jouleLossesKW} kW` : `${feeder.calculationBreakdown?.jouleLossesWatts ?? 0} W`}
+                                      {feeder.calculationBreakdown?.jouleLossesPercent !== undefined ? ` (${feeder.calculationBreakdown.jouleLossesPercent}%)` : ''}
+                                    </span>
                                   </div>
                                   <div className="flex justify-between">
                                     <span className="text-slate-400">Condutor Proteção (PE):</span>

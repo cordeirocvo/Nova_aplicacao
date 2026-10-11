@@ -721,6 +721,10 @@ export interface TopologyChargerNode {
   distanceMeters: number;      // Distância individual do Trecho 4 (Painel -> Carregador)
   marginPercent: number;        // Margem de erro do cabo (ex: 10% ou 15%)
   photoUrl?: string;
+  efficiencyPercent?: number;  // Rendimento interno do carregador (ex: 95% para DC, 98.5% para AC)
+  internalLossesKW?: number;   // Perdas internas do carregador em kW
+  conductorMaterial?: 'copper' | 'aluminum';
+  installationMethod?: 'B1' | 'B2' | 'C' | 'D';
 }
 
 export interface SectionCableConduitSizing {
@@ -753,9 +757,14 @@ export interface SectionCableConduitSizing {
   calculationBreakdown?: {
     apparentPowerKVA?: number;
     activePowerKW?: number;
+    cableResistanceOhm?: number;
+    jouleLossesWatts?: number;
+    jouleLossesKW?: number;
+    jouleLossesPercent?: number;
     formulaDesignCurrent?: string;
     formulaAmpacity?: string;
     formulaVoltageDrop?: string;
+    formulaJouleLosses?: string;
     fct?: number;
     fca?: number;
     rhoCopper?: number;
@@ -858,10 +867,15 @@ export interface TransformerTopologyState {
   connectionGroup: string;     // Dyn1
   inrushCurveProtection: 'D';  // Curva D obrigatória
   lossesKW: number;
+  efficiencyPercent?: number;  // Rendimento nominal do trafo (ex: 97.5%)
+  customLossesKW?: number;     // Perdas diretas informadas do ensaio de perdas no cobre + ferro
   apparentPowerKVA?: number;
   activePowerKW?: number;
   calculationBreakdown?: {
     totalLoadChargersKW: number;
+    totalFeedersLossKW?: number;
+    totalSecondaryPowerKW?: number;
+    totalPrimaryPowerKW?: number;
     cosPhi: number;
     efficiency: number;
     safetyMarginFactor: number;
@@ -870,6 +884,7 @@ export interface TransformerTopologyState {
     formulaKVA: string;
     formulaPrimaryCurrent: string;
     formulaSecondaryCurrent: string;
+    formulaLosses?: string;
     notes: string;
     isCustomSelected?: boolean;
     isOverloaded?: boolean;

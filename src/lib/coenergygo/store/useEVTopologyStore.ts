@@ -42,6 +42,8 @@ interface EVTopologyStoreState {
 
   // Customização do Transformador
   customTransformerKVA?: number;
+  customTransformerEfficiencyPercent?: number;
+  customTransformerLossesKW?: number;
 
   // Circuitos Customizados dos Painéis
   customCircuits220V: Array<{
@@ -85,6 +87,7 @@ interface EVTopologyStoreState {
   }) => void;
   setDLMSettings: (hasDLM: boolean, maxCapKW?: number) => void;
   setCustomTransformerKVA: (kva: number | undefined) => void;
+  setTransformerEfficiencyAndLosses: (efficiencyPercent?: number, lossesKW?: number) => void;
   addCustomCircuit: (panel: '220v' | '380v', circuit: { name: string; powerW: number; voltageV: 127 | 220 | 380 }) => void;
   removeCustomCircuit: (panel: '220v' | '380v', id: string) => void;
   addCharger: (charger: Omit<TopologyChargerNode, 'id'>) => void;
@@ -168,6 +171,8 @@ export const useEVTopologyStore = create<EVTopologyStoreState>((set, get) => {
       customCircuits220V: currentState.customCircuits220V || initialSaved220V,
       customCircuits380V: currentState.customCircuits380V || initialSaved380V,
       customTransformerKVA: currentState.customTransformerKVA,
+      customTransformerEfficiencyPercent: currentState.customTransformerEfficiencyPercent,
+      customTransformerLossesKW: currentState.customTransformerLossesKW,
       hasSmartChargingDLM: currentState.hasSmartChargingDLM,
       maxChargerCapKW: currentState.maxChargerCapKW
     });
@@ -222,6 +227,8 @@ export const useEVTopologyStore = create<EVTopologyStoreState>((set, get) => {
     customCircuits220V: initialSaved220V,
     customCircuits380V: initialSaved380V,
     customTransformerKVA: undefined,
+    customTransformerEfficiencyPercent: undefined,
+    customTransformerLossesKW: undefined,
 
     auxiliaryConfig: {
       cctvEnabled: true,
@@ -272,6 +279,19 @@ export const useEVTopologyStore = create<EVTopologyStoreState>((set, get) => {
       set((state) => {
         const nextState: Partial<EVTopologyStoreState> = {
           customTransformerKVA: kva
+        };
+        return {
+          ...nextState,
+          topologyOutput: computeOutput(nextState)
+        };
+      });
+    },
+
+    setTransformerEfficiencyAndLosses: (efficiencyPercent, lossesKW) => {
+      set((state) => {
+        const nextState: Partial<EVTopologyStoreState> = {
+          customTransformerEfficiencyPercent: efficiencyPercent,
+          customTransformerLossesKW: lossesKW
         };
         return {
           ...nextState,

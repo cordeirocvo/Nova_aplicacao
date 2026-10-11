@@ -203,6 +203,22 @@ export default function CoenergyGODashboard() {
   const [customHourlyFactors, setCustomHourlyFactors] = useState<number[]>(Array(24).fill(1.0));
   const [customProfileName, setCustomProfileName] = useState<string>("Perfil do Projetista");
   const [isCopied, setIsCopied] = useState<boolean>(false);
+  const [uiThemeMode, setUiThemeMode] = useState<"STUDIO_DARK" | "CLASSIC">(() => {
+    if (typeof window !== "undefined") {
+      const s = localStorage.getItem("coenergygo_ui_theme_mode");
+      if (s === "CLASSIC" || s === "STUDIO_DARK") return s;
+    }
+    return "STUDIO_DARK";
+  });
+
+  const handleToggleThemeMode = (mode: "STUDIO_DARK" | "CLASSIC") => {
+    setUiThemeMode(mode);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("coenergygo_ui_theme_mode", mode);
+      } catch (e) {}
+    }
+  };
 
   // ─── CARREGAR PROJETOS EXISTENTES (BANCO SUPABASE + LOCALSTORAGE RESILIENTE) ─
   useEffect(() => {
@@ -679,6 +695,18 @@ export default function CoenergyGODashboard() {
       setClientProjectData(prev => ({ ...prev, ...p.clientProjectData }));
     }
 
+    // Restaurar Circuitos Customizados dos Painéis 220V e 380V
+    if (Array.isArray(p.customCircuits220V)) {
+      try {
+        localStorage.setItem('coenergygo_custom_circuits_220v', JSON.stringify(p.customCircuits220V));
+      } catch (e) {}
+    }
+    if (Array.isArray(p.customCircuits380V)) {
+      try {
+        localStorage.setItem('coenergygo_custom_circuits_380v', JSON.stringify(p.customCircuits380V));
+      } catch (e) {}
+    }
+
     // Se possui lista completa de carregadores restaurada do snapshot
     if (Array.isArray(p.configuredChargers) && p.configuredChargers.length > 0) {
       setConfiguredChargers(p.configuredChargers);
@@ -983,6 +1011,22 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
       totalPowerKW: totalChargersInstalledKW,
       configuredChargers: configuredChargers,
       commercialHub: commercialHub,
+      customCircuits220V: (() => {
+        try {
+          const s = localStorage.getItem('coenergygo_custom_circuits_220v');
+          return s ? JSON.parse(s) : [];
+        } catch (e) {
+          return [];
+        }
+      })(),
+      customCircuits380V: (() => {
+        try {
+          const s = localStorage.getItem('coenergygo_custom_circuits_380v');
+          return s ? JSON.parse(s) : [];
+        } catch (e) {
+          return [];
+        }
+      })(),
       clientProjectData: {
         ...clientProjectData,
         projectName: resolvedProjectName,
@@ -1207,6 +1251,34 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
+              {/* Seletor do Modo de Exibição (Reversível a qualquer momento) */}
+              <div className="bg-slate-900/90 p-1 rounded-2xl flex gap-1 border border-slate-700/80 shadow-md">
+                <button
+                  type="button"
+                  onClick={() => handleToggleThemeMode('STUDIO_DARK')}
+                  className={`px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                    uiThemeMode === 'STUDIO_DARK'
+                      ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                  title="Interface escura ergonômica com contraste WCAG AAA para menor fadiga visual em sessões estendidas"
+                >
+                  <span>🌙</span> Studio Ergonômico
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleToggleThemeMode('CLASSIC')}
+                  className={`px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                    uiThemeMode === 'CLASSIC'
+                      ? 'bg-white text-slate-900 shadow-sm font-black'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                  title="Voltar ao layout clássico original a qualquer momento com 1 clique"
+                >
+                  <span>☀️</span> Modo Clássico
+                </button>
+              </div>
+
               <Link 
                 href="/engenharia/padrao-cemig"
                 className="bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-3 rounded-2xl flex items-center gap-2 border border-slate-700 text-xs font-bold transition-all shadow-sm"

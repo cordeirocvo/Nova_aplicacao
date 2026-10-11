@@ -80,6 +80,8 @@ interface EVTopologyStoreState {
     chargers?: TopologyChargerNode[];
     hasSmartChargingDLM?: boolean;
     maxChargerCapKW?: number;
+    customCircuits220V?: Array<{ id: string; name: string; powerW: number; voltageV: 127 | 220; breakerA: number; cableMM2: number }>;
+    customCircuits380V?: Array<{ id: string; name: string; powerW: number; voltageV: 220 | 380; breakerA: number; cableMM2: number }>;
   }) => void;
   setDLMSettings: (hasDLM: boolean, maxCapKW?: number) => void;
   setCustomTransformerKVA: (kva: number | undefined) => void;
@@ -123,6 +125,20 @@ const INITIAL_CHARGERS: TopologyChargerNode[] = [
 ];
 
 export const useEVTopologyStore = create<EVTopologyStoreState>((set, get) => {
+  // Ler circuitos customizados salvos no localStorage para persistência imediata
+  let initialSaved220V: any[] = [];
+  let initialSaved380V: any[] = [];
+  if (typeof window !== 'undefined') {
+    try {
+      const s220 = localStorage.getItem('coenergygo_custom_circuits_220v');
+      if (s220) initialSaved220V = JSON.parse(s220);
+      const s380 = localStorage.getItem('coenergygo_custom_circuits_380v');
+      if (s380) initialSaved380V = JSON.parse(s380);
+    } catch (e) {
+      console.warn('Erro ao carregar circuitos auxiliares do localStorage:', e);
+    }
+  }
+
   const computeOutput = (state: Partial<EVTopologyStoreState>): ChainTopologyOutput => {
     const currentState = { ...get(), ...state };
     return calculateChainTopology({
@@ -149,8 +165,8 @@ export const useEVTopologyStore = create<EVTopologyStoreState>((set, get) => {
         lightingEnabled: true,
         lightingPowerW: 400
       },
-      customCircuits220V: currentState.customCircuits220V || [],
-      customCircuits380V: currentState.customCircuits380V || [],
+      customCircuits220V: currentState.customCircuits220V || initialSaved220V,
+      customCircuits380V: currentState.customCircuits380V || initialSaved380V,
       customTransformerKVA: currentState.customTransformerKVA,
       hasSmartChargingDLM: currentState.hasSmartChargingDLM,
       maxChargerCapKW: currentState.maxChargerCapKW
@@ -181,8 +197,8 @@ export const useEVTopologyStore = create<EVTopologyStoreState>((set, get) => {
       lightingEnabled: true,
       lightingPowerW: 400
     },
-    customCircuits220V: [],
-    customCircuits380V: []
+    customCircuits220V: initialSaved220V,
+    customCircuits380V: initialSaved380V
   });
 
   return {
@@ -203,8 +219,8 @@ export const useEVTopologyStore = create<EVTopologyStoreState>((set, get) => {
     section3MarginPercent: 10,
     section3ConductorMaterial: 'copper',
 
-    customCircuits220V: [],
-    customCircuits380V: [],
+    customCircuits220V: initialSaved220V,
+    customCircuits380V: initialSaved380V,
     customTransformerKVA: undefined,
 
     auxiliaryConfig: {
@@ -228,7 +244,9 @@ export const useEVTopologyStore = create<EVTopologyStoreState>((set, get) => {
           gridSupplyVoltage: data.gridSupplyVoltage ?? state.gridSupplyVoltage,
           chargers: data.chargers && data.chargers.length > 0 ? data.chargers : state.chargers,
           hasSmartChargingDLM: data.hasSmartChargingDLM !== undefined ? data.hasSmartChargingDLM : state.hasSmartChargingDLM,
-          maxChargerCapKW: data.maxChargerCapKW !== undefined ? data.maxChargerCapKW : state.maxChargerCapKW
+          maxChargerCapKW: data.maxChargerCapKW !== undefined ? data.maxChargerCapKW : state.maxChargerCapKW,
+          customCircuits220V: data.customCircuits220V && data.customCircuits220V.length > 0 ? data.customCircuits220V : state.customCircuits220V,
+          customCircuits380V: data.customCircuits380V && data.customCircuits380V.length > 0 ? data.customCircuits380V : state.customCircuits380V
         };
         return {
           ...nextState,
@@ -275,9 +293,22 @@ export const useEVTopologyStore = create<EVTopologyStoreState>((set, get) => {
           cableMM2: calcCable
         };
 
-        const nextState: Partial<EVTopologyStoreState> = panel === '220v'
-          ? { customCircuits220V: [...state.customCircuits220V, newCircuit] }
-          : { customCircuits380V: [...state.customCircuits380V, newCircuit] };
+        const nextCircuits220V = panel === '220v' ? [...state.customCircuits220V, newCircuit] : state.customCircuits220V;
+        const nextCircuits380V = panel === '380v' ? [...state.customCircuits380V, newCircuit] : state.customCircuits380V;
+
+        if (typeof window !== 'undefined') {
+          try {
+            if (panel === '220v') localStorage.setItem('coenergygo_custom_circuits_220v', JSON.stringify(nextCircuits220V));
+            if (panel === '380v') localStorage.setItem('coenergygo_custom_circuits_380v', JSON.stringify(nextCircuits380V));
+          } catch (e) {
+            console.warn('Erro ao salvar circuitos auxiliares no localStorage:', e);
+          }
+        }
+
+        const nextState: Partial<EVTopologyStoreState> = {
+          customCircuits220V: nextCircuits220V,
+          customCircuits380V: nextCircuits380V
+        };
 
         return {
           ...nextState,
@@ -288,9 +319,22 @@ export const useEVTopologyStore = create<EVTopologyStoreState>((set, get) => {
 
     removeCustomCircuit: (panel, id) => {
       set((state) => {
-        const nextState: Partial<EVTopologyStoreState> = panel === '220v'
-          ? { customCircuits220V: state.customCircuits220V.filter(c => c.id !== id) }
-          : { customCircuits380V: state.customCircuits380V.filter(c => c.id !== id) };
+        const nextCircuits220V = panel === '220v' ? state.customCircuits220V.filter(c => c.id !== id) : state.customCircuits220V;
+        const nextCircuits380V = panel === '380v' ? state.customCircuits380V.filter(c => c.id !== id) : state.customCircuits380V;
+
+        if (typeof window !== 'undefined') {
+          try {
+            if (panel === '220v') localStorage.setItem('coenergygo_custom_circuits_220v', JSON.stringify(nextCircuits220V));
+            if (panel === '380v') localStorage.setItem('coenergygo_custom_circuits_380v', JSON.stringify(nextCircuits380V));
+          } catch (e) {
+            console.warn('Erro ao salvar circuitos auxiliares no localStorage:', e);
+          }
+        }
+
+        const nextState: Partial<EVTopologyStoreState> = {
+          customCircuits220V: nextCircuits220V,
+          customCircuits380V: nextCircuits380V
+        };
 
         return {
           ...nextState,

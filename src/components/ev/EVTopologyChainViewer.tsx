@@ -136,6 +136,24 @@ export function EVTopologyChainViewer({
   const [activeTab, setActiveTab] = useState<'vis' | 'bom' | 'sections'>('vis');
   const [showAddChargerModal, setShowAddChargerModal] = useState(false);
   const [includeEntranceStandardInBOM, setIncludeEntranceStandardInBOM] = useState<boolean>(true);
+  const [uiMode, setUiMode] = useState<'STUDIO_DARK' | 'CLASSIC'>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('coenergygo_ui_theme_mode');
+      if (saved === 'CLASSIC' || saved === 'STUDIO_DARK') return saved;
+    }
+    return 'STUDIO_DARK';
+  });
+
+  const handleToggleUiMode = (mode: 'STUDIO_DARK' | 'CLASSIC') => {
+    setUiMode(mode);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('coenergygo_ui_theme_mode', mode);
+      } catch (e) {}
+    }
+  };
+
+  const isDark = uiMode === 'STUDIO_DARK';
 
   const {
     standardAlert,
@@ -193,7 +211,35 @@ export function EVTopologyChainViewer({
         </div>
 
         {/* Botões de Ação Rápida e Abas */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Seletor do Modo de Exibição (Reversível) */}
+          <div className="bg-slate-900/90 p-1 rounded-xl flex gap-1 border border-slate-700/80 shadow-md">
+            <button
+              type="button"
+              onClick={() => handleToggleUiMode('STUDIO_DARK')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                isDark
+                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+              title="Interface escura ergonômica com contraste WCAG AAA para menor fadiga visual"
+            >
+              <span>🌙</span> Studio Ergonômico
+            </button>
+            <button
+              type="button"
+              onClick={() => handleToggleUiMode('CLASSIC')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                !isDark
+                  ? 'bg-white text-slate-900 shadow-sm font-black'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+              title="Voltar ao layout clássico original a qualquer momento"
+            >
+              <span>☀️</span> Modo Clássico
+            </button>
+          </div>
+
           <button
             type="button"
             onClick={() => setActiveTab('vis')}

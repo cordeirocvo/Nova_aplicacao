@@ -203,6 +203,7 @@ export default function CoenergyGODashboard() {
   const [customHourlyFactors, setCustomHourlyFactors] = useState<number[]>(Array(24).fill(1.0));
   const [customProfileName, setCustomProfileName] = useState<string>("Perfil do Projetista");
   const [isCopied, setIsCopied] = useState<boolean>(false);
+  const [activeLoadedProjectId, setActiveLoadedProjectId] = useState<string | null>(null);
   const [uiThemeMode, setUiThemeMode] = useState<"STUDIO_DARK" | "CLASSIC">(() => {
     if (typeof window !== "undefined") {
       const s = localStorage.getItem("coenergygo_ui_theme_mode");
@@ -608,6 +609,7 @@ export default function CoenergyGODashboard() {
   };
 
   const handleStartNewProject = () => {
+    setActiveLoadedProjectId(null);
     setProjectName("Novo Dimensionamento");
     setClientName("Cliente Particular");
     setApplicationMode('individual');
@@ -629,6 +631,7 @@ export default function CoenergyGODashboard() {
   };
 
   const handleLoadProjectIntoCoenergyGO = (p: any) => {
+    setActiveLoadedProjectId(p.id || null);
     setProjectName(p.projectName || 'Dimensionamento Carregado');
     setClientName(p.clientName || 'Cliente Particular');
     if (p.utility) setSelectedUtility(p.utility as UtilityId);
@@ -729,11 +732,17 @@ export default function CoenergyGODashboard() {
     setActiveTab('veiculos');
   };
 
-  const handleDeleteProject = (id: string, projectName: string) => {
+  const handleDeleteProject = async (id: string, projectName: string) => {
     if (!window.confirm(`Deseja realmente remover o projeto "${projectName}" do sistema?`)) {
       return;
     }
-    // Remover do localStorage
+    // 1. Remover do banco de dados remoto
+    try {
+      await fetch(`/api/ev/sizing/${id}`, { method: "DELETE" });
+    } catch (err) {
+      console.warn("Aviso ao remover projeto do banco remoto:", err);
+    }
+    // 2. Remover do localStorage
     try {
       const stored = localStorage.getItem('coenergygo_saved_projects');
       if (stored) {
@@ -744,8 +753,11 @@ export default function CoenergyGODashboard() {
     } catch (e) {
       console.warn("Aviso ao remover do localStorage:", e);
     }
-    // Remover do estado local
+    // 3. Remover do estado local e desmarcar projeto ativo se for ele
     setProjects(prev => prev.filter(p => p.id !== id));
+    if (activeLoadedProjectId === id) {
+      setActiveLoadedProjectId(null);
+    }
   };
 
   const handleUpdateCharger = (id: string, updates: Partial<ConfiguredCharger>) => {
@@ -974,7 +986,7 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
   const buildCurrentProjectSnapshot = (customId?: string) => {
     const resolvedProjectName = clientProjectData.projectName || projectName || "Novo Dimensionamento VE";
     const resolvedClientName = clientProjectData.clientName || clientName || "Cliente Particular";
-    const projectId = customId || `proj-coenergygo-${Date.now()}`;
+    const projectId = customId || activeLoadedProjectId || `proj-coenergygo-${Date.now()}`;
 
     return {
       id: projectId,
@@ -1121,23 +1133,31 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
         cosPhi: 0.98
       };
 
+      const isExistingInDb = activeLoadedProjectId && !activeLoadedProjectId.startsWith('proj-coenergygo-') && !activeLoadedProjectId.startsWith('proj-auto-saved-');
+
       try {
-        const res = await fetch("/api/ev/sizing", {
-          method: "POST",
+        const url = isExistingInDb ? `/api/ev/sizing/${activeLoadedProjectId}` : "/api/ev/sizing";
+        const method = isExistingInDb ? "PUT" : "POST";
+
+        const res = await fetch(url, {
+          method,
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload)
         });
         if (res.ok) {
           const data = await res.json();
           if (data.project) {
-            // Substitui temporário pelo retornado do banco
-            const merged = { ...fullProjectSnapshot, ...data.project };
-            setProjects(prev => [merged, ...prev.filter(p => p.id !== fullProjectSnapshot.id && p.id !== data.project.id)]);
+            const savedProject = data.project;
+            setActiveLoadedProjectId(savedProject.id);
+
+            // Substitui temporário ou atualiza pelo retornado do banco
+            const merged = { ...fullProjectSnapshot, ...savedProject };
+            setProjects(prev => [merged, ...prev.filter(p => p.id !== fullProjectSnapshot.id && p.id !== savedProject.id)]);
             // Atualiza também o cache local com o ID do banco
             try {
               const stored = localStorage.getItem('coenergygo_saved_projects');
               const list = stored ? JSON.parse(stored) : [];
-              const updatedList = [merged, ...list.filter((x: any) => x.id !== fullProjectSnapshot.id && x.id !== data.project.id)];
+              const updatedList = [merged, ...list.filter((x: any) => x.id !== fullProjectSnapshot.id && x.id !== savedProject.id)];
               localStorage.setItem('coenergygo_saved_projects', JSON.stringify(updatedList));
             } catch (err) {}
           }

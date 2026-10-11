@@ -129,3 +129,31 @@ export async function PUT(
     return NextResponse.json({ error: "Erro ao atualizar projeto" }, { status: 500 });
   }
 }
+
+export async function DELETE(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    
+    // Tenta encontrar o projeto antes de deletar
+    const existing = await prisma.eVProject.findUnique({
+      where: { id }
+    });
+
+    if (!existing) {
+      return NextResponse.json({ success: true, message: "Projeto já não existe no banco" });
+    }
+
+    await prisma.eVProject.delete({
+      where: { id }
+    });
+
+    console.log(`Projeto ${id} removido do banco com sucesso.`);
+    return NextResponse.json({ success: true, message: "Projeto excluído do banco com sucesso" });
+  } catch (error: any) {
+    console.error("DELETE_PROJECT_ERROR:", error);
+    return NextResponse.json({ error: "Erro ao excluir projeto do banco", details: error.message }, { status: 500 });
+  }
+}

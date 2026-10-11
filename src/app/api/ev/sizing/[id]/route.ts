@@ -136,21 +136,36 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
+    const url = new URL(req.url);
+    const projectNameParam = url.searchParams.get("projectName");
     
-    // Tenta encontrar o projeto antes de deletar
+    // Tenta encontrar o projeto pelo ID
     const existing = await prisma.eVProject.findUnique({
       where: { id }
     });
 
-    if (!existing) {
-      return NextResponse.json({ success: true, message: "Projeto já não existe no banco" });
+    if (existing) {
+      await prisma.eVProject.delete({
+        where: { id }
+      });
+      console.log(`Projeto ${id} removido do banco com sucesso.`);
     }
 
-    await prisma.eVProject.delete({
-      where: { id }
-    });
+    // Se fornecido projectName, limpa qualquer outro registro duplicado no banco com esse nome
+    if (projectNameParam) {
+      const delByName = await prisma.eVProject.deleteMany({
+        where: { projectName: projectNameParam }
+      });
+      if (delByName.count > 0) {
+        console.log(`Projetos com nome '${projectNameParam}' removidos do banco (${delByName.count} registro(s)).`);
+      }
+    } else if (!existing && id) {
+      // Se id não era um CUID válido, tenta deletar onde projectName == id
+      await prisma.eVProject.deleteMany({
+        where: { projectName: id }
+      });
+    }
 
-    console.log(`Projeto ${id} removido do banco com sucesso.`);
     return NextResponse.json({ success: true, message: "Projeto excluído do banco com sucesso" });
   } catch (error: any) {
     console.error("DELETE_PROJECT_ERROR:", error);

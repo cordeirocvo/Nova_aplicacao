@@ -227,7 +227,11 @@ export default function CoenergyGODashboard() {
     try {
       const stored = localStorage.getItem('coenergygo_saved_projects');
       if (stored) {
-        localSaved = JSON.parse(stored);
+        const raw = JSON.parse(stored);
+        if (Array.isArray(raw)) {
+          // Descarta snapshots voláteis de rascunho
+          localSaved = raw.filter((x: any) => x && x.id && x.id !== 'proj-auto-saved-current');
+        }
       }
     } catch (e) {
       console.warn("Aviso ao ler projetos do localStorage:", e);
@@ -240,24 +244,61 @@ export default function CoenergyGODashboard() {
       })
       .then(dbProjects => {
         const dbList = Array.isArray(dbProjects) ? dbProjects : [];
-        // Mesclar priorizando os snapshots mais completos do localStorage (que contêm perfis 24h e customizações)
-        const combined = [...localSaved];
+        
+        // 1. Deduplicar registros do banco se houver duplicatas legadas com o mesmo nome
+        const dedupedDb: any[] = [];
+        const seenDbNames = new Set<string>();
         dbList.forEach(p => {
-          const existingIdx = combined.findIndex(c => c.id === p.id);
-          if (existingIdx >= 0) {
-            // Mescla mantendo campos avançados salvos localmente
-            combined[existingIdx] = { ...p, ...combined[existingIdx] };
+          const normName = (p.projectName || "").trim().toLowerCase();
+          if (normName && seenDbNames.has(normName)) {
+            // Já existe um registro com esse nome; mantém o primeiro (mais recente)
+            return;
+          }
+          if (normName) seenDbNames.add(normName);
+          dedupedDb.push(p);
+        });
+
+        // 2. Mesclar projetos locais com projetos do banco evitando qualquer duplicação
+        const finalProjects: any[] = [...dedupedDb];
+        localSaved.forEach(localP => {
+          const normLocalName = (localP.projectName || "").trim().toLowerCase();
+          const existingById = finalProjects.find(fp => fp.id === localP.id);
+          const existingByName = normLocalName ? finalProjects.find(fp => (fp.projectName || "").trim().toLowerCase() === normLocalName) : null;
+
+          if (existingById) {
+            // Mescla detalhes avançados locais mantendo a referência oficial
+            Object.assign(existingById, { ...localP, id: existingById.id });
+          } else if (existingByName) {
+            // Mescla no projeto existente pelo nome, garantindo o ID do banco
+            Object.assign(existingByName, { ...localP, id: existingByName.id });
           } else {
-            combined.push(p);
+            // Projeto offline exclusivo
+            finalProjects.push(localP);
           }
         });
-        setProjects(combined);
+
+        // Salva a lista limpa e deduplicada de volta no localStorage
+        try {
+          localStorage.setItem('coenergygo_saved_projects', JSON.stringify(finalProjects));
+        } catch (e) {}
+
+        setProjects(finalProjects);
         setLoadingProjects(false);
       })
       .catch(err => {
         console.warn("Aviso na API remota /api/ev/sizing, utilizando projetos locais:", err);
         if (localSaved.length > 0) {
-          setProjects(localSaved);
+          // Deduplicar localSaved por nome
+          const dedupedLocal: any[] = [];
+          const seenLocal = new Set<string>();
+          localSaved.forEach(p => {
+            const n = (p.projectName || "").trim().toLowerCase();
+            if (!seenLocal.has(n)) {
+              if (n) seenLocal.add(n);
+              dedupedLocal.push(p);
+            }
+          });
+          setProjects(dedupedLocal);
         }
         setLoadingProjects(false);
       });
@@ -736,25 +777,42 @@ export default function CoenergyGODashboard() {
     if (!window.confirm(`Deseja realmente remover o projeto "${projectName}" do sistema?`)) {
       return;
     }
-    // 1. Remover do banco de dados remoto
+    const normName = (projectName || "").trim().toLowerCase();
+
+    // 1. Remover do banco de dados remoto (passando id e projectName para limpar duplicatas)
     try {
-      await fetch(`/api/ev/sizing/${id}`, { method: "DELETE" });
+      await fetch(`/api/ev/sizing/${id}?projectName=${encodeURIComponent(projectName)}`, { method: "DELETE" });
     } catch (err) {
       console.warn("Aviso ao remover projeto do banco remoto:", err);
     }
-    // 2. Remover do localStorage
+
+    // 2. Remover do localStorage (por id e por projectName)
     try {
       const stored = localStorage.getItem('coenergygo_saved_projects');
       if (stored) {
         const list = JSON.parse(stored);
-        const filtered = list.filter((x: any) => x.id !== id);
+        const filtered = list.filter((x: any) => 
+          x.id !== id && ((x.projectName || "").trim().toLowerCase() !== normName)
+        );
         localStorage.setItem('coenergygo_saved_projects', JSON.stringify(filtered));
+      }
+
+      // Se for o rascunho ativo salvo, limpar também
+      const draft = localStorage.getItem('coenergygo_active_draft');
+      if (draft) {
+        const d = JSON.parse(draft);
+        if (d.id === id || ((d.projectName || "").trim().toLowerCase() === normName)) {
+          localStorage.removeItem('coenergygo_active_draft');
+        }
       }
     } catch (e) {
       console.warn("Aviso ao remover do localStorage:", e);
     }
+
     // 3. Remover do estado local e desmarcar projeto ativo se for ele
-    setProjects(prev => prev.filter(p => p.id !== id));
+    setProjects(prev => prev.filter(p => 
+      p.id !== id && ((p.projectName || "").trim().toLowerCase() !== normName)
+    ));
     if (activeLoadedProjectId === id) {
       setActiveLoadedProjectId(null);
     }
@@ -1058,14 +1116,10 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
     };
   };
 
-  // Auto-Save silencioso automático disparado ao mudar de passo
+  // Auto-Save silencioso automático disparado ao mudar de passo (salva APENAS como rascunho de sessão, NÃO cria projeto fantasma na lista de projetos salvos)
   const handleAutoSaveSnapshot = () => {
     try {
       const snapshot = buildCurrentProjectSnapshot('proj-auto-saved-current');
-      const stored = localStorage.getItem('coenergygo_saved_projects');
-      const list = stored ? JSON.parse(stored) : [];
-      const updatedList = [snapshot, ...list.filter((x: any) => x.id !== snapshot.id)];
-      localStorage.setItem('coenergygo_saved_projects', JSON.stringify(updatedList));
       localStorage.setItem('coenergygo_active_draft', JSON.stringify(snapshot));
     } catch (e) {
       console.warn("Auto-save snapshot aviso:", e);
@@ -1086,19 +1140,6 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
       const resolvedProjectName = clientProjectData.projectName || projectName || "Novo Dimensionamento VE";
       const resolvedClientName = clientProjectData.clientName || clientName || "Cliente Particular";
       const fullProjectSnapshot = buildCurrentProjectSnapshot();
-
-      // 1. Persistência imediata e segura em localStorage
-      try {
-        const stored = localStorage.getItem('coenergygo_saved_projects');
-        const list = stored ? JSON.parse(stored) : [];
-        const updatedList = [fullProjectSnapshot, ...list.filter((x: any) => x.id !== fullProjectSnapshot.id)];
-        localStorage.setItem('coenergygo_saved_projects', JSON.stringify(updatedList));
-      } catch (e) {
-        console.warn("Aviso ao salvar snapshot no localStorage:", e);
-      }
-
-      // Atualiza o estado da UI imediatamente para garantir feedback ao usuário
-      setProjects(prev => [fullProjectSnapshot, ...prev.filter(p => p.id !== fullProjectSnapshot.id)]);
 
       // 2. Persistência remota na API /api/ev/sizing
       const payload = {
@@ -1133,12 +1174,23 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
         cosPhi: 0.98
       };
 
-      const isExistingInDb = activeLoadedProjectId && !activeLoadedProjectId.startsWith('proj-coenergygo-') && !activeLoadedProjectId.startsWith('proj-auto-saved-');
+      // Verifica se já existe um projeto no banco com o mesmo id ou mesmo nome
+      const normName = resolvedProjectName.trim().toLowerCase();
+      const existingProjectInList = projects.find(p => 
+        (activeLoadedProjectId && p.id === activeLoadedProjectId) ||
+        ((p.projectName || "").trim().toLowerCase() === normName)
+      );
+
+      const targetDbId = existingProjectInList && !existingProjectInList.id.startsWith('proj-')
+        ? existingProjectInList.id
+        : (activeLoadedProjectId && !activeLoadedProjectId.startsWith('proj-') ? activeLoadedProjectId : null);
+
+      const url = targetDbId ? `/api/ev/sizing/${targetDbId}` : "/api/ev/sizing";
+      const method = targetDbId ? "PUT" : "POST";
+
+      let savedProject: any = null;
 
       try {
-        const url = isExistingInDb ? `/api/ev/sizing/${activeLoadedProjectId}` : "/api/ev/sizing";
-        const method = isExistingInDb ? "PUT" : "POST";
-
         const res = await fetch(url, {
           method,
           headers: { "Content-Type": "application/json" },
@@ -1147,25 +1199,54 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
         if (res.ok) {
           const data = await res.json();
           if (data.project) {
-            const savedProject = data.project;
-            setActiveLoadedProjectId(savedProject.id);
-
-            // Substitui temporário ou atualiza pelo retornado do banco
-            const merged = { ...fullProjectSnapshot, ...savedProject };
-            setProjects(prev => [merged, ...prev.filter(p => p.id !== fullProjectSnapshot.id && p.id !== savedProject.id)]);
-            // Atualiza também o cache local com o ID do banco
-            try {
-              const stored = localStorage.getItem('coenergygo_saved_projects');
-              const list = stored ? JSON.parse(stored) : [];
-              const updatedList = [merged, ...list.filter((x: any) => x.id !== fullProjectSnapshot.id && x.id !== savedProject.id)];
-              localStorage.setItem('coenergygo_saved_projects', JSON.stringify(updatedList));
-            } catch (err) {}
+            savedProject = data.project;
           }
         } else {
           console.warn("Aviso: Falha ao persistir no banco remoto, mas o projeto foi salvo localmente.");
         }
       } catch (netErr) {
-        console.warn("Aviso de rede: Projeto salvo localmente com sucesso. Sincronização remota pendente:", netErr);
+        console.warn("Aviso de rede: Sincronização remota pendente:", netErr);
+      }
+
+      // Se retornou do banco, usa o id oficial; caso contrário, usa o id do snapshot
+      const finalId = savedProject?.id || targetDbId || fullProjectSnapshot.id;
+      setActiveLoadedProjectId(finalId);
+
+      const mergedProject = {
+        ...fullProjectSnapshot,
+        ...(savedProject || {}),
+        id: finalId,
+        projectName: resolvedProjectName,
+        clientName: resolvedClientName
+      };
+
+      // Atualiza o estado da lista no React deduplicando rigorosamente por ID e por Nome
+      setProjects(prev => [
+        mergedProject,
+        ...prev.filter(p => 
+          p.id !== finalId && 
+          p.id !== fullProjectSnapshot.id && 
+          ((p.projectName || "").trim().toLowerCase() !== normName)
+        )
+      ]);
+
+      // Atualiza o localStorage deduplicando
+      try {
+        const stored = localStorage.getItem('coenergygo_saved_projects');
+        const list = stored ? JSON.parse(stored) : [];
+        const updatedList = [
+          mergedProject,
+          ...list.filter((x: any) => 
+            x.id !== finalId && 
+            x.id !== fullProjectSnapshot.id && 
+            x.id !== 'proj-auto-saved-current' && 
+            ((x.projectName || "").trim().toLowerCase() !== normName)
+          )
+        ];
+        localStorage.setItem('coenergygo_saved_projects', JSON.stringify(updatedList));
+        localStorage.setItem('coenergygo_active_draft', JSON.stringify(mergedProject));
+      } catch (err) {
+        console.warn("Aviso ao salvar snapshot no localStorage:", err);
       }
 
       setSaveSuccessMessage(`Projeto "${resolvedProjectName}" salvo no Dossiê com sucesso!`);

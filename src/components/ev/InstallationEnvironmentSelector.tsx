@@ -335,7 +335,7 @@ export default function InstallationEnvironmentSelector({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {/* Previsão de Recargas/Dia */}
             <div className="bg-white p-3.5 rounded-xl border border-slate-200">
               <label className="block text-xs font-bold text-slate-700 mb-1">
@@ -401,19 +401,6 @@ export default function InstallationEnvironmentSelector({
                 {(commercialHub.gridSupplyVoltage ?? (utility === "CEMIG" ? 220 : 380)) === 220
                   ? "⚡ Na rede 220V (CEMIG), carregadores 380V exigem Transformador Elevador."
                   : "✅ Alimentação 380V Fase-Fase (dispensa transformador elevador)."}
-              </p>
-            </div>
-
-            {/* Subestação Particular */}
-            <div className="bg-white p-3.5 rounded-xl border border-slate-200">
-              <label className="block text-xs font-bold text-slate-700 mb-1">
-                Subestação / Trafo:
-              </label>
-              <div className="text-xs font-bold text-amber-700 py-2 px-2.5 bg-amber-50 rounded-lg border border-amber-200">
-                Obrigatório se Demanda &gt; 75 kW
-              </div>
-              <p className="text-[10px] text-slate-400 mt-1">
-                CEMIG ND-5.3 (Média Tensão 13.8 / 23.1 kV).
               </p>
             </div>
           </div>

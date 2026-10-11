@@ -110,8 +110,8 @@ export function evaluateCEMIG(input: UtilitySizingInput): UtilitySizingOutput {
     else if (calculatedDemandKVA <= 114.0) matchedF = CEMIG_CATEGORIES['F3'];
     else if (calculatedDemandKVA <= 152.0) matchedF = CEMIG_CATEGORIES['F4'];
     else if (calculatedDemandKVA <= 171.0) matchedF = CEMIG_CATEGORIES['F5'];
-    else if (calculatedDemandKVA <= 188.0) matchedF = CEMIG_CATEGORIES['F6'];
-    else if (calculatedDemandKVA <= 228.0) matchedF = CEMIG_CATEGORIES['F7'];
+    else if (calculatedDemandKVA <= 217.2) matchedF = CEMIG_CATEGORIES['F7_600'] || CEMIG_CATEGORIES['F7_630'];
+    else if (calculatedDemandKVA <= 228.0) matchedF = CEMIG_CATEGORIES['F7_630'] || CEMIG_CATEGORIES['F7_600'];
     else if (calculatedDemandKVA <= 266.0) matchedF = CEMIG_CATEGORIES['F8'];
     else matchedF = CEMIG_CATEGORIES['F9'];
 

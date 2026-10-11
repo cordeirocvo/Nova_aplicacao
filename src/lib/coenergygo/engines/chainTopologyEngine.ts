@@ -562,6 +562,12 @@ export function calculateChainTopology(params: ChainTopologyInputParams): ChainT
     };
   });
 
+  // Disjuntor dedicado de proteção do transformador 220/380V (no primário 220V do Painel)
+  const trafoPrimaryProtectionRating = isTransformerNeeded ? trafoPrimaryCurrentA * 1.15 : 0;
+  const trafoPrimaryBreakerA = isTransformerNeeded
+    ? (STANDARD_BREAKERS.find(b => b >= trafoPrimaryProtectionRating) || 300)
+    : undefined;
+
   const panel220V: Panel220VTopologyState = {
     voltageV: isGrid380V ? 380 : 220,
     panelName: isGrid380V ? 'Painel Geral de Proteção 380V (QGBT)' : 'Painel de Proteção e Medição 220V',
@@ -573,6 +579,8 @@ export function calculateChainTopology(params: ChainTopologyInputParams): ChainT
     totalAuxKW: Number(totalAuxKW.toFixed(2)),
     auxiliaryLoads,
     customCircuits: customCircuits220V,
+    transformerProtectionBreakerA: trafoPrimaryBreakerA,
+    transformerProtectionCurve: 'D',
     individualChargerBreakers: isGrid380V ? individualChargerBreakers : undefined
   };
 

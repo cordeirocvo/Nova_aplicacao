@@ -813,6 +813,8 @@ export interface Panel220VTopologyState {
   totalAuxKW: number;          // Potência total ativa das cargas auxiliares habilitadas
   auxiliaryLoads: AuxiliaryLoadsState;
   customCircuits?: CustomAuxiliaryCircuit[];
+  transformerProtectionBreakerA?: number; // Disjuntor dedicado de proteção do transformador 220/380V (primário)
+  transformerProtectionCurve?: 'C' | 'D';
   individualChargerBreakers?: Array<{
     chargerId: string;
     breakerA: number;

@@ -284,31 +284,6 @@ export const CEMIG_CATEGORIES: Record<string, UtilityCategorySpec> = {
     subterraneoObrigatorio: true,
     hastesAterramento: 3
   },
-  'F7': {
-    categoryId: 'F7',
-    categoryName: 'Tipo F7 — Alta Demanda até 228 kVA (Disjuntor 630A)',
-    phases: 3,
-    voltage: '220/380V',
-    maxLimitKW: 228.0,
-    breakerCurrentA: 630,
-    cableGaugePhaseMM2: 240,
-    cableGaugeNeutralMM2: 240,
-    cableGaugeGroundMM2: 120,
-    caboFaseAlMM2: 240,
-    caboFaseVias: 2,
-    eletrodutoPol: '2x(4")',
-    eletrodutoPVCMM: 110,
-    eletrodutoAcoMM: 100,
-    tcRelacao: '600/5',
-    tcFatorTermico: 2.0,
-    tcQuantidade: 3,
-    caixaMedicao: 'CM-4',
-    caixaDisjuntor: 'CM-18',
-    meterBoxType: 'Caixa CM-4 (3 TCs 600/5) + Caixa CM-18',
-    posteHomologado: 'Entrada Subterrânea Obrigatória',
-    subterraneoObrigatorio: true,
-    hastesAterramento: 3
-  },
   'F7_600': {
     categoryId: 'F7_600',
     categoryName: 'Tipo F7 — Alta Demanda até 217 kW (Disjuntor 600A)',
@@ -332,8 +307,7 @@ export const CEMIG_CATEGORIES: Record<string, UtilityCategorySpec> = {
     meterBoxType: 'Caixa CM-4 (3 TCs 600/5) + Caixa CM-18',
     posteHomologado: 'Entrada Subterrânea Obrigatória',
     subterraneoObrigatorio: true,
-    hastesAterramento: 3
-  },
+    },
   'F7_630': {
     categoryId: 'F7_630',
     categoryName: 'Tipo F7 — Alta Demanda até 228 kVA (Disjuntor 630A)',

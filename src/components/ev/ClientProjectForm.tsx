@@ -573,27 +573,26 @@ export default function ClientProjectForm({
                   let contractedKW = data.contractedDemandKW;
 
                   if (rawCat === 'F7_600') {
-                    newCat = 'F7';
+                    newCat = 'F7_600';
                     defaultBreaker = 600;
                     contractedKW = 217;
-                  } else if (rawCat === 'F7_630') {
-                    newCat = 'F7';
+                  } else if (rawCat === 'F7_630' || rawCat === 'F7') {
+                    newCat = 'F7_630';
                     defaultBreaker = 630;
                     contractedKW = 228;
                   } else {
                     const catBreakerMap: Record<string, number> = {
                       'A1': 63, 'A_LEGADO_40A': 40, 'B1': 63, 'B2': 63,
                       'C1': 63, 'C2': 80, 'C3': 100, 'C4': 125, 'C5': 150, 'C6': 200,
-                      'F1': 225, 'F2': 250, 'F3': 300, 'F4': 400, 'F5': 450, 'F6': 500, 'F7': 630, 'F8': 700, 'F9': 800
+                      'F1': 225, 'F2': 250, 'F3': 300, 'F4': 400, 'F5': 450, 'F6': 500, 'F7_600': 600, 'F7_630': 630, 'F8': 700, 'F9': 800
                     };
                     defaultBreaker = catBreakerMap[newCat] || (newCat.startsWith('F') ? 225 : 63);
-                    if (newCat === 'F7') contractedKW = 228;
                   }
 
                   const defaultGaugeMap: Record<string, number> = {
                     'A1': 16, 'A_LEGADO_40A': 10, 'B1': 16, 'B2': 16,
                     'C1': 16, 'C2': 25, 'C3': 35, 'C4': 50, 'C5': 70, 'C6': 95,
-                    'F1': 120, 'F2': 150, 'F3': 240, 'F4': 120, 'F5': 150, 'F6': 185, 'F7': 240, 'F8': 150, 'F9': 185
+                    'F1': 120, 'F2': 150, 'F3': 240, 'F4': 120, 'F5': 150, 'F6': 185, 'F7_600': 240, 'F7_630': 240, 'F8': 150, 'F9': 185
                   };
                   const suggestedGauge = defaultGaugeMap[newCat] || 16;
                   const confirmedPhases = (newCat.startsWith('C') || newCat.startsWith('F')) ? '3F' : (newCat.startsWith('B') ? '2F' : '1F');
@@ -757,8 +756,8 @@ export default function ClientProjectForm({
                     400: { cat: 'F4', gauge: 120, phases: '3F' },
                     450: { cat: 'F5', gauge: 150, phases: '3F' },
                     500: { cat: 'F6', gauge: 185, phases: '3F' },
-                    600: { cat: 'F7', gauge: 240, phases: '3F' },
-                    630: { cat: 'F7', gauge: 240, phases: '3F' },
+                    600: { cat: 'F7_600', gauge: 240, phases: '3F' },
+                    630: { cat: 'F7_630', gauge: 240, phases: '3F' },
                     700: { cat: 'F8', gauge: 150, phases: '3F' },
                     800: { cat: 'F9', gauge: 185, phases: '3F' }
                   };

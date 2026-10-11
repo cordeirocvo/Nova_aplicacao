@@ -2798,6 +2798,7 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
             onUpdateChargerPower={(id, newPowerKW) => {
               handleUpdateCharger(id, { powerKW: newPowerKW });
             }}
+            cemigStandardBOM={cemigPadraoResult?.itensSugeridos}
           />
 
           {/* Painel de Identificação e Integração dos Parâmetros */}

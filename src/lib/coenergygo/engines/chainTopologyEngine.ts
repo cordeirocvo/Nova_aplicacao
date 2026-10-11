@@ -940,18 +940,6 @@ export function calculateChainTopology(params: ChainTopologyInputParams): ChainT
     normReference: 'NBR 5410 / NBR IEC 61439'
   });
 
-  if (isTransformerNeeded) {
-    totalBOM.push({
-      id: 'bom-trafo-elevador',
-      category: 'quadro',
-      description: `Transformador Elevador a Seco ${transformerKVA} kVA (220V Delta -> 380V/220V Estrela Dyn1)`,
-      quantity: 1,
-      unit: 'pç',
-      spec: 'Isolação Classe F/H, Grau de Proteção IP23/IP54 com neutro aterrado no BEP',
-      normReference: 'ABNT NBR 5356 / NBR 17019'
-    });
-  }
-
   if (isPanel380VActive) {
     totalBOM.push({
       id: 'bom-painel-380v',

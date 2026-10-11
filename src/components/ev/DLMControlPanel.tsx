@@ -208,13 +208,46 @@ export default function DLMControlPanel({
             { id: 'edificio_comercial', label: 'Edifício Comercial', desc: 'Pico diurno 09h-17h' },
             { id: 'centro_comercial', label: 'Shopping / Varejo', desc: 'Pico estendido 14h-21h' },
             { id: 'industrial', label: 'Indústria / Turnos', desc: 'Oscilação por turnos' },
-            { id: 'custom_usuario', label: customProfileName || 'Perfil Customizado', desc: 'Valores hora a hora editáveis pelo projetista' }
+            { id: 'custom_usuario', label: customProfileName || 'Perfil do Projetista', desc: 'Valores hora a hora editáveis pelo projetista' }
           ].map((p) => {
             const isSelected = profileType === p.id;
             return (
               <button
                 key={p.id}
-                onClick={() => setProfileType(p.id as any)}
+                onClick={() => {
+                  setProfileType(p.id as any);
+                  // Ao selecionar qualquer perfil pré-definido, carregar seus fatores típicos normalizados para o editor
+                  const templateMap: Record<string, number[]> = {
+                    condominio_residencial: [
+                      0.28, 0.24, 0.22, 0.21, 0.22, 0.28,
+                      0.42, 0.58, 0.50, 0.38, 0.35, 0.38,
+                      0.44, 0.42, 0.40, 0.42, 0.52, 0.70,
+                      0.88, 1.00, 0.96, 0.85, 0.60, 0.40
+                    ],
+                    edificio_comercial: [
+                      0.15, 0.14, 0.14, 0.14, 0.15, 0.20,
+                      0.35, 0.65, 0.88, 0.98, 1.00, 0.95,
+                      0.82, 0.88, 0.96, 0.95, 0.92, 0.75,
+                      0.50, 0.35, 0.26, 0.20, 0.18, 0.16
+                    ],
+                    centro_comercial: [
+                      0.20, 0.18, 0.18, 0.18, 0.18, 0.20,
+                      0.25, 0.35, 0.50, 0.70, 0.80, 0.85,
+                      0.88, 0.85, 0.92, 0.96, 0.98, 1.00,
+                      0.98, 0.95, 0.85, 0.65, 0.40, 0.25
+                    ],
+                    industrial: [
+                      0.60, 0.58, 0.58, 0.60, 0.75, 0.90,
+                      0.95, 1.00, 0.98, 0.95, 0.95, 0.90,
+                      0.85, 0.95, 0.98, 0.96, 0.92, 0.85,
+                      0.80, 0.75, 0.70, 0.68, 0.65, 0.62
+                    ],
+                    posto_combustivel_constante: Array(24).fill(1.0)
+                  };
+                  if (templateMap[p.id]) {
+                    onUpdateCustomHourlyFactors?.(templateMap[p.id]);
+                  }
+                }}
                 className={`p-3 rounded-2xl border text-left transition-all ${
                   isSelected
                     ? 'border-[#E45318] bg-orange-50/50 shadow-sm ring-1 ring-[#E45318]'
@@ -228,79 +261,83 @@ export default function DLMControlPanel({
           })}
         </div>
 
-        {/* Editor Expansível de Pontos Horários (Quando Perfil Customizado ou Selecionado) */}
-        {profileType === 'custom_usuario' && (
-          <div className="mt-3 p-4 bg-slate-900 text-slate-100 rounded-2xl border border-slate-800 space-y-3">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-2">
-              <div className="flex items-center gap-2">
-                <Sliders className="w-4 h-4 text-[#E45318]" />
-                <span className="text-xs font-bold uppercase tracking-wider text-white">
-                  Editor de Curva de Carga do Projetista (24 Horas)
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  value={customProfileName}
-                  onChange={(e) => onUpdateCustomProfileName?.(e.target.value)}
-                  placeholder="Nome da Categoria / Perfil"
-                  className="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white font-semibold focus:outline-none focus:border-[#E45318]"
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    // Setar todos para 100% (linha plana contínua 24h)
-                    const flat = Array(24).fill(1.0);
-                    onUpdateCustomHourlyFactors?.(flat);
-                  }}
-                  className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-amber-400 rounded-lg text-[10px] font-bold border border-slate-700"
-                  title="Ajusta todas as 24 horas para 100% (linha reta contínua)"
-                >
-                  24h Linha Reta (100%)
-                </button>
-              </div>
+        {/* Editor de Pontos Horários Disponível para Qualquer Perfil Selecionado */}
+        <div className="mt-3 p-4 bg-slate-900 text-slate-100 rounded-2xl border border-slate-800 space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-2">
+            <div className="flex items-center gap-2">
+              <Sliders className="w-4 h-4 text-[#E45318]" />
+              <span className="text-xs font-bold uppercase tracking-wider text-white">
+                Editor de Curva de Carga 24 Horas ({
+                  profileType === 'posto_combustivel_constante' ? 'Carga Constante 24h' :
+                  profileType === 'condominio_residencial' ? 'Condomínio Residencial' :
+                  profileType === 'edificio_comercial' ? 'Edifício Comercial' :
+                  profileType === 'centro_comercial' ? 'Shopping / Varejo' :
+                  profileType === 'industrial' ? 'Indústria / Turnos' :
+                  (customProfileName || 'Perfil do Projetista')
+                })
+              </span>
             </div>
-
-            <p className="text-[11px] text-slate-400 leading-tight">
-              Ajuste a intensidade de cada hora do dia (% da Demanda Base de {peakDemandKW.toFixed(1)} kW). O gráfico é recalculado instantaneamente.
-            </p>
-
-            <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-12 gap-1.5 pt-1">
-              {Array.from({ length: 24 }).map((_, hour) => {
-                const factors = customHourlyFactors && customHourlyFactors.length === 24
-                  ? customHourlyFactors
-                  : Array(24).fill(1.0);
-                const currentVal = factors[hour] !== undefined ? factors[hour] : 1.0;
-                const kwValue = (currentVal * peakDemandKW).toFixed(1);
-
-                return (
-                  <div key={hour} className="bg-slate-800/90 p-1.5 rounded-lg border border-slate-700 flex flex-col items-center">
-                    <span className="text-[9px] font-mono text-slate-400 font-bold">
-                      {String(hour).padStart(2, '0')}h
-                    </span>
-                    <input
-                      type="number"
-                      min="0"
-                      max="1.5"
-                      step="0.05"
-                      value={currentVal}
-                      onChange={(e) => {
-                        const newV = Math.max(0, Math.min(2.0, parseFloat(e.target.value) || 0));
-                        const nextFactors = [...factors];
-                        nextFactors[hour] = newV;
-                        onUpdateCustomHourlyFactors?.(nextFactors);
-                      }}
-                      className="w-12 bg-slate-950 border border-slate-600 rounded text-center text-xs font-bold text-amber-400 my-1 py-0.5 focus:outline-none focus:border-[#E45318]"
-                    />
-                    <span className="text-[8px] font-mono text-slate-400">
-                      {kwValue} kW
-                    </span>
-                  </div>
-                );
-              })}
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={customProfileName}
+                onChange={(e) => onUpdateCustomProfileName?.(e.target.value)}
+                placeholder="Nome do Perfil Customizado"
+                className="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white font-semibold focus:outline-none focus:border-[#E45318]"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  const flat = Array(24).fill(1.0);
+                  onUpdateCustomHourlyFactors?.(flat);
+                }}
+                className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-amber-400 rounded-lg text-[10px] font-bold border border-slate-700"
+                title="Ajusta todas as 24 horas para 100% (linha reta contínua)"
+              >
+                24h Linha Reta (100%)
+              </button>
             </div>
           </div>
-        )}
+
+          <p className="text-[11px] text-slate-400 leading-tight">
+            Ajuste a intensidade de cada hora do dia (% da Demanda Base de {peakDemandKW.toFixed(1)} kW). Ao alterar os horários, a curva é recalculada instantaneamente em tempo real.
+          </p>
+
+          <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-12 gap-1.5 pt-1">
+            {Array.from({ length: 24 }).map((_, hour) => {
+              const factors = customHourlyFactors && customHourlyFactors.length === 24
+                ? customHourlyFactors
+                : Array(24).fill(1.0);
+              const currentVal = factors[hour] !== undefined ? factors[hour] : 1.0;
+              const kwValue = (currentVal * peakDemandKW).toFixed(1);
+
+              return (
+                <div key={hour} className="bg-slate-800/90 p-1.5 rounded-lg border border-slate-700 flex flex-col items-center">
+                  <span className="text-[9px] font-mono text-slate-400 font-bold">
+                    {String(hour).padStart(2, '0')}h
+                  </span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="1.5"
+                    step="0.05"
+                    value={currentVal}
+                    onChange={(e) => {
+                      const newV = Math.max(0, Math.min(2.0, parseFloat(e.target.value) || 0));
+                      const nextFactors = [...factors];
+                      nextFactors[hour] = newV;
+                      onUpdateCustomHourlyFactors?.(nextFactors);
+                    }}
+                    className="w-12 bg-slate-950 border border-slate-600 rounded text-center text-xs font-bold text-amber-400 my-1 py-0.5 focus:outline-none focus:border-[#E45318]"
+                  />
+                  <span className="text-[8px] font-mono text-slate-400">
+                    {kwValue} kW
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
       {/* 2. Painel de Parâmetros Integrados (3 Colunas) */}

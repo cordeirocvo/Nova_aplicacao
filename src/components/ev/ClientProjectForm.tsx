@@ -607,30 +607,33 @@ export default function ClientProjectForm({
                 }}
                 className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#00B356]"
               >
-                {availableCategories.flatMap(cat => {
+                {Array.from(new Set(availableCategories.filter(c => c !== 'F7'))).map(cat => {
+                  if (cat === 'F7_600') {
+                    return (
+                      <option key="F7_600" value="F7_600">
+                        F7_600 (Alta Demanda BT — Disjuntor 600A | Limite 217 kW)
+                      </option>
+                    );
+                  }
+                  if (cat === 'F7_630') {
+                    return (
+                      <option key="F7_630" value="F7_630">
+                        F7_630 (Alta Demanda BT — Disjuntor 630A | Limite 228 kW)
+                      </option>
+                    );
+                  }
                   const catBreakerMap: Record<string, number> = {
                     'A1': 63, 'A_LEGADO_40A': 40, 'B1': 63, 'B2': 63,
                     'C1': 63, 'C2': 80, 'C3': 100, 'C4': 125, 'C5': 150, 'C6': 200,
-                    'F1': 225, 'F2': 250, 'F3': 300, 'F4': 400, 'F5': 450, 'F6': 500, 'F7': 630, 'F8': 700, 'F9': 800
+                    'F1': 225, 'F2': 250, 'F3': 300, 'F4': 400, 'F5': 450, 'F6': 500, 'F8': 700, 'F9': 800
                   };
-                  if (cat === 'F7' || cat === 'F7_600' || cat === 'F7_630') {
-                    if (cat === 'F7_600' || cat === 'F7_630') return []; // Já renderizados agrupados sob F7
-                    return [
-                      <option key="F7_600" value="F7_600">
-                        F7 (Alta Demanda BT — Disjuntor 600A | Limite 217 kW)
-                      </option>,
-                      <option key="F7_630" value="F7_630">
-                        F7 (Alta Demanda BT — Disjuntor 630A | Limite 228 kW)
-                      </option>
-                    ];
-                  }
                   const brk = catBreakerMap[cat] || (cat.startsWith('F') ? 225 : 63);
                   const typeLabel = cat.startsWith('C') ? 'Trifásico BT' : cat.startsWith('B') ? 'Bifásico BT' : cat.startsWith('F') ? 'Alta Demanda BT' : 'Monofásico BT';
-                  return [
+                  return (
                     <option key={cat} value={cat}>
                       {cat} ({typeLabel} — Disjuntor {brk}A)
                     </option>
-                  ];
+                  );
                 })}
               </select>
             </div>

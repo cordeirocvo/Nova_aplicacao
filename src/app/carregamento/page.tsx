@@ -223,10 +223,14 @@ export default function CoenergyGODashboard() {
       })
       .then(dbProjects => {
         const dbList = Array.isArray(dbProjects) ? dbProjects : [];
-        // Mesclar priorizando os mais recentes e evitando duplicatas de ID
+        // Mesclar priorizando os snapshots mais completos do localStorage (que contêm perfis 24h e customizações)
         const combined = [...localSaved];
         dbList.forEach(p => {
-          if (!combined.some(c => c.id === p.id)) {
+          const existingIdx = combined.findIndex(c => c.id === p.id);
+          if (existingIdx >= 0) {
+            // Mescla mantendo campos avançados salvos localmente
+            combined[existingIdx] = { ...p, ...combined[existingIdx] };
+          } else {
             combined.push(p);
           }
         });
@@ -938,6 +942,86 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
   const [savingProject, setSavingProject] = useState<boolean>(false);
   const [saveSuccessMessage, setSaveSuccessMessage] = useState<string | null>(null);
 
+  // Snapshot completo com todos os parâmetros dos Passos 1A a 3
+  const buildCurrentProjectSnapshot = (customId?: string) => {
+    const resolvedProjectName = clientProjectData.projectName || projectName || "Novo Dimensionamento VE";
+    const resolvedClientName = clientProjectData.clientName || clientName || "Cliente Particular";
+    const projectId = customId || `proj-coenergygo-${Date.now()}`;
+
+    return {
+      id: projectId,
+      projectName: resolvedProjectName,
+      clientName: resolvedClientName,
+      clientDocument: clientProjectData.installationNumber ? `Instalação CEMIG: ${clientProjectData.installationNumber}` : "",
+      clientPhone: clientProjectData.clientPhone || "",
+      clientEmail: clientProjectData.clientEmail || "",
+      clientAddress: clientProjectData.address || "",
+      utility: selectedUtility,
+      entranceCategory: effectiveHomologatedCategory.categoryId,
+      existingEntranceCategory: currentStandardCategoryId,
+      existingEntranceBreaker: fieldBreakerAmps,
+      existingEntranceCable: clientProjectData.fieldCableGaugeMM2 || 10,
+      existingEntrancePhases: fieldPhases === '3F' ? 3 : fieldPhases === '2F' ? 2 : 1,
+      existingLoadKW: effectiveExistingLoadKW,
+      distance: circuitDistanceMeters,
+      installationMethod: installationMethod,
+      applicationMode: applicationMode,
+      isCollective: applicationMode !== 'individual',
+      isOutdoor: isOutdoor,
+      demandControlEnabled: dlmEnableDLM,
+      demandControlLimit: effectiveDlmGridLimitKW,
+      dlmProfileType: dlmProfileType,
+      dlmChargeStartHour: dlmChargeStartHour,
+      dlmChargeDurationHours: dlmChargeDurationHours,
+      dlmSimulationScenario: dlmSimulationScenario,
+      customHourlyFactors: customHourlyFactors,
+      customProfileName: customProfileName,
+      hasEmergencyButton5m: auditHasEmergencyButton,
+      requiresWarningSigns: auditHasSignaling,
+      groundingType: "TN-S",
+      cosPhi: 0.98,
+      totalPowerKW: totalChargersInstalledKW,
+      configuredChargers: configuredChargers,
+      commercialHub: commercialHub,
+      clientProjectData: {
+        ...clientProjectData,
+        projectName: resolvedProjectName,
+        clientName: resolvedClientName,
+        standardCategory: clientProjectData.standardCategory || currentStandardCategoryId,
+        applicationMode: applicationMode
+      },
+      charger: {
+        brand: primaryCharger.brand || "WEG",
+        model: primaryCharger.model || primaryCharger.name,
+        power: primaryCharger.powerKW,
+        voltage: primaryCharger.voltage,
+        phases: primaryCharger.phases,
+        current: primaryCharger.currentInA || 32
+      },
+      createdAt: new Date().toISOString()
+    };
+  };
+
+  // Auto-Save silencioso automático disparado ao mudar de passo
+  const handleAutoSaveSnapshot = () => {
+    try {
+      const snapshot = buildCurrentProjectSnapshot('proj-auto-saved-current');
+      const stored = localStorage.getItem('coenergygo_saved_projects');
+      const list = stored ? JSON.parse(stored) : [];
+      const updatedList = [snapshot, ...list.filter((x: any) => x.id !== snapshot.id)];
+      localStorage.setItem('coenergygo_saved_projects', JSON.stringify(updatedList));
+      localStorage.setItem('coenergygo_active_draft', JSON.stringify(snapshot));
+    } catch (e) {
+      console.warn("Auto-save snapshot aviso:", e);
+    }
+  };
+
+  // Navegação protegida entre abas com auto-save automático
+  const handleTabChange = (nextTab: 'projetos' | 'veiculos' | 'concessionarias' | 'nbr17019' | 'curva_dlm' | 'infraestrutura' | 'resultado') => {
+    handleAutoSaveSnapshot();
+    setActiveTab(nextTab);
+  };
+
   const handleSaveCurrentProject = async () => {
     try {
       setSavingProject(true);
@@ -945,60 +1029,7 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
 
       const resolvedProjectName = clientProjectData.projectName || projectName || "Novo Dimensionamento VE";
       const resolvedClientName = clientProjectData.clientName || clientName || "Cliente Particular";
-      const projectId = `proj-coenergygo-${Date.now()}`;
-
-      // Snapshot completo com todos os parâmetros dos Passos 1A a 3
-      const fullProjectSnapshot = {
-        id: projectId,
-        projectName: resolvedProjectName,
-        clientName: resolvedClientName,
-        clientDocument: clientProjectData.installationNumber ? `Instalação CEMIG: ${clientProjectData.installationNumber}` : "",
-        clientPhone: clientProjectData.clientPhone || "",
-        clientEmail: clientProjectData.clientEmail || "",
-        clientAddress: clientProjectData.address || "",
-        utility: selectedUtility,
-        entranceCategory: effectiveHomologatedCategory.categoryId,
-        existingEntranceCategory: currentStandardCategoryId,
-        existingEntranceBreaker: fieldBreakerAmps,
-        existingEntranceCable: clientProjectData.fieldCableGaugeMM2 || 10,
-        existingEntrancePhases: fieldPhases === '3F' ? 3 : fieldPhases === '2F' ? 2 : 1,
-        existingLoadKW: effectiveExistingLoadKW,
-        distance: circuitDistanceMeters,
-        installationMethod: installationMethod,
-        applicationMode: applicationMode,
-        isCollective: applicationMode !== 'individual',
-        isOutdoor: isOutdoor,
-        demandControlEnabled: dlmEnableDLM,
-        demandControlLimit: effectiveDlmGridLimitKW,
-        dlmProfileType: dlmProfileType,
-        dlmChargeStartHour: dlmChargeStartHour,
-        dlmChargeDurationHours: dlmChargeDurationHours,
-        dlmSimulationScenario: dlmSimulationScenario,
-        customHourlyFactors: customHourlyFactors,
-        customProfileName: customProfileName,
-        hasEmergencyButton5m: auditHasEmergencyButton,
-        requiresWarningSigns: auditHasSignaling,
-        groundingType: "TN-S",
-        cosPhi: 0.98,
-        totalPowerKW: totalChargersInstalledKW,
-        // Dados estendidos para reconstrução fiel
-        configuredChargers: configuredChargers,
-        commercialHub: commercialHub,
-        clientProjectData: {
-          ...clientProjectData,
-          projectName: resolvedProjectName,
-          clientName: resolvedClientName
-        },
-        charger: {
-          brand: primaryCharger.brand || "WEG",
-          model: primaryCharger.model || primaryCharger.name,
-          power: primaryCharger.powerKW,
-          voltage: primaryCharger.voltage,
-          phases: primaryCharger.phases,
-          current: primaryCharger.currentInA || 32
-        },
-        createdAt: new Date().toISOString()
-      };
+      const fullProjectSnapshot = buildCurrentProjectSnapshot();
 
       // 1. Persistência imediata e segura em localStorage
       try {
@@ -1196,7 +1227,7 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
           {/* SUB-NAV TABS (100% VISÍVEIS E RESPONSIVOS) */}
           <div className="flex flex-wrap items-center gap-2 pt-4 border-t border-slate-800/80">
             <button
-              onClick={() => setActiveTab('projetos')}
+              onClick={() => handleTabChange('projetos')}
               className={`px-3.5 py-2 rounded-xl font-bold text-xs transition-all flex items-center gap-2 ${
                 activeTab === 'projetos'
                   ? 'bg-white text-[#0A192F] shadow-sm font-black'
@@ -1208,7 +1239,7 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
             </button>
 
             <button
-              onClick={() => setActiveTab('veiculos')}
+              onClick={() => handleTabChange('veiculos')}
               className={`px-3.5 py-2 rounded-xl font-bold text-xs transition-all flex items-center gap-2 ${
                 activeTab === 'veiculos'
                   ? 'bg-[#00B356] text-white shadow-sm ring-1 ring-emerald-400 font-black'
@@ -1221,7 +1252,7 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
             </button>
 
             <button
-              onClick={() => setActiveTab('concessionarias')}
+              onClick={() => handleTabChange('concessionarias')}
               className={`px-3.5 py-2 rounded-xl font-bold text-xs transition-all flex items-center gap-2 ${
                 activeTab === 'concessionarias'
                   ? 'bg-[#E45318] text-white shadow-sm ring-1 ring-orange-400 font-black'
@@ -1234,7 +1265,7 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
             </button>
 
             <button
-              onClick={() => setActiveTab('nbr17019')}
+              onClick={() => handleTabChange('nbr17019')}
               className={`px-3.5 py-2 rounded-xl font-bold text-xs transition-all flex items-center gap-2 ${
                 activeTab === 'nbr17019'
                   ? 'bg-blue-600 text-white shadow-sm ring-1 ring-blue-400 font-black'
@@ -1246,7 +1277,7 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
             </button>
 
             <button
-              onClick={() => setActiveTab('curva_dlm')}
+              onClick={() => handleTabChange('curva_dlm')}
               className={`px-3.5 py-2 rounded-xl font-bold text-xs transition-all flex items-center gap-2 ${
                 activeTab === 'curva_dlm'
                   ? 'bg-[#0A192F] text-white shadow-sm ring-2 ring-[#00B356] font-black'
@@ -1261,7 +1292,7 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
             </button>
 
             <button
-              onClick={() => setActiveTab('infraestrutura')}
+              onClick={() => handleTabChange('infraestrutura')}
               className={`px-3.5 py-2 rounded-xl font-bold text-xs transition-all flex items-center gap-2 ${
                 activeTab === 'infraestrutura'
                   ? 'bg-[#E45318] text-white shadow-sm ring-1 ring-orange-300 font-black'
@@ -1276,7 +1307,7 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
             </button>
 
             <button
-              onClick={() => setActiveTab('resultado')}
+              onClick={() => handleTabChange('resultado')}
               className={`px-3.5 py-2 rounded-xl font-bold text-xs transition-all flex items-center gap-2 ${
                 activeTab === 'resultado'
                   ? 'bg-gradient-to-r from-amber-500 to-emerald-600 text-white shadow-sm font-black'
@@ -1701,7 +1732,7 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
             </div>
             <button
               type="button"
-              onClick={() => setActiveTab('concessionarias')}
+              onClick={() => handleTabChange('concessionarias')}
               className="w-full sm:w-auto bg-[#E45318] hover:bg-[#d04610] text-white text-xs font-bold px-6 py-3 rounded-2xl shadow-sm hover:shadow transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
               <span>Avançar para Passo 1B: Análise de Padrão & Concessionária</span>
@@ -2121,7 +2152,7 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
                   </p>
                 </div>
                 <button
-                  onClick={() => setActiveTab('veiculos')}
+                  onClick={() => handleTabChange('veiculos')}
                   className="text-[10px] font-bold text-[#E45318] hover:underline self-start mt-2"
                 >
                   Alterar equipamentos no Passo 1A →
@@ -2139,7 +2170,7 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
                 </span>
               </div>
               <button
-                onClick={() => setActiveTab('curva_dlm')}
+                onClick={() => handleTabChange('curva_dlm')}
                 className="bg-[#00B356] hover:bg-emerald-600 text-white font-bold text-[11px] px-3.5 py-1.5 rounded-xl whitespace-nowrap shadow-sm self-start sm:self-auto flex items-center gap-1.5"
               >
                 <Activity className="w-3.5 h-3.5" />
@@ -2894,7 +2925,7 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
               </div>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => setActiveTab('concessionarias')}
+                  onClick={() => handleTabChange('concessionarias')}
                   className="bg-white hover:bg-orange-100 border border-orange-300 text-orange-950 font-bold text-xs px-3.5 py-2 rounded-xl transition-all whitespace-nowrap cursor-pointer"
                 >
                   Ajustar Medição Spot (Passo 1B)

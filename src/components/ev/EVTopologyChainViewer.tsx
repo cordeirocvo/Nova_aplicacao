@@ -1523,6 +1523,24 @@ export function EVTopologyChainViewer({
                               </div>
                             </div>
                           )}
+
+                          {/* Circuitos de Proteção Exclusiva dos Carregadores VE (Rede 380V ou Bypass) */}
+                          {(!transformer.needed || gridSupplyVoltage === 380) && chargers.map((ch, idx) => {
+                            const inrushFactor = 1.15;
+                            const v = ch.voltageV >= 380 ? 380 : (gridSupplyVoltage === 380 ? 380 : 220);
+                            const calcA = (ch.powerKW * 1000) / (Math.sqrt(ch.phases === 3 ? 3 : 1) * v * 0.98) * inrushFactor;
+                            const breakerA = [16, 20, 25, 32, 40, 50, 63, 80, 100, 125, 150, 175, 200, 225, 250, 300, 400, 500, 630].find(b => b >= calcA) || 40;
+                            return (
+                              <div key={`ch-unifilar-${ch.id}`} className="p-2.5 bg-emerald-950/30 rounded-lg border border-emerald-500/40 text-xs">
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="text-white font-bold text-[11px] truncate">VE {idx + 1}: {ch.name}</span>
+                                  <span className="text-[9px] bg-emerald-900 text-emerald-300 px-1.5 py-0.2 rounded font-bold">{breakerA}A Curva C ({ch.phases === 3 ? '3P' : '2P'})</span>
+                                </div>
+                                <span className="text-[10px] text-emerald-400 block">{ch.powerKW} kW ({v}V) • DR 30mA Tipo B</span>
+                                <span className="text-[9px] text-slate-400 font-mono">Alimentador Trecho 4 • Conector {ch.connector || 'Tipo 2'}</span>
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     </div>

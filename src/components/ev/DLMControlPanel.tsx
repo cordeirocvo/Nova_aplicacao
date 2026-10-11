@@ -288,11 +288,12 @@ export default function DLMControlPanel({
               <button
                 type="button"
                 onClick={() => {
+                  setProfileType('custom_usuario');
                   const flat = Array(24).fill(1.0);
                   onUpdateCustomHourlyFactors?.(flat);
                 }}
                 className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-amber-400 rounded-lg text-[10px] font-bold border border-slate-700"
-                title="Ajusta todas as 24 horas para 100% (linha reta contínua)"
+                title="Ajusta todas as 24 horas para 100% (linha reta contínua) no Perfil do Projetista"
               >
                 24h Linha Reta (100%)
               </button>
@@ -300,7 +301,7 @@ export default function DLMControlPanel({
           </div>
 
           <p className="text-[11px] text-slate-400 leading-tight">
-            Ajuste a intensidade de cada hora do dia (% da Demanda Base de {peakDemandKW.toFixed(1)} kW). Ao alterar os horários, a curva é recalculada instantaneamente em tempo real.
+            Ajuste a intensidade de cada hora do dia (% da Demanda Base de {peakDemandKW.toFixed(1)} kW). Ao alterar os horários, o sistema adota automaticamente o <strong>Perfil do Projetista</strong> e recalcula a curva em tempo real.
           </p>
 
           <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-12 gap-1.5 pt-1">
@@ -323,6 +324,9 @@ export default function DLMControlPanel({
                     step="0.05"
                     value={currentVal}
                     onChange={(e) => {
+                      if (profileType !== 'custom_usuario') {
+                        setProfileType('custom_usuario');
+                      }
                       const newV = Math.max(0, Math.min(2.0, parseFloat(e.target.value) || 0));
                       const nextFactors = [...factors];
                       nextFactors[hour] = newV;
@@ -494,9 +498,12 @@ export default function DLMControlPanel({
                   {Array.from({ length: 24 }).map((_, d) => {
                     const dur = d + 1;
                     const endH = (chargeStartHour + dur) % 24;
+                    const endLabel = dur === 24 
+                      ? (chargeStartHour === 0 ? '24:00h' : `${String(chargeStartHour).padStart(2, '0')}:00h (+24h)`)
+                      : `${String(endH).padStart(2, '0')}:00h`;
                     return (
                       <option key={dur} value={dur}>
-                        Até {String(endH).padStart(2, '0')}:00h ({dur}h de recarga)
+                        Até {endLabel} ({dur}h de recarga)
                       </option>
                     );
                   })}
@@ -506,7 +513,11 @@ export default function DLMControlPanel({
 
             <div className="bg-white/80 p-2.5 rounded-xl border border-slate-200 text-[10px] text-slate-600 space-y-0.5">
               <p>
-                ⏰ <strong>Janela de Operação Ativa:</strong> Das <strong>{String(chargeStartHour).padStart(2, '0')}:00h</strong> às <strong>{String((chargeStartHour + chargeDurationHours) % 24).padStart(2, '0')}:00h</strong> (Duração: {chargeDurationHours} horas contínuas).
+                ⏰ <strong>Janela de Operação Ativa:</strong> Das <strong>{String(chargeStartHour).padStart(2, '0')}:00h</strong> às <strong>{
+                  chargeDurationHours === 24 
+                    ? (chargeStartHour === 0 ? '24:00h' : `${String(chargeStartHour).padStart(2, '0')}:00h (+24h)`)
+                    : `${String((chargeStartHour + chargeDurationHours) % 24).padStart(2, '0')}:00h`
+                }</strong> (Duração: {chargeDurationHours} horas {chargeDurationHours === 24 ? 'ininterruptas' : 'contínuas'}).
               </p>
               <p className="text-slate-400">
                 Você pode selecionar qualquer horário de início e término desejado. O simulador projeta a curva horária exata para a janela definida.

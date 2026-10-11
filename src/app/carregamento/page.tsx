@@ -400,8 +400,13 @@ export default function CoenergyGODashboard() {
     }
   }, [effectiveExistingLoadKW]);
 
-  // Calibrar perfil e horários de funcionamento padrão com base no modo da aplicação
+  // Calibrar perfil e horários de funcionamento padrão com base no modo da aplicação apenas quando o usuário não tiver customizado ou carregado um projeto
   useEffect(() => {
+    // Se há um projeto ativo carregado ou o usuário configurou um perfil customizado, não sobrescrever
+    if (activeLoadedProjectId || dlmProfileType === 'custom_usuario') {
+      return;
+    }
+
     if (applicationMode === 'eletroposto_hub') {
       setDlmProfileType('edificio_comercial');
       setDlmChargeStartHour(8); // 08:00h comercial
@@ -415,7 +420,7 @@ export default function CoenergyGODashboard() {
       setDlmChargeStartHour(20); // 20:00h noturno
       setDlmChargeDurationHours(7);
     }
-  }, [applicationMode, highestChargerPowerKW]);
+  }, [applicationMode, highestChargerPowerKW, activeLoadedProjectId, dlmProfileType]);
 
   // Categoria Homologada Efetiva (Automática ou Personalizada pelo Usuário)
   const effectiveHomologatedCategory = (customHomologatedCategoryId && availableCategories[customHomologatedCategoryId])

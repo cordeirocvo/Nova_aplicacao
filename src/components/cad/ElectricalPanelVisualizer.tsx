@@ -1,18 +1,28 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Download, FileCode, CheckCircle2, Shield, Zap, Layers, Copy, Check } from "lucide-react";
 import {
   QuadroEletricoModel,
   criarQuadroExemplo,
   gerarListaDeMateriais,
   exportarQuadroParaDxf,
+  calcularDimensionamentoQuadro,
+  criarCargasExemplo,
+  CircuitoCargaInput,
 } from "@/lib/cad/electricalDimensioning";
 
 export default function ElectricalPanelVisualizer() {
+  const [cargas, setCargas] = useState<CircuitoCargaInput[]>(criarCargasExemplo);
   const [quadro, setQuadro] = useState<QuadroEletricoModel>(criarQuadroExemplo);
-  const [activeTab, setActiveTab] = useState<"VISUAL" | "MATERIAIS" | "CAD">("VISUAL");
+  const [activeTab, setActiveTab] = useState<"VISUAL" | "QUADRO_CARGAS" | "MATERIAIS">("VISUAL");
+  const [uiMode, setUiMode] = useState<"STUDIO_DARK" | "CLASSIC">("STUDIO_DARK");
   const [copiedBom, setCopiedBom] = useState(false);
+
+  // Dimensionamento rigoroso em tempo real NBR 5410 / NBR 17019
+  const quadroDimensionado = useMemo(() => {
+    return calcularDimensionamentoQuadro("QDF/QGBT Principal Cordeiro", 380, cargas);
+  }, [cargas]);
 
   const materiais = gerarListaDeMateriais(quadro);
 
@@ -31,7 +41,7 @@ export default function ElectricalPanelVisualizer() {
   };
 
   const handleCopyBom = () => {
-    const text = materiais
+    const text = quadroDimensionado.resumoMateriais
       .map((m, i) => `${i + 1}. ${m.item} - Qtd: ${m.quantidade} ${m.unidade} (${m.especificacao})`)
       .join("\n");
     navigator.clipboard.writeText(text);
@@ -39,28 +49,64 @@ export default function ElectricalPanelVisualizer() {
     setTimeout(() => setCopiedBom(false), 2000);
   };
 
+  const isDark = uiMode === "STUDIO_DARK";
+
   return (
-    <div className="w-full bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+    <div
+      className={`w-full rounded-2xl transition-colors duration-200 border ${
+        isDark
+          ? "bg-[#0b1329] border-slate-800 text-slate-100 shadow-xl"
+          : "bg-white border-slate-200 text-slate-800 shadow-sm"
+      } overflow-hidden`}
+    >
       {/* ── Topo do Visualizador ────────────────────────────────────────── */}
-      <div className="bg-slate-900 text-white p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div
+        className={`p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b ${
+          isDark ? "bg-[#0a0f1d] border-slate-800" : "bg-slate-900 border-slate-800"
+        } text-white`}
+      >
         <div>
           <div className="flex items-center gap-2">
             <span className="bg-[#f15a24] text-white text-[10px] font-black uppercase px-2 py-0.5 rounded">
               Engenharia Cordeiro
             </span>
-            <span className="text-xs text-slate-400 font-bold">NBR 5410 • AutoCAD Ready</span>
+            <span className="text-xs text-slate-400 font-bold">NBR 5410 • NBR 17019 • AutoCAD Ready</span>
           </div>
           <h2 className="text-lg font-black tracking-tight text-white mt-1 flex items-center gap-2">
             <Zap className="w-5 h-5 text-amber-400" />
-            {quadro.nome}
+            {quadroDimensionado.nome}
           </h2>
-          <p className="text-xs text-slate-400">
-            {quadro.tipoAlimentacao} {quadro.tensaoEntradaV}V • Geral: {quadro.disjuntorGeralA}A • Proteção Wallbox EV Integrada
+          <p className="text-xs text-slate-400 font-mono">
+            3F+N+PE {quadroDimensionado.tensaoLinhaV}V • Geral: {quadroDimensionado.disjuntorGeral.correnteNominalA}A (
+            {quadroDimensionado.disjuntorGeral.tipo === "CAIXA_MOLDADA" ? "Caixa Moldada MCCB 25kA" : "Mini-Disjuntor DIN"}
+            ) • Desbalanceamento: {quadroDimensionado.desbalanceamentoFasesPct}%
           </p>
         </div>
 
-        {/* Abas e Botões de Ação */}
+        {/* Abas, Alternador de Tema Ergonômico e Botão CAD */}
         <div className="flex items-center gap-2 flex-wrap">
+          {/* Seletor do Modo de Exibição (Reversível) */}
+          <div className="bg-slate-800/80 p-1 rounded-xl flex gap-1 border border-slate-700">
+            <button
+              onClick={() => setUiMode("STUDIO_DARK")}
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
+                isDark ? "bg-amber-500/20 text-amber-300 border border-amber-500/30" : "text-slate-400 hover:text-white"
+              }`}
+              title="Interface escura ergonômica com contraste WCAG AAA para menor fadiga visual"
+            >
+              🌙 Studio Ergonômico
+            </button>
+            <button
+              onClick={() => setUiMode("CLASSIC")}
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
+                !isDark ? "bg-white text-slate-900 shadow-sm" : "text-slate-400 hover:text-white"
+              }`}
+              title="Voltar ao layout clássico original a qualquer momento"
+            >
+              ☀️ Modo Clássico
+            </button>
+          </div>
+
           <div className="bg-slate-800 p-1 rounded-xl flex gap-1 border border-slate-700">
             <button
               onClick={() => setActiveTab("VISUAL")}
@@ -68,7 +114,15 @@ export default function ElectricalPanelVisualizer() {
                 activeTab === "VISUAL" ? "bg-[#00BFA5] text-white shadow-sm" : "text-slate-400 hover:text-white"
               }`}
             >
-              Layout do Painel
+              Layout Físico (QDF)
+            </button>
+            <button
+              onClick={() => setActiveTab("QUADRO_CARGAS")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                activeTab === "QUADRO_CARGAS" ? "bg-[#00BFA5] text-white shadow-sm" : "text-slate-400 hover:text-white"
+              }`}
+            >
+              Quadro de Cargas NBR 5410 ({quadroDimensionado.circuitos.length})
             </button>
             <button
               onClick={() => setActiveTab("MATERIAIS")}
@@ -76,17 +130,17 @@ export default function ElectricalPanelVisualizer() {
                 activeTab === "MATERIAIS" ? "bg-[#00BFA5] text-white shadow-sm" : "text-slate-400 hover:text-white"
               }`}
             >
-              Lista de Materiais ({materiais.length})
+              BOM ({quadroDimensionado.resumoMateriais.length})
             </button>
           </div>
 
           <button
             onClick={handleDownloadDxf}
-            className="flex items-center gap-1.5 bg-[#f15a24] hover:bg-[#d94816] text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md transition-all cursor-pointer hover:scale-[1.02]"
+            className="flex items-center gap-1.5 bg-[#f15a24] hover:bg-[#d94816] text-white px-3.5 py-2 rounded-xl text-xs font-bold shadow-md transition-all cursor-pointer hover:scale-[1.02]"
             title="Exportar arquivo DXF nativo para abrir no AutoCAD"
           >
             <FileCode className="w-4 h-4" />
-            Exportar AutoCAD (.DXF)
+            AutoCAD (.DXF)
           </button>
         </div>
       </div>
@@ -331,26 +385,210 @@ export default function ElectricalPanelVisualizer() {
         </div>
       )}
 
+      {/* ── Aba de Quadro de Cargas Balanceado NBR 5410 ───────────────── */}
+      {activeTab === "QUADRO_CARGAS" && (
+        <div className={`p-6 ${isDark ? "bg-[#0b1329]" : "bg-white"}`}>
+          {/* Card de Resumo de Balanço de Fases e Proteção Geral */}
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
+            <div
+              className={`p-4 rounded-xl border ${
+                isDark ? "bg-[#111c3a] border-slate-700/60" : "bg-slate-50 border-slate-200"
+              }`}
+            >
+              <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Potência Total</div>
+              <div className="text-xl font-black font-mono mt-1 text-[#00BFA5]">
+                {(quadroDimensionado.potenciaTotalInstaladaW / 1000).toFixed(1)} kW
+              </div>
+              <div className="text-[10px] text-slate-400 font-mono mt-0.5">
+                Ib Geral: {quadroDimensionado.correnteGeralCalculadaA} A
+              </div>
+            </div>
+
+            <div
+              className={`p-4 rounded-xl border ${
+                isDark ? "bg-[#111c3a] border-slate-700/60" : "bg-slate-50 border-slate-200"
+              }`}
+            >
+              <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Balanço por Fase (R / S / T)</div>
+              <div className="text-xs font-mono font-bold mt-1.5 flex justify-between gap-1">
+                <span className="text-slate-200">R: {(quadroDimensionado.potenciaPorFaseW.R / 1000).toFixed(1)}kW</span>
+                <span className="text-red-400">S: {(quadroDimensionado.potenciaPorFaseW.S / 1000).toFixed(1)}kW</span>
+                <span className="text-blue-400">T: {(quadroDimensionado.potenciaPorFaseW.T / 1000).toFixed(1)}kW</span>
+              </div>
+              <div className="text-[10px] text-emerald-400 font-bold mt-1">
+                Desbalanceamento: {quadroDimensionado.desbalanceamentoFasesPct}% (Ideal &lt; 10%)
+              </div>
+            </div>
+
+            <div
+              className={`p-4 rounded-xl border ${
+                isDark ? "bg-[#111c3a] border-slate-700/60" : "bg-slate-50 border-slate-200"
+              }`}
+            >
+              <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Disjuntor Geral</div>
+              <div className="text-lg font-black font-mono mt-1 text-amber-400 flex items-center gap-1.5">
+                {quadroDimensionado.disjuntorGeral.correnteNominalA}A Tripolar
+              </div>
+              <div className="text-[10px] text-slate-400 mt-0.5">
+                {quadroDimensionado.disjuntorGeral.tipo === "CAIXA_MOLDADA"
+                  ? "Caixa Moldada (MCCB 25kA) Barramento"
+                  : "Mini-Disjuntor DIN 10kA"}
+              </div>
+            </div>
+
+            <div
+              className={`p-4 rounded-xl border ${
+                isDark ? "bg-[#111c3a] border-slate-700/60" : "bg-slate-50 border-slate-200"
+              }`}
+            >
+              <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Coordenação DPS Classe II</div>
+              <div className="text-lg font-black font-mono mt-1 text-red-400">4x 45kA / 275V</div>
+              <div className="text-[10px] text-emerald-400 font-bold mt-0.5">
+                Ligação Equipotencial PE Direta
+              </div>
+            </div>
+          </div>
+
+          {/* Tabela de Cargas Estruturada NBR 5410 com Zebra Striping e Fontes Numéricas Tabulares */}
+          <div
+            className={`overflow-x-auto rounded-xl border ${
+              isDark ? "border-slate-800 bg-[#0f172a]" : "border-slate-200 bg-white"
+            }`}
+          >
+            <table className="w-full text-left text-xs font-sans">
+              <thead
+                className={`uppercase font-bold text-[11px] tracking-wider border-b ${
+                  isDark
+                    ? "bg-[#16223f] text-slate-300 border-slate-800"
+                    : "bg-slate-50 text-slate-600 border-slate-200"
+                }`}
+              >
+                <tr>
+                  <th className="p-3">Circ.</th>
+                  <th className="p-3">Descrição da Carga</th>
+                  <th className="p-3 text-right">Potência</th>
+                  <th className="p-3 text-center">Fase</th>
+                  <th className="p-3 text-right">Ib (A)</th>
+                  <th className="p-3 text-center">Disjuntor In</th>
+                  <th className="p-3 text-center">Tipo</th>
+                  <th className="p-3 text-center">Cabo (mm²)</th>
+                  <th className="p-3 text-right">ΔV%</th>
+                  <th className="p-3 text-center">Proteção DR</th>
+                </tr>
+              </thead>
+              <tbody className={isDark ? "divide-y divide-slate-800/80" : "divide-y divide-slate-100"}>
+                {quadroDimensionado.circuitos.map((c, i) => (
+                  <tr
+                    key={c.id}
+                    className={`transition-colors font-mono text-[11px] ${
+                      isDark
+                        ? i % 2 === 0
+                          ? "bg-[#0b1329]/80 hover:bg-[#16223f]"
+                          : "bg-[#0f172a]/80 hover:bg-[#16223f]"
+                        : i % 2 === 0
+                        ? "bg-white hover:bg-slate-50"
+                        : "bg-slate-50/60 hover:bg-slate-50"
+                    }`}
+                  >
+                    <td className="p-3 font-bold text-amber-500">{c.tag}</td>
+                    <td className="p-3 font-sans font-medium text-slate-200">{c.descricao}</td>
+                    <td className="p-3 text-right font-bold text-slate-300">
+                      {(c.potenciaW || 0) >= 1000
+                        ? `${((c.potenciaW || 0) / 1000).toFixed(1)} kW`
+                        : `${c.potenciaW || 0} W`}
+                    </td>
+                    <td className="p-3 text-center">
+                      <span
+                        className={`px-2 py-0.5 rounded text-[10px] font-black ${
+                          c.faseAlocada === "R"
+                            ? "bg-slate-700 text-slate-200"
+                            : c.faseAlocada === "S"
+                            ? "bg-red-900/60 text-red-300"
+                            : c.faseAlocada === "T"
+                            ? "bg-blue-900/60 text-blue-300"
+                            : "bg-purple-900/60 text-purple-300"
+                        }`}
+                      >
+                        {c.faseAlocada}
+                      </span>
+                    </td>
+                    <td className="p-3 text-right font-bold text-slate-200">{c.correnteNominalA} A</td>
+                    <td className="p-3 text-center font-black text-amber-400">
+                      {c.curvaDisjuntor}
+                      {c.correnteNominalA} ({c.polos}P)
+                    </td>
+                    <td className="p-3 text-center text-[10px] text-slate-400 font-sans">
+                      {c.aparato === "CAIXA_MOLDADA" ? "Caixa Moldada" : "DIN"}
+                    </td>
+                    <td className="p-3 text-center font-bold text-emerald-400">
+                      {c.bitolaCaboMm2} mm²
+                    </td>
+                    <td
+                      className={`p-3 text-right font-bold ${
+                        (c.quedaTensaoPct || 0) <= 2.5
+                          ? "text-emerald-400"
+                          : (c.quedaTensaoPct || 0) <= 4.0
+                          ? "text-amber-400"
+                          : "text-red-400"
+                      }`}
+                    >
+                      {c.quedaTensaoPct}%
+                    </td>
+                    <td className="p-3 text-center">
+                      {c.drProtecao ? (
+                        <span className="px-2 py-0.5 rounded text-[10px] font-black bg-emerald-950 text-emerald-300 border border-emerald-800">
+                          DR {c.sensibilidadeDrMA}mA
+                        </span>
+                      ) : (
+                        <span className="text-slate-600 text-[10px]">-</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {/* ── Aba de Lista de Materiais (BOM) ──────────────────────────────── */}
       {activeTab === "MATERIAIS" && (
-        <div className="p-6">
+        <div className={`p-6 ${isDark ? "bg-[#0b1329]" : "bg-white"}`}>
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="text-base font-bold text-slate-800">Lista Quantitativa de Materiais Elétricos</h3>
-              <p className="text-xs text-slate-500">Pronta para cotação em distribuidores (Steck, Schneider, Weg, Clamper)</p>
+              <h3 className={`text-base font-bold ${isDark ? "text-white" : "text-slate-800"}`}>
+                Lista Quantitativa de Materiais Elétricos
+              </h3>
+              <p className="text-xs text-slate-400">
+                Pronta para cotação em distribuidores (Steck, Schneider, Weg, Clamper)
+              </p>
             </div>
             <button
               onClick={handleCopyBom}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition-all cursor-pointer"
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                isDark
+                  ? "bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700"
+                  : "bg-slate-100 hover:bg-slate-200 text-slate-700"
+              }`}
             >
-              {copiedBom ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+              {copiedBom ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
               {copiedBom ? "Copiado!" : "Copiar Lista"}
             </button>
           </div>
 
-          <div className="overflow-x-auto border border-slate-200 rounded-xl">
+          <div
+            className={`overflow-x-auto rounded-xl border ${
+              isDark ? "border-slate-800 bg-[#0f172a]" : "border-slate-200 bg-white"
+            }`}
+          >
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 text-slate-600 uppercase font-bold border-b border-slate-200">
+              <thead
+                className={`uppercase font-bold border-b ${
+                  isDark
+                    ? "bg-[#16223f] text-slate-300 border-slate-800"
+                    : "bg-slate-50 text-slate-600 border-slate-200"
+                }`}
+              >
                 <tr>
                   <th className="p-3">#</th>
                   <th className="p-3">Item / Componente</th>
@@ -359,14 +597,23 @@ export default function ElectricalPanelVisualizer() {
                   <th className="p-3">Especificação Técnica</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
-                {materiais.map((mat, i) => (
-                  <tr key={i} className="hover:bg-slate-50/80 transition-colors">
+              <tbody className={isDark ? "divide-y divide-slate-800/80" : "divide-y divide-slate-100"}>
+                {quadroDimensionado.resumoMateriais.map((mat, i) => (
+                  <tr
+                    key={i}
+                    className={`transition-colors ${
+                      isDark
+                        ? i % 2 === 0
+                          ? "bg-[#0b1329]/80 hover:bg-[#16223f]"
+                          : "bg-[#0f172a]/80 hover:bg-[#16223f]"
+                        : "hover:bg-slate-50/80"
+                    }`}
+                  >
                     <td className="p-3 font-bold text-slate-400">{i + 1}</td>
-                    <td className="p-3 font-bold text-slate-800">{mat.item}</td>
+                    <td className={`p-3 font-bold ${isDark ? "text-slate-200" : "text-slate-800"}`}>{mat.item}</td>
                     <td className="p-3 text-center font-black text-[#f15a24]">{mat.quantidade}</td>
-                    <td className="p-3 text-center font-semibold text-slate-500">{mat.unidade}</td>
-                    <td className="p-3 text-slate-600">{mat.especificacao}</td>
+                    <td className="p-3 text-center font-semibold text-slate-400">{mat.unidade}</td>
+                    <td className={`p-3 ${isDark ? "text-slate-300" : "text-slate-600"}`}>{mat.especificacao}</td>
                   </tr>
                 ))}
               </tbody>

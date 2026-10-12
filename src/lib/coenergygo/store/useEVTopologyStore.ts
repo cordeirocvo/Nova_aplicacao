@@ -23,15 +23,15 @@ interface EVTopologyStoreState {
   section1DistanceM: number;       // Padrão -> Painel 220V
   section1MarginPercent: number;
   section1ConductorMaterial?: 'copper' | 'aluminum';
-  section1InstallationMethod?: 'B1' | 'B2' | 'C' | 'D';
+  section1InstallationMethod?: 'B1' | 'B2' | 'C' | 'D' | 'F' | 'E';
   section2DistanceM: number;       // Painel 220V -> Trafo
   section2MarginPercent: number;
   section2ConductorMaterial?: 'copper' | 'aluminum';
-  section2InstallationMethod?: 'B1' | 'B2' | 'C' | 'D';
+  section2InstallationMethod?: 'B1' | 'B2' | 'C' | 'D' | 'F' | 'E';
   section3DistanceM: number;       // Trafo -> Painel 380V
   section3MarginPercent: number;
   section3ConductorMaterial?: 'copper' | 'aluminum';
-  section3InstallationMethod?: 'B1' | 'B2' | 'C' | 'D';
+  section3InstallationMethod?: 'B1' | 'B2' | 'C' | 'D' | 'F' | 'E';
 
   // Cargas Auxiliares
   auxiliaryConfig: {
@@ -102,15 +102,15 @@ interface EVTopologyStoreState {
     section1DistanceM?: number;
     section1MarginPercent?: number;
     section1ConductorMaterial?: 'copper' | 'aluminum';
-    section1InstallationMethod?: 'B1' | 'B2' | 'C' | 'D';
+    section1InstallationMethod?: 'B1' | 'B2' | 'C' | 'D' | 'F' | 'E';
     section2DistanceM?: number;
     section2MarginPercent?: number;
     section2ConductorMaterial?: 'copper' | 'aluminum';
-    section2InstallationMethod?: 'B1' | 'B2' | 'C' | 'D';
+    section2InstallationMethod?: 'B1' | 'B2' | 'C' | 'D' | 'F' | 'E';
     section3DistanceM?: number;
     section3MarginPercent?: number;
     section3ConductorMaterial?: 'copper' | 'aluminum';
-    section3InstallationMethod?: 'B1' | 'B2' | 'C' | 'D';
+    section3InstallationMethod?: 'B1' | 'B2' | 'C' | 'D' | 'F' | 'E';
     customTransformerKVA?: number;
     customTransformerEfficiencyPercent?: number;
     customTransformerLossesKW?: number;
@@ -142,7 +142,7 @@ interface EVTopologyStoreState {
   ) => void;
   updateSectionInstallationMethod: (
     section: 'trecho_1' | 'trecho_2' | 'trecho_3',
-    method: 'B1' | 'B2' | 'C' | 'D'
+    method: 'B1' | 'B2' | 'C' | 'D' | 'F' | 'E'
   ) => void;
   updateAuxiliaryConfig: (updates: Partial<EVTopologyStoreState['auxiliaryConfig']>) => void;
   setSelectedDrawerNodeId: (nodeId: string | null) => void;

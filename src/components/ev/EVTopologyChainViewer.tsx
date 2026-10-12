@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useEVTopologyStore } from '@/lib/coenergygo/store/useEVTopologyStore';
+import { TopologyChargerNode } from '@/lib/coenergygo/types';
 import { HOMOLOGATED_CHARGERS } from '@/lib/ev/chargersDatabase';
 import { CEMIG_CATEGORIES } from '@/lib/coenergygo/database/utilities';
 import {
@@ -40,28 +41,51 @@ export interface EVTopologyChainViewerProps {
     currentInA?: number;
     connector?: string;
     type?: 'AC' | 'DC';
+    distanceMeters?: number;
+    marginPercent?: number;
+    conductorMaterial?: 'copper' | 'aluminum';
+    installationMethod?: 'B1' | 'B2' | 'C' | 'D' | 'F' | 'E';
+    internalLossesKW?: number;
+    efficiencyPercent?: number;
   }>;
+  externalSection1DistanceM?: number;
+  externalSection1MarginPercent?: number;
+  externalSection1ConductorMaterial?: 'copper' | 'aluminum';
+  externalSection1InstallationMethod?: 'B1' | 'B2' | 'C' | 'D' | 'F' | 'E';
+  externalSection2DistanceM?: number;
+  externalSection2MarginPercent?: number;
+  externalSection2ConductorMaterial?: 'copper' | 'aluminum';
+  externalSection2InstallationMethod?: 'B1' | 'B2' | 'C' | 'D' | 'F' | 'E';
+  externalSection3DistanceM?: number;
+  externalSection3MarginPercent?: number;
+  externalSection3ConductorMaterial?: 'copper' | 'aluminum';
+  externalSection3InstallationMethod?: 'B1' | 'B2' | 'C' | 'D' | 'F' | 'E';
+  externalCustomTransformerKVA?: number;
+  externalCustomTransformerEfficiencyPercent?: number;
+  externalCustomTransformerLossesKW?: number;
   onUpdateStandard?: (categoryId: string, breakerA?: number) => void;
   externalHasSmartChargingDLM?: boolean;
   externalMaxChargerCapKW?: number;
   onUpdateChargerPower?: (id: string, newPowerKW: number) => void;
+  onUpdateChargerFull?: (id: string, updates: Partial<TopologyChargerNode>) => void;
   cemigStandardBOM?: any[];
   onSaveTopologyParams?: (params: {
     section1DistanceM: number;
     section1MarginPercent: number;
     section1ConductorMaterial?: 'copper' | 'aluminum';
-    section1InstallationMethod?: 'B1' | 'B2' | 'C' | 'D';
+    section1InstallationMethod?: 'B1' | 'B2' | 'C' | 'D' | 'F' | 'E';
     section2DistanceM: number;
     section2MarginPercent: number;
     section2ConductorMaterial?: 'copper' | 'aluminum';
-    section2InstallationMethod?: 'B1' | 'B2' | 'C' | 'D';
+    section2InstallationMethod?: 'B1' | 'B2' | 'C' | 'D' | 'F' | 'E';
     section3DistanceM: number;
     section3MarginPercent: number;
     section3ConductorMaterial?: 'copper' | 'aluminum';
-    section3InstallationMethod?: 'B1' | 'B2' | 'C' | 'D';
+    section3InstallationMethod?: 'B1' | 'B2' | 'C' | 'D' | 'F' | 'E';
     customTransformerKVA?: number;
     customTransformerEfficiencyPercent?: number;
     customTransformerLossesKW?: number;
+    chargers?: TopologyChargerNode[];
   }) => void;
   onConcludeTopology?: () => void;
 }
@@ -75,6 +99,22 @@ export function EVTopologyChainViewer({
   onUpdateStandard,
   externalHasSmartChargingDLM,
   externalMaxChargerCapKW,
+  externalSection1DistanceM,
+  externalSection1MarginPercent,
+  externalSection1ConductorMaterial,
+  externalSection1InstallationMethod,
+  externalSection2DistanceM,
+  externalSection2MarginPercent,
+  externalSection2ConductorMaterial,
+  externalSection2InstallationMethod,
+  externalSection3DistanceM,
+  externalSection3MarginPercent,
+  externalSection3ConductorMaterial,
+  externalSection3InstallationMethod,
+  externalCustomTransformerKVA,
+  externalCustomTransformerEfficiencyPercent,
+  externalCustomTransformerLossesKW,
+  onUpdateChargerFull,
   onUpdateChargerPower,
   cemigStandardBOM,
   onSaveTopologyParams,
@@ -126,26 +166,55 @@ export function EVTopologyChainViewer({
 
   // Sincronizar em tempo real com os passos 1A e 1B se informados externamente
   React.useEffect(() => {
-    if (externalClientBaseLoadKW !== undefined || externalStandardCategory || externalChargers) {
+    if (
+      externalClientBaseLoadKW !== undefined || 
+      externalStandardCategory || 
+      externalChargers ||
+      externalSection1DistanceM !== undefined ||
+      externalSection2DistanceM !== undefined ||
+      externalSection3DistanceM !== undefined
+    ) {
       syncFromProjectData({
         clientBaseLoadKW: externalClientBaseLoadKW ?? clientBaseLoadKW,
         currentStandardCategory: externalStandardCategory ?? currentStandardCategory,
         currentStandardBreakerA: externalStandardBreakerA ?? currentStandardBreakerA,
         gridSupplyVoltage: externalGridSupplyVoltage ?? gridSupplyVoltage,
-        chargers: externalChargers ? externalChargers.map((c, i) => ({
-          id: c.id || `ext-${i}`,
-          name: c.name,
-          brand: c.brand || 'WEG',
-          model: c.model || c.name,
-          powerKW: c.powerKW,
-          phases: c.phases,
-          voltageV: c.voltageV,
-          currentInA: c.currentInA || Math.round((c.powerKW * 1000) / (c.phases === 3 ? Math.sqrt(3) * c.voltageV * 0.98 : c.voltageV * 0.98)),
-          connector: c.connector || (c.type === 'DC' ? 'CCS2' : 'Tipo 2'),
-          type: c.type || (c.powerKW >= 30 ? 'DC' : 'AC'),
-          distanceMeters: 15,
-          marginPercent: 10
-        })) : undefined,
+        chargers: externalChargers ? externalChargers.map((c, i) => {
+          const existing = chargers.find(ex => ex.id === c.id);
+          return {
+            id: c.id || `ext-${i}`,
+            name: c.name,
+            brand: c.brand || 'WEG',
+            model: c.model || c.name,
+            powerKW: c.powerKW,
+            phases: c.phases,
+            voltageV: c.voltageV,
+            currentInA: c.currentInA || Math.round((c.powerKW * 1000) / (c.phases === 3 ? Math.sqrt(3) * c.voltageV * 0.98 : c.voltageV * 0.98)),
+            connector: c.connector || (c.type === 'DC' ? 'CCS2' : 'Tipo 2'),
+            type: c.type || (c.powerKW >= 30 ? 'DC' : 'AC'),
+            distanceMeters: c.distanceMeters ?? existing?.distanceMeters ?? 15,
+            marginPercent: c.marginPercent ?? existing?.marginPercent ?? 10,
+            conductorMaterial: c.conductorMaterial ?? existing?.conductorMaterial ?? 'copper',
+            installationMethod: c.installationMethod ?? existing?.installationMethod ?? 'B1',
+            internalLossesKW: c.internalLossesKW ?? existing?.internalLossesKW,
+            efficiencyPercent: c.efficiencyPercent ?? existing?.efficiencyPercent
+          };
+        }) : undefined,
+        section1DistanceM: externalSection1DistanceM ?? section1DistanceM,
+        section1MarginPercent: externalSection1MarginPercent ?? section1MarginPercent,
+        section1ConductorMaterial: externalSection1ConductorMaterial ?? section1ConductorMaterial,
+        section1InstallationMethod: externalSection1InstallationMethod ?? section1InstallationMethod,
+        section2DistanceM: externalSection2DistanceM ?? section2DistanceM,
+        section2MarginPercent: externalSection2MarginPercent ?? section2MarginPercent,
+        section2ConductorMaterial: externalSection2ConductorMaterial ?? section2ConductorMaterial,
+        section2InstallationMethod: externalSection2InstallationMethod ?? section2InstallationMethod,
+        section3DistanceM: externalSection3DistanceM ?? section3DistanceM,
+        section3MarginPercent: externalSection3MarginPercent ?? section3MarginPercent,
+        section3ConductorMaterial: externalSection3ConductorMaterial ?? section3ConductorMaterial,
+        section3InstallationMethod: externalSection3InstallationMethod ?? section3InstallationMethod,
+        customTransformerKVA: externalCustomTransformerKVA !== undefined ? externalCustomTransformerKVA : customTransformerKVA,
+        customTransformerEfficiencyPercent: externalCustomTransformerEfficiencyPercent !== undefined ? externalCustomTransformerEfficiencyPercent : customTransformerEfficiencyPercent,
+        customTransformerLossesKW: externalCustomTransformerLossesKW !== undefined ? externalCustomTransformerLossesKW : customTransformerLossesKW,
         hasSmartChargingDLM: externalHasSmartChargingDLM,
         maxChargerCapKW: externalMaxChargerCapKW
       });
@@ -156,6 +225,21 @@ export function EVTopologyChainViewer({
     externalStandardBreakerA,
     externalGridSupplyVoltage,
     externalChargers?.length,
+    externalSection1DistanceM,
+    externalSection1MarginPercent,
+    externalSection1ConductorMaterial,
+    externalSection1InstallationMethod,
+    externalSection2DistanceM,
+    externalSection2MarginPercent,
+    externalSection2ConductorMaterial,
+    externalSection2InstallationMethod,
+    externalSection3DistanceM,
+    externalSection3MarginPercent,
+    externalSection3ConductorMaterial,
+    externalSection3InstallationMethod,
+    externalCustomTransformerKVA,
+    externalCustomTransformerEfficiencyPercent,
+    externalCustomTransformerLossesKW,
     externalHasSmartChargingDLM,
     externalMaxChargerCapKW
   ]);
@@ -1399,7 +1483,11 @@ export function EVTopologyChainViewer({
                         <input
                           type="number"
                           value={chargers[i]?.distanceMeters || 10}
-                          onChange={(e) => updateCharger(chargers[i].id, { distanceMeters: Number(e.target.value) || 0 })}
+                          onChange={(e) => {
+                            const d = Number(e.target.value) || 0;
+                            updateCharger(chargers[i].id, { distanceMeters: d });
+                            if (onUpdateChargerFull) onUpdateChargerFull(chargers[i].id, { distanceMeters: d });
+                          }}
                           className="w-16 bg-slate-800 border border-slate-700 rounded px-1.5 py-0.5 text-white"
                         /> m
                       </td>
@@ -1407,7 +1495,11 @@ export function EVTopologyChainViewer({
                         <input
                           type="number"
                           value={chargers[i]?.marginPercent || 10}
-                          onChange={(e) => updateCharger(chargers[i].id, { marginPercent: Number(e.target.value) || 0 })}
+                          onChange={(e) => {
+                            const m = Number(e.target.value) || 0;
+                            updateCharger(chargers[i].id, { marginPercent: m });
+                            if (onUpdateChargerFull) onUpdateChargerFull(chargers[i].id, { marginPercent: m });
+                          }}
                           className="w-14 bg-slate-800 border border-slate-700 rounded px-1.5 py-0.5 text-white"
                         /> %
                       </td>
@@ -2404,12 +2496,13 @@ export function EVTopologyChainViewer({
                             <label className="block text-slate-400 text-[10px] uppercase font-bold mb-1.5">
                               Método de Instalação Normativo (NBR 5410 Tabela 33):
                             </label>
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-1.5">
                               {[
                                 { id: 'B1', title: 'Método B1', sub: 'Embutido', desc: 'Duto alvenaria' },
                                 { id: 'B2', title: 'Método B2', sub: 'Aparente', desc: 'Duto em parede' },
                                 { id: 'C', title: 'Método C', sub: 'Bandeja/Perf.', desc: 'Direto em perfil' },
-                                { id: 'D', title: 'Método D', sub: 'Enterrado', desc: 'Duto no solo 20°C' },
+                                { id: 'D', title: 'Método D', sub: 'Enterrado', desc: 'Duto solo 20°C' },
+                                { id: 'F', title: 'Método F', sub: 'Aéreo Multiplex', desc: 'Postes / Ar livre' },
                               ].map((m) => {
                                 const isCurrent = (sec.installationMethod || 'B1') === m.id;
                                 return (
@@ -2419,7 +2512,7 @@ export function EVTopologyChainViewer({
                                     onClick={() => updateSectionInstallationMethod(selectedDrawerNodeId as any, m.id as any)}
                                     className={`p-2 rounded-lg border text-left transition-all ${
                                       isCurrent
-                                        ? 'bg-amber-950/40 border-amber-500 text-white shadow-sm'
+                                        ? 'bg-amber-950/40 border-amber-500 text-white shadow-sm ring-1 ring-amber-500'
                                         : 'bg-slate-800/50 border-slate-700 text-slate-400 hover:text-slate-200 hover:border-slate-600'
                                     }`}
                                   >
@@ -2751,6 +2844,111 @@ export function EVTopologyChainViewer({
                         <strong className="text-base text-white font-bold">
                           {panel380V.mainBreakerA} A Tripolar
                         </strong>
+                      </div>
+                    </div>
+
+                    {/* ── DIAGRAMA UNIFILAR INTERATIVO DO PAINEL 380V (CONFORME FOTO 01 / NBR 5410 & NBR 17019) ── */}
+                    <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3 font-mono">
+                      <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                        <div>
+                          <span className="text-[10px] uppercase font-bold text-[#00B356] block">Diagrama Unifilar Interativo (NBR 5410 / NBR 17019)</span>
+                          <span className="text-white text-xs font-bold">Quadro de Distribuição 380V (QDC-VE)</span>
+                        </div>
+                        <span className="text-[10px] bg-slate-800 text-emerald-400 px-2 py-0.5 rounded font-bold">
+                          Tensão Barramento: 380V (3F+N+PE)
+                        </span>
+                      </div>
+
+                      {/* Visualização Esquemática Unifilar Vetorial 380V */}
+                      <div className="bg-slate-900/90 p-4 rounded-lg border border-slate-800 space-y-4">
+                        {/* 1. Entrada: Alimentação do Secundário Trafo Dyn1 (Trecho 3) */}
+                        <div className="flex flex-col items-center">
+                          <span className="text-[9px] text-slate-400 uppercase font-bold mb-1">
+                            Alimentação Secundário Trafo 380V (Trecho 3)
+                          </span>
+                          <div className="w-1 bg-[#00B356] h-4" />
+                          <div className="bg-slate-800 border-2 border-[#00B356] rounded-lg px-4 py-2 text-center shadow-md">
+                            <span className="text-[10px] text-slate-400 block font-sans">
+                              {panel380V.requiresBusbar ? 'Disjuntor Geral QDC-VE' : 'Disjuntor Unificado QDC-VE (1 Carregador)'}
+                            </span>
+                            <span className="text-white text-sm font-bold block">{panel380V.mainBreakerA}A Tripolar</span>
+                            <span className="text-[9px] text-emerald-400">Curva {panel380V.mainBreakerCurve} • Tripolar 3P • Icu ≥ 16kA</span>
+                          </div>
+                          <div className="w-1 bg-emerald-500 h-4" />
+                        </div>
+
+                        {/* 2. DPS Classe II e Esquema de Proteção */}
+                        <div className="flex items-center justify-center gap-2">
+                          <div className="bg-slate-950 border border-emerald-500/60 rounded px-2.5 py-1 text-center">
+                            <span className="text-[9px] text-emerald-400 font-bold block">4x DPS Classe II (385V / 40kA)</span>
+                            <span className="text-[8px] text-slate-400">Proteção contra sobretensões transitórias (Fases + Neutro)</span>
+                          </div>
+                          <div className="bg-slate-950 border border-cyan-500/60 rounded px-2.5 py-1 text-center">
+                            <span className="text-[9px] text-cyan-400 font-bold block">Aterramento BEP TN-S</span>
+                            <span className="text-[8px] text-slate-400">Neutro aterrado na saída do Trafo Dyn1</span>
+                          </div>
+                        </div>
+
+                        {/* 3. Barramento Principal em Cobre 380V (ou indicação de unificado) */}
+                        <div className="space-y-1 my-2">
+                          <div className="flex items-center justify-between text-[9px] text-slate-400 px-1 font-sans">
+                            <span>Barramento de Distribuição de Cobre 380V</span>
+                            <span className={panel380V.requiresBusbar ? 'text-emerald-400 font-bold' : 'text-slate-500 font-bold'}>
+                              {panel380V.requiresBusbar ? `${panel380V.busbarRatingA}A (99.9% Cu)` : 'Dispensado (1 Carregador)'}
+                            </span>
+                          </div>
+                          {panel380V.requiresBusbar ? (
+                            <div className="h-2 bg-gradient-to-r from-red-600 via-amber-500 to-blue-600 rounded-sm w-full shadow-inner" title="Fases R, S, T (380V)" />
+                          ) : (
+                            <div className="h-1 bg-slate-800 rounded-sm w-full border border-dashed border-slate-700" title="Ligação direta sem barramento" />
+                          )}
+                        </div>
+
+                        {/* 4. Derivações dos Circuitos Terminais dos Carregadores VE e Auxiliares */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 pt-2">
+                          {chargers.map((ch, idx) => {
+                            const brk = individualChargerBreakers.find(b => b.chargerId === ch.id);
+                            const brkAmp = brk ? brk.breakerA : (ch.phases === 3 ? 40 : 32);
+                            const curve = brk?.curve || 'C';
+                            const dr = brk?.drType || 'Tetrapolar 40A / 30mA Tipo B';
+
+                            return (
+                              <div key={`unifilar-380-ch-${ch.id}`} className="p-2.5 rounded-lg border text-xs bg-slate-950 border-emerald-500/50">
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="text-white font-bold text-[11px] truncate">VE {idx + 1}: {ch.name}</span>
+                                  <span className="text-[9px] bg-emerald-950 text-emerald-300 border border-emerald-700/60 px-1.5 py-0.2 rounded font-bold">
+                                    {brkAmp}A Curva {curve} ({ch.phases}P)
+                                  </span>
+                                </div>
+                                <span className="text-[10px] text-emerald-300 block">
+                                  {ch.phases === 3 ? 'Trifásico 380V' : 'Monofásico 220V'} • {ch.powerKW.toFixed(2)} kW ({Number(((ch.powerKW * 1000) / (Math.sqrt(ch.phases === 3 ? 3 : 1) * (ch.voltageV || 380) * 0.98)).toFixed(1))} A)
+                                </span>
+                                <span className="text-[9px] text-slate-400 font-mono block">
+                                  {dr}
+                                </span>
+                                <span className="text-[9px] text-amber-400/90 font-mono block">
+                                  Alimentador Trecho 4 • Conector {ch.connector || 'Tipo 2'}
+                                </span>
+                              </div>
+                            );
+                          })}
+
+                          {/* Circuitos Extras em 380V */}
+                          {customCircuits380V.map((circ, idx) => (
+                            <div key={`unifilar-380-custom-${circ.id}`} className="p-2.5 bg-slate-950 rounded-lg border border-slate-700 text-xs">
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-white font-bold text-[11px] truncate">Circ. {chargers.length + idx + 1}: {circ.name}</span>
+                                <span className="text-[9px] bg-slate-800 px-1.5 py-0.2 rounded text-amber-400 font-bold">
+                                  {circ.breakerA}A Curva {circ.curve || 'C'}
+                                </span>
+                              </div>
+                              <span className="text-[10px] text-slate-400 block">{circ.voltageV}V • {circ.powerW}W</span>
+                              <span className="text-[9px] text-slate-500 font-mono">
+                                Cabo {circ.cableMM2} mm² {circ.drRequired ? '• DR 30mA' : ''}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </div>
 
@@ -3118,7 +3316,11 @@ export function EVTopologyChainViewer({
                               <input
                                 type="number"
                                 value={c.distanceMeters}
-                                onChange={(e) => updateCharger(c.id, { distanceMeters: Number(e.target.value) || 0 })}
+                                onChange={(e) => {
+                                  const dist = Number(e.target.value) || 0;
+                                  updateCharger(c.id, { distanceMeters: dist });
+                                  if (onUpdateChargerFull) onUpdateChargerFull(c.id, { distanceMeters: dist });
+                                }}
                                 className="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white font-mono"
                               />
                             </div>
@@ -3127,9 +3329,88 @@ export function EVTopologyChainViewer({
                               <input
                                 type="number"
                                 value={c.marginPercent}
-                                onChange={(e) => updateCharger(c.id, { marginPercent: Number(e.target.value) || 0 })}
+                                onChange={(e) => {
+                                  const marg = Number(e.target.value) || 0;
+                                  updateCharger(c.id, { marginPercent: marg });
+                                  if (onUpdateChargerFull) onUpdateChargerFull(c.id, { marginPercent: marg });
+                                }}
                                 className="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white font-mono"
                               />
+                            </div>
+                          </div>
+
+                          {/* Material do Condutor do Ramal do Carregador */}
+                          <div className="pt-2 border-t border-slate-800/80">
+                            <label className="block text-slate-400 text-[10px] uppercase font-bold mb-1.5">
+                              Material do Condutor do Ramal:
+                            </label>
+                            <div className="grid grid-cols-2 gap-2">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  updateCharger(c.id, { conductorMaterial: 'copper' });
+                                  if (onUpdateChargerFull) onUpdateChargerFull(c.id, { conductorMaterial: 'copper' });
+                                }}
+                                className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all border text-left ${
+                                  (c.conductorMaterial || 'copper') === 'copper'
+                                    ? 'bg-[#E45318]/20 border-[#E45318] text-white shadow-sm'
+                                    : 'bg-slate-800/60 border-slate-700 text-slate-400 hover:text-white'
+                                }`}
+                              >
+                                <span>Cobre (Cu)</span>
+                                <span className="text-[9px] text-slate-400 font-normal block mt-0.5">70°C PVC</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  updateCharger(c.id, { conductorMaterial: 'aluminum' });
+                                  if (onUpdateChargerFull) onUpdateChargerFull(c.id, { conductorMaterial: 'aluminum' });
+                                }}
+                                className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all border text-left ${
+                                  c.conductorMaterial === 'aluminum'
+                                    ? 'bg-[#00B356]/20 border-[#00B356] text-white shadow-sm'
+                                    : 'bg-slate-800/60 border-slate-700 text-slate-400 hover:text-white'
+                                }`}
+                              >
+                                <span>Alumínio (Al)</span>
+                                <span className="text-[9px] text-slate-400 font-normal block mt-0.5">Multiplex / Mín 16mm²</span>
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Método de Instalação do Ramal (com Método F Aéreo) */}
+                          <div className="pt-2 border-t border-slate-800/80">
+                            <label className="block text-slate-400 text-[10px] uppercase font-bold mb-1.5">
+                              Método de Instalação (NBR 5410 Tabela 33):
+                            </label>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-1.5">
+                              {[
+                                { id: 'B1', title: 'B1', sub: 'Embutido' },
+                                { id: 'B2', title: 'B2', sub: 'Aparente' },
+                                { id: 'C', title: 'C', sub: 'Perfil' },
+                                { id: 'D', title: 'D', sub: 'Enterrado' },
+                                { id: 'F', title: 'F', sub: 'Aéreo Multiplex' },
+                              ].map((m) => {
+                                const isCurrent = (c.installationMethod || 'B1') === m.id;
+                                return (
+                                  <button
+                                    key={m.id}
+                                    type="button"
+                                    onClick={() => {
+                                      updateCharger(c.id, { installationMethod: m.id as any });
+                                      if (onUpdateChargerFull) onUpdateChargerFull(c.id, { installationMethod: m.id as any });
+                                    }}
+                                    className={`p-1.5 rounded-lg border text-left transition-all ${
+                                      isCurrent
+                                        ? 'bg-amber-950/40 border-amber-500 text-white shadow-sm ring-1 ring-amber-500'
+                                        : 'bg-slate-800/50 border-slate-700 text-slate-400 hover:text-slate-200'
+                                    }`}
+                                  >
+                                    <span className="text-xs font-bold block">{m.title}</span>
+                                    <span className="text-[8px] text-amber-300/80 block">{m.sub}</span>
+                                  </button>
+                                );
+                              })}
                             </div>
                           </div>
 
@@ -3421,7 +3702,8 @@ export function EVTopologyChainViewer({
                     section3InstallationMethod,
                     customTransformerKVA,
                     customTransformerEfficiencyPercent,
-                    customTransformerLossesKW
+                    customTransformerLossesKW,
+                    chargers
                   });
                 }
                 if (onConcludeTopology) {

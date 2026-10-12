@@ -93,15 +93,15 @@ export interface ChainTopologyInputParams {
   section1DistanceM: number;       // Padrão -> Painel 220V
   section1MarginPercent: number;
   section1ConductorMaterial?: 'copper' | 'aluminum';
-  section1InstallationMethod?: 'B1' | 'B2' | 'C' | 'D';
+  section1InstallationMethod?: 'B1' | 'B2' | 'C' | 'D' | 'F' | 'E';
   section2DistanceM: number;       // Painel 220V -> Trafo
   section2MarginPercent: number;
   section2ConductorMaterial?: 'copper' | 'aluminum';
-  section2InstallationMethod?: 'B1' | 'B2' | 'C' | 'D';
+  section2InstallationMethod?: 'B1' | 'B2' | 'C' | 'D' | 'F' | 'E';
   section3DistanceM: number;       // Trafo -> Painel 380V
   section3MarginPercent: number;
   section3ConductorMaterial?: 'copper' | 'aluminum';
-  section3InstallationMethod?: 'B1' | 'B2' | 'C' | 'D';
+  section3InstallationMethod?: 'B1' | 'B2' | 'C' | 'D' | 'F' | 'E';
 
   auxiliaryConfig: {
     cctvEnabled: boolean;
@@ -154,7 +154,7 @@ export function sizeCableAndConduitSection(params: {
   phases: 1 | 2 | 3;
   voltageV: number;
   conductorMaterial?: 'copper' | 'aluminum';
-  installationMethod?: 'B1' | 'B2' | 'C' | 'D';
+  installationMethod?: 'B1' | 'B2' | 'C' | 'D' | 'F' | 'E';
   maxAllowedVoltageDropPercent?: number;
   includeNeutral?: boolean;
   minGaugeMM2?: number;          // Seção mínima imposta (ex: saída do padrão CEMIG)
@@ -192,10 +192,16 @@ export function sizeCableAndConduitSection(params: {
 
   // Fatores de correção ambientais (NBR 5410 Tabela 40 e Tabela 42)
   const FCT = installationMethod === 'D' ? 1.00 : 1.00; // Solo 20°C (FCT=1.0) ou Ar 30°C (FCT=1.0)
-  const FCA = 1.00; // 1 circuito no duto (FCA=1.0)
+  const FCA = 1.00; // 1 circuito no duto ou feixe (FCA=1.0)
   const DERATING_FACTOR = FCT * FCA;
 
-  const methodLabel = installationMethod === 'B1'
+  const isAerial = installationMethod === 'F' || installationMethod === 'E';
+
+  const methodLabel = installationMethod === 'F'
+    ? 'Método F (Cabos unipolares ou multiplexados ao ar livre / aéreo em postes - NBR 5410 Tabela 33)'
+    : installationMethod === 'E'
+    ? 'Método E (Cabo multipolar / multiplexado ao ar livre em isoladores ou fixado em poste - NBR 5410)'
+    : installationMethod === 'B1'
     ? 'Método B1 (Condutores isolados em eletroduto de seção circular embutido em alvenaria - NBR 5410 Tabela 33)'
     : installationMethod === 'B2'
     ? 'Método B2 (Cabo multipolar em eletroduto sobre parede ou aparente - NBR 5410 Tabela 33)'
@@ -204,7 +210,7 @@ export function sizeCableAndConduitSection(params: {
     : 'Método D (Cabos em eletroduto enterrado no solo - NBR 5410 Tabela 33)';
 
   const tempRef = installationMethod === 'D' ? '20°C (Solo, FCT=1.00)' : '30°C (Ar Ambiente, FCT=1.00)';
-  const groupedNote = '1 circuito isolado no conduto (FCA=1.00)';
+  const groupedNote = isAerial ? 'Cabo isolado autossustentado ao ar livre' : '1 circuito isolado no conduto (FCA=1.00)';
 
   // 1. Bitola por Ampacidade e Seleção de Condutores em Paralelo (NBR 5410)
   let chosenConductors = Math.max(1, minConductorsPerPhase);
@@ -221,11 +227,16 @@ export function sizeCableAndConduitSection(params: {
 
       let cap = isThreePhase ? spec.b1_3cond : spec.b1_2cond;
       if (installationMethod === 'B2') cap = isThreePhase ? spec.b2_3cond : spec.b2_2cond;
-      if (installationMethod === 'C') cap = isThreePhase ? spec.c_3cond : spec.c_2cond;
+      else if (installationMethod === 'C') cap = isThreePhase ? spec.c_3cond : spec.c_2cond;
+      else if (isAerial) cap = isThreePhase ? (spec.c_3cond * 1.15) : (spec.c_2cond * 1.15);
 
       // Capacidade de condutor de Alumínio (multiplexado aéreo ou duto)
       if (isAluminum) {
-        cap = spec.al_aereo_3cond || spec.al_b1_3cond || Math.round(cap * 0.78);
+        if (isAerial) {
+          cap = spec.al_aereo_3cond || Math.round(cap * 0.85);
+        } else {
+          cap = spec.al_b1_3cond || Math.round(cap * 0.78);
+        }
       }
 
       const correctedCap = cap * DERATING_FACTOR;
@@ -356,10 +367,10 @@ export function sizeCableAndConduitSection(params: {
     cableGaugeNeutralMM2: includeNeutral ? cableGaugePhaseMM2 : undefined,
     cableGaugeGroundMM2,
     totalConductorsCount,
-    conduitDiameterMM: selectedConduit.internalDiameterMM,
-    conduitInches: isAluminum && installationMethod === 'D' ? 'Aéreo Multiplex' : conduitQuantity > 1 ? `${conduitQuantity}x(${selectedConduit.inches})` : selectedConduit.inches,
-    conduitQuantity,
-    conduitFillingRatePercent,
+    conduitDiameterMM: isAerial ? 0 : selectedConduit.internalDiameterMM,
+    conduitInches: isAerial ? 'Aéreo (Sem Duto)' : conduitQuantity > 1 ? `${conduitQuantity}x(${selectedConduit.inches})` : selectedConduit.inches,
+    conduitQuantity: isAerial ? 0 : conduitQuantity,
+    conduitFillingRatePercent: isAerial ? 0 : conduitFillingRatePercent,
     voltageDropPercent,
     voltageDropVolts,
     isVoltageDropCompliant: voltageDropPercent <= maxAllowedVoltageDropPercent,

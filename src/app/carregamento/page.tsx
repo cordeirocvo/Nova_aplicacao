@@ -285,6 +285,20 @@ export default function CoenergyGODashboard() {
 
         setProjects(finalProjects);
         setLoadingProjects(false);
+
+        // Se houver um rascunho de sessão recente salvo, restaurar parâmetros se ainda no modo novo
+        try {
+          const draft = localStorage.getItem('coenergygo_active_draft');
+          if (draft) {
+            const parsedDraft = JSON.parse(draft);
+            if (parsedDraft && parsedDraft.clientProjectData) {
+              setClientProjectData(prev => ({ ...prev, ...parsedDraft.clientProjectData }));
+            }
+            if (Array.isArray(parsedDraft?.configuredChargers) && parsedDraft.configuredChargers.length > 0) {
+              setConfiguredChargers(parsedDraft.configuredChargers);
+            }
+          }
+        } catch (e) {}
       })
       .catch(err => {
         console.warn("Aviso na API remota /api/ev/sizing, utilizando projetos locais:", err);
@@ -302,6 +316,19 @@ export default function CoenergyGODashboard() {
           setProjects(dedupedLocal);
         }
         setLoadingProjects(false);
+
+        try {
+          const draft = localStorage.getItem('coenergygo_active_draft');
+          if (draft) {
+            const parsedDraft = JSON.parse(draft);
+            if (parsedDraft && parsedDraft.clientProjectData) {
+              setClientProjectData(prev => ({ ...prev, ...parsedDraft.clientProjectData }));
+            }
+            if (Array.isArray(parsedDraft?.configuredChargers) && parsedDraft.configuredChargers.length > 0) {
+              setConfiguredChargers(parsedDraft.configuredChargers);
+            }
+          }
+        } catch (e) {}
       });
   }, []);
 
@@ -740,10 +767,26 @@ export default function CoenergyGODashboard() {
       setCommercialHub(prev => ({ ...prev, ...p.commercialHub }));
     }
 
-    // Se possui clientProjectData estruturado
-    if (p.clientProjectData) {
-      setClientProjectData(prev => ({ ...prev, ...p.clientProjectData }));
-    }
+    // Se possui clientProjectData estruturado ou campos de topologia na raiz
+    const mergedClientData = {
+      ...(p.clientProjectData || {}),
+      section1DistanceM: p.section1DistanceM ?? p.clientProjectData?.section1DistanceM,
+      section1MarginPercent: p.marginPercent ?? p.section1MarginPercent ?? p.clientProjectData?.section1MarginPercent,
+      section1ConductorMaterial: p.section1ConductorMaterial ?? p.clientProjectData?.section1ConductorMaterial,
+      section1InstallationMethod: p.section1InstallationMethod ?? p.clientProjectData?.section1InstallationMethod,
+      section2DistanceM: p.section2DistanceM ?? p.clientProjectData?.section2DistanceM,
+      section2MarginPercent: p.section2MarginPercent ?? p.clientProjectData?.section2MarginPercent,
+      section2ConductorMaterial: p.section2ConductorMaterial ?? p.clientProjectData?.section2ConductorMaterial,
+      section2InstallationMethod: p.section2InstallationMethod ?? p.clientProjectData?.section2InstallationMethod,
+      section3DistanceM: p.section3DistanceM ?? p.clientProjectData?.section3DistanceM,
+      section3MarginPercent: p.section3MarginPercent ?? p.clientProjectData?.section3MarginPercent,
+      section3ConductorMaterial: p.section3ConductorMaterial ?? p.clientProjectData?.section3ConductorMaterial,
+      section3InstallationMethod: p.section3InstallationMethod ?? p.clientProjectData?.section3InstallationMethod,
+      customTransformerKVA: p.customTransformerKVA ?? p.clientProjectData?.customTransformerKVA,
+      customTransformerEfficiencyPercent: p.customTransformerEfficiencyPercent ?? p.clientProjectData?.customTransformerEfficiencyPercent,
+      customTransformerLossesKW: p.customTransformerLossesKW ?? p.clientProjectData?.customTransformerLossesKW
+    };
+    setClientProjectData(prev => ({ ...prev, ...mergedClientData }));
 
     // Restaurar Planilhas de Medição e Histórico de Carga
     if (Array.isArray(p.attachedSheetsList) && p.attachedSheetsList.length > 0) {
@@ -771,14 +814,16 @@ export default function CoenergyGODashboard() {
     }
 
     // Se possui lista completa de carregadores restaurada do snapshot
+    let restoredChargersList: ConfiguredCharger[] = [];
     if (Array.isArray(p.configuredChargers) && p.configuredChargers.length > 0) {
+      restoredChargersList = p.configuredChargers;
       setConfiguredChargers(p.configuredChargers);
     } else if (p.charger) {
       // Injetar carregador padrão do relacionamento 1:1 caso não tenha o snapshot
       const kw = Number(p.charger.power) || 7.4;
       const phases = (Number(p.charger.phases) || (kw >= 11 ? 3 : 1)) as (1 | 3);
       const isDC = p.charger.type === 'DC' || kw >= 30;
-      setConfiguredChargers([{
+      restoredChargersList = [{
         id: `ch-loaded-${p.id}`,
         name: p.charger.model || (isDC ? `${kw} kW Dispensador DC Rápido` : `${kw} kW Wallbox AC`),
         powerKW: kw,
@@ -786,8 +831,59 @@ export default function CoenergyGODashboard() {
         voltage: Number(p.charger.voltage) || (phases === 3 ? 380 : 220),
         type: isDC ? 'DC' : 'AC',
         quantity: 1,
-        connector: isDC ? 'CCS2' : 'Tipo 2'
-      }]);
+        connector: isDC ? 'CCS2' : 'Tipo 2',
+        distanceMeters: 15,
+        marginPercent: 10
+      }];
+      setConfiguredChargers(restoredChargersList);
+    }
+
+    // Sincronizar store da topologia imediatamente com todos os parâmetros restaurados
+    try {
+      const { useEVTopologyStore } = require('@/lib/coenergygo/store/useEVTopologyStore');
+      useEVTopologyStore.getState().syncFromProjectData({
+        clientBaseLoadKW: Number(p.existingLoadKW) || 5.0,
+        currentStandardCategory: p.existingEntranceCategory || p.entranceCategory || 'C3',
+        currentStandardBreakerA: Number(p.existingEntranceBreaker) || 63,
+        gridSupplyVoltage: p.commercialHub?.gridSupplyVoltage ?? 220,
+        section1DistanceM: mergedClientData.section1DistanceM,
+        section1MarginPercent: mergedClientData.section1MarginPercent,
+        section1ConductorMaterial: mergedClientData.section1ConductorMaterial,
+        section1InstallationMethod: mergedClientData.section1InstallationMethod,
+        section2DistanceM: mergedClientData.section2DistanceM,
+        section2MarginPercent: mergedClientData.section2MarginPercent,
+        section2ConductorMaterial: mergedClientData.section2ConductorMaterial,
+        section2InstallationMethod: mergedClientData.section2InstallationMethod,
+        section3DistanceM: mergedClientData.section3DistanceM,
+        section3MarginPercent: mergedClientData.section3MarginPercent,
+        section3ConductorMaterial: mergedClientData.section3ConductorMaterial,
+        section3InstallationMethod: mergedClientData.section3InstallationMethod,
+        customTransformerKVA: mergedClientData.customTransformerKVA,
+        customTransformerEfficiencyPercent: mergedClientData.customTransformerEfficiencyPercent,
+        customTransformerLossesKW: mergedClientData.customTransformerLossesKW,
+        customCircuits220V: Array.isArray(p.customCircuits220V) ? p.customCircuits220V : undefined,
+        customCircuits380V: Array.isArray(p.customCircuits380V) ? p.customCircuits380V : undefined,
+        chargers: restoredChargersList.map((ch: any) => ({
+          id: ch.id,
+          name: ch.name,
+          brand: ch.brand || 'WEG',
+          model: ch.model || ch.name,
+          powerKW: ch.powerKW,
+          phases: ch.phases,
+          voltageV: ch.voltage,
+          currentInA: ch.currentInA || Math.round((ch.powerKW * 1000) / (ch.phases === 3 ? Math.sqrt(3) * ch.voltage * 0.98 : ch.voltage * 0.98)),
+          connector: ch.connector,
+          type: ch.type,
+          distanceMeters: ch.distanceMeters ?? 15,
+          marginPercent: ch.marginPercent ?? 10,
+          conductorMaterial: ch.conductorMaterial ?? 'copper',
+          installationMethod: ch.installationMethod ?? 'B1',
+          internalLossesKW: ch.internalLossesKW,
+          efficiencyPercent: ch.efficiencyPercent
+        }))
+      });
+    } catch (err) {
+      console.warn("Aviso ao sincronizar useEVTopologyStore no carregamento do projeto:", err);
     }
     setActiveTab('veiculos');
   };
@@ -1119,6 +1215,21 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
           return [];
         }
       })(),
+      section1DistanceM: clientProjectData.section1DistanceM,
+      section1MarginPercent: clientProjectData.section1MarginPercent,
+      section1ConductorMaterial: clientProjectData.section1ConductorMaterial,
+      section1InstallationMethod: clientProjectData.section1InstallationMethod,
+      section2DistanceM: clientProjectData.section2DistanceM,
+      section2MarginPercent: clientProjectData.section2MarginPercent,
+      section2ConductorMaterial: clientProjectData.section2ConductorMaterial,
+      section2InstallationMethod: clientProjectData.section2InstallationMethod,
+      section3DistanceM: clientProjectData.section3DistanceM,
+      section3MarginPercent: clientProjectData.section3MarginPercent,
+      section3ConductorMaterial: clientProjectData.section3ConductorMaterial,
+      section3InstallationMethod: clientProjectData.section3InstallationMethod,
+      customTransformerKVA: clientProjectData.customTransformerKVA,
+      customTransformerEfficiencyPercent: clientProjectData.customTransformerEfficiencyPercent,
+      customTransformerLossesKW: clientProjectData.customTransformerLossesKW,
       clientProjectData: {
         ...clientProjectData,
         projectName: resolvedProjectName,
@@ -3037,8 +3148,29 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
               voltageV: c.voltage,
               currentInA: c.currentInA,
               connector: c.connector,
-              type: c.type
+              type: c.type,
+              distanceMeters: c.distanceMeters,
+              marginPercent: c.marginPercent,
+              conductorMaterial: c.conductorMaterial,
+              installationMethod: c.installationMethod,
+              internalLossesKW: c.internalLossesKW,
+              efficiencyPercent: c.efficiencyPercent
             }))}
+            externalSection1DistanceM={clientProjectData.section1DistanceM}
+            externalSection1MarginPercent={clientProjectData.section1MarginPercent}
+            externalSection1ConductorMaterial={clientProjectData.section1ConductorMaterial}
+            externalSection1InstallationMethod={clientProjectData.section1InstallationMethod}
+            externalSection2DistanceM={clientProjectData.section2DistanceM}
+            externalSection2MarginPercent={clientProjectData.section2MarginPercent}
+            externalSection2ConductorMaterial={clientProjectData.section2ConductorMaterial}
+            externalSection2InstallationMethod={clientProjectData.section2InstallationMethod}
+            externalSection3DistanceM={clientProjectData.section3DistanceM}
+            externalSection3MarginPercent={clientProjectData.section3MarginPercent}
+            externalSection3ConductorMaterial={clientProjectData.section3ConductorMaterial}
+            externalSection3InstallationMethod={clientProjectData.section3InstallationMethod}
+            externalCustomTransformerKVA={clientProjectData.customTransformerKVA}
+            externalCustomTransformerEfficiencyPercent={clientProjectData.customTransformerEfficiencyPercent}
+            externalCustomTransformerLossesKW={clientProjectData.customTransformerLossesKW}
             onUpdateStandard={(catId, breakerA) => {
               setCurrentStandardCategoryId(catId);
               setCustomHomologatedCategoryId(catId);
@@ -3056,6 +3188,18 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
               : undefined}
             onUpdateChargerPower={(id, newPowerKW) => {
               handleUpdateCharger(id, { powerKW: newPowerKW });
+            }}
+            onUpdateChargerFull={(id, updates) => {
+              setConfiguredChargers(prev => prev.map(c => {
+                if (c.id === id) {
+                  return {
+                    ...c,
+                    ...updates,
+                    phases: (updates.phases ?? c.phases) as (1 | 2 | 3)
+                  };
+                }
+                return c;
+              }));
             }}
             cemigStandardBOM={cemigPadraoResult?.itensSugeridos}
             onSaveTopologyParams={(params) => {
@@ -3077,6 +3221,23 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
                 customTransformerEfficiencyPercent: params.customTransformerEfficiencyPercent,
                 customTransformerLossesKW: params.customTransformerLossesKW
               }));
+              if (params.chargers && params.chargers.length > 0) {
+                setConfiguredChargers(prev => prev.map(ch => {
+                  const node = params.chargers?.find(cn => cn.id === ch.id);
+                  if (node) {
+                    return {
+                      ...ch,
+                      distanceMeters: node.distanceMeters,
+                      marginPercent: node.marginPercent,
+                      conductorMaterial: node.conductorMaterial,
+                      installationMethod: node.installationMethod,
+                      internalLossesKW: node.internalLossesKW,
+                      efficiencyPercent: node.efficiencyPercent
+                    };
+                  }
+                  return ch;
+                }));
+              }
               handleAutoSaveSnapshot();
             }}
             onConcludeTopology={() => {

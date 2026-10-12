@@ -150,15 +150,15 @@ export interface ClientProjectData {
   section1DistanceM?: number;
   section1MarginPercent?: number;
   section1ConductorMaterial?: 'copper' | 'aluminum';
-  section1InstallationMethod?: 'B1' | 'B2' | 'C' | 'D';
+  section1InstallationMethod?: 'B1' | 'B2' | 'C' | 'D' | 'F' | 'E';
   section2DistanceM?: number;
   section2MarginPercent?: number;
   section2ConductorMaterial?: 'copper' | 'aluminum';
-  section2InstallationMethod?: 'B1' | 'B2' | 'C' | 'D';
+  section2InstallationMethod?: 'B1' | 'B2' | 'C' | 'D' | 'F' | 'E';
   section3DistanceM?: number;
   section3MarginPercent?: number;
   section3ConductorMaterial?: 'copper' | 'aluminum';
-  section3InstallationMethod?: 'B1' | 'B2' | 'C' | 'D';
+  section3InstallationMethod?: 'B1' | 'B2' | 'C' | 'D' | 'F' | 'E';
   customTransformerKVA?: number;
   customTransformerEfficiencyPercent?: number;
   customTransformerLossesKW?: number;
@@ -217,7 +217,7 @@ export interface ConfiguredCharger {
   id: string;
   name: string;
   powerKW: number;
-  phases: 1 | 3;
+  phases: 1 | 2 | 3;
   voltage: number;
   type: 'AC' | 'DC';
   quantity: number;
@@ -231,6 +231,11 @@ export interface ConfiguredCharger {
   datasheet?: ChargerDatasheet;
   targetVehicleId?: string;
   targetVehicleName?: string;
+  distanceMeters?: number;
+  marginPercent?: number;
+  conductorMaterial?: 'copper' | 'aluminum';
+  installationMethod?: 'B1' | 'B2' | 'C' | 'D' | 'F' | 'E';
+  internalLossesKW?: number;
 }
 
 export interface UtilitySizingInput {
@@ -741,7 +746,7 @@ export interface TopologyChargerNode {
   efficiencyPercent?: number;  // Rendimento interno do carregador (ex: 95% para DC, 98.5% para AC)
   internalLossesKW?: number;   // Perdas internas do carregador em kW
   conductorMaterial?: 'copper' | 'aluminum';
-  installationMethod?: 'B1' | 'B2' | 'C' | 'D';
+  installationMethod?: 'B1' | 'B2' | 'C' | 'D' | 'F' | 'E';
 }
 
 export interface SectionCableConduitSizing {
@@ -756,7 +761,7 @@ export interface SectionCableConduitSizing {
   phases: 1 | 2 | 3;
   voltageV: number;
   conductorMaterial: 'copper' | 'aluminum';
-  installationMethod: 'B1' | 'B2' | 'C' | 'D';
+  installationMethod: 'B1' | 'B2' | 'C' | 'D' | 'F' | 'E';
   conductorsPerPhase: number;    // Número de condutores em paralelo por fase (ex: 1, 2, 3)
   cableGaugePhaseMM2: number;
   cableGaugeNeutralMM2?: number;

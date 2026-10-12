@@ -4,9 +4,9 @@ import React, { useState } from "react";
 import { 
   FileSpreadsheet, Calendar, Clock, Zap, Activity, 
   TrendingUp, BarChart3, ChevronLeft, ChevronRight, CheckCircle2,
-  AlertCircle, Trash2, Layers
+  AlertCircle, Trash2, Layers, Download
 } from "lucide-react";
-import { PeriodMeasurementSummary, MeasuredIntervalPoint, DailyPeakPoint } from "@/lib/coenergygo";
+import { PeriodMeasurementSummary, MeasuredIntervalPoint, DailyPeakPoint, exportLoadSummaryToExcel } from "@/lib/coenergygo";
 
 interface ImportedDataViewerProps {
   summary: PeriodMeasurementSummary;
@@ -31,6 +31,25 @@ export default function ImportedDataViewer({
   const [currentPage, setCurrentPage] = useState(1);
   const [showTable, setShowTable] = useState(false);
   const pageSize = 10;
+
+  const handleDownloadExcel = () => {
+    try {
+      const bytes = exportLoadSummaryToExcel(summary, dailyPeaks);
+      const blob = new Blob([bytes as any], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const cleanFileName = summary.fileName.replace(/[^a-zA-Z0-9_\-\.]/g, '_');
+      a.download = cleanFileName.endsWith('.xlsx') ? cleanFileName : `${cleanFileName}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      console.error("Erro ao gerar planilha para download:", err);
+      alert("Erro ao baixar planilha: " + (err.message || "Falha na geração do arquivo Excel"));
+    }
+  };
 
   const totalPages = Math.ceil(summary.intervalPoints.length / pageSize);
   const startIndex = (currentPage - 1) * pageSize;
@@ -182,21 +201,33 @@ export default function ImportedDataViewer({
             </button>
           </div>
 
-          {onClear && (
+          <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={onClear}
-              className="text-xs font-bold text-red-600 hover:text-white bg-red-50 hover:bg-red-600 border border-red-200 hover:border-red-600 px-3 py-2 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
-              title="Excluir medição e zerar dados de carga anexados"
+              onClick={handleDownloadExcel}
+              className="text-xs font-bold text-emerald-700 hover:text-white bg-emerald-50 hover:bg-emerald-600 border border-emerald-200 hover:border-emerald-600 px-3 py-2 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+              title="Baixar planilha Excel (.xlsx) completa com histórico e medições"
             >
-              <Trash2 className="w-3.5 h-3.5" />
-              <span>Excluir Medição</span>
+              <Download className="w-3.5 h-3.5" />
+              <span>Baixar Planilha Excel</span>
             </button>
-          )}
+
+            {onClear && (
+              <button
+                type="button"
+                onClick={onClear}
+                className="text-xs font-bold text-red-600 hover:text-white bg-red-50 hover:bg-red-600 border border-red-200 hover:border-red-600 px-3 py-2 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+                title="Excluir medição e zerar dados de carga anexados"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Excluir Medição</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* ─── LISTA DE PLANILHAS ANEXADAS (COM BOTÃO DE DELETAR CADA UMA INDIVIDUALMENTE) ─── */}
+      {/* ─── LISTA DE PLANILHAS ANEXADAS (COM BOTÃO DE DOWNLOAD E DELETAR CADA UMA) ─── */}
       {attachedFiles.length > 0 && (
         <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-3.5 space-y-2">
           <div className="flex items-center justify-between text-xs font-bold text-slate-700">
@@ -205,7 +236,7 @@ export default function ImportedDataViewer({
               Planilhas Anexadas no Projeto ({attachedFiles.length}):
             </span>
             <span className="text-[11px] text-slate-400 font-normal">
-              Você pode remover qualquer planilha individualmente abaixo
+              Você pode baixar ou remover qualquer planilha individualmente abaixo
             </span>
           </div>
 
@@ -221,16 +252,26 @@ export default function ImportedDataViewer({
                     Pico: <strong className="text-[#E45318]">{f.maxKW.toFixed(2)} kW</strong> • {f.readings} pts
                   </p>
                 </div>
-                {onRemoveFile && (
+                <div className="flex items-center gap-1 shrink-0">
                   <button
                     type="button"
-                    onClick={() => onRemoveFile(f.id)}
-                    className="p-1 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors shrink-0 cursor-pointer"
-                    title={`Remover planilha ${f.name}`}
+                    onClick={handleDownloadExcel}
+                    className="p-1.5 rounded-lg text-emerald-700 hover:text-emerald-950 hover:bg-emerald-50 transition-colors cursor-pointer"
+                    title={`Baixar dados da planilha ${f.name} em Excel`}
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    <Download className="w-3.5 h-3.5" />
                   </button>
-                )}
+                  {onRemoveFile && (
+                    <button
+                      type="button"
+                      onClick={() => onRemoveFile(f.id)}
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                      title={`Remover planilha ${f.name}`}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
               </div>
             ))}
           </div>

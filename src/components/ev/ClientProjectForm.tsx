@@ -6,7 +6,7 @@ import {
   Upload, FileText, CheckCircle2, AlertCircle, 
   Loader2, Sparkles, Shield, Eye, Trash2, HelpCircle,
   Sun, BarChart3, TrendingUp, ArrowRight,
-  AlertTriangle, Flame, ShieldAlert
+  AlertTriangle, Flame, ShieldAlert, Download
 } from "lucide-react";
 import { ClientProjectData, UtilityId } from "@/lib/coenergygo";
 
@@ -143,20 +143,35 @@ export default function ClientProjectForm({
         {/* Status da Fatura Anexada */}
         {data.utilityBillFileName && (
           <div className="bg-emerald-50 border border-emerald-200 px-3.5 py-2 rounded-2xl flex items-center gap-3">
-            <CheckCircle2 className="w-4 h-4 text-[#00B356]" />
+            <CheckCircle2 className="w-4 h-4 text-[#00B356] shrink-0" />
             <div className="text-left">
               <span className="text-[10px] uppercase font-bold text-emerald-800 block">Conta Anexada</span>
               <span className="text-xs font-bold text-emerald-950 truncate max-w-[180px] block">
                 {data.utilityBillFileName}
               </span>
             </div>
-            <button
-              onClick={handleRemoveAttachedBill}
-              className="text-slate-400 hover:text-red-500 transition-colors p-1"
-              title="Remover anexo"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-1 ml-auto">
+              {data.utilityBillFileUrl && (
+                <a
+                  href={data.utilityBillFileUrl}
+                  download={data.utilityBillFileName}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-1.5 rounded-lg text-emerald-700 hover:text-emerald-950 hover:bg-emerald-100 transition-colors flex items-center gap-1 cursor-pointer"
+                  title={`Baixar arquivo da conta (${data.utilityBillFileName})`}
+                >
+                  <Download className="w-4 h-4" />
+                </a>
+              )}
+              <button
+                type="button"
+                onClick={handleRemoveAttachedBill}
+                className="text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors p-1.5 cursor-pointer"
+                title="Remover anexo"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         )}
       </div>

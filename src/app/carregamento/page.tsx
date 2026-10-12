@@ -8,7 +8,7 @@ import {
   BatteryCharging, Gauge, ArrowRight, BookOpen, Layers, Flame, Activity,
   Cable, FileSpreadsheet, Upload, AlertCircle, Printer, Check, Copy, Award,
   Building2, Trash2, Sliders, RefreshCw, Cpu, CheckSquare, Sparkles, Calculator,
-  Settings, Globe, ExternalLink, Save
+  Settings, Globe, ExternalLink, Save, Download
 } from "lucide-react";
 import { 
   BRAZIL_ELECTRIC_VEHICLES, 
@@ -23,6 +23,7 @@ import {
   simulateDLM, 
   parseUniversalLoadFile,
   compileMultipleLoadSummaries,
+  exportLoadSummaryToExcel,
   DailyPeakPoint,
   MultiSheetMeasurementSummary,
   sizeElectricalInfrastructure,
@@ -744,6 +745,19 @@ export default function CoenergyGODashboard() {
       setClientProjectData(prev => ({ ...prev, ...p.clientProjectData }));
     }
 
+    // Restaurar Planilhas de Medição e Histórico de Carga
+    if (Array.isArray(p.attachedSheetsList) && p.attachedSheetsList.length > 0) {
+      setAttachedSheetsList(p.attachedSheetsList);
+      if (p.smartMeterSummary) {
+        setSmartMeterSummary(p.smartMeterSummary);
+      }
+      if (Array.isArray(p.dailyPeaksState)) {
+        setDailyPeaksState(p.dailyPeaksState);
+      }
+    } else if (p.smartMeterSummary) {
+      setSmartMeterSummary(p.smartMeterSummary);
+    }
+
     // Restaurar Circuitos Customizados dos Painéis 220V e 380V
     if (Array.isArray(p.customCircuits220V)) {
       try {
@@ -1086,6 +1100,9 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
       totalPowerKW: totalChargersInstalledKW,
       configuredChargers: configuredChargers,
       commercialHub: commercialHub,
+      attachedSheetsList: attachedSheetsList,
+      smartMeterSummary: smartMeterSummary,
+      dailyPeaksState: dailyPeaksState,
       customCircuits220V: (() => {
         try {
           const s = localStorage.getItem('coenergygo_custom_circuits_220v');
@@ -2153,8 +2170,32 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
                             </strong>
                             <button
                               type="button"
+                              onClick={() => {
+                                try {
+                                  const bytes = exportLoadSummaryToExcel(smartMeterSummary, dailyPeaksState);
+                                  const blob = new Blob([bytes as any], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                                  const url = URL.createObjectURL(blob);
+                                  const a = document.createElement('a');
+                                  a.href = url;
+                                  const cleanFileName = smartMeterSummary.fileName.replace(/[^a-zA-Z0-9_\-\.]/g, '_');
+                                  a.download = cleanFileName.endsWith('.xlsx') ? cleanFileName : `${cleanFileName}.xlsx`;
+                                  document.body.appendChild(a);
+                                  a.click();
+                                  document.body.removeChild(a);
+                                  URL.revokeObjectURL(url);
+                                } catch (err: any) {
+                                  alert("Erro ao baixar planilha: " + err.message);
+                                }
+                              }}
+                              className="text-emerald-700 hover:text-emerald-950 p-1 hover:bg-emerald-100 rounded cursor-pointer transition-colors"
+                              title="Baixar planilha de medição em Excel (.xlsx)"
+                            >
+                              <Download className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
                               onClick={handleClearAllSheets}
-                              className="text-slate-400 hover:text-red-500 p-0.5 rounded cursor-pointer"
+                              className="text-slate-400 hover:text-red-500 p-1 hover:bg-red-50 rounded cursor-pointer transition-colors"
                               title="Remover planilha e limpar dados"
                             >
                               <Trash2 className="w-3.5 h-3.5" />

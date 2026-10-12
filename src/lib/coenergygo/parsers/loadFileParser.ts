@@ -589,3 +589,74 @@ export function compileMultipleLoadSummaries(summaries: PeriodMeasurementSummary
     totalDays: dailyPeaks.length
   };
 }
+
+/**
+ * Gera um arquivo Excel (.xlsx) para download contendo todos os dados de monitoramento
+ * da medição de carga do cliente (leituras em alta resolução e resumo dos picos diários).
+ */
+export function exportLoadSummaryToExcel(
+  summary: PeriodMeasurementSummary,
+  dailyPeaks: DailyPeakPoint[] = []
+): Uint8Array {
+  const wb = XLSX.utils.book_new();
+
+  // 1. Aba de Leituras em Alta Resolução (compatível com o layout oficial do SmartMeter)
+  const leiturasData: any[] = [
+    ["Data", "Hora", "Potência Consumida (kW)", "Corrente Estimada (A)"]
+  ];
+
+  for (const pt of summary.intervalPoints) {
+    leiturasData.push([
+      pt.dateStr,
+      pt.timeStr,
+      pt.powerKW,
+      pt.estimatedCurrentA || Number(((pt.powerKW * 1000) / (220 * 0.98)).toFixed(1))
+    ]);
+  }
+
+  const wsLeituras = XLSX.utils.aoa_to_sheet(leiturasData);
+  XLSX.utils.book_append_sheet(wb, wsLeituras, "Potência Consumida (kW)");
+
+  // 2. Aba de Picos Diários Consolidados (caso haja dias identificados)
+  if (dailyPeaks && dailyPeaks.length > 0) {
+    const picosData: any[] = [
+      ["Dia", "Data", "Demanda Máxima (kW)", "Horário do Pico", "Demanda Média (kW)", "Consumo Diário (kWh)", "Total de Leituras", "Origem"]
+    ];
+
+    for (const dp of dailyPeaks) {
+      picosData.push([
+        dp.dayLabel,
+        dp.dateStr,
+        dp.maxPowerKW,
+        dp.peakTimeStr,
+        dp.averagePowerKW,
+        dp.totalEnergyKWh,
+        dp.readingsCount,
+        dp.sourceFileName || summary.fileName
+      ]);
+    }
+
+    const wsPicos = XLSX.utils.aoa_to_sheet(picosData);
+    XLSX.utils.book_append_sheet(wb, wsPicos, "Picos Diários");
+  }
+
+  // 3. Aba de Resumo Estatístico do Período
+  const resumoData: any[] = [
+    ["Parâmetro de Medição", "Valor"],
+    ["Arquivo / Descrição", summary.fileName],
+    ["Início do Período", summary.periodStart],
+    ["Fim do Período", summary.periodEnd],
+    ["Demanda Máxima Registrada (kW)", summary.maxPowerKW],
+    ["Horário do Pico Global", summary.peakTimestamp],
+    ["Demanda Média no Período (kW)", summary.averagePowerKW],
+    ["Demanda Mínima Registrada (kW)", summary.minPowerKW],
+    ["Energia Total Integrada (kWh)", summary.totalEnergyKWh],
+    ["Total de Leituras Processadas", summary.totalReadings],
+    ["Intervalo Médio entre Leituras", `${summary.intervalMinutes} min`]
+  ];
+  const wsResumo = XLSX.utils.aoa_to_sheet(resumoData);
+  XLSX.utils.book_append_sheet(wb, wsResumo, "Resumo Analítico");
+
+  return XLSX.write(wb, { bookType: "xlsx", type: "array" }) as Uint8Array;
+}
+

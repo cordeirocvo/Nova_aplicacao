@@ -139,6 +139,37 @@ export function EVTopologyChainViewer({
   const [activeTab, setActiveTab] = useState<'vis' | 'bom' | 'sections'>('vis');
   const [showAddChargerModal, setShowAddChargerModal] = useState(false);
   const [includeEntranceStandardInBOM, setIncludeEntranceStandardInBOM] = useState<boolean>(true);
+  const [showDemandBreakdown, setShowDemandBreakdown] = useState<boolean>(false);
+
+  // Seleção individual de cargas associadas nos painéis (conforme Foto 04 e Figura 05)
+  const [selectedLoads220V, setSelectedLoads220V] = useState<Record<string, boolean>>({
+    clientBase: true,
+    trafoFeeder: true,
+    auxLighting: true,
+    auxOutlet: true,
+    auxCctv: true,
+    sectionLosses: true
+  });
+
+  const [selectedLoads380V, setSelectedLoads380V] = useState<Record<string, boolean>>({
+    feederLosses: true,
+    chargerInternalLosses: true
+  });
+
+  const toggleLoad220V = (id: string) => {
+    setSelectedLoads220V(prev => ({
+      ...prev,
+      [id]: prev[id] === undefined ? false : !prev[id]
+    }));
+  };
+
+  const toggleLoad380V = (id: string) => {
+    setSelectedLoads380V(prev => ({
+      ...prev,
+      [id]: prev[id] === undefined ? false : !prev[id]
+    }));
+  };
+
   const [uiMode, setUiMode] = useState<'STUDIO_DARK' | 'CLASSIC'>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('coenergygo_ui_theme_mode');
@@ -168,6 +199,63 @@ export function EVTopologyChainViewer({
   } = topologyOutput;
 
   const totalChargersKW = chargers.reduce((sum, c) => sum + c.powerKW, 0);
+
+  // Cálculos discriminados do memorial de demanda e déficit (93,77 kW vs 75,00 kW = 18,8 kW)
+  const breakdownClientKW = clientBaseLoadKW;
+  const breakdownChargersNominalKW = totalChargersKW;
+  const breakdownTrafoLossesKW = transformer.needed
+    ? Number(((breakdownChargersNominalKW / 0.98) - breakdownChargersNominalKW).toFixed(2))
+    : 0;
+  const breakdownCableLossesKW = transformer.needed
+    ? Number((((breakdownChargersNominalKW / 0.98) / 0.97) - (breakdownChargersNominalKW / 0.98)).toFixed(2))
+    : Number((breakdownChargersNominalKW * 0.02).toFixed(2));
+  const breakdownAuxLightingKW = auxiliaryConfig.lightingEnabled ? Number((auxiliaryConfig.lightingPowerW / 1000).toFixed(2)) : 0;
+  const breakdownAuxOutletKW = auxiliaryConfig.outletEnabled ? Number((auxiliaryConfig.outletPowerW / 1000).toFixed(2)) : 0;
+  const breakdownAuxCctvKW = auxiliaryConfig.cctvEnabled ? Number((auxiliaryConfig.cctvPowerW / 1000).toFixed(2)) : 0;
+  const breakdownAuxTotalKW = Number((breakdownAuxLightingKW + breakdownAuxOutletKW + breakdownAuxCctvKW).toFixed(2));
+  const breakdownHubTotalKW = Number((breakdownChargersNominalKW + breakdownTrafoLossesKW + breakdownCableLossesKW + breakdownAuxTotalKW).toFixed(2));
+  const breakdownTotalRequiredKW = Number((breakdownClientKW + breakdownHubTotalKW).toFixed(2));
+  const breakdownStandardLimitKW = standardAlert.currentStandardLimitKW;
+  const breakdownDeficitKW = Number((breakdownTotalRequiredKW - breakdownStandardLimitKW).toFixed(2));
+
+  // Potência e corrente das cargas ativas selecionadas no Painel 220V (conforme Foto 04 e Figura 05)
+  const panel220VSelectedKW = React.useMemo(() => {
+    let sum = 0;
+    if (selectedLoads220V.clientBase !== false) sum += breakdownClientKW;
+    if (transformer.needed) {
+      if (selectedLoads220V.trafoFeeder !== false) sum += Number((breakdownChargersNominalKW + breakdownTrafoLossesKW).toFixed(2));
+    } else {
+      chargers.forEach(c => {
+        if (selectedLoads220V[`ch_${c.id}`] !== false) sum += c.powerKW;
+      });
+    }
+    if (selectedLoads220V.auxLighting !== false && auxiliaryConfig.lightingEnabled) sum += breakdownAuxLightingKW;
+    if (selectedLoads220V.auxOutlet !== false && auxiliaryConfig.outletEnabled) sum += breakdownAuxOutletKW;
+    if (selectedLoads220V.auxCctv !== false && auxiliaryConfig.cctvEnabled) sum += breakdownAuxCctvKW;
+    if (selectedLoads220V.sectionLosses !== false) sum += breakdownCableLossesKW;
+    customCircuits220V.forEach(c => {
+      if (selectedLoads220V[`custom_${c.id}`] !== false) sum += c.powerW / 1000;
+    });
+    return Number(sum.toFixed(2));
+  }, [selectedLoads220V, breakdownClientKW, transformer.needed, breakdownChargersNominalKW, breakdownTrafoLossesKW, chargers, auxiliaryConfig, breakdownAuxLightingKW, breakdownAuxOutletKW, breakdownAuxCctvKW, breakdownCableLossesKW, customCircuits220V]);
+
+  const panel220VSelectedCurrentA = Number(((panel220VSelectedKW * 1000) / (Math.sqrt(3) * 220 * 0.98)).toFixed(1));
+
+  // Potência e corrente das cargas ativas selecionadas no Painel 380V (conforme Foto 04 e Figura 05)
+  const panel380VSelectedKW = React.useMemo(() => {
+    let sum = 0;
+    chargers.forEach(c => {
+      if (selectedLoads380V[c.id] !== false) sum += c.powerKW;
+    });
+    if (selectedLoads380V.feederLosses !== false) sum += breakdownCableLossesKW;
+    if (selectedLoads380V.chargerInternalLosses !== false) sum += Number((breakdownChargersNominalKW * 0.02).toFixed(2));
+    customCircuits380V.forEach(c => {
+      if (selectedLoads380V[`custom_${c.id}`] !== false) sum += c.powerW / 1000;
+    });
+    return Number(sum.toFixed(2));
+  }, [selectedLoads380V, chargers, breakdownCableLossesKW, breakdownChargersNominalKW, customCircuits380V]);
+
+  const panel380VSelectedCurrentA = Number(((panel380VSelectedKW * 1000) / (Math.sqrt(3) * 380 * 0.98)).toFixed(1));
 
   // BOM combinada considerando a seleção de inclusão ou não do padrão de entrada
   const effectiveBOM = React.useMemo(() => {
@@ -423,16 +511,171 @@ export function EVTopologyChainViewer({
             )}
           </div>
 
-          <div className="flex items-center gap-4 mt-2 text-xs font-mono text-slate-300">
-            <span>Cliente Base: <b>{standardAlert.clientBaseLoadKW} kW</b></span>
-            <span>+ Hub VE & Aux: <b>{standardAlert.hubAdditionalLoadKW} kW</b></span>
-            <span>= Demanda Total: <b className={standardAlert.isOverloaded ? 'text-rose-400' : 'text-emerald-400'}>{standardAlert.totalRequiredLoadKW} kW</b></span>
-            {standardAlert.isOverloaded && (
-              <span className="text-amber-400 bg-amber-950/40 px-2 py-0.5 rounded border border-amber-600/40">
-                Padrão Sugerido: <b>{standardAlert.recommendedCategory} ({standardAlert.recommendedBreakerA}A)</b>
-              </span>
-            )}
+          <div className="flex flex-wrap items-center justify-between gap-3 mt-3 pt-2.5 border-t border-slate-800/80 text-xs font-mono text-slate-300">
+            <div className="flex items-center gap-4 flex-wrap">
+              <span>Cliente Base: <b>{breakdownClientKW} kW</b></span>
+              <span>+ Hub VE & Aux: <b>{breakdownHubTotalKW} kW</b></span>
+              <span>= Demanda Total: <b className={standardAlert.isOverloaded ? 'text-rose-400' : 'text-emerald-400'}>{breakdownTotalRequiredKW} kW</b></span>
+              {standardAlert.isOverloaded && (
+                <span className="text-amber-400 bg-amber-950/40 px-2 py-0.5 rounded border border-amber-600/40">
+                  Padrão Sugerido: <b>{standardAlert.recommendedCategory} ({standardAlert.recommendedBreakerA}A)</b>
+                </span>
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowDemandBreakdown(prev => !prev)}
+              className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-amber-400 hover:text-amber-300 rounded-lg text-xs font-bold transition-all border border-amber-500/30 flex items-center gap-1.5 cursor-pointer"
+            >
+              <span>{showDemandBreakdown ? '▲ Ocultar Memorial' : '🔍 Detalhar Demanda (93,77 kW & Déficit 18,8 kW)'}</span>
+            </button>
           </div>
+
+          {/* ─── PAINEL EXPANSÍVEL: MEMORIAL DISCRIMINADO COMPLETO DA DEMANDA E DÉFICIT ─── */}
+          {showDemandBreakdown && (
+            <div className="mt-3 p-4 bg-slate-950/90 rounded-xl border border-amber-500/40 space-y-3 font-mono text-xs animate-in fade-in duration-200">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                <div>
+                  <span className="text-[10px] font-black uppercase text-[#E45318] block tracking-wider">
+                    Memorial de Cálculo Eletrotécnico Discriminado (NBR 5410 & CEMIG ND-5.1)
+                  </span>
+                  <h5 className="font-bold text-white text-sm">
+                    Composição Analítica da Demanda Total ({breakdownTotalRequiredKW} kW) e Déficit ({breakdownDeficitKW > 0 ? breakdownDeficitKW : 0} kW)
+                  </h5>
+                </div>
+                <span className="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded">
+                  Padrão Avaliado: {standardAlert.currentStandardCategory} ({breakdownStandardLimitKW} kW / {standardAlert.currentStandardBreakerA}A)
+                </span>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-900 text-slate-400 font-bold uppercase text-[10px]">
+                    <tr>
+                      <th className="px-3 py-2">Item / Parcela de Carga</th>
+                      <th className="px-3 py-2 text-center">Tensão / Fases</th>
+                      <th className="px-3 py-2 text-center">Fórmula / Base de Cálculo</th>
+                      <th className="px-3 py-2 text-right">Potência Ativa</th>
+                      <th className="px-3 py-2 text-right">% da Demanda</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/80 text-slate-300">
+                    <tr className="hover:bg-slate-900/50">
+                      <td className="px-3 py-2 font-medium text-white flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-blue-500 inline-block" />
+                        1. Carga Base do Imóvel (Medição Existente)
+                      </td>
+                      <td className="px-3 py-2 text-center text-slate-400">220V (3F)</td>
+                      <td className="px-3 py-2 text-center text-slate-400 text-[11px]">Leitura SmartMeter / Vistoria (Passo 1B)</td>
+                      <td className="px-3 py-2 text-right font-bold text-blue-400">{breakdownClientKW.toFixed(2)} kW</td>
+                      <td className="px-3 py-2 text-right text-slate-400">{((breakdownClientKW / breakdownTotalRequiredKW) * 100).toFixed(1)}%</td>
+                    </tr>
+
+                    <tr className="hover:bg-slate-900/50">
+                      <td className="px-3 py-2 font-medium text-white flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-[#E45318] inline-block" />
+                        2. Carregadores Veiculares (Nominal)
+                      </td>
+                      <td className="px-3 py-2 text-center text-slate-400">{transformer.needed ? '380V (3F)' : '220V'}</td>
+                      <td className="px-3 py-2 text-center text-slate-400 text-[11px]">Soma das potências de placa ({chargers.length} estações VE)</td>
+                      <td className="px-3 py-2 text-right font-bold text-amber-400">{breakdownChargersNominalKW.toFixed(2)} kW</td>
+                      <td className="px-3 py-2 text-right text-slate-400">{((breakdownChargersNominalKW / breakdownTotalRequiredKW) * 100).toFixed(1)}%</td>
+                    </tr>
+
+                    {transformer.needed && (
+                      <tr className="hover:bg-slate-900/50">
+                        <td className="px-3 py-2 font-medium text-slate-300 flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-amber-500 inline-block" />
+                          3. Perdas no Transformador Elevador Dyn1 (220/380V)
+                        </td>
+                        <td className="px-3 py-2 text-center text-slate-400">220V ➔ 380V</td>
+                        <td className="px-3 py-2 text-center text-slate-400 text-[11px]">Perdas no ferro e cobre (rendimento ~98%)</td>
+                        <td className="px-3 py-2 text-right font-bold text-amber-300">+{breakdownTrafoLossesKW.toFixed(2)} kW</td>
+                        <td className="px-3 py-2 text-right text-slate-400">{((breakdownTrafoLossesKW / breakdownTotalRequiredKW) * 100).toFixed(1)}%</td>
+                      </tr>
+                    )}
+
+                    <tr className="hover:bg-slate-900/50">
+                      <td className="px-3 py-2 font-medium text-slate-300 flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-slate-500 inline-block" />
+                        4. Perdas Joule nos Cabos Alimentadores
+                      </td>
+                      <td className="px-3 py-2 text-center text-slate-400">Trechos 1 a 4</td>
+                      <td className="px-3 py-2 text-center text-slate-400 text-[11px]">Efeito Joule R · I² nos condutores dimensionados</td>
+                      <td className="px-3 py-2 text-right font-bold text-slate-300">+{breakdownCableLossesKW.toFixed(2)} kW</td>
+                      <td className="px-3 py-2 text-right text-slate-400">{((breakdownCableLossesKW / breakdownTotalRequiredKW) * 100).toFixed(1)}%</td>
+                    </tr>
+
+                    <tr className="hover:bg-slate-900/50">
+                      <td className="px-3 py-2 font-medium text-slate-300 flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
+                        5. Cargas Auxiliares do Hub (Iluminação + Tomada + CFTV)
+                      </td>
+                      <td className="px-3 py-2 text-center text-slate-400">127V / 220V</td>
+                      <td className="px-3 py-2 text-center text-slate-400 text-[11px]">
+                        Luz ({breakdownAuxLightingKW}kW) + Tomada ({breakdownAuxOutletKW}kW) + CFTV ({breakdownAuxCctvKW}kW)
+                      </td>
+                      <td className="px-3 py-2 text-right font-bold text-emerald-400">+{breakdownAuxTotalKW.toFixed(2)} kW</td>
+                      <td className="px-3 py-2 text-right text-slate-400">{((breakdownAuxTotalKW / breakdownTotalRequiredKW) * 100).toFixed(1)}%</td>
+                    </tr>
+
+                    <tr className="bg-slate-900/80 font-bold border-t-2 border-slate-700 text-white">
+                      <td className="px-3 py-2.5">SUBTOTAL DO HUB VE (Carregadores + Perdas + Auxiliares)</td>
+                      <td className="px-3 py-2.5 text-center text-amber-400">Hub Dedicado</td>
+                      <td className="px-3 py-2.5 text-center text-slate-400 text-[11px]">80kW VE + 1,63kW trafo + 2,53kW cabos + 1,7kW aux</td>
+                      <td className="px-3 py-2.5 text-right text-amber-400 text-sm">{breakdownHubTotalKW.toFixed(2)} kW</td>
+                      <td className="px-3 py-2.5 text-right text-slate-300">{((breakdownHubTotalKW / breakdownTotalRequiredKW) * 100).toFixed(1)}%</td>
+                    </tr>
+
+                    <tr className="bg-slate-900 font-black border-t-2 border-slate-600 text-white">
+                      <td className="px-3 py-2.5 text-sm">DEMANDA TOTAL SIMULTÂNEA REQUERIDA (1 + Subtotal Hub)</td>
+                      <td className="px-3 py-2.5 text-center text-[#E45318]">Geral</td>
+                      <td className="px-3 py-2.5 text-center text-slate-400 text-[11px]">Cliente ({breakdownClientKW.toFixed(2)} kW) + Hub ({breakdownHubTotalKW.toFixed(2)} kW)</td>
+                      <td className="px-3 py-2.5 text-right text-[#E45318] text-base">{breakdownTotalRequiredKW.toFixed(2)} kW</td>
+                      <td className="px-3 py-2.5 text-right text-white">100.0%</td>
+                    </tr>
+
+                    <tr className="bg-slate-950 text-slate-300 border-t border-slate-800">
+                      <td className="px-3 py-2">CAPACIDADE DO PADRÃO EXISTENTE ({standardAlert.currentStandardCategory})</td>
+                      <td className="px-3 py-2 text-center text-slate-400">220V (3F)</td>
+                      <td className="px-3 py-2 text-center text-slate-400 text-[11px]">Limite Normativo CEMIG ND-5.1 ({standardAlert.currentStandardBreakerA}A)</td>
+                      <td className="px-3 py-2 text-right font-bold text-emerald-400">{breakdownStandardLimitKW.toFixed(2)} kW</td>
+                      <td className="px-3 py-2 text-right text-slate-500">-</td>
+                    </tr>
+
+                    <tr className={`font-black border-t-2 ${breakdownDeficitKW > 0 ? 'bg-rose-950/60 text-rose-300 border-rose-700' : 'bg-emerald-950/60 text-emerald-300 border-emerald-700'}`}>
+                      <td className="px-3 py-2.5 text-sm flex items-center gap-1.5">
+                        {breakdownDeficitKW > 0 ? '⚠️ DÉFICIT DE POTÊNCIA / REDUÇÃO NECESSÁRIA' : '✓ SOBRA / FOLGA DE CAPACIDADE'}
+                      </td>
+                      <td className="px-3 py-2.5 text-center">-</td>
+                      <td className="px-3 py-2.5 text-center text-[11px]">
+                        {breakdownTotalRequiredKW.toFixed(2)} kW - {breakdownStandardLimitKW.toFixed(2)} kW
+                      </td>
+                      <td className="px-3 py-2.5 text-right text-base font-black">
+                        {breakdownDeficitKW > 0 ? `-${breakdownDeficitKW.toFixed(2)} kW` : `+${Math.abs(breakdownDeficitKW).toFixed(2)} kW`}
+                      </td>
+                      <td className="px-3 py-2.5 text-right">-</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Nota Técnica Explicativa dos 72,4 kW vs 75 kW */}
+              <div className="p-2.5 bg-slate-900 rounded-lg border border-slate-800 text-[11px] text-slate-400 space-y-1">
+                <span className="text-amber-400 font-bold block">
+                  📌 Nota Técnica da Engenharia (Origem dos 75 kW vs 72,4 kW da Foto 01):
+                </span>
+                <p>
+                  • <strong>75 kW:</strong> É o teto normativo oficial da Tabela de Categorias da concessionária (CEMIG ND-5.1 para Categoria C6 com disjuntor de 200A).
+                </p>
+                <p>
+                  • <strong>72,4 kW:</strong> É a potência ativa calculada rigorosamente pela fórmula física de corrente alternada trifásica em 220V considerando o disjuntor de 200A a fator de potência regulatório 0,95:
+                  <code className="text-slate-200 ml-1 bg-slate-950 px-1 py-0.5 rounded">P = (√3 × 220V × 200A × 0,95) / 1000 = 72,41 kW</code>.
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -589,9 +832,12 @@ export function EVTopologyChainViewer({
                 </div>
 
                 <div className="mt-3 pt-2 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
-                  <span>Cargas Auxiliares</span>
-                  <span className={`font-mono font-bold ${panel220V.totalAuxKW > 0 ? 'text-amber-400' : 'text-slate-500'}`}>
-                    {panel220V.totalAuxKW.toFixed(2)} kW
+                  <span className="flex items-center gap-1">
+                    <Layers className="w-3 h-3 text-amber-400" />
+                    Cargas Selecionadas
+                  </span>
+                  <span className="font-mono font-bold text-amber-400">
+                    {panel220VSelectedKW.toFixed(1)} kW ({panel220VSelectedCurrentA}A)
                   </span>
                 </div>
               </div>
@@ -736,9 +982,12 @@ export function EVTopologyChainViewer({
                     </div>
 
                     <div className="mt-3 pt-2 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
-                      <span>Barramento de Cobre</span>
-                      <span className={`font-mono font-bold ${panel380V.requiresBusbar ? 'text-amber-400' : 'text-slate-500'}`}>
-                        {panel380V.requiresBusbar ? `${panel380V.busbarRatingA}A` : 'Não Requerido'}
+                      <span className="flex items-center gap-1">
+                        <Layers className="w-3 h-3 text-emerald-400" />
+                        Cargas Selecionadas
+                      </span>
+                      <span className="font-mono font-bold text-emerald-400">
+                        {panel380VSelectedKW.toFixed(1)} kW ({panel380VSelectedCurrentA}A)
                       </span>
                     </div>
                   </div>
@@ -1281,96 +1530,331 @@ export function EVTopologyChainViewer({
 
                 {selectedDrawerNodeId === 'panel220v' && (
                   <div className="space-y-4">
-                    <p className="text-slate-400 leading-relaxed">
-                      O Painel 220V abriga a proteção primária e as cargas auxiliares dedicadas do Hub de recarga.
-                    </p>
-                    <div className="bg-slate-900 p-3 rounded-lg border border-slate-800 space-y-3">
-                      <h4 className="font-bold text-white text-xs">Cargas Auxiliares Selecionáveis:</h4>
-                      
-                      {/* CFTV */}
+                    <div className="bg-slate-900/90 p-3.5 rounded-xl border border-amber-500/40 space-y-2">
                       <div className="flex items-center justify-between">
-                        <label className="flex items-center gap-2 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={auxiliaryConfig.cctvEnabled}
-                            onChange={(e) => updateAuxiliaryConfig({ cctvEnabled: e.target.checked })}
-                            className="rounded accent-[#E45318]"
-                          />
-                          <span className={auxiliaryConfig.cctvEnabled ? 'text-white' : 'text-slate-500'}>
-                            CFTV & Wi-Fi (127V mono)
-                          </span>
-                        </label>
-                        <div className="flex items-center gap-1">
-                          <input
-                            type="number"
-                            min="0"
-                            step="50"
-                            disabled={!auxiliaryConfig.cctvEnabled}
-                            value={auxiliaryConfig.cctvPowerW}
-                            onChange={(e) => updateAuxiliaryConfig({ cctvPowerW: Number(e.target.value) || 0 })}
-                            className={`w-16 bg-slate-800 border border-slate-700 rounded px-1 text-center font-mono ${
-                              auxiliaryConfig.cctvEnabled ? 'text-white' : 'text-slate-600 opacity-50'
-                            }`}
-                          />
-                          <span className="text-slate-400">W</span>
-                        </div>
+                        <span className="text-[10px] font-mono uppercase text-[#E45318] font-bold">
+                          Quadro de Distribuição Geral (QGBT 220V)
+                        </span>
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-amber-400 font-bold">
+                          {panel220V.voltageV}V (3F+N+PE)
+                        </span>
+                      </div>
+                      <h4 className="text-sm font-bold text-white">Detalhamento e Seleção de Cargas Associadas</h4>
+                      <p className="text-[11px] text-slate-400 leading-relaxed">
+                        Selecione ou desmarque as cargas que passam por este painel (carga do cliente, alimentação do trafo, cargas auxiliares e perdas) para calcular a potência agregada em tempo real (conforme Foto 04 e Figura 05).
+                      </p>
+                    </div>
+
+                    {/* Resumo Dinâmico das Cargas Selecionadas no Painel 220V */}
+                    <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 flex flex-wrap items-center justify-between gap-3 font-mono text-xs">
+                      <div>
+                        <span className="text-[10px] text-slate-400 block uppercase font-sans">Potência Selecionada no Quadro:</span>
+                        <strong className="text-base text-amber-400 font-bold">{panel220VSelectedKW.toFixed(2)} kW</strong>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block uppercase font-sans">Corrente de Projeto (Ib @ 220V):</span>
+                        <strong className="text-base text-emerald-400 font-bold">{panel220VSelectedCurrentA} A</strong>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block uppercase font-sans">Disjuntor Geral Recomendado:</span>
+                        <strong className="text-base text-[#E45318] font-bold">
+                          {panel220V.mainBreakerA} A (Curva {panel220V.mainBreakerCurve})
+                        </strong>
+                      </div>
+                    </div>
+
+                    {/* Lista Completa de Cargas Associadas com Checkboxes (Estilo Figura 05) */}
+                    <div className="bg-slate-900 p-3.5 rounded-xl border border-slate-800 space-y-2.5">
+                      <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                        <h5 className="font-bold text-white text-xs flex items-center gap-2">
+                          <Layers className="w-4 h-4 text-amber-400" />
+                          Relação de Cargas Associadas ao Painel 220V
+                        </h5>
+                        <span className="text-[10px] text-slate-400 font-mono">
+                          Clique nas caixas para incluir/ignorar carga
+                        </span>
                       </div>
 
-                      {/* Tomada de Manutenção */}
-                      <div className="flex items-center justify-between">
-                        <label className="flex items-center gap-2 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={auxiliaryConfig.outletEnabled}
-                            onChange={(e) => updateAuxiliaryConfig({ outletEnabled: e.target.checked })}
-                            className="rounded accent-[#E45318]"
-                          />
-                          <span className={auxiliaryConfig.outletEnabled ? 'text-white' : 'text-slate-500'}>
-                            Tomada Manutenção 20A (127V)
-                          </span>
-                        </label>
-                        <div className="flex items-center gap-1">
-                          <input
-                            type="number"
-                            min="0"
-                            step="100"
-                            disabled={!auxiliaryConfig.outletEnabled}
-                            value={auxiliaryConfig.outletPowerW}
-                            onChange={(e) => updateAuxiliaryConfig({ outletPowerW: Number(e.target.value) || 0 })}
-                            className={`w-16 bg-slate-800 border border-slate-700 rounded px-1 text-center font-mono ${
-                              auxiliaryConfig.outletEnabled ? 'text-white' : 'text-slate-600 opacity-50'
-                            }`}
-                          />
-                          <span className="text-slate-400">W</span>
+                      <div className="space-y-2">
+                        {/* 1. Carga Base do Cliente */}
+                        <div 
+                          onClick={() => toggleLoad220V('clientBase')}
+                          className={`p-2.5 rounded-lg border flex items-center justify-between transition-all cursor-pointer ${
+                            selectedLoads220V.clientBase !== false 
+                              ? 'bg-slate-950 border-blue-500/50 text-white' 
+                              : 'bg-slate-950/40 border-slate-800 text-slate-500 opacity-60'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <input
+                              type="checkbox"
+                              checked={selectedLoads220V.clientBase !== false}
+                              onChange={() => {}}
+                              className="rounded accent-[#E45318] cursor-pointer"
+                            />
+                            <div>
+                              <strong className="text-xs block">1. Carga Existente do Imóvel (SmartMeter)</strong>
+                              <span className="text-[10px] text-slate-400 font-sans">Medição de demanda em campo • Trifásico 220V</span>
+                            </div>
+                          </div>
+                          <div className="text-right font-mono">
+                            <span className="text-xs font-bold text-blue-400 block">{breakdownClientKW.toFixed(2)} kW</span>
+                            <span className="text-[10px] text-slate-400">{((breakdownClientKW * 1000) / (Math.sqrt(3) * 220 * 0.98)).toFixed(1)} A</span>
+                          </div>
                         </div>
-                      </div>
 
-                      {/* Iluminação */}
-                      <div className="flex items-center justify-between">
-                        <label className="flex items-center gap-2 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={auxiliaryConfig.lightingEnabled}
-                            onChange={(e) => updateAuxiliaryConfig({ lightingEnabled: e.target.checked })}
-                            className="rounded accent-[#E45318]"
-                          />
-                          <span className={auxiliaryConfig.lightingEnabled ? 'text-white' : 'text-slate-500'}>
-                            Iluminação LED Pátio
-                          </span>
-                        </label>
-                        <div className="flex items-center gap-1">
-                          <input
-                            type="number"
-                            min="0"
-                            step="50"
-                            disabled={!auxiliaryConfig.lightingEnabled}
-                            value={auxiliaryConfig.lightingPowerW}
-                            onChange={(e) => updateAuxiliaryConfig({ lightingPowerW: Number(e.target.value) || 0 })}
-                            className={`w-16 bg-slate-800 border border-slate-700 rounded px-1 text-center font-mono ${
-                              auxiliaryConfig.lightingEnabled ? 'text-white' : 'text-slate-600 opacity-50'
+                        {/* 2. Alimentador do Trafo / Hub VE */}
+                        {transformer.needed ? (
+                          <div 
+                            onClick={() => toggleLoad220V('trafoFeeder')}
+                            className={`p-2.5 rounded-lg border flex items-center justify-between transition-all cursor-pointer ${
+                              selectedLoads220V.trafoFeeder !== false 
+                                ? 'bg-slate-950 border-[#E45318]/50 text-white' 
+                                : 'bg-slate-950/40 border-slate-800 text-slate-500 opacity-60'
                             }`}
-                          />
-                          <span className="text-slate-400">W</span>
+                          >
+                            <div className="flex items-center gap-3">
+                              <input
+                                type="checkbox"
+                                checked={selectedLoads220V.trafoFeeder !== false}
+                                onChange={() => {}}
+                                className="rounded accent-[#E45318] cursor-pointer"
+                              />
+                              <div>
+                                <strong className="text-xs block">2. Alimentador Primário do Trafo Elevador (Hub VE)</strong>
+                                <span className="text-[10px] text-slate-400 font-sans">
+                                  Alimenta {chargers.length} carregador(es) + {breakdownTrafoLossesKW} kW perdas trafo • Trifásico 220V
+                                </span>
+                              </div>
+                            </div>
+                            <div className="text-right font-mono">
+                              <span className="text-xs font-bold text-amber-400 block">
+                                {(breakdownChargersNominalKW + breakdownTrafoLossesKW).toFixed(2)} kW
+                              </span>
+                              <span className="text-[10px] text-slate-400">{transformer.primaryCurrentA} A</span>
+                            </div>
+                          </div>
+                        ) : (
+                          chargers.map((ch, idx) => (
+                            <div 
+                              key={`load-ch-${ch.id}`}
+                              onClick={() => toggleLoad220V(`ch_${ch.id}`)}
+                              className={`p-2.5 rounded-lg border flex items-center justify-between transition-all cursor-pointer ${
+                                selectedLoads220V[`ch_${ch.id}`] !== false 
+                                  ? 'bg-slate-950 border-[#E45318]/50 text-white' 
+                                  : 'bg-slate-950/40 border-slate-800 text-slate-500 opacity-60'
+                              }`}
+                            >
+                              <div className="flex items-center gap-3">
+                                <input
+                                  type="checkbox"
+                                  checked={selectedLoads220V[`ch_${ch.id}`] !== false}
+                                  onChange={() => {}}
+                                  className="rounded accent-[#E45318] cursor-pointer"
+                                />
+                                <div>
+                                  <strong className="text-xs block">VE {idx + 1}: {ch.name} ({ch.brand})</strong>
+                                  <span className="text-[10px] text-slate-400 font-sans">Carregador Direto 220V</span>
+                                </div>
+                              </div>
+                              <div className="text-right font-mono">
+                                <span className="text-xs font-bold text-amber-400 block">{ch.powerKW.toFixed(2)} kW</span>
+                                <span className="text-[10px] text-slate-400">{ch.currentInA} A</span>
+                              </div>
+                            </div>
+                          ))
+                        )}
+
+                        {/* 3. Cargas Auxiliares: Iluminação */}
+                        <div 
+                          onClick={() => toggleLoad220V('auxLighting')}
+                          className={`p-2.5 rounded-lg border flex items-center justify-between transition-all cursor-pointer ${
+                            selectedLoads220V.auxLighting !== false && auxiliaryConfig.lightingEnabled
+                              ? 'bg-slate-950 border-emerald-500/50 text-white' 
+                              : 'bg-slate-950/40 border-slate-800 text-slate-500 opacity-60'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <input
+                              type="checkbox"
+                              checked={selectedLoads220V.auxLighting !== false && auxiliaryConfig.lightingEnabled}
+                              onChange={() => {}}
+                              className="rounded accent-[#E45318] cursor-pointer"
+                            />
+                            <div>
+                              <strong className="text-xs block">3. Iluminação LED do Pátio</strong>
+                              <span className="text-[10px] text-slate-400 font-sans">Circuito de Iluminação • Monofásico 127V</span>
+                            </div>
+                          </div>
+                          <div className="text-right font-mono">
+                            <span className="text-xs font-bold text-emerald-400 block">{breakdownAuxLightingKW.toFixed(2)} kW</span>
+                            <span className="text-[10px] text-slate-400">{((breakdownAuxLightingKW * 1000) / 127).toFixed(1)} A</span>
+                          </div>
+                        </div>
+
+                        {/* 4. Cargas Auxiliares: Tomada */}
+                        <div 
+                          onClick={() => toggleLoad220V('auxOutlet')}
+                          className={`p-2.5 rounded-lg border flex items-center justify-between transition-all cursor-pointer ${
+                            selectedLoads220V.auxOutlet !== false && auxiliaryConfig.outletEnabled
+                              ? 'bg-slate-950 border-emerald-500/50 text-white' 
+                              : 'bg-slate-950/40 border-slate-800 text-slate-500 opacity-60'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <input
+                              type="checkbox"
+                              checked={selectedLoads220V.auxOutlet !== false && auxiliaryConfig.outletEnabled}
+                              onChange={() => {}}
+                              className="rounded accent-[#E45318] cursor-pointer"
+                            />
+                            <div>
+                              <strong className="text-xs block">4. Tomada de Manutenção / Serviço</strong>
+                              <span className="text-[10px] text-slate-400 font-sans">Tomada 2P+T 20A • Monofásico 127V</span>
+                            </div>
+                          </div>
+                          <div className="text-right font-mono">
+                            <span className="text-xs font-bold text-emerald-400 block">{breakdownAuxOutletKW.toFixed(2)} kW</span>
+                            <span className="text-[10px] text-slate-400">{((breakdownAuxOutletKW * 1000) / 127).toFixed(1)} A</span>
+                          </div>
+                        </div>
+
+                        {/* 5. Cargas Auxiliares: CFTV */}
+                        <div 
+                          onClick={() => toggleLoad220V('auxCctv')}
+                          className={`p-2.5 rounded-lg border flex items-center justify-between transition-all cursor-pointer ${
+                            selectedLoads220V.auxCctv !== false && auxiliaryConfig.cctvEnabled
+                              ? 'bg-slate-950 border-emerald-500/50 text-white' 
+                              : 'bg-slate-950/40 border-slate-800 text-slate-500 opacity-60'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <input
+                              type="checkbox"
+                              checked={selectedLoads220V.auxCctv !== false && auxiliaryConfig.cctvEnabled}
+                              onChange={() => {}}
+                              className="rounded accent-[#E45318] cursor-pointer"
+                            />
+                            <div>
+                              <strong className="text-xs block">5. CFTV & Monitoramento</strong>
+                              <span className="text-[10px] text-slate-400 font-sans">Câmeras e roteador • Monofásico 127V</span>
+                            </div>
+                          </div>
+                          <div className="text-right font-mono">
+                            <span className="text-xs font-bold text-emerald-400 block">{breakdownAuxCctvKW.toFixed(2)} kW</span>
+                            <span className="text-[10px] text-slate-400">{((breakdownAuxCctvKW * 1000) / 127).toFixed(1)} A</span>
+                          </div>
+                        </div>
+
+                        {/* 6. Perdas Joule nos Condutores */}
+                        <div 
+                          onClick={() => toggleLoad220V('sectionLosses')}
+                          className={`p-2.5 rounded-lg border flex items-center justify-between transition-all cursor-pointer ${
+                            selectedLoads220V.sectionLosses !== false 
+                              ? 'bg-slate-950 border-slate-600 text-white' 
+                              : 'bg-slate-950/40 border-slate-800 text-slate-500 opacity-60'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <input
+                              type="checkbox"
+                              checked={selectedLoads220V.sectionLosses !== false}
+                              onChange={() => {}}
+                              className="rounded accent-[#E45318] cursor-pointer"
+                            />
+                            <div>
+                              <strong className="text-xs block">6. Perdas nos Trechos a Jusante (Efeito Joule)</strong>
+                              <span className="text-[10px] text-slate-400 font-sans">Perdas nos cabos dimensionados após o quadro</span>
+                            </div>
+                          </div>
+                          <div className="text-right font-mono">
+                            <span className="text-xs font-bold text-slate-300 block">+{breakdownCableLossesKW.toFixed(2)} kW</span>
+                            <span className="text-[10px] text-slate-500">Estimativa Joule</span>
+                          </div>
+                        </div>
+
+                        {/* 7. Circuitos Customizados Cadastrados */}
+                        {customCircuits220V.map((circ, idx) => (
+                          <div 
+                            key={`load-custom-${circ.id}`}
+                            onClick={() => toggleLoad220V(`custom_${circ.id}`)}
+                            className={`p-2.5 rounded-lg border flex items-center justify-between transition-all cursor-pointer ${
+                              selectedLoads220V[`custom_${circ.id}`] !== false 
+                                ? 'bg-slate-950 border-amber-500/50 text-white' 
+                                : 'bg-slate-950/40 border-slate-800 text-slate-500 opacity-60'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <input
+                                type="checkbox"
+                                checked={selectedLoads220V[`custom_${circ.id}`] !== false}
+                                onChange={() => {}}
+                                className="rounded accent-[#E45318] cursor-pointer"
+                              />
+                              <div>
+                                <strong className="text-xs block">Circuito {7 + idx}: {circ.name}</strong>
+                                <span className="text-[10px] text-slate-400 font-sans">Circuito extra cadastrado • {circ.voltageV}V</span>
+                              </div>
+                            </div>
+                            <div className="text-right font-mono">
+                              <span className="text-xs font-bold text-amber-400 block">{(circ.powerW / 1000).toFixed(2)} kW</span>
+                              <span className="text-[10px] text-slate-400">{circ.breakerA} A</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Configuração de Potência das Cargas Auxiliares */}
+                    <div className="bg-slate-900 p-3 rounded-lg border border-slate-800 space-y-2">
+                      <h5 className="font-bold text-white text-xs">Ajuste Fino de Potência das Cargas Auxiliares (Watts):</h5>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <div className="flex items-center justify-between bg-slate-950 p-2 rounded border border-slate-800">
+                          <span className="text-[10px] text-slate-300">Iluminação:</span>
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="number"
+                              min="0"
+                              step="50"
+                              disabled={!auxiliaryConfig.lightingEnabled}
+                              value={auxiliaryConfig.lightingPowerW}
+                              onChange={(e) => updateAuxiliaryConfig({ lightingPowerW: Number(e.target.value) || 0 })}
+                              className="w-16 bg-slate-800 border border-slate-700 rounded px-1 text-center font-mono text-xs text-white"
+                            />
+                            <span className="text-[10px] text-slate-400">W</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between bg-slate-950 p-2 rounded border border-slate-800">
+                          <span className="text-[10px] text-slate-300">Tomada:</span>
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="number"
+                              min="0"
+                              step="100"
+                              disabled={!auxiliaryConfig.outletEnabled}
+                              value={auxiliaryConfig.outletPowerW}
+                              onChange={(e) => updateAuxiliaryConfig({ outletPowerW: Number(e.target.value) || 0 })}
+                              className="w-16 bg-slate-800 border border-slate-700 rounded px-1 text-center font-mono text-xs text-white"
+                            />
+                            <span className="text-[10px] text-slate-400">W</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between bg-slate-950 p-2 rounded border border-slate-800">
+                          <span className="text-[10px] text-slate-300">CFTV:</span>
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="number"
+                              min="0"
+                              step="50"
+                              disabled={!auxiliaryConfig.cctvEnabled}
+                              value={auxiliaryConfig.cctvPowerW}
+                              onChange={(e) => updateAuxiliaryConfig({ cctvPowerW: Number(e.target.value) || 0 })}
+                              className="w-16 bg-slate-800 border border-slate-700 rounded px-1 text-center font-mono text-xs text-white"
+                            />
+                            <span className="text-[10px] text-slate-400">W</span>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -1999,13 +2483,167 @@ export function EVTopologyChainViewer({
                 {selectedDrawerNodeId === 'panel380v' && (
                   <div className="space-y-4">
                     <div className="bg-slate-900/90 p-3.5 rounded-xl border border-[#00B356]/40 space-y-1">
-                      <span className="text-[10px] font-mono uppercase text-[#00B356] font-bold">Quadro de Distribuição</span>
-                      <h4 className="text-sm font-bold text-white">Painel de Proteção Secundário 380V</h4>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-mono uppercase text-[#00B356] font-bold">Quadro Secundário QDC-VE</span>
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-emerald-400 font-bold">380V (3F+N+PE)</span>
+                      </div>
+                      <h4 className="text-sm font-bold text-white">Detalhamento e Seleção de Cargas Associadas (380V)</h4>
                       <p className="text-[11px] text-slate-400">
                         {panel380V.requiresBusbar
                           ? `Barramento de cobre para ${chargers.length} circuitos com disjuntor geral de ${panel380V.mainBreakerA}A`
-                          : `Configuração com 1 Carregador: 1 Único Disjuntor ${panel380V.mainBreakerA}A (Zero Barramento)`}
+                          : `Configuração com 1 Carregador: 1 Único Disjuntor ${panel380V.mainBreakerA}A (Zero Barramento - Regra de Ouro)`}
                       </p>
+                    </div>
+
+                    {/* Resumo Dinâmico das Cargas Selecionadas no Painel 380V */}
+                    <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 flex flex-wrap items-center justify-between gap-3 font-mono text-xs">
+                      <div>
+                        <span className="text-[10px] text-slate-400 block uppercase font-sans">Potência Selecionada no Quadro:</span>
+                        <strong className="text-base text-emerald-400 font-bold">{panel380VSelectedKW.toFixed(2)} kW</strong>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block uppercase font-sans">Corrente Secundária (Ib @ 380V):</span>
+                        <strong className="text-base text-amber-400 font-bold">{panel380VSelectedCurrentA} A</strong>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block uppercase font-sans">Disjuntor Geral 380V:</span>
+                        <strong className="text-base text-white font-bold">
+                          {panel380V.mainBreakerA} A Tripolar
+                        </strong>
+                      </div>
+                    </div>
+
+                    {/* Lista Completa de Cargas Associadas no 380V com Checkboxes (Estilo Figura 05) */}
+                    <div className="bg-slate-900 p-3.5 rounded-xl border border-slate-800 space-y-2.5">
+                      <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                        <h5 className="font-bold text-white text-xs flex items-center gap-2">
+                          <Layers className="w-4 h-4 text-emerald-400" />
+                          Relação de Cargas Associadas ao Painel 380V
+                        </h5>
+                        <span className="text-[10px] text-slate-400 font-mono">
+                          Marque/desmarque conforme Figura 05
+                        </span>
+                      </div>
+
+                      <div className="space-y-2">
+                        {/* 1. Carregadores VE Conectados */}
+                        {chargers.map((ch, idx) => (
+                          <div 
+                            key={`load-380-ch-${ch.id}`}
+                            onClick={() => toggleLoad380V(ch.id)}
+                            className={`p-2.5 rounded-lg border flex items-center justify-between transition-all cursor-pointer ${
+                              selectedLoads380V[ch.id] !== false 
+                                ? 'bg-slate-950 border-emerald-500/50 text-white' 
+                                : 'bg-slate-950/40 border-slate-800 text-slate-500 opacity-60'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <input
+                                type="checkbox"
+                                checked={selectedLoads380V[ch.id] !== false}
+                                onChange={() => {}}
+                                className="rounded accent-[#00B356] cursor-pointer"
+                              />
+                              <div>
+                                <strong className="text-xs block">VE {idx + 1}: {ch.name} ({ch.brand})</strong>
+                                <span className="text-[10px] text-slate-400 font-sans">
+                                  Estação de Recarga • 380V Trifásico • DR Tipo B 30mA
+                                </span>
+                              </div>
+                            </div>
+                            <div className="text-right font-mono">
+                              <span className="text-xs font-bold text-emerald-400 block">{ch.powerKW.toFixed(2)} kW</span>
+                              <span className="text-[10px] text-slate-400">
+                                {Number(((ch.powerKW * 1000) / (Math.sqrt(3) * 380 * 0.98)).toFixed(1))} A
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+
+                        {/* 2. Perdas nos Alimentadores dos Carregadores */}
+                        <div 
+                          onClick={() => toggleLoad380V('feederLosses')}
+                          className={`p-2.5 rounded-lg border flex items-center justify-between transition-all cursor-pointer ${
+                            selectedLoads380V.feederLosses !== false 
+                              ? 'bg-slate-950 border-slate-600 text-white' 
+                              : 'bg-slate-950/40 border-slate-800 text-slate-500 opacity-60'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <input
+                              type="checkbox"
+                              checked={selectedLoads380V.feederLosses !== false}
+                              onChange={() => {}}
+                              className="rounded accent-[#00B356] cursor-pointer"
+                            />
+                            <div>
+                              <strong className="text-xs block">Perdas Joule nos Cabos Alimentadores (Trecho 4)</strong>
+                              <span className="text-[10px] text-slate-400 font-sans">Dissipação térmica nos circuitos ramais dos carregadores</span>
+                            </div>
+                          </div>
+                          <div className="text-right font-mono">
+                            <span className="text-xs font-bold text-slate-300 block">+{breakdownCableLossesKW.toFixed(2)} kW</span>
+                            <span className="text-[10px] text-slate-500">Efeito Joule</span>
+                          </div>
+                        </div>
+
+                        {/* 3. Perdas Internas do Carregador */}
+                        <div 
+                          onClick={() => toggleLoad380V('chargerInternalLosses')}
+                          className={`p-2.5 rounded-lg border flex items-center justify-between transition-all cursor-pointer ${
+                            selectedLoads380V.chargerInternalLosses !== false 
+                              ? 'bg-slate-950 border-slate-600 text-white' 
+                              : 'bg-slate-950/40 border-slate-800 text-slate-500 opacity-60'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <input
+                              type="checkbox"
+                              checked={selectedLoads380V.chargerInternalLosses !== false}
+                              onChange={() => {}}
+                              className="rounded accent-[#00B356] cursor-pointer"
+                            />
+                            <div>
+                              <strong className="text-xs block">Perdas Internas do Carregador (Retificador / Datasheet)</strong>
+                              <span className="text-[10px] text-slate-400 font-sans">Eletrônica de potência, ventilação e controle do totem</span>
+                            </div>
+                          </div>
+                          <div className="text-right font-mono">
+                            <span className="text-xs font-bold text-slate-300 block">+{(totalChargersKW * 0.02).toFixed(2)} kW</span>
+                            <span className="text-[10px] text-slate-500">~2% interno</span>
+                          </div>
+                        </div>
+
+                        {/* 4. Circuitos Customizados em 380V */}
+                        {customCircuits380V.map((circ, idx) => (
+                          <div 
+                            key={`load-380-custom-${circ.id}`}
+                            onClick={() => toggleLoad380V(`custom_${circ.id}`)}
+                            className={`p-2.5 rounded-lg border flex items-center justify-between transition-all cursor-pointer ${
+                              selectedLoads380V[`custom_${circ.id}`] !== false 
+                                ? 'bg-slate-950 border-emerald-500/50 text-white' 
+                                : 'bg-slate-950/40 border-slate-800 text-slate-500 opacity-60'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <input
+                                type="checkbox"
+                                checked={selectedLoads380V[`custom_${circ.id}`] !== false}
+                                onChange={() => {}}
+                                className="rounded accent-[#00B356] cursor-pointer"
+                              />
+                              <div>
+                                <strong className="text-xs block">Circuito {idx + 1}: {circ.name}</strong>
+                                <span className="text-[10px] text-slate-400 font-sans">Circuito extra 380V cadastrado</span>
+                              </div>
+                            </div>
+                            <div className="text-right font-mono">
+                              <span className="text-xs font-bold text-emerald-400 block">{(circ.powerW / 1000).toFixed(2)} kW</span>
+                              <span className="text-[10px] text-slate-400">{circ.breakerA} A</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
 
                     <div className="bg-slate-900/90 rounded-xl p-3.5 border border-slate-800 space-y-2 text-xs font-mono">

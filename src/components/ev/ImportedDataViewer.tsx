@@ -30,6 +30,8 @@ export default function ImportedDataViewer({
   const [activeTab, setActiveTab] = useState<'daily_peaks' | 'full_curve' | 'table'>('daily_peaks');
   const [currentPage, setCurrentPage] = useState(1);
   const [showTable, setShowTable] = useState(false);
+  const [hoveredPointIndex, setHoveredPointIndex] = useState<number | null>(null);
+  const [hoveredDailyIndex, setHoveredDailyIndex] = useState<number | null>(null);
   const pageSize = 10;
 
   const handleDownloadExcel = () => {
@@ -537,8 +539,47 @@ export default function ImportedDataViewer({
             </div>
           </div>
 
-          <div className="bg-[#0A192F] p-4 rounded-3xl overflow-x-auto shadow-inner">
-            <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} className="w-full h-auto min-w-[650px]">
+          {/* Destaque Superior Permanente da Maior Carga do Período */}
+          <div className="bg-gradient-to-r from-orange-500/10 via-amber-500/10 to-transparent border-l-4 border-[#E45318] p-3 rounded-xl flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="p-2 bg-[#E45318] text-white rounded-lg shadow-sm">
+                <Zap className="w-5 h-5" />
+              </span>
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-[#E45318] block">
+                  Maior Carga Registrada em Todo o Período (Pico Global)
+                </span>
+                <span className="text-base font-black text-slate-900 font-mono">
+                  {summary.maxPowerKW.toFixed(2)} kW
+                </span>
+                <span className="text-xs text-slate-500 ml-2">
+                  registrado em <strong className="text-slate-700">{summary.peakTimestamp}</strong> ({summary.totalReadings} leituras processadas)
+                </span>
+              </div>
+            </div>
+            <div className="text-right">
+              <span className="text-[11px] font-bold px-3 py-1 rounded-full bg-slate-900 text-amber-300 font-mono">
+                {summary.maxPowerKW > gridLimitKW ? '⚠️ Ultrapassa Padrão' : '✓ Dentro do Limite'}
+              </span>
+            </div>
+          </div>
+
+          <div className="bg-[#0A192F] p-4 rounded-3xl overflow-x-auto shadow-inner relative">
+            <svg 
+              viewBox={`0 0 ${svgWidth} ${svgHeight}`} 
+              className="w-full h-auto min-w-[650px] cursor-crosshair select-none"
+              onMouseMove={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                const scaleX = svgWidth / rect.width;
+                const svgX = (e.clientX - rect.left) * scaleX;
+                if (svgX >= paddingLeft && svgX <= svgWidth - paddingRight && points.length > 0) {
+                  const ratio = (svgX - paddingLeft) / plotWidth;
+                  const idx = Math.max(0, Math.min(points.length - 1, Math.round(ratio * (points.length - 1))));
+                  setHoveredPointIndex(idx);
+                }
+              }}
+              onMouseLeave={() => setHoveredPointIndex(null)}
+            >
               <defs>
                 <linearGradient id="measuredGradient" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.35" />
@@ -606,37 +647,171 @@ export default function ImportedDataViewer({
               {/* Linha Projetada com Carregador */}
               <path d={pathWithCharger} fill="none" stroke="#E45318" strokeWidth="2" strokeDasharray="5,3" />
 
-              {/* Ponto de Pico Destacado */}
+              {/* ─── PONTO DE PICO MÁXIMO DE TODO O PERÍODO (SEMPRE EVIDENTE) ─── */}
               {points.length > 0 && (() => {
                 const peakIdx = points.findIndex(p => p.powerKW === summary.maxPowerKW);
                 if (peakIdx === -1) return null;
+                const peakPt = points[peakIdx];
                 const xPeak = getCurveX(peakIdx);
                 const yPeak = getCurveY(summary.maxPowerKW);
+                const isOver = summary.maxPowerKW > gridLimitKW;
+
                 return (
-                  <g>
-                    <circle cx={xPeak} cy={yPeak} r="5" fill="#E45318" stroke="#ffffff" strokeWidth="2" />
-                    <rect
-                      x={xPeak - 40}
-                      y={yPeak - 24}
-                      width="80"
-                      height="18"
-                      rx="6"
-                      fill="#E45318"
+                  <g key="peak-marker">
+                    {/* Anel Pulsante Indicador de Ponto Crítico */}
+                    <circle cx={xPeak} cy={yPeak} r="12" fill="none" stroke="#E45318" strokeWidth="2" opacity="0.6">
+                      <animate attributeName="r" values="6;18;6" dur="2.2s" repeatCount="indefinite" />
+                      <animate attributeName="opacity" values="0.8;0.1;0.8" dur="2.2s" repeatCount="indefinite" />
+                    </circle>
+
+                    {/* Ponto Central */}
+                    <circle cx={xPeak} cy={yPeak} r="6" fill="#E45318" stroke="#ffffff" strokeWidth="2.5" />
+
+                    {/* Tag Permanente da Maior Carga do Período */}
+                    <g transform={`translate(${Math.max(75, Math.min(svgWidth - 95, xPeak))}, ${Math.max(38, yPeak - 30)})`}>
+                      <rect
+                        x="-75"
+                        y="-26"
+                        width="150"
+                        height="32"
+                        rx="7"
+                        fill="#E45318"
+                        stroke="#ffffff"
+                        strokeWidth="1.5"
+                        filter="drop-shadow(0px 3px 5px rgba(0,0,0,0.5))"
+                      />
+                      <text
+                        x="0"
+                        y="-12"
+                        textAnchor="middle"
+                        fill="#ffffff"
+                        fontSize="9.5"
+                        fontWeight="900"
+                        fontFamily="Montserrat"
+                      >
+                        🔥 MAIOR CARGA: {summary.maxPowerKW.toFixed(2)} kW
+                      </text>
+                      <text
+                        x="0"
+                        y="-1"
+                        textAnchor="middle"
+                        fill="#fef08a"
+                        fontSize="7.5"
+                        fontWeight="bold"
+                        fontFamily="Montserrat"
+                      >
+                        {peakPt.dateStr || ''} às {peakPt.timeStr} {isOver ? '(SOBRECARGA)' : ''}
+                      </text>
+                    </g>
+                  </g>
+                );
+              })()}
+
+              {/* ─── TOOLTIP INTERATIVO NO HOVER DO MOUSE (PASSO A PASSO AO PASSAR O MOUSE) ─── */}
+              {hoveredPointIndex !== null && points[hoveredPointIndex] && (() => {
+                const pt = points[hoveredPointIndex];
+                const xH = getCurveX(hoveredPointIndex);
+                const yHMeasured = getCurveY(pt.powerKW);
+                const yHTotal = getCurveY(pt.powerKW + chargerPowerKW);
+                const isOver = (pt.powerKW + chargerPowerKW) > gridLimitKW;
+
+                // Auto-posicionamento da caixa para não sair do SVG
+                const boxWidth = 160;
+                const boxHeight = 72;
+                const placeLeft = xH > svgWidth - boxWidth - 30;
+                const boxX = placeLeft ? xH - boxWidth - 12 : xH + 12;
+                const boxY = Math.max(paddingTop + 5, Math.min(svgHeight - paddingBottom - boxHeight - 5, yHMeasured - boxHeight / 2));
+
+                return (
+                  <g key="hover-guide" pointerEvents="none">
+                    {/* Linha Guia Vertical */}
+                    <line
+                      x1={xH}
+                      y1={paddingTop}
+                      x2={xH}
+                      y2={paddingTop + plotHeight}
+                      stroke="#38bdf8"
+                      strokeWidth="1.5"
+                      strokeDasharray="3,3"
                     />
+
+                    {/* Marcador na Curva Medida */}
+                    <circle cx={xH} cy={yHMeasured} r="5" fill="#38bdf8" stroke="#ffffff" strokeWidth="2" />
+
+                    {/* Marcador na Curva Projetada com VE */}
+                    <circle cx={xH} cy={yHTotal} r="5" fill="#E45318" stroke="#ffffff" strokeWidth="2" />
+
+                    {/* Caixa Flutuante do Tooltip */}
+                    <rect
+                      x={boxX}
+                      y={boxY}
+                      width={boxWidth}
+                      height={boxHeight}
+                      rx="8"
+                      fill="#0f172a"
+                      stroke="#38bdf8"
+                      strokeWidth="1.2"
+                      opacity="0.95"
+                    />
+
+                    {/* Conteúdo do Tooltip */}
                     <text
-                      x={xPeak}
-                      y={yPeak - 12}
-                      textAnchor="middle"
-                      fill="#ffffff"
+                      x={boxX + 10}
+                      y={boxY + 16}
+                      fill="#94a3b8"
                       fontSize="9"
                       fontWeight="bold"
                       fontFamily="Montserrat"
                     >
-                      Pico: {summary.maxPowerKW.toFixed(2)} kW
+                      📅 {pt.dateStr || ''} • ⏰ {pt.timeStr}
+                    </text>
+
+                    <text
+                      x={boxX + 10}
+                      y={boxY + 32}
+                      fill="#38bdf8"
+                      fontSize="10"
+                      fontWeight="bold"
+                      fontFamily="Montserrat"
+                    >
+                      Medição: {pt.powerKW.toFixed(2)} kW
+                      <tspan fill="#64748b" fontSize="8.5"> ({pt.estimatedCurrentA?.toFixed(1) || '--'}A)</tspan>
+                    </text>
+
+                    <text
+                      x={boxX + 10}
+                      y={boxY + 48}
+                      fill="#E45318"
+                      fontSize="10"
+                      fontWeight="bold"
+                      fontFamily="Montserrat"
+                    >
+                      Com Hub VE: {(pt.powerKW + chargerPowerKW).toFixed(2)} kW
+                    </text>
+
+                    <text
+                      x={boxX + 10}
+                      y={boxY + 62}
+                      fill={isOver ? '#fb7185' : '#4ade80'}
+                      fontSize="8.5"
+                      fontWeight="bold"
+                      fontFamily="Montserrat"
+                    >
+                      {isOver ? `⚠️ Excede Padrão (+${((pt.powerKW + chargerPowerKW) - gridLimitKW).toFixed(1)} kW)` : `✓ Dentro do Padrão (${gridLimitKW} kW)`}
                     </text>
                   </g>
                 );
               })()}
+
+              {/* Área invisível transparente de captura de mouse (Overlay interativo) */}
+              <rect
+                x={paddingLeft}
+                y={paddingTop}
+                width={plotWidth}
+                height={plotHeight}
+                fill="transparent"
+                cursor="crosshair"
+              />
 
               {/* Eixo X com Labels de Horários */}
               {points.map((pt, i) => {

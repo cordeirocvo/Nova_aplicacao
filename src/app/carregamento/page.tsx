@@ -2012,7 +2012,16 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
                       </span>
                     </div>
                     <h4 className="text-sm font-black text-slate-900 mt-0.5">
-                      Padrão Físico: {fieldPhases} • Disjuntor {fieldBreakerAmps}A • Cabos {clientProjectData.fieldCableGaugeMM2 || 10} mm² ({fieldCalculatedLimitKW} kW em 220V)
+                      Padrão Físico: {fieldPhases} • Disjuntor {fieldBreakerAmps}A • Cabos {clientProjectData.fieldCableGaugeMM2 || 10} mm²
+                      {fieldBreakerAmps === 200 ? (
+                        <span className="text-xs font-mono font-bold text-blue-700 ml-1">
+                          (75 kW Normativo CEMIG C6 | 72,4 kW Térmico @ FP 0,95)
+                        </span>
+                      ) : (
+                        <span className="text-xs font-mono font-bold text-slate-600 ml-1">
+                          ({fieldCalculatedLimitKW} kW em 220V)
+                        </span>
+                      )}
                     </h4>
                   </div>
                 </div>

@@ -23,12 +23,15 @@ interface EVTopologyStoreState {
   section1DistanceM: number;       // Padrão -> Painel 220V
   section1MarginPercent: number;
   section1ConductorMaterial?: 'copper' | 'aluminum';
+  section1InstallationMethod?: 'B1' | 'B2' | 'C' | 'D';
   section2DistanceM: number;       // Painel 220V -> Trafo
   section2MarginPercent: number;
   section2ConductorMaterial?: 'copper' | 'aluminum';
+  section2InstallationMethod?: 'B1' | 'B2' | 'C' | 'D';
   section3DistanceM: number;       // Trafo -> Painel 380V
   section3MarginPercent: number;
   section3ConductorMaterial?: 'copper' | 'aluminum';
+  section3InstallationMethod?: 'B1' | 'B2' | 'C' | 'D';
 
   // Cargas Auxiliares
   auxiliaryConfig: {
@@ -53,6 +56,12 @@ interface EVTopologyStoreState {
     voltageV: 127 | 220;
     breakerA: number;
     cableMM2: number;
+    circuitCategory?: 'lighting' | 'outlet_tug' | 'outlet_tue' | 'electronics_cctv' | 'transformer_feeder' | 'ev_charger' | 'custom';
+    curve?: 'B' | 'C' | 'D';
+    drRequired?: boolean;
+    drType?: string;
+    dpsClass?: 'Classe II' | 'Classe III' | 'Dispensado';
+    notes?: string;
   }>;
   customCircuits380V: Array<{
     id: string;
@@ -61,6 +70,12 @@ interface EVTopologyStoreState {
     voltageV: 220 | 380;
     breakerA: number;
     cableMM2: number;
+    circuitCategory?: 'lighting' | 'outlet_tug' | 'outlet_tue' | 'electronics_cctv' | 'transformer_feeder' | 'ev_charger' | 'custom';
+    curve?: 'B' | 'C' | 'D';
+    drRequired?: boolean;
+    drType?: string;
+    dpsClass?: 'Classe II' | 'Classe III' | 'Dispensado';
+    notes?: string;
   }>;
 
   // Gaveta/Modal de Inspeção do Componente Selecionado
@@ -82,13 +97,33 @@ interface EVTopologyStoreState {
     chargers?: TopologyChargerNode[];
     hasSmartChargingDLM?: boolean;
     maxChargerCapKW?: number;
-    customCircuits220V?: Array<{ id: string; name: string; powerW: number; voltageV: 127 | 220; breakerA: number; cableMM2: number }>;
-    customCircuits380V?: Array<{ id: string; name: string; powerW: number; voltageV: 220 | 380; breakerA: number; cableMM2: number }>;
+    customCircuits220V?: Array<any>;
+    customCircuits380V?: Array<any>;
+    section1DistanceM?: number;
+    section1MarginPercent?: number;
+    section1ConductorMaterial?: 'copper' | 'aluminum';
+    section1InstallationMethod?: 'B1' | 'B2' | 'C' | 'D';
+    section2DistanceM?: number;
+    section2MarginPercent?: number;
+    section2ConductorMaterial?: 'copper' | 'aluminum';
+    section2InstallationMethod?: 'B1' | 'B2' | 'C' | 'D';
+    section3DistanceM?: number;
+    section3MarginPercent?: number;
+    section3ConductorMaterial?: 'copper' | 'aluminum';
+    section3InstallationMethod?: 'B1' | 'B2' | 'C' | 'D';
+    customTransformerKVA?: number;
+    customTransformerEfficiencyPercent?: number;
+    customTransformerLossesKW?: number;
   }) => void;
   setDLMSettings: (hasDLM: boolean, maxCapKW?: number) => void;
   setCustomTransformerKVA: (kva: number | undefined) => void;
   setTransformerEfficiencyAndLosses: (efficiencyPercent?: number, lossesKW?: number) => void;
-  addCustomCircuit: (panel: '220v' | '380v', circuit: { name: string; powerW: number; voltageV: 127 | 220 | 380 }) => void;
+  addCustomCircuit: (panel: '220v' | '380v', circuit: { 
+    name: string; 
+    powerW: number; 
+    voltageV: 127 | 220 | 380;
+    circuitCategory?: 'lighting' | 'outlet_tug' | 'outlet_tue' | 'electronics_cctv' | 'transformer_feeder' | 'ev_charger' | 'custom';
+  }) => void;
   removeCustomCircuit: (panel: '220v' | '380v', id: string) => void;
   addCharger: (charger: Omit<TopologyChargerNode, 'id'>) => void;
   removeCharger: (id: string) => void;
@@ -104,6 +139,10 @@ interface EVTopologyStoreState {
   updateSectionMaterial: (
     section: 'trecho_1' | 'trecho_2' | 'trecho_3',
     material: 'copper' | 'aluminum'
+  ) => void;
+  updateSectionInstallationMethod: (
+    section: 'trecho_1' | 'trecho_2' | 'trecho_3',
+    method: 'B1' | 'B2' | 'C' | 'D'
   ) => void;
   updateAuxiliaryConfig: (updates: Partial<EVTopologyStoreState['auxiliaryConfig']>) => void;
   setSelectedDrawerNodeId: (nodeId: string | null) => void;
@@ -154,12 +193,15 @@ export const useEVTopologyStore = create<EVTopologyStoreState>((set, get) => {
       section1DistanceM: currentState.section1DistanceM ?? 20,
       section1MarginPercent: currentState.section1MarginPercent ?? 10,
       section1ConductorMaterial: currentState.section1ConductorMaterial ?? 'copper',
+      section1InstallationMethod: currentState.section1InstallationMethod ?? 'B1',
       section2DistanceM: currentState.section2DistanceM ?? 5,
       section2MarginPercent: currentState.section2MarginPercent ?? 10,
       section2ConductorMaterial: currentState.section2ConductorMaterial ?? 'copper',
+      section2InstallationMethod: currentState.section2InstallationMethod ?? 'B1',
       section3DistanceM: currentState.section3DistanceM ?? 5,
       section3MarginPercent: currentState.section3MarginPercent ?? 10,
       section3ConductorMaterial: currentState.section3ConductorMaterial ?? 'copper',
+      section3InstallationMethod: currentState.section3InstallationMethod ?? 'B1',
       auxiliaryConfig: currentState.auxiliaryConfig || {
         cctvEnabled: true,
         cctvPowerW: 300,
@@ -188,12 +230,15 @@ export const useEVTopologyStore = create<EVTopologyStoreState>((set, get) => {
     section1DistanceM: 20,
     section1MarginPercent: 10,
     section1ConductorMaterial: 'copper',
+    section1InstallationMethod: 'B1',
     section2DistanceM: 5,
     section2MarginPercent: 10,
     section2ConductorMaterial: 'copper',
+    section2InstallationMethod: 'B1',
     section3DistanceM: 5,
     section3MarginPercent: 10,
     section3ConductorMaterial: 'copper',
+    section3InstallationMethod: 'B1',
     auxiliaryConfig: {
       cctvEnabled: true,
       cctvPowerW: 300,
@@ -217,12 +262,15 @@ export const useEVTopologyStore = create<EVTopologyStoreState>((set, get) => {
     section1DistanceM: 20,
     section1MarginPercent: 10,
     section1ConductorMaterial: 'copper',
+    section1InstallationMethod: 'B1',
     section2DistanceM: 5,
     section2MarginPercent: 10,
     section2ConductorMaterial: 'copper',
+    section2InstallationMethod: 'B1',
     section3DistanceM: 5,
     section3MarginPercent: 10,
     section3ConductorMaterial: 'copper',
+    section3InstallationMethod: 'B1',
 
     customCircuits220V: initialSaved220V,
     customCircuits380V: initialSaved380V,
@@ -253,7 +301,22 @@ export const useEVTopologyStore = create<EVTopologyStoreState>((set, get) => {
           hasSmartChargingDLM: data.hasSmartChargingDLM !== undefined ? data.hasSmartChargingDLM : state.hasSmartChargingDLM,
           maxChargerCapKW: data.maxChargerCapKW !== undefined ? data.maxChargerCapKW : state.maxChargerCapKW,
           customCircuits220V: data.customCircuits220V && data.customCircuits220V.length > 0 ? data.customCircuits220V : state.customCircuits220V,
-          customCircuits380V: data.customCircuits380V && data.customCircuits380V.length > 0 ? data.customCircuits380V : state.customCircuits380V
+          customCircuits380V: data.customCircuits380V && data.customCircuits380V.length > 0 ? data.customCircuits380V : state.customCircuits380V,
+          section1DistanceM: data.section1DistanceM ?? state.section1DistanceM,
+          section1MarginPercent: data.section1MarginPercent ?? state.section1MarginPercent,
+          section1ConductorMaterial: data.section1ConductorMaterial ?? state.section1ConductorMaterial,
+          section1InstallationMethod: data.section1InstallationMethod ?? state.section1InstallationMethod,
+          section2DistanceM: data.section2DistanceM ?? state.section2DistanceM,
+          section2MarginPercent: data.section2MarginPercent ?? state.section2MarginPercent,
+          section2ConductorMaterial: data.section2ConductorMaterial ?? state.section2ConductorMaterial,
+          section2InstallationMethod: data.section2InstallationMethod ?? state.section2InstallationMethod,
+          section3DistanceM: data.section3DistanceM ?? state.section3DistanceM,
+          section3MarginPercent: data.section3MarginPercent ?? state.section3MarginPercent,
+          section3ConductorMaterial: data.section3ConductorMaterial ?? state.section3ConductorMaterial,
+          section3InstallationMethod: data.section3InstallationMethod ?? state.section3InstallationMethod,
+          customTransformerKVA: data.customTransformerKVA !== undefined ? data.customTransformerKVA : state.customTransformerKVA,
+          customTransformerEfficiencyPercent: data.customTransformerEfficiencyPercent !== undefined ? data.customTransformerEfficiencyPercent : state.customTransformerEfficiencyPercent,
+          customTransformerLossesKW: data.customTransformerLossesKW !== undefined ? data.customTransformerLossesKW : state.customTransformerLossesKW
         };
         return {
           ...nextState,
@@ -302,15 +365,58 @@ export const useEVTopologyStore = create<EVTopologyStoreState>((set, get) => {
 
     addCustomCircuit: (panel, circuit) => {
       set((state) => {
-        const calcBreaker = STANDARD_BREAKERS.find(b => b >= (circuit.powerW / (circuit.voltageV === 380 ? (Math.sqrt(3) * 380 * 0.92) : circuit.voltageV)) * 1.25) || 16;
-        const calcCable = calcBreaker <= 16 ? 2.5 : calcBreaker <= 25 ? 4.0 : 6.0;
+        const cat = circuit.circuitCategory || 'custom';
+        let minGauge = 2.5;
+        let defaultCurve: 'B' | 'C' | 'D' = 'C';
+        let drReq = true;
+        let drType = 'Bipolar 25A / 30mA Tipo AC';
+        let dpsCl: 'Classe II' | 'Classe III' | 'Dispensado' = 'Dispensado';
+
+        if (cat === 'lighting') {
+          minGauge = 1.5;
+          defaultCurve = 'B';
+          drReq = false;
+        } else if (cat === 'outlet_tug' || cat === 'outlet_tue') {
+          minGauge = 2.5;
+          defaultCurve = 'C';
+          drReq = true; // NBR 5410 item 5.1.3.2.2 mandatório <= 30mA
+          drType = circuit.voltageV === 380 ? 'Tetrapolar 40A / 30mA' : 'Bipolar 25A / 30mA Tipo A/AC';
+        } else if (cat === 'electronics_cctv') {
+          minGauge = 2.5;
+          defaultCurve = 'C';
+          drReq = true;
+          dpsCl = 'Classe III'; // Proteção fina para equipamentos sensíveis
+        } else if (cat === 'transformer_feeder') {
+          minGauge = 10.0;
+          defaultCurve = 'D'; // Suporte inrush
+          drReq = false;
+        } else if (cat === 'ev_charger') {
+          minGauge = 6.0;
+          defaultCurve = 'C';
+          drReq = true;
+          drType = 'DR Tipo B 30mA (NBR 17019)';
+          dpsCl = 'Classe II';
+        }
+
+        const calcCurrent = circuit.voltageV === 380 
+          ? (circuit.powerW / (Math.sqrt(3) * 380 * 0.92))
+          : (circuit.powerW / circuit.voltageV);
+        const calcBreaker = STANDARD_BREAKERS.find(b => b >= calcCurrent * 1.25) || (cat === 'lighting' ? 10 : 16);
+        const calcCable = Math.max(minGauge, calcBreaker <= 10 ? 1.5 : calcBreaker <= 16 ? 2.5 : calcBreaker <= 25 ? 4.0 : 6.0);
+
         const newCircuit = {
           id: `circ-${Date.now()}`,
           name: circuit.name,
           powerW: circuit.powerW,
           voltageV: circuit.voltageV as any,
           breakerA: calcBreaker,
-          cableMM2: calcCable
+          cableMM2: calcCable,
+          circuitCategory: cat,
+          curve: defaultCurve,
+          drRequired: drReq,
+          drType: drType,
+          dpsClass: dpsCl,
+          notes: `Dimensionado conforme NBR 5410 (Categoria ${cat.toUpperCase()})`
         };
 
         const nextCircuits220V = panel === '220v' ? [...state.customCircuits220V, newCircuit] : state.customCircuits220V;
@@ -446,6 +552,23 @@ export const useEVTopologyStore = create<EVTopologyStoreState>((set, get) => {
           updates.section2ConductorMaterial = material;
         } else if (section === 'trecho_3') {
           updates.section3ConductorMaterial = material;
+        }
+        return {
+          ...updates,
+          topologyOutput: computeOutput(updates)
+        };
+      });
+    },
+
+    updateSectionInstallationMethod: (section, method) => {
+      set((state) => {
+        const updates: Partial<EVTopologyStoreState> = {};
+        if (section === 'trecho_1') {
+          updates.section1InstallationMethod = method;
+        } else if (section === 'trecho_2') {
+          updates.section2InstallationMethod = method;
+        } else if (section === 'trecho_3') {
+          updates.section3InstallationMethod = method;
         }
         return {
           ...updates,

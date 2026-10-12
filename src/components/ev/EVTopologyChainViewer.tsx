@@ -46,6 +46,24 @@ export interface EVTopologyChainViewerProps {
   externalMaxChargerCapKW?: number;
   onUpdateChargerPower?: (id: string, newPowerKW: number) => void;
   cemigStandardBOM?: any[];
+  onSaveTopologyParams?: (params: {
+    section1DistanceM: number;
+    section1MarginPercent: number;
+    section1ConductorMaterial?: 'copper' | 'aluminum';
+    section1InstallationMethod?: 'B1' | 'B2' | 'C' | 'D';
+    section2DistanceM: number;
+    section2MarginPercent: number;
+    section2ConductorMaterial?: 'copper' | 'aluminum';
+    section2InstallationMethod?: 'B1' | 'B2' | 'C' | 'D';
+    section3DistanceM: number;
+    section3MarginPercent: number;
+    section3ConductorMaterial?: 'copper' | 'aluminum';
+    section3InstallationMethod?: 'B1' | 'B2' | 'C' | 'D';
+    customTransformerKVA?: number;
+    customTransformerEfficiencyPercent?: number;
+    customTransformerLossesKW?: number;
+  }) => void;
+  onConcludeTopology?: () => void;
 }
 
 export function EVTopologyChainViewer({
@@ -58,7 +76,9 @@ export function EVTopologyChainViewer({
   externalHasSmartChargingDLM,
   externalMaxChargerCapKW,
   onUpdateChargerPower,
-  cemigStandardBOM
+  cemigStandardBOM,
+  onSaveTopologyParams,
+  onConcludeTopology
 }: EVTopologyChainViewerProps = {}) {
   const {
     chargers,
@@ -69,12 +89,15 @@ export function EVTopologyChainViewer({
     section1DistanceM,
     section1MarginPercent,
     section1ConductorMaterial,
+    section1InstallationMethod,
     section2DistanceM,
     section2MarginPercent,
     section2ConductorMaterial,
+    section2InstallationMethod,
     section3DistanceM,
     section3MarginPercent,
     section3ConductorMaterial,
+    section3InstallationMethod,
     auxiliaryConfig,
     customTransformerKVA,
     customTransformerEfficiencyPercent,
@@ -96,6 +119,7 @@ export function EVTopologyChainViewer({
     setCurrentStandardCategory,
     updateSectionDistanceAndMargin,
     updateSectionMaterial,
+    updateSectionInstallationMethod,
     updateAuxiliaryConfig,
     setSelectedDrawerNodeId
   } = useEVTopologyStore();
@@ -218,12 +242,13 @@ export function EVTopologyChainViewer({
   const breakdownStandardLimitKW = standardAlert.currentStandardLimitKW;
   const breakdownDeficitKW = Number((breakdownTotalRequiredKW - breakdownStandardLimitKW).toFixed(2));
 
-  // Potência e corrente das cargas ativas selecionadas no Painel 220V (conforme Foto 04 e Figura 05)
+  // Potência e corrente das cargas ativas selecionadas no Painel 220V (conforme Foto 01, Foto 04 e Figura 05)
   const panel220VSelectedKW = React.useMemo(() => {
     let sum = 0;
     if (selectedLoads220V.clientBase !== false) sum += breakdownClientKW;
     if (transformer.needed) {
-      if (selectedLoads220V.trafoFeeder !== false) sum += Number((breakdownChargersNominalKW + breakdownTrafoLossesKW).toFixed(2));
+      if (selectedLoads220V.trafoFeeder !== false) sum += breakdownChargersNominalKW;
+      if (selectedLoads220V.trafoLosses !== false) sum += breakdownTrafoLossesKW;
     } else {
       chargers.forEach(c => {
         if (selectedLoads220V[`ch_${c.id}`] !== false) sum += c.powerKW;
@@ -623,7 +648,12 @@ export function EVTopologyChainViewer({
                     <tr className="bg-slate-900/80 font-bold border-t-2 border-slate-700 text-white">
                       <td className="px-3 py-2.5">SUBTOTAL DO HUB VE (Carregadores + Perdas + Auxiliares)</td>
                       <td className="px-3 py-2.5 text-center text-amber-400">Hub Dedicado</td>
-                      <td className="px-3 py-2.5 text-center text-slate-400 text-[11px]">80kW VE + 1,63kW trafo + 2,53kW cabos + 1,7kW aux</td>
+                      <td className="px-3 py-2.5 text-center text-slate-400 text-[11px]">
+                        {breakdownChargersNominalKW.toFixed(1)}kW VE
+                        {transformer.needed ? ` + ${breakdownTrafoLossesKW.toFixed(2)}kW trafo` : ''}
+                        {` + ${breakdownCableLossesKW.toFixed(2)}kW cabos`}
+                        {breakdownAuxTotalKW > 0 ? ` + ${breakdownAuxTotalKW.toFixed(2)}kW aux` : ''}
+                      </td>
                       <td className="px-3 py-2.5 text-right text-amber-400 text-sm">{breakdownHubTotalKW.toFixed(2)} kW</td>
                       <td className="px-3 py-2.5 text-right text-slate-300">{((breakdownHubTotalKW / breakdownTotalRequiredKW) * 100).toFixed(1)}%</td>
                     </tr>
@@ -1278,6 +1308,56 @@ export function EVTopologyChainViewer({
                 </div>
               </div>
             )}
+
+            {/* Trecho 3 (Trafo -> Painel 380V) */}
+            {sections.section3_trafoToPanel380 && (
+              <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-4">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+                  <h4 className="font-bold text-sm text-white flex items-center gap-2">
+                    <Cable className="w-4 h-4 text-[#00B356]" />
+                    {sections.section3_trafoToPanel380.name}
+                  </h4>
+                  <span className="text-xs font-mono px-2 py-0.5 rounded bg-slate-800 text-emerald-400">
+                    380V Secundário Trafo
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-3 mt-3 text-xs">
+                  <div>
+                    <span className="text-slate-400">Comprimento Nominal:</span>
+                    <div className="flex items-center gap-2 mt-1">
+                      <input
+                        type="number"
+                        value={section3DistanceM}
+                        onChange={(e) => updateSectionDistanceAndMargin('trecho_3', Number(e.target.value) || 0, section3MarginPercent)}
+                        className="w-20 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white font-mono"
+                      />
+                      <span className="text-slate-400">m</span>
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-slate-400">Margem de Erro (%):</span>
+                    <div className="flex items-center gap-2 mt-1">
+                      <input
+                        type="number"
+                        value={section3MarginPercent}
+                        onChange={(e) => updateSectionDistanceAndMargin('trecho_3', section3DistanceM, Number(e.target.value) || 0)}
+                        className="w-20 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white font-mono"
+                      />
+                      <span className="text-slate-400">%</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs font-mono">
+                  <span>Distância Total: <b>{sections.section3_trafoToPanel380.distanceTotalM}m</b></span>
+                  <span>Bitola Fase: <b className="text-emerald-400">
+                    {sections.section3_trafoToPanel380.conductorsPerPhase > 1
+                      ? `${sections.section3_trafoToPanel380.conductorsPerPhase}x (${sections.section3_trafoToPanel380.cableGaugePhaseMM2}mm²)`
+                      : `${sections.section3_trafoToPanel380.cableGaugePhaseMM2}mm²`}
+                  </b></span>
+                  <span>Duto {sections.section3_trafoToPanel380.conduitInches} (Ocupação: <b className="text-emerald-400">{sections.section3_trafoToPanel380.conduitFillingRatePercent}%</b>)</span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Feeders dos Carregadores (Trecho 4) */}
@@ -1603,37 +1683,74 @@ export function EVTopologyChainViewer({
                           </div>
                         </div>
 
-                        {/* 2. Alimentador do Trafo / Hub VE */}
+                        {/* 2. Carregadores Veiculares Nominais (Passantes pelo Trafo ou Diretos) */}
                         {transformer.needed ? (
-                          <div 
-                            onClick={() => toggleLoad220V('trafoFeeder')}
-                            className={`p-2.5 rounded-lg border flex items-center justify-between transition-all cursor-pointer ${
-                              selectedLoads220V.trafoFeeder !== false 
-                                ? 'bg-slate-950 border-[#E45318]/50 text-white' 
-                                : 'bg-slate-950/40 border-slate-800 text-slate-500 opacity-60'
-                            }`}
-                          >
-                            <div className="flex items-center gap-3">
-                              <input
-                                type="checkbox"
-                                checked={selectedLoads220V.trafoFeeder !== false}
-                                onChange={() => {}}
-                                className="rounded accent-[#E45318] cursor-pointer"
-                              />
-                              <div>
-                                <strong className="text-xs block">2. Alimentador Primário do Trafo Elevador (Hub VE)</strong>
-                                <span className="text-[10px] text-slate-400 font-sans">
-                                  Alimenta {chargers.length} carregador(es) + {breakdownTrafoLossesKW} kW perdas trafo • Trifásico 220V
+                          <>
+                            <div 
+                              onClick={() => toggleLoad220V('trafoFeeder')}
+                              className={`p-2.5 rounded-lg border flex items-center justify-between transition-all cursor-pointer ${
+                                selectedLoads220V.trafoFeeder !== false 
+                                  ? 'bg-slate-950 border-[#E45318]/50 text-white' 
+                                  : 'bg-slate-950/40 border-slate-800 text-slate-500 opacity-60'
+                              }`}
+                            >
+                              <div className="flex items-center gap-3">
+                                <input
+                                  type="checkbox"
+                                  checked={selectedLoads220V.trafoFeeder !== false}
+                                  onChange={() => {}}
+                                  className="rounded accent-[#E45318] cursor-pointer"
+                                />
+                                <div>
+                                  <strong className="text-xs block">2. Carregadores Veiculares Nominais (Hub VE)</strong>
+                                  <span className="text-[10px] text-slate-400 font-sans">
+                                    Potência nominal de placa ({chargers.length} estações VE) • Sem perdas acopladas
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="text-right font-mono">
+                                <span className="text-xs font-bold text-amber-400 block">
+                                  {breakdownChargersNominalKW.toFixed(2)} kW
+                                </span>
+                                <span className="text-[10px] text-slate-400">
+                                  {Number(((breakdownChargersNominalKW * 1000) / (Math.sqrt(3) * 220 * 0.98)).toFixed(1))} A
                                 </span>
                               </div>
                             </div>
-                            <div className="text-right font-mono">
-                              <span className="text-xs font-bold text-amber-400 block">
-                                {(breakdownChargersNominalKW + breakdownTrafoLossesKW).toFixed(2)} kW
-                              </span>
-                              <span className="text-[10px] text-slate-400">{transformer.primaryCurrentA} A</span>
+
+                            {/* 3. Perdas no Transformador Elevador Dyn1 */}
+                            <div 
+                              onClick={() => toggleLoad220V('trafoLosses')}
+                              className={`p-2.5 rounded-lg border flex items-center justify-between transition-all cursor-pointer ${
+                                selectedLoads220V.trafoLosses !== false 
+                                  ? 'bg-slate-950 border-amber-500/50 text-white' 
+                                  : 'bg-slate-950/40 border-slate-800 text-slate-500 opacity-60'
+                              }`}
+                            >
+                              <div className="flex items-center gap-3">
+                                <input
+                                  type="checkbox"
+                                  checked={selectedLoads220V.trafoLosses !== false}
+                                  onChange={() => {}}
+                                  className="rounded accent-amber-500 cursor-pointer"
+                                />
+                                <div>
+                                  <strong className="text-xs block">3. Perdas no Transformador Elevador Dyn1</strong>
+                                  <span className="text-[10px] text-slate-400 font-sans">
+                                    Perdas ativas nos enrolamentos e núcleo ferromagnético (rendimento ~98%)
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="text-right font-mono">
+                                <span className="text-xs font-bold text-amber-300 block">
+                                  +{breakdownTrafoLossesKW.toFixed(2)} kW
+                                </span>
+                                <span className="text-[10px] text-slate-400">
+                                  {Number(((breakdownTrafoLossesKW * 1000) / (Math.sqrt(3) * 220 * 0.98)).toFixed(1))} A
+                                </span>
+                              </div>
                             </div>
-                          </div>
+                          </>
                         ) : (
                           chargers.map((ch, idx) => (
                             <div 
@@ -1885,7 +2002,7 @@ export function EVTopologyChainViewer({
                         </div>
                       ))}
 
-                      {/* Formulário Inline de Adição Rápida */}
+                      {/* Formulário Inline de Adição Rápida com Categorização NBR 5410 */}
                       <form
                         onSubmit={(e) => {
                           e.preventDefault();
@@ -1893,13 +2010,28 @@ export function EVTopologyChainViewer({
                           const name = (form.elements.namedItem('circName') as HTMLInputElement).value;
                           const watts = Number((form.elements.namedItem('circPower') as HTMLInputElement).value);
                           const volt = Number((form.elements.namedItem('circVolt') as HTMLSelectElement).value) as 127 | 220;
+                          const category = (form.elements.namedItem('circCategory') as HTMLSelectElement).value as any;
                           if (name && watts > 0) {
-                            addCustomCircuit('220v', { name, powerW: watts, voltageV: volt });
+                            addCustomCircuit('220v', { name, powerW: watts, voltageV: volt, circuitCategory: category });
                             form.reset();
                           }
                         }}
                         className="flex flex-wrap gap-2 pt-2 border-t border-slate-800/80"
                       >
+                        <select
+                          name="circCategory"
+                          defaultValue="outlet_tug"
+                          className="w-full sm:w-44 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-[#E45318]"
+                          title="Categoria normativa do circuito (determina bitola mínima, curva e DR obrigatório)"
+                        >
+                          <option value="outlet_tug">Tomada TUG (Mín. 2.5mm² + DR 30mA)</option>
+                          <option value="outlet_tue">Tomada TUE (Mín. 2.5mm² + DR 30mA)</option>
+                          <option value="lighting">Iluminação (Mín. 1.5mm² Curva B)</option>
+                          <option value="electronics_cctv">CFTV / TI (Mín. 2.5mm² + DPS III)</option>
+                          <option value="transformer_feeder">Alimentador Trafo (Curva D)</option>
+                          <option value="ev_charger">Carregador VE (NBR 17019 - DR B)</option>
+                          <option value="custom">Geral / Customizado</option>
+                        </select>
                         <input
                           name="circName"
                           placeholder="Nome (Ex: Totem, Sensor)"
@@ -2191,6 +2323,42 @@ export function EVTopologyChainViewer({
                                   Aéreo multiplex / Duto enterrado
                                 </span>
                               </button>
+                            </div>
+                          </div>
+
+                          {/* Seletor de Método de Instalação NBR 5410 (Tabela 33) */}
+                          <div className="pt-2 border-t border-slate-800/80">
+                            <label className="block text-slate-400 text-[10px] uppercase font-bold mb-1.5">
+                              Método de Instalação Normativo (NBR 5410 Tabela 33):
+                            </label>
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                              {[
+                                { id: 'B1', title: 'Método B1', sub: 'Embutido', desc: 'Duto alvenaria' },
+                                { id: 'B2', title: 'Método B2', sub: 'Aparente', desc: 'Duto em parede' },
+                                { id: 'C', title: 'Método C', sub: 'Bandeja/Perf.', desc: 'Direto em perfil' },
+                                { id: 'D', title: 'Método D', sub: 'Enterrado', desc: 'Duto no solo 20°C' },
+                              ].map((m) => {
+                                const isCurrent = (sec.installationMethod || 'B1') === m.id;
+                                return (
+                                  <button
+                                    key={m.id}
+                                    type="button"
+                                    onClick={() => updateSectionInstallationMethod(selectedDrawerNodeId as any, m.id as any)}
+                                    className={`p-2 rounded-lg border text-left transition-all ${
+                                      isCurrent
+                                        ? 'bg-amber-950/40 border-amber-500 text-white shadow-sm'
+                                        : 'bg-slate-800/50 border-slate-700 text-slate-400 hover:text-slate-200 hover:border-slate-600'
+                                    }`}
+                                  >
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-xs font-bold">{m.title}</span>
+                                      {isCurrent && <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />}
+                                    </div>
+                                    <span className="text-[9px] block text-amber-300/80 font-mono mt-0.5">{m.sub}</span>
+                                    <span className="text-[8px] block text-slate-400">{m.desc}</span>
+                                  </button>
+                                );
+                              })}
                             </div>
                           </div>
                         </div>
@@ -2693,7 +2861,7 @@ export function EVTopologyChainViewer({
                         </div>
                       ))}
 
-                      {/* Formulário Inline de Adição Rápida */}
+                      {/* Formulário Inline de Adição Rápida com Categorização NBR 5410 / NBR 17019 */}
                       <form
                         onSubmit={(e) => {
                           e.preventDefault();
@@ -2701,13 +2869,25 @@ export function EVTopologyChainViewer({
                           const name = (form.elements.namedItem('circName380') as HTMLInputElement).value;
                           const watts = Number((form.elements.namedItem('circPower380') as HTMLInputElement).value);
                           const volt = Number((form.elements.namedItem('circVolt380') as HTMLSelectElement).value) as 220 | 380;
+                          const category = (form.elements.namedItem('circCategory380') as HTMLSelectElement).value as any;
                           if (name && watts > 0) {
-                            addCustomCircuit('380v', { name, powerW: watts, voltageV: volt });
+                            addCustomCircuit('380v', { name, powerW: watts, voltageV: volt, circuitCategory: category });
                             form.reset();
                           }
                         }}
                         className="flex flex-wrap gap-2 pt-2 border-t border-slate-800/80"
                       >
+                        <select
+                          name="circCategory380"
+                          defaultValue="ev_charger"
+                          className="w-full sm:w-44 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-[#00B356]"
+                          title="Categoria normativa do circuito (determina bitola mínima, curva e DR obrigatório)"
+                        >
+                          <option value="ev_charger">Carregador VE (NBR 17019 - DR B)</option>
+                          <option value="outlet_tue">Tomada TUE 380V (Mín. 2.5mm² + DR)</option>
+                          <option value="electronics_cctv">Painel Automação / TI (DPS III)</option>
+                          <option value="custom">Geral Trifásico / Outros</option>
+                        </select>
                         <input
                           name="circName380"
                           placeholder="Nome (Ex: Ar-condicionado, Painel Sec)"
@@ -3060,10 +3240,35 @@ export function EVTopologyChainViewer({
 
             <button
               type="button"
-              onClick={() => setSelectedDrawerNodeId(null)}
-              className="w-full py-2.5 bg-[#E45318] hover:bg-[#c24210] text-white font-bold rounded-xl text-xs shadow-lg transition-all cursor-pointer mt-6"
+              onClick={() => {
+                if (onSaveTopologyParams) {
+                  onSaveTopologyParams({
+                    section1DistanceM,
+                    section1MarginPercent,
+                    section1ConductorMaterial,
+                    section1InstallationMethod,
+                    section2DistanceM,
+                    section2MarginPercent,
+                    section2ConductorMaterial,
+                    section2InstallationMethod,
+                    section3DistanceM,
+                    section3MarginPercent,
+                    section3ConductorMaterial,
+                    section3InstallationMethod,
+                    customTransformerKVA,
+                    customTransformerEfficiencyPercent,
+                    customTransformerLossesKW
+                  });
+                }
+                if (onConcludeTopology) {
+                  onConcludeTopology();
+                }
+                setSelectedDrawerNodeId(null);
+              }}
+              className="w-full py-2.5 bg-[#E45318] hover:bg-[#c24210] text-white font-bold rounded-xl text-xs shadow-lg transition-all cursor-pointer mt-6 flex items-center justify-center gap-2"
             >
-              Concluir & Recalcular Topologia
+              <CheckCircle2 className="w-4 h-4" />
+              <span>Concluir & Recalcular Topologia</span>
             </button>
           </div>
         </div>

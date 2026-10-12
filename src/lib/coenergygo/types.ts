@@ -145,6 +145,23 @@ export interface ClientProjectData {
   fieldBoxType?: 'policarbonato_atual' | 'chapa_antiga_cm1' | 'desconhecido'; // Tipo de caixa existente
   hasCustomerModifiedBreaker?: boolean; // Suspeita/Confirmação de alteração do disjuntor sem troca da fiação
   fieldInspectionConfirmed?: boolean; // Termo de validação técnica do projetista
+
+  // ─── Parâmetros de Topologia em Cadeia NBR 5410 & NBR 17019 ──────────────────
+  section1DistanceM?: number;
+  section1MarginPercent?: number;
+  section1ConductorMaterial?: 'copper' | 'aluminum';
+  section1InstallationMethod?: 'B1' | 'B2' | 'C' | 'D';
+  section2DistanceM?: number;
+  section2MarginPercent?: number;
+  section2ConductorMaterial?: 'copper' | 'aluminum';
+  section2InstallationMethod?: 'B1' | 'B2' | 'C' | 'D';
+  section3DistanceM?: number;
+  section3MarginPercent?: number;
+  section3ConductorMaterial?: 'copper' | 'aluminum';
+  section3InstallationMethod?: 'B1' | 'B2' | 'C' | 'D';
+  customTransformerKVA?: number;
+  customTransformerEfficiencyPercent?: number;
+  customTransformerLossesKW?: number;
 }
 
 // ─── 2.2 AMBIENTE DE INSTALAÇÃO & BOMBEIROS (IT-41 / IT-30) ─────────────────
@@ -768,6 +785,9 @@ export interface SectionCableConduitSizing {
     fct?: number;
     fca?: number;
     rhoCopper?: number;
+    installationMethodName?: string;
+    tempReference?: string;
+    groupedCircuitsNote?: string;
     standardOriginNote?: string;
   };
 }
@@ -892,6 +912,8 @@ export interface TransformerTopologyState {
   };
 }
 
+export type AuxiliaryCircuitCategory = 'lighting' | 'outlet_tug' | 'outlet_tue' | 'electronics_cctv' | 'transformer_feeder' | 'ev_charger' | 'custom';
+
 export interface CustomAuxiliaryCircuit {
   id: string;
   name: string;
@@ -899,6 +921,12 @@ export interface CustomAuxiliaryCircuit {
   voltageV: 127 | 220 | 380;
   breakerA: number;
   cableMM2: number;
+  circuitCategory?: AuxiliaryCircuitCategory;
+  curve?: 'B' | 'C' | 'D';
+  drRequired?: boolean;
+  drType?: string;
+  dpsClass?: 'Classe II' | 'Classe III' | 'Dispensado';
+  notes?: string;
 }
 
 export interface StandardCapacityAlert {

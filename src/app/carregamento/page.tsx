@@ -3058,6 +3058,30 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
               handleUpdateCharger(id, { powerKW: newPowerKW });
             }}
             cemigStandardBOM={cemigPadraoResult?.itensSugeridos}
+            onSaveTopologyParams={(params) => {
+              setClientProjectData(prev => ({
+                ...prev,
+                section1DistanceM: params.section1DistanceM,
+                section1MarginPercent: params.section1MarginPercent,
+                section1ConductorMaterial: params.section1ConductorMaterial,
+                section1InstallationMethod: params.section1InstallationMethod,
+                section2DistanceM: params.section2DistanceM,
+                section2MarginPercent: params.section2MarginPercent,
+                section2ConductorMaterial: params.section2ConductorMaterial,
+                section2InstallationMethod: params.section2InstallationMethod,
+                section3DistanceM: params.section3DistanceM,
+                section3MarginPercent: params.section3MarginPercent,
+                section3ConductorMaterial: params.section3ConductorMaterial,
+                section3InstallationMethod: params.section3InstallationMethod,
+                customTransformerKVA: params.customTransformerKVA,
+                customTransformerEfficiencyPercent: params.customTransformerEfficiencyPercent,
+                customTransformerLossesKW: params.customTransformerLossesKW
+              }));
+              handleAutoSaveSnapshot();
+            }}
+            onConcludeTopology={() => {
+              handleAutoSaveSnapshot();
+            }}
           />
 
           {/* Painel de Identificação e Integração dos Parâmetros */}

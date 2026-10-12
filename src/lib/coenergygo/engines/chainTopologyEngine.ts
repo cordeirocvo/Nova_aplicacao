@@ -190,10 +190,21 @@ export function sizeCableAndConduitSection(params: {
   // NBR 5410 item 6.2.7.1: bitola mínima de alumínio é 16 mm² (10 mm² em casos específicos de linhas aéreas particulares)
   const effectiveMinGauge = isAluminum ? Math.max(16, minGaugeMM2) : minGaugeMM2;
 
-  // Fatores de correção ambientais (NBR 5410)
-  const FCT = 1.00; // Temperatura ambiente 30°C
-  const FCA = 1.00; // Circuito exclusivo no duto
+  // Fatores de correção ambientais (NBR 5410 Tabela 40 e Tabela 42)
+  const FCT = installationMethod === 'D' ? 1.00 : 1.00; // Solo 20°C (FCT=1.0) ou Ar 30°C (FCT=1.0)
+  const FCA = 1.00; // 1 circuito no duto (FCA=1.0)
   const DERATING_FACTOR = FCT * FCA;
+
+  const methodLabel = installationMethod === 'B1'
+    ? 'Método B1 (Condutores isolados em eletroduto de seção circular embutido em alvenaria - NBR 5410 Tabela 33)'
+    : installationMethod === 'B2'
+    ? 'Método B2 (Cabo multipolar em eletroduto sobre parede ou aparente - NBR 5410 Tabela 33)'
+    : installationMethod === 'C'
+    ? 'Método C (Cabos unipolares ou multipolares fixados diretamente na parede/perfilado - NBR 5410)'
+    : 'Método D (Cabos em eletroduto enterrado no solo - NBR 5410 Tabela 33)';
+
+  const tempRef = installationMethod === 'D' ? '20°C (Solo, FCT=1.00)' : '30°C (Ar Ambiente, FCT=1.00)';
+  const groupedNote = '1 circuito isolado no conduto (FCA=1.00)';
 
   // 1. Bitola por Ampacidade e Seleção de Condutores em Paralelo (NBR 5410)
   let chosenConductors = Math.max(1, minConductorsPerPhase);
@@ -307,8 +318,8 @@ export function sizeCableAndConduitSection(params: {
     : `Ib = P / (V × cos φ) = ${designCurrentA.toFixed(1)} A`;
 
   const formulaAmpacity = chosenConductors > 1
-    ? `Critério de Ampacidade: ${chosenConductors} vias em paralelo de ${matLabel}. Corrente por via = ${designCurrentA.toFixed(1)}A / ${chosenConductors} = ${(designCurrentA / chosenConductors).toFixed(1)}A. Cabo ${cableGaugePhaseMM2}mm² suporta ${ampacityPerCable}A. Capacidade total Iz = ${chosenConductors} × ${ampacityPerCable}A = ${totalAmpacityA}A (≥ ${designCurrentA.toFixed(1)}A - CONFORME).`
-    : `Critério de Ampacidade: 1 condutor por fase de ${matLabel}. Cabo ${cableGaugePhaseMM2}mm² suporta ${ampacityPerCable}A (FCT=1.0, FCA=1.0) ≥ Ib (${designCurrentA.toFixed(1)}A - CONFORME).`;
+    ? `Critério de Ampacidade: ${chosenConductors} vias em paralelo de ${matLabel}. ${methodLabel}. Temperatura: ${tempRef}, Agrupamento: ${groupedNote}. Fator de Correção Total FCT × FCA = ${(FCT * FCA).toFixed(2)}. Corrente de projeto por via: Ib/via = ${designCurrentA.toFixed(1)}A / ${chosenConductors} = ${(designCurrentA / chosenConductors).toFixed(1)}A. Capacidade nominal de tabela: ${ampacityPerCable}A por cabo. Capacidade corrigida total: Iz = ${chosenConductors} × (${ampacityPerCable}A × ${(FCT * FCA).toFixed(2)}) = ${totalAmpacityA}A (≥ Ib ${designCurrentA.toFixed(1)}A — CONFORME).`
+    : `Critério de Ampacidade: 1 condutor por fase de ${matLabel}. ${methodLabel}. Temperatura: ${tempRef}, Agrupamento: ${groupedNote}. Fator de Correção Total FCT × FCA = ${(FCT * FCA).toFixed(2)}. Cabo ${cableGaugePhaseMM2}mm² possui capacidade nominal de ${ampacityPerCable}A. Capacidade corrigida Iz = ${ampacityPerCable}A × ${(FCT * FCA).toFixed(2)} = ${totalAmpacityA}A (≥ Ib ${designCurrentA.toFixed(1)}A — CONFORME).`;
 
   const formulaVoltageDrop = isThreePhase
     ? `ΔV = (√3 × ρ_${isAluminum ? 'Al' : 'Cu'} × L × Ib × cos φ) / S_eq = (1.732 × ${resistivity} × ${distanceTotalM}m × ${designCurrentA.toFixed(1)}A × ${cosPhi}) / (${cableGaugePhaseMM2} × ${chosenConductors}mm²) = ${voltageDropVolts}V (${voltageDropPercent}% ≤ ${maxAllowedVoltageDropPercent}% - CONFORME).`
@@ -368,6 +379,9 @@ export function sizeCableAndConduitSection(params: {
       fct: FCT,
       fca: FCA,
       rhoCopper: resistivity,
+      installationMethodName: methodLabel,
+      tempReference: tempRef,
+      groupedCircuitsNote: groupedNote,
       standardOriginNote
     }
   };

@@ -222,6 +222,8 @@ export function EVTopologyChainViewer({
     totalBOM
   } = topologyOutput;
 
+  const individualChargerBreakers = panel380V.individualBreakers || panel220V.individualChargerBreakers || [];
+
   const totalChargersKW = chargers.reduce((sum, c) => sum + c.powerKW, 0);
 
   // Cálculos discriminados do memorial de demanda e déficit (93,77 kW vs 75,00 kW = 18,8 kW)
@@ -1160,11 +1162,19 @@ export function EVTopologyChainViewer({
                       </p>
                     </div>
 
-                    <div className="mt-3 pt-2 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
-                      <span>Cabo Sugerido</span>
-                      <span className="font-mono font-bold text-amber-400">
-                        {sections.section4_chargersFeeders[idx]?.cableGaugePhaseMM2 || 6}mm² (ΔV {sections.section4_chargersFeeders[idx]?.voltageDropPercent || 0.5}%)
-                      </span>
+                    <div className="mt-3 pt-2 border-t border-slate-800 space-y-1 text-[11px] text-slate-400">
+                      <div className="flex items-center justify-between">
+                        <span>Disjuntor Sugerido</span>
+                        <span className="font-mono font-bold text-emerald-400">
+                          {individualChargerBreakers.find(b => b.chargerId === charger.id)?.breakerA || 40}A Curva C + DR
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span>Cabo Sugerido</span>
+                        <span className="font-mono font-bold text-amber-400">
+                          {sections.section4_chargersFeeders[idx]?.cableGaugePhaseMM2 || 6}mm² (ΔV {sections.section4_chargersFeeders[idx]?.voltageDropPercent || 0.5}%)
+                        </span>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -2112,13 +2122,33 @@ export function EVTopologyChainViewer({
 
                         {/* 4. Derivações dos Circuitos Terminais Derivados (Conforme Foto 04) */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 pt-2">
+                          {/* Circuito 0: Carga Existente do Cliente */}
+                          {panel220V.auxiliaryLoads.clientBaseBreaker && panel220V.auxiliaryLoads.clientBaseBreaker.powerKW > 0 && (
+                            <div className="p-2.5 rounded-lg border text-xs bg-slate-950 border-blue-500/50">
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-white font-bold text-[11px] truncate">Circ. Cliente: Carga Existente</span>
+                                <span className="text-[9px] bg-blue-950 text-blue-300 border border-blue-700/60 px-1.5 py-0.2 rounded font-bold">
+                                  {panel220V.auxiliaryLoads.clientBaseBreaker.breakerA}A Curva C (3P)
+                                </span>
+                              </div>
+                              <span className="text-[10px] text-blue-300 block">
+                                Trifásico 220V • {panel220V.auxiliaryLoads.clientBaseBreaker.powerKW.toFixed(2)} kW ({panel220V.auxiliaryLoads.clientBaseBreaker.designCurrentA} A)
+                              </span>
+                              <span className="text-[9px] text-slate-400 font-mono">
+                                Medição SmartMeter (Passos 1A e 1B)
+                              </span>
+                            </div>
+                          )}
+
                           {/* Circuito 1: Iluminação */}
                           <div className={`p-2.5 rounded-lg border text-xs transition-all ${
                             auxiliaryConfig.lightingEnabled ? 'bg-slate-950 border-slate-700' : 'bg-slate-950/40 border-slate-900 opacity-60'
                           }`}>
                             <div className="flex items-center justify-between mb-1">
                               <span className="text-white font-bold text-[11px]">Circ. 1: Iluminação LED</span>
-                              <span className="text-[9px] bg-slate-800 px-1.5 py-0.2 rounded text-emerald-400 font-bold">10A Curva B</span>
+                              <span className="text-[9px] bg-slate-800 px-1.5 py-0.2 rounded text-emerald-400 font-bold">
+                                {panel220V.auxiliaryLoads.lighting.breakerA}A Curva B
+                              </span>
                             </div>
                             <span className="text-[10px] text-slate-400 block">Monofásico 127V • {auxiliaryConfig.lightingPowerW}W</span>
                             <span className="text-[9px] text-slate-500 font-mono">Cabo 2.5 mm² • Duto 3/4"</span>
@@ -2130,7 +2160,9 @@ export function EVTopologyChainViewer({
                           }`}>
                             <div className="flex items-center justify-between mb-1">
                               <span className="text-white font-bold text-[11px]">Circ. 2: Tomada de Serviço</span>
-                              <span className="text-[9px] bg-slate-800 px-1.5 py-0.2 rounded text-emerald-400 font-bold">20A Curva C</span>
+                              <span className="text-[9px] bg-slate-800 px-1.5 py-0.2 rounded text-emerald-400 font-bold">
+                                {panel220V.auxiliaryLoads.maintenanceOutlet.breakerA}A Curva C
+                              </span>
                             </div>
                             <span className="text-[10px] text-slate-400 block">Monofásico 127V • {auxiliaryConfig.outletPowerW}W</span>
                             <span className="text-[9px] text-slate-500 font-mono">Cabo 2.5 mm² + DR 30mA</span>
@@ -2142,7 +2174,9 @@ export function EVTopologyChainViewer({
                           }`}>
                             <div className="flex items-center justify-between mb-1">
                               <span className="text-white font-bold text-[11px]">Circ. 3: CFTV & Automação</span>
-                              <span className="text-[9px] bg-slate-800 px-1.5 py-0.2 rounded text-emerald-400 font-bold">10A Curva C</span>
+                              <span className="text-[9px] bg-slate-800 px-1.5 py-0.2 rounded text-emerald-400 font-bold">
+                                {panel220V.auxiliaryLoads.cctv.breakerA}A Curva C
+                              </span>
                             </div>
                             <span className="text-[10px] text-slate-400 block">Monofásico 127V • {auxiliaryConfig.cctvPowerW}W</span>
                             <span className="text-[9px] text-slate-500 font-mono">Cabo 2.5 mm² • DPS Cl. III</span>
@@ -2153,10 +2187,14 @@ export function EVTopologyChainViewer({
                             <div key={circ.id} className="p-2.5 bg-slate-950 rounded-lg border border-slate-700 text-xs">
                               <div className="flex items-center justify-between mb-1">
                                 <span className="text-white font-bold text-[11px] truncate">Circ. {4 + idx}: {circ.name}</span>
-                                <span className="text-[9px] bg-slate-800 px-1.5 py-0.2 rounded text-amber-400 font-bold">{circ.breakerA}A Curva C</span>
+                                <span className="text-[9px] bg-slate-800 px-1.5 py-0.2 rounded text-amber-400 font-bold">
+                                  {circ.breakerA}A Curva {circ.curve || 'C'}
+                                </span>
                               </div>
                               <span className="text-[10px] text-slate-400 block">{circ.voltageV}V • {circ.powerW}W</span>
-                              <span className="text-[9px] text-slate-500 font-mono">Cabo {circ.cableMM2} mm²</span>
+                              <span className="text-[9px] text-slate-500 font-mono">
+                                Cabo {circ.cableMM2} mm² {circ.drRequired ? '• DR 30mA' : ''} {circ.dpsClass && circ.dpsClass !== 'Dispensado' ? `• DPS ${circ.dpsClass}` : ''}
+                              </span>
                             </div>
                           ))}
 
@@ -2210,16 +2248,51 @@ export function EVTopologyChainViewer({
                       </div>
                     </div>
 
-                    <div className="p-3 bg-slate-800/40 rounded-lg border border-slate-700/60 font-mono text-[11px] space-y-1">
-                      <div className="text-emerald-400 font-bold">Coordenação Seletiva de Proteção (NBR 5410):</div>
-                      <div className="text-slate-300">
-                        Disjuntor Geral do Painel 220V: <strong>{panel220V.mainBreakerA}A</strong> (Curva {panel220V.mainBreakerCurve}) ➔ Coordenado com o Padrão de Entrada ({standardAlert.currentStandardBreakerA}A)
+                    {/* Memorial de Cálculo Passo a Passo de Todos os Componentes do Painel 220V */}
+                    <div className="p-3.5 bg-slate-900/90 rounded-xl border border-slate-800 font-mono text-xs space-y-2">
+                      <div className="text-amber-400 font-bold font-sans text-xs flex items-center justify-between border-b border-slate-800 pb-1.5">
+                        <span>Memorial de Cálculo de Dimensionamento dos Disjuntores (Painel 220V):</span>
+                        <span className="text-[#00B356] text-[10px]">Auditável NBR 5410</span>
                       </div>
-                      {panel220V.transformerProtectionBreakerA && (
-                        <div className="text-slate-400">
-                          Disjuntor Dedicado de Proteção do Trafo: <strong>{panel220V.transformerProtectionBreakerA}A</strong> Curva D (Suporta corrente de magnetização inrush de até 12x In)
+                      
+                      <div className="space-y-1.5 text-[11px]">
+                        <div className="p-2 rounded bg-slate-950 border border-slate-800">
+                          <strong className="text-white block font-sans">1. Disjuntor Geral do Painel 220V:</strong>
+                          <span className="text-amber-300 block">
+                            {panel220V.calculationBreakdown?.formulaMainBreaker || `In = ${panel220V.mainBreakerA}A Caixa Moldada Curva ${panel220V.mainBreakerCurve}`}
+                          </span>
                         </div>
-                      )}
+
+                        {panel220V.calculationBreakdown?.formulaTrafoBreaker && (
+                          <div className="p-2 rounded bg-slate-950 border border-slate-800">
+                            <strong className="text-white block font-sans">2. Disjuntor de Proteção do Transformador Dyn1:</strong>
+                            <span className="text-amber-300 block">
+                              {panel220V.calculationBreakdown.formulaTrafoBreaker}
+                            </span>
+                          </div>
+                        )}
+
+                        {panel220V.auxiliaryLoads.clientBaseBreaker && panel220V.auxiliaryLoads.clientBaseBreaker.powerKW > 0 && (
+                          <div className="p-2 rounded bg-slate-950 border border-slate-800">
+                            <strong className="text-white block font-sans">3. Disjuntor do Alimentador da Carga do Cliente:</strong>
+                            <span className="text-blue-300 block">
+                              {panel220V.auxiliaryLoads.clientBaseBreaker.formulaSizing}
+                            </span>
+                          </div>
+                        )}
+
+                        <div className="p-2 rounded bg-slate-950 border border-slate-800 space-y-1">
+                          <strong className="text-white block font-sans">4. Disjuntores dos Circuitos Auxiliares (CFTV, Iluminação, Tomadas e Outros):</strong>
+                          <div className="text-emerald-400 block">• CFTV: {panel220V.auxiliaryLoads.cctv.formulaSizing}</div>
+                          <div className="text-emerald-400 block">• Iluminação: {panel220V.auxiliaryLoads.lighting.formulaSizing}</div>
+                          <div className="text-emerald-400 block">• Tomada de Serviço: {panel220V.auxiliaryLoads.maintenanceOutlet.formulaSizing}</div>
+                          {customCircuits220V.map((circ, idx) => (
+                            <div key={`circ-mem-${circ.id}`} className="text-slate-300 block">
+                              • Circ. {idx + 4} ({circ.name}): Ib = {circ.powerW}W / {circ.voltageV}V = {(circ.powerW / circ.voltageV).toFixed(1)}A ➔ Disjuntor {circ.breakerA}A Curva {circ.curve || 'C'} ({circ.drRequired ? 'com DR 30mA' : 'sem DR'})
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -2835,6 +2908,75 @@ export function EVTopologyChainViewer({
                       </div>
                     </div>
 
+                    {/* Memorial de Cálculo Passo a Passo do Painel 380V (NBR 5410 & NBR 17019) */}
+                    <div className="p-3.5 bg-slate-900/90 rounded-xl border border-slate-800 font-mono text-xs space-y-2.5">
+                      <div className="text-emerald-400 font-bold font-sans text-xs flex items-center justify-between border-b border-slate-800 pb-1.5">
+                        <span>Memorial de Cálculo de Dimensionamento (Painel 380V):</span>
+                        <span className="text-amber-400 text-[10px]">Auditável NBR 17019</span>
+                      </div>
+
+                      <div className="space-y-2 text-[11px]">
+                        {/* 1. Disjuntor Geral 380V */}
+                        <div className="p-2.5 rounded bg-slate-950 border border-slate-800 space-y-1">
+                          <strong className="text-white block font-sans">
+                            1. Disjuntor Geral 380V {panel380V.calculationBreakdown?.isSingleChargerUnified ? '(Unificado - 1 Carregador)' : '(Soma de Cargas + Perdas)'}:
+                          </strong>
+                          <span className="text-amber-300 block leading-relaxed">
+                            {panel380V.calculationBreakdown?.formulaMainBreaker || `In = ${panel380V.mainBreakerA}A Tripolar`}
+                          </span>
+                          <div className="text-[10px] text-slate-400 pt-1 flex flex-wrap gap-2 border-t border-slate-800/60">
+                            <span>Potência Nominal Carregadores: <b>{panel380V.calculationBreakdown?.totalChargersNominalKW ?? totalChargersKW} kW</b></span>
+                            <span>• Perdas Internas: <b>+{panel380V.calculationBreakdown?.totalInternalLossesKW ?? 0} kW</b></span>
+                            <span>• Perdas Cabos Ramais: <b>+{panel380V.calculationBreakdown?.totalFeedersLossesKW ?? 0} kW</b></span>
+                          </div>
+                        </div>
+
+                        {/* 2. Disjuntores Individuais de Cada Carregador */}
+                        <div className="p-2.5 rounded bg-slate-950 border border-slate-800 space-y-1.5">
+                          <strong className="text-white block font-sans">2. Dimensionamento dos Disjuntores e DRs dos Carregadores:</strong>
+                          {(panel380V.individualBreakers && panel380V.individualBreakers.length > 0
+                            ? panel380V.individualBreakers
+                            : individualChargerBreakers
+                          ).map((cb, idx) => {
+                            const chRef = chargers.find(c => c.id === cb.chargerId);
+                            return (
+                              <div key={`brk-380-${cb.chargerId}`} className="p-1.5 rounded bg-slate-900 border border-slate-800 space-y-0.5">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-white font-bold">{chRef?.name || `Carregador ${idx + 1}`}:</span>
+                                  <span className="text-amber-400 font-bold">{cb.breakerA}A Curva {cb.curve} ({cb.poles}P) + {cb.drType}</span>
+                                </div>
+                                <div className="text-[10px] text-emerald-400">
+                                  {cb.formulaSizing}
+                                </div>
+                                <div className="text-[9px] text-slate-400">
+                                  Potência saída: {cb.nominalPowerKW}kW | Perdas internas retificador: {cb.internalLossesKW || 0}kW | Potência total demandada: {cb.inputPowerKW}kW
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        {/* 3. Barramento e Seletividade */}
+                        <div className="p-2.5 rounded bg-slate-950 border border-slate-800 space-y-1">
+                          <strong className="text-white block font-sans">3. Barramento de Cobre e Esquema de Proteção:</strong>
+                          <div className="text-slate-300 text-[10px]">
+                            {panel380V.requiresBusbar ? (
+                              <span>
+                                • Barramento de Cobre Eletrolítico dimensionado para <b>{panel380V.busbarRatingA} A</b> com isoladores epóxi e pintura termocontrátil (Fases R, S, T + Neutro 100% + Terra PE).
+                              </span>
+                            ) : (
+                              <span>
+                                • <b>Barramento Dispensado (Regra NBR 17019):</b> Em instalações com 1 única estação de recarga, o condutor de alimentação conecta-se diretamente aos bornes do disjuntor de proteção do carregador, eliminando perdas por conexões intermediárias.
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-slate-400 text-[10px]">
+                            • Esquema de Aterramento: TN-S (Condutor Neutro e Condutor de Proteção PE separados após o transformador Dyn1 e equipotencializados no BEP).
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
                     {/* Circuitos Adicionais no Painel 380V */}
                     <div className="bg-slate-900 p-3 rounded-lg border border-slate-800 space-y-2">
                       <div className="flex items-center justify-between border-b border-slate-800 pb-2">
@@ -3082,9 +3224,31 @@ export function EVTopologyChainViewer({
                               );
                             })()}
 
+                            {/* Dimensionamento do Disjuntor de Proteção do Carregador (NBR 17019) */}
+                            {(() => {
+                              const brkInfo = individualChargerBreakers.find(b => b.chargerId === c.id);
+                              return (
+                                <div className="p-2.5 rounded bg-slate-950/80 border border-amber-500/30 space-y-1">
+                                  <div className="flex items-center justify-between text-[11px]">
+                                    <span className="text-white font-sans font-bold">Disjuntor de Proteção do Carregador:</span>
+                                    <span className="font-bold text-amber-400">
+                                      {brkInfo ? `${brkInfo.breakerA}A Curva ${brkInfo.curve} (${brkInfo.poles}P)` : 'Dimensionado'}
+                                    </span>
+                                  </div>
+                                  <div className="text-[10px] text-emerald-400">
+                                    {brkInfo?.formulaSizing}
+                                  </div>
+                                  <div className="text-[9px] text-slate-400 flex flex-wrap gap-2 pt-1 border-t border-slate-800/60">
+                                    <span>DR Obrigatório: <b className="text-white">{brkInfo?.drType || 'Tetrapolar 40A / 30mA Tipo B'}</b></span>
+                                    <span>• Perdas Internas: <b className="text-amber-300">+{brkInfo?.internalLossesKW ?? 0} kW</b></span>
+                                  </div>
+                                </div>
+                              );
+                            })()}
+
                             {/* 1. Corrente de Projeto */}
                             <div className="bg-slate-950/80 p-2 rounded border border-slate-800 space-y-1">
-                              <span className="text-slate-400 font-sans font-semibold text-[11px] block">1. Corrente de Projeto (Ib):</span>
+                              <span className="text-slate-400 font-sans font-semibold text-[11px] block">1. Corrente de Projeto (Ib) e Cabo Alimentador:</span>
                               <div className="text-amber-400 text-[11px] font-bold">
                                 {feeder.calculationBreakdown?.formulaDesignCurrent || `Ib = ${feeder.designCurrentA} A`}
                               </div>

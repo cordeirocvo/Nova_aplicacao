@@ -800,6 +800,9 @@ export interface AuxiliaryLoadsState {
     phases: 1;
     breakerA: number;
     cableMM2: number;
+    curve?: 'B' | 'C' | 'D';
+    designCurrentA?: number;
+    formulaSizing?: string;
   };
   maintenanceOutlet: {
     enabled: boolean;
@@ -808,25 +811,43 @@ export interface AuxiliaryLoadsState {
     phases: 1;
     breakerA: number;
     cableMM2: number;
+    curve?: 'B' | 'C' | 'D';
+    designCurrentA?: number;
+    drRequired?: boolean;
+    drType?: string;
+    formulaSizing?: string;
   };
   lighting: {
     enabled: boolean;
     voltageV: 127 | 220;
-    powerW: number; // Editável pelo usuário
+    powerW: number;
     phases: 1;
     breakerA: number;
     cableMM2: number;
+    curve?: 'B' | 'C' | 'D';
+    designCurrentA?: number;
+    formulaSizing?: string;
+  };
+  clientBaseBreaker?: {
+    enabled: boolean;
+    voltageV: 220 | 380;
+    powerKW: number;
+    phases: 3;
+    breakerA: number;
+    designCurrentA: number;
+    curve: 'C';
+    formulaSizing: string;
   };
   dps220V: {
     enabled: boolean;
-    classType: string; // "Classe II"
-    rating: string;    // "Uc=275V, In=20kA, Imax=40kA"
-    quantity: number;  // 3 polos (F+F+T ou F+N+T)
+    classType: string;
+    rating: string;
+    quantity: number;
   };
   energyMeter: {
     enabled: boolean;
-    type: string;      // "Multimedidor digital trifásico com TC e RS485 Modbus"
-    measuresTrafoAndAuxOnly: boolean; // TRUE: não inclui consumo de base do cliente
+    type: string;
+    measuresTrafoAndAuxOnly: boolean;
     aggregatedLoadKW: number;
   };
 }
@@ -840,16 +861,31 @@ export interface Panel220VTopologyState {
   busbarRatingA: number;       // Dimensionado exatamente pelo disjuntor geral
   requiresBusbar: boolean;
   totalAuxKW: number;          // Potência total ativa das cargas auxiliares habilitadas
+  totalLoadWithClientKW?: number;
+  totalDesignCurrentA?: number;
   auxiliaryLoads: AuxiliaryLoadsState;
   customCircuits?: CustomAuxiliaryCircuit[];
   transformerProtectionBreakerA?: number; // Disjuntor dedicado de proteção do transformador 220/380V (primário)
   transformerProtectionCurve?: 'C' | 'D';
+  calculationBreakdown?: {
+    totalLoadKW: number;
+    totalCurrentA: number;
+    chargerLoadsKW: number;
+    clientLoadKW: number;
+    auxLoadsKW: number;
+    lossesKW: number;
+    formulaMainBreaker: string;
+    formulaTrafoBreaker?: string;
+    formulaClientBreaker?: string;
+  };
   individualChargerBreakers?: Array<{
     chargerId: string;
     breakerA: number;
     poles: number;
     curve: 'C';
     drType: string;
+    designCurrentA?: number;
+    formulaSizing?: string;
   }>;
 }
 
@@ -867,12 +903,29 @@ export interface Panel380VTopologyState {
     quantity: number;
   };
   customCircuits?: CustomAuxiliaryCircuit[];
+  totalLoadWithLossesKW?: number;
+  totalSecondaryCurrentA?: number;
+  calculationBreakdown?: {
+    totalChargersNominalKW: number;
+    totalInternalLossesKW: number;
+    totalFeedersLossesKW: number;
+    totalCustomCircuitsKW: number;
+    totalActiveKW: number;
+    totalCurrentA: number;
+    isSingleChargerUnified: boolean;
+    formulaMainBreaker: string;
+  };
   individualBreakers: Array<{
     chargerId: string;
     breakerA: number;
     poles: number;
     curve: 'C';
     drType: string;
+    designCurrentA?: number;
+    nominalPowerKW?: number;
+    internalLossesKW?: number;
+    inputPowerKW?: number;
+    formulaSizing?: string;
   }>;
 }
 

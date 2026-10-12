@@ -657,6 +657,28 @@ export function calculateChainTopology(params: ChainTopologyInputParams): ChainT
   const customAux220VKW = customCircuits220V.reduce((sum, c) => sum + (c.powerW || 0), 0) / 1000;
   const totalAuxKW = (cctvPowerW + outletPowerW + lightingPowerW) / 1000 + customAux220VKW;
 
+  // Correntes de cada circuito auxiliar dimensionadas pela sua carga lançada em projeto
+  const cctvVoltage = isGrid380V ? 220 : 127;
+  const cctvCurrentA = cctvPowerW > 0 ? Number((cctvPowerW / cctvVoltage).toFixed(1)) : 0;
+  const cctvBreakerA = STANDARD_BREAKERS.find(b => b >= cctvCurrentA * 1.25) || 10;
+
+  const outletVoltage = isGrid380V ? 220 : 127;
+  const outletCurrentA = outletPowerW > 0 ? Number((outletPowerW / outletVoltage).toFixed(1)) : 0;
+  const outletBreakerA = STANDARD_BREAKERS.find(b => b >= outletCurrentA * 1.25) || 20;
+
+  const lightingVoltage = isGrid380V ? 220 : 127;
+  const lightingCurrentA = lightingPowerW > 0 ? Number((lightingPowerW / lightingVoltage).toFixed(1)) : 0;
+  const lightingBreakerA = STANDARD_BREAKERS.find(b => b >= lightingCurrentA * 1.25) || 10;
+
+  // Disjuntor do Cliente dimensionado pela carga existente de medição (Passos 1A e 1B)
+  const clientVoltage = isGrid380V ? 380 : 220;
+  const clientCurrentA = clientBaseLoadKW > 0
+    ? Number(((clientBaseLoadKW * 1000) / (Math.sqrt(3) * clientVoltage * 0.95)).toFixed(1))
+    : 0;
+  const clientBreakerA = clientCurrentA > 0
+    ? (STANDARD_BREAKERS.find(b => b >= clientCurrentA * 1.15) || 40)
+    : 40;
+
   // Medidor Exclusivo do Hub: Mede trafo/carregadores + auxiliares (NÃO mede carga de base do cliente)
   const hubDirectLoadKW = isTransformerNeeded
     ? Number(((trafoBreakdown?.totalPrimaryPowerKW || 0) + section2LossKW).toFixed(2))
@@ -666,27 +688,48 @@ export function calculateChainTopology(params: ChainTopologyInputParams): ChainT
   const auxiliaryLoads: AuxiliaryLoadsState = {
     cctv: {
       enabled: auxiliaryConfig.cctvEnabled,
-      voltageV: isGrid380V ? 220 : 127,
+      voltageV: cctvVoltage as any,
       powerW: cctvPowerW,
       phases: 1,
-      breakerA: 10,
-      cableMM2: 2.5
+      breakerA: cctvBreakerA,
+      cableMM2: 2.5,
+      curve: 'C',
+      designCurrentA: cctvCurrentA,
+      formulaSizing: `Ib = P / V = ${cctvPowerW}W / ${cctvVoltage}V = ${cctvCurrentA}A ➔ Disjuntor ${cctvBreakerA}A Curva C + DPS Classe III`
     },
     maintenanceOutlet: {
       enabled: auxiliaryConfig.outletEnabled,
-      voltageV: isGrid380V ? 220 : 127,
+      voltageV: outletVoltage as any,
       powerW: outletPowerW,
       phases: 1,
-      breakerA: 20,
-      cableMM2: 2.5
+      breakerA: outletBreakerA,
+      cableMM2: 2.5,
+      curve: 'C',
+      designCurrentA: outletCurrentA,
+      drRequired: true,
+      drType: 'Bipolar 25A / 30mA Tipo A/AC',
+      formulaSizing: `Ib = P / V = ${outletPowerW}W / ${outletVoltage}V = ${outletCurrentA}A ➔ Disjuntor ${outletBreakerA}A Curva C + DR 30mA (NBR 5410)`
     },
     lighting: {
       enabled: auxiliaryConfig.lightingEnabled,
-      voltageV: isGrid380V ? 220 : 127,
+      voltageV: lightingVoltage as any,
       powerW: lightingPowerW,
       phases: 1,
-      breakerA: 10,
-      cableMM2: 2.5
+      breakerA: lightingBreakerA,
+      cableMM2: 2.5,
+      curve: 'B',
+      designCurrentA: lightingCurrentA,
+      formulaSizing: `Ib = P / V = ${lightingPowerW}W / ${lightingVoltage}V = ${lightingCurrentA}A ➔ Disjuntor ${lightingBreakerA}A Curva B`
+    },
+    clientBaseBreaker: {
+      enabled: clientBaseLoadKW > 0,
+      voltageV: clientVoltage as any,
+      powerKW: clientBaseLoadKW,
+      phases: 3,
+      breakerA: clientBreakerA,
+      designCurrentA: clientCurrentA,
+      curve: 'C',
+      formulaSizing: `Ib = P / (√3 × ${clientVoltage}V × 0.95) = (${clientBaseLoadKW} × 1000) / (1.732 × ${clientVoltage} × 0.95) = ${clientCurrentA}A ➔ Disjuntor ${clientBreakerA}A Caixa Moldada`
     },
     dps220V: {
       enabled: true,
@@ -702,37 +745,46 @@ export function calculateChainTopology(params: ChainTopologyInputParams): ChainT
     }
   };
 
-  // 8. Painel de Entrada / Proteção Geral (220V ou 380V)
-  const chargersCurrentInGridA = isGrid380V
-    ? (totalChargersInputKW * 1000) / (Math.sqrt(3) * 380 * 0.98)
-    : (isTransformerNeeded ? trafoPrimaryCurrentA : (totalChargersInputKW * 1000) / (Math.sqrt(3) * 220 * 0.98));
-
-  const auxCurrentA = totalAuxKW > 0
-    ? (isGrid380V ? (totalAuxKW * 1000) / 220 : (totalAuxKW * 1000) / 127)
-    : 0;
-
-  const panelMainCurrentA = Number((chargersCurrentInGridA + (auxCurrentA / 3)).toFixed(1));
+  // 8. Painel Geral 220V: Disjuntor Geral dimensionado pela SOMA INTEGRAL:
+  // Carga Carregadores + Auxiliares + Carga do Cliente + Perdas inerentes aos cabos e componentes a frente
+  const totalPanel220VActiveKW = Number((clientBaseLoadKW + hubAggregatedLoadKW).toFixed(2));
+  const panel220VVoltage = isGrid380V ? 380 : 220;
+  const panelMainCurrentA = Number(((totalPanel220VActiveKW * 1000) / (Math.sqrt(3) * panel220VVoltage * 0.98)).toFixed(1));
   const panelMainBreakerRating = panelMainCurrentA * 1.15;
-  const panelMainBreakerA = STANDARD_BREAKERS.find(b => b >= panelMainBreakerRating) || (isGrid380V ? 63 : 80);
+  const panelMainBreakerA = STANDARD_BREAKERS.find(b => b >= panelMainBreakerRating) || (isGrid380V ? 100 : 125);
 
-  // Disjuntores dos carregadores individuais (dimensionados para a corrente com perdas)
+  // Disjuntor dedicado de proteção do transformador 220/380V (no primário 220V do Painel)
+  // Dimensionado de acordo com a carga dos carregadores e perdas a frente dele (trafo + cabos trecho 3 + ramais)
+  const trafoPrimaryProtectionRating = isTransformerNeeded ? trafoPrimaryCurrentA * 1.15 : 0;
+  const trafoPrimaryBreakerA = isTransformerNeeded
+    ? (STANDARD_BREAKERS.find(b => b >= trafoPrimaryProtectionRating) || 300)
+    : undefined;
+
+  // Disjuntores dos carregadores individuais (dimensionados pela potência e perdas internas)
   const individualChargerBreakers = enrichedChargers.map(c => {
     const inrushFactor = 1.15;
     const calcA = c.designCurrentA * inrushFactor;
     const breakerA = STANDARD_BREAKERS.find(b => b >= calcA) || 40;
+    const vRef = c.voltageV;
+    const sqrtPh = Math.sqrt(c.phases === 3 ? 3 : 1);
+    const formulaSizing = `Ib = P_ent / (${c.phases === 3 ? '√3 × ' : ''}${vRef}V × 0.98) = ${c.inputPowerKW}kW / (${sqrtPh.toFixed(3)} × ${vRef} × 0.98) = ${c.designCurrentA}A ➔ Disjuntor ${breakerA}A Curva C (${c.phases}P)`;
     return {
       chargerId: c.id,
       breakerA,
       poles: c.phases === 3 ? 3 : 2,
       curve: 'C' as const,
-      drType: c.phases === 3 ? 'Tetrapolar 40A / 30mA Tipo B' : 'Bipolar 40A / 30mA Tipo B'
+      drType: c.phases === 3 ? 'Tetrapolar 40A / 30mA Tipo B' : 'Bipolar 40A / 30mA Tipo B',
+      designCurrentA: c.designCurrentA,
+      nominalPowerKW: c.powerKW,
+      internalLossesKW: c.internalLossesKW,
+      inputPowerKW: c.inputPowerKW,
+      formulaSizing
     };
   });
 
-  // Disjuntor dedicado de proteção do transformador 220/380V (no primário 220V do Painel)
-  const trafoPrimaryProtectionRating = isTransformerNeeded ? trafoPrimaryCurrentA * 1.15 : 0;
-  const trafoPrimaryBreakerA = isTransformerNeeded
-    ? (STANDARD_BREAKERS.find(b => b >= trafoPrimaryProtectionRating) || 300)
+  const formula220VMain = `Disjuntor Geral 220V: P_tot = P_cliente (${clientBaseLoadKW.toFixed(2)} kW) + P_hub (${hubAggregatedLoadKW.toFixed(2)} kW com perdas trafo ${trafoLossesKW}kW e cabos) = ${totalPanel220VActiveKW.toFixed(2)} kW. Ib = P_tot / (√3 × 220V × 0.98) = ${panelMainCurrentA} A. Com margem inrush 1.15x: In ≥ ${(panelMainCurrentA * 1.15).toFixed(1)} A ➔ Disjuntor Geral ${panelMainBreakerA}A Caixa Moldada.`;
+  const formulaTrafoBreaker = isTransformerNeeded
+    ? `Disjuntor do Trafo (Primário 220V): P_prim = ${trafoBreakdown?.totalPrimaryPowerKW || 0} kW (Cargas carregadores + perdas trafo + perdas cabos). I_prim = ${trafoPrimaryCurrentA} A. Margem inrush trafo Dyn1 (1.15x): In ≥ ${(trafoPrimaryCurrentA * 1.15).toFixed(1)} A ➔ Disjuntor ${trafoPrimaryBreakerA}A Curva D (Suporte inrush magnético 10x-12x In).`
     : undefined;
 
   const panel220V: Panel220VTopologyState = {
@@ -744,42 +796,57 @@ export function calculateChainTopology(params: ChainTopologyInputParams): ChainT
     busbarRatingA: panelMainBreakerA,
     requiresBusbar: true,
     totalAuxKW: Number(totalAuxKW.toFixed(2)),
+    totalLoadWithClientKW: totalPanel220VActiveKW,
+    totalDesignCurrentA: panelMainCurrentA,
     auxiliaryLoads,
     customCircuits: customCircuits220V,
     transformerProtectionBreakerA: trafoPrimaryBreakerA,
     transformerProtectionCurve: 'D',
+    calculationBreakdown: {
+      totalLoadKW: totalPanel220VActiveKW,
+      totalCurrentA: panelMainCurrentA,
+      chargerLoadsKW: totalChargersNominalKW,
+      clientLoadKW: clientBaseLoadKW,
+      auxLoadsKW: Number(totalAuxKW.toFixed(2)),
+      lossesKW: Number((trafoLossesKW + section2LossKW + totalFeederLossesAllKW + totalChargersLossesKW).toFixed(2)),
+      formulaMainBreaker: formula220VMain,
+      formulaTrafoBreaker,
+      formulaClientBreaker: auxiliaryLoads.clientBaseBreaker?.formulaSizing
+    },
     individualChargerBreakers: isGrid380V ? individualChargerBreakers : undefined
   };
 
   // 9. Painel 380V (Secundário)
+  // Regra do Usuário:
+  // - O disjuntor geral deve ser dimensionado de acordo com a carga dos carregadores e perdas inerentes dos componentes a frente dele.
+  // - Se for apenas um carregador, o disjuntor geral será o mesmo de proteção do carregador (zero barramento unificado).
+  // - Caso tenha mais de um carregador, o disjuntor geral é a soma das cargas dos carregadores mais perdas inerentes.
+  // - Disjuntor do carregador é dimensionado pela potência e perdas do carregador.
   const isPanel380VActive = isTransformerNeeded;
-  const chargersCount = chargers.length;
-  const totalCircuits380V = chargersCount + customCircuits380V.length;
-  const requires380VBusbar = isPanel380VActive && totalCircuits380V > 1;
-
-  const individualBreakers = enrichedChargers.map(c => {
-    const inrushFactor = 1.15;
-    const calcA = c.designCurrentA * inrushFactor;
-    const breakerA = STANDARD_BREAKERS.find(b => b >= calcA) || 40;
-    return {
-      chargerId: c.id,
-      breakerA,
-      poles: 3,
-      curve: 'C' as const,
-      drType: 'Tetrapolar 40A / 30mA Tipo B'
-    };
-  });
+  const chargers380V = enrichedChargers.filter(c => c.voltageV >= 380);
+  const chargersCount380V = chargers380V.length;
+  const isSingleChargerUnified = chargersCount380V === 1 && customCircuits380V.length === 0;
 
   const panel380VMainBreakerRating = (trafoSecondaryCurrentA + customCircuits380VA) * 1.15;
-  const panel380VMainBreakerA = STANDARD_BREAKERS.find(b => b >= panel380VMainBreakerRating) || 40;
+  const panel380VCalculatedMainBreakerA = STANDARD_BREAKERS.find(b => b >= panel380VMainBreakerRating) || 40;
+
+  const finalPanel380VMainBreakerA = isSingleChargerUnified
+    ? (individualChargerBreakers.find(b => b.chargerId === chargers380V[0]?.id)?.breakerA || individualChargerBreakers[0]?.breakerA || 40)
+    : panel380VCalculatedMainBreakerA;
+
+  const formula380VMain = isSingleChargerUnified
+    ? `Disjuntor Geral 380V Unificado: Configuração com 1 único carregador (${chargers380V[0]?.name}). O disjuntor geral é o próprio disjuntor de proteção do carregador (${finalPanel380VMainBreakerA}A Curva C) dispensando barramento secundário (Regra de Ouro NBR 17019).`
+    : `Disjuntor Geral 380V: Soma das potências dos carregadores (${chargers380VInputKW.toFixed(2)} kW com perdas internas) + perdas nos cabos ramais (${totalFeederLosses380VKW.toFixed(2)} kW) = ${secondaryTotalActiveKW.toFixed(2)} kW. Corrente Secundária Ib = ${trafoSecondaryCurrentA} A. Com margem inrush 1.15x: In ≥ ${(trafoSecondaryCurrentA * 1.15).toFixed(1)} A ➔ Disjuntor Geral ${finalPanel380VMainBreakerA}A Tripolar.`;
 
   const panel380V: Panel380VTopologyState = {
     active: isPanel380VActive,
-    mainBreakerA: requires380VBusbar ? panel380VMainBreakerA : (individualBreakers[0]?.breakerA || 40),
+    mainBreakerA: finalPanel380VMainBreakerA,
     mainBreakerPoles: 3,
     mainBreakerCurve: 'C',
-    requiresBusbar: requires380VBusbar,
-    busbarRatingA: requires380VBusbar ? panel380VMainBreakerA : 0,
+    requiresBusbar: !isSingleChargerUnified,
+    busbarRatingA: isSingleChargerUnified ? 0 : finalPanel380VMainBreakerA,
+    totalLoadWithLossesKW: secondaryTotalActiveKW,
+    totalSecondaryCurrentA: trafoSecondaryCurrentA,
     dps380V: {
       enabled: isPanel380VActive,
       classType: 'Classe II',
@@ -787,7 +854,17 @@ export function calculateChainTopology(params: ChainTopologyInputParams): ChainT
       quantity: 4
     },
     customCircuits: customCircuits380V,
-    individualBreakers
+    calculationBreakdown: {
+      totalChargersNominalKW: chargers.filter(c => c.voltageV >= 380).reduce((s, c) => s + c.powerKW, 0),
+      totalInternalLossesKW: Number((chargers380VInputKW - chargers.filter(c => c.voltageV >= 380).reduce((s, c) => s + c.powerKW, 0)).toFixed(2)),
+      totalFeedersLossesKW: totalFeederLosses380VKW,
+      totalCustomCircuitsKW: customCircuits380VKW,
+      totalActiveKW: secondaryTotalActiveKW,
+      totalCurrentA: trafoSecondaryCurrentA,
+      isSingleChargerUnified,
+      formulaMainBreaker: formula380VMain
+    },
+    individualBreakers: individualChargerBreakers.filter(b => chargers.find(c => c.id === b.chargerId)?.voltageV === 380)
   };
 
   // Identificação das especificações normatizadas do padrão selecionado
@@ -1032,12 +1109,12 @@ export function calculateChainTopology(params: ChainTopologyInputParams): ChainT
     totalBOM.push({
       id: 'bom-painel-380v',
       category: 'quadro',
-      description: requires380VBusbar
-        ? `Painel de Distribuição 380V com Barramento de Cobre ${panel380V.busbarRatingA}A e ${chargersCount} Disjuntores`
+      description: panel380V.requiresBusbar
+        ? `Painel de Distribuição 380V com Barramento de Cobre ${panel380V.busbarRatingA}A e ${chargersCount380V} Disjuntores`
         : `Caixa de Proteção 380V com Disjuntor Unificado ${panel380V.mainBreakerA}A (Zero Barramento)`,
       quantity: 1,
       unit: 'pç',
-      spec: requires380VBusbar ? 'Barramento proporcional + DPS 385V + DRs Tipo B' : 'Disjuntor único sem barramento',
+      spec: panel380V.requiresBusbar ? 'Barramento proporcional + DPS 385V + DRs Tipo B' : 'Disjuntor único sem barramento',
       normReference: 'NBR 17019 / NBR 5410'
     });
   }

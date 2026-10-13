@@ -327,6 +327,80 @@ export const EVReportPDF: React.FC<EVReportPDFProps> = ({ project, logoUrl }) =>
             </View>
           </View>
 
+          {/* Diagrama Esquemático Unifilar da Infraestrutura (Padrão ao Ponto de Carga) */}
+          <View style={styles.section} wrap={false}>
+            <Text style={styles.sectionTitle}>Diagrama Esquemático Unifilar da Infraestrutura (Ponta a Ponta)</Text>
+            <View style={{ backgroundColor: '#0f172a', padding: 12, borderRadius: 8, marginBottom: 10 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                <View style={{ backgroundColor: '#1e293b', padding: 6, borderRadius: 4, width: '22%' }}>
+                  <Text style={{ fontSize: 7, color: '#94a3b8', textTransform: 'uppercase' }}>1. Entrada</Text>
+                  <Text style={{ fontSize: 9, fontWeight: 'bold', color: '#38bdf8' }}>Padrão Concessionária</Text>
+                  <Text style={{ fontSize: 7, color: '#e2e8f0', marginTop: 2 }}>{project.calculatedBreaker || 63}A • {project.gridSupplyVoltage || 220}V</Text>
+                </View>
+                <Text style={{ color: '#94a3b8', fontSize: 10, fontWeight: 'bold' }}>➔</Text>
+                <View style={{ backgroundColor: '#1e293b', padding: 6, borderRadius: 4, width: '22%' }}>
+                  <Text style={{ fontSize: 7, color: '#94a3b8', textTransform: 'uppercase' }}>2. Proteção Geral</Text>
+                  <Text style={{ fontSize: 9, fontWeight: 'bold', color: '#e45318' }}>QGBT Geral</Text>
+                  <Text style={{ fontSize: 7, color: '#e2e8f0', marginTop: 2 }}>DPS 45kA + DR 30mA</Text>
+                </View>
+                {project.hasTransformer ? (
+                  <>
+                    <Text style={{ color: '#94a3b8', fontSize: 10, fontWeight: 'bold' }}>➔</Text>
+                    <View style={{ backgroundColor: '#1e293b', padding: 6, borderRadius: 4, width: '22%' }}>
+                      <Text style={{ fontSize: 7, color: '#94a3b8', textTransform: 'uppercase' }}>3. Transformação</Text>
+                      <Text style={{ fontSize: 9, fontWeight: 'bold', color: '#f59e0b' }}>Trafo Dyn1 Seco</Text>
+                      <Text style={{ fontSize: 7, color: '#e2e8f0', marginTop: 2 }}>220V ➔ 380V Trifásico</Text>
+                    </View>
+                    <Text style={{ color: '#94a3b8', fontSize: 10, fontWeight: 'bold' }}>➔</Text>
+                    <View style={{ backgroundColor: '#1e293b', padding: 6, borderRadius: 4, width: '22%' }}>
+                      <Text style={{ fontSize: 7, color: '#94a3b8', textTransform: 'uppercase' }}>4. Distribuição VE</Text>
+                      <Text style={{ fontSize: 9, fontWeight: 'bold', color: '#00b356' }}>QDC-VE 380V</Text>
+                      <Text style={{ fontSize: 7, color: '#e2e8f0', marginTop: 2 }}>{project.calculatedCableGauge}mm² • {project.charger?.power || 22}kW</Text>
+                    </View>
+                  </>
+                ) : (
+                  <>
+                    <Text style={{ color: '#94a3b8', fontSize: 10, fontWeight: 'bold' }}>➔</Text>
+                    <View style={{ backgroundColor: '#1e293b', padding: 6, borderRadius: 4, width: '45%' }}>
+                      <Text style={{ fontSize: 7, color: '#94a3b8', textTransform: 'uppercase' }}>3. Estação de Recarga</Text>
+                      <Text style={{ fontSize: 9, fontWeight: 'bold', color: '#00b356' }}>Circuito Terminal VE</Text>
+                      <Text style={{ fontSize: 7, color: '#e2e8f0', marginTop: 2 }}>Alimentação Direta {project.calculatedCableGauge}mm² • {project.charger?.power}kW</Text>
+                    </View>
+                  </>
+                )}
+              </View>
+              <Text style={{ fontSize: 7, color: '#94a3b8', fontStyle: 'italic', textAlign: 'center' }}>
+                * Diagrama esquemático unifilar gerado em conformidade com as normas ABNT NBR 5410, NBR 17019 e CEMIG ND-5.1.
+              </Text>
+            </View>
+          </View>
+
+          {/* Sistema de Desligamento de Emergência (NBR 17019 / CEMIG) */}
+          <View style={styles.section} wrap={false}>
+            <Text style={styles.sectionTitle}>Sistema de Desligamento de Emergência & Segurança NBR 17019 / CEMIG</Text>
+            <View style={[styles.infoGrid, { backgroundColor: '#fff7ed', borderColor: '#fed7aa', marginBottom: 10 }]}>
+              <View style={styles.infoItem}>
+                <Text style={styles.label}>Acionador de Emergência</Text>
+                <Text style={[styles.value, { color: '#c2410c' }]}>Botão Cogumelo com Trava/Giro IP65 (≥ 5m de distância)</Text>
+              </View>
+              <View style={styles.infoItem}>
+                <Text style={styles.label}>Elemento de Desarme Rápido</Text>
+                <Text style={[styles.value, { color: '#c2410c' }]}>Bobina de Disparo MX (Shunt Trip) 220V CA acoplada ao Disjuntor Geral</Text>
+              </View>
+              <View style={styles.infoItem}>
+                <Text style={styles.label}>Proteção do Circuito Auxiliar</Text>
+                <Text style={styles.value}>Minidisjuntor 2A Curva C + Cabo de Comando 2x1.5mm²</Text>
+              </View>
+              <View style={styles.infoItem}>
+                <Text style={styles.label}>Padrão Homologado Concessionária</Text>
+                <Text style={styles.value}>Disjuntores Homologados CEMIG PEC-11 (WEG DWB / Soprano ASM GII)</Text>
+              </View>
+            </View>
+            <Text style={{ fontSize: 7, color: '#9a3412', fontStyle: 'italic', marginBottom: 5 }}>
+              * Conforme ABNT NBR 17019 e critérios CEMIG/Corpo de Bombeiros, o acionamento mecânico do botão desenergiza instantaneamente a alimentação dos postos de recarga através da bobina de liberação Shunt Trip (tempo de resposta inferior a 50ms).
+            </Text>
+          </View>
+
           {/* Segurança e Normas */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Segurança e Conformidade Normativa</Text>
@@ -339,11 +413,11 @@ export const EVReportPDF: React.FC<EVReportPDFProps> = ({ project, logoUrl }) =>
                 </View>
                 <View style={styles.safetyItem}>
                   <Text style={styles.bullet}>•</Text>
-                  <Text style={styles.safetyText}>Botão Emergência: Obrigatório a 5m (Tipo Cogumelo)</Text>
+                  <Text style={styles.safetyText}>Botão Emergência: Obrigatório a 5m (Tipo Cogumelo com trava)</Text>
                 </View>
                 <View style={styles.safetyItem}>
                   <Text style={styles.bullet}>•</Text>
-                  <Text style={styles.safetyText}>Sinalização: Pintura e Placas conforme NBR 17019</Text>
+                  <Text style={styles.safetyText}>Sinalização: Pintura e Placas fotoluminescentes NBR 17019</Text>
                 </View>
               </View>
               <View style={[styles.safetyBox, { backgroundColor: '#f0fdf4', borderColor: '#dcfce7' }]}>
@@ -369,8 +443,8 @@ export const EVReportPDF: React.FC<EVReportPDFProps> = ({ project, logoUrl }) =>
             <View style={styles.standardsBox}>
                <Text style={styles.label}>Normas ABNT Aplicáveis</Text>
                <Text style={styles.standardItem}>{project.abntStandards}</Text>
-               <Text style={[styles.label, { marginTop: 8 }]}>Instrução Técnica Bombeiros</Text>
-               <Text style={styles.standardItem}>{project.fireDeptStandards || 'IT 41/2023 - CBMG'}</Text>
+               <Text style={[styles.label, { marginTop: 8 }]}>Normas Técnicas Concessionária e Bombeiros</Text>
+               <Text style={styles.standardItem}>{project.fireDeptStandards || 'IT 41/2023 - CBMG'} | CEMIG PEC-11 (Materiais e Disjuntores Homologados)</Text>
             </View>
           </View>
 

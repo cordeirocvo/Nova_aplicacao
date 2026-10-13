@@ -28,6 +28,11 @@ import {
   MultiSheetMeasurementSummary,
   sizeElectricalInfrastructure,
   TypicalProfileType, 
+  RealCurveExtractionMode,
+  buildWorstCaseEnvelope24h,
+  findWorstPeakDay24h,
+  buildAverageReal24h,
+  SOLAR_GENERATION_NORMALIZED,
   DLMSimulationResult,
   PeriodMeasurementSummary,
   ElectricalInfrastructureSizing,
@@ -46,9 +51,9 @@ import LoadCurveChart from "@/components/ev/LoadCurveChart";
 import DLMControlPanel from "@/components/ev/DLMControlPanel";
 import LoadFeasibilityReport from "@/components/ev/LoadFeasibilityReport";
 import ImportedDataViewer from "@/components/ev/ImportedDataViewer";
-import InfrastructurePanel from "@/components/ev/InfrastructurePanel";
 import { EVTopologyChainViewer } from "@/components/ev/EVTopologyChainViewer";
 import ClientProjectForm from "@/components/ev/ClientProjectForm";
+import { EVEngineeringReportsHub } from "@/components/ev/EVEngineeringReportsHub";
 import InstallationEnvironmentSelector from "@/components/ev/InstallationEnvironmentSelector";
 import ChargerCatalogSelector from "@/components/ev/ChargerCatalogSelector";
 import { 
@@ -188,6 +193,7 @@ export default function CoenergyGODashboard() {
   const [customCurvePoints, setCustomCurvePoints] = useState<any[] | null>(null);
   const [customCurveBackup, setCustomCurveBackup] = useState<any[] | null>(null);
   const [isLoadingFile, setIsLoadingFile] = useState<boolean>(false);
+  const [realCurveExtractionMode, setRealCurveExtractionMode] = useState<RealCurveExtractionMode>('worst_case_envelope');
 
   // Curva de Carga & DLM (Passo 2)
   const [dlmProfileType, setDlmProfileType] = useState<TypicalProfileType>('condominio_residencial');
@@ -205,6 +211,7 @@ export default function CoenergyGODashboard() {
   const [customProfileName, setCustomProfileName] = useState<string>("Perfil do Projetista");
   const [isCopied, setIsCopied] = useState<boolean>(false);
   const [activeLoadedProjectId, setActiveLoadedProjectId] = useState<string | null>(null);
+  const [showEngineeringReportsHubModal, setShowEngineeringReportsHubModal] = useState<boolean>(false);
   const [uiThemeMode, setUiThemeMode] = useState<"STUDIO_DARK" | "CLASSIC">(() => {
     if (typeof window !== "undefined") {
       const s = localStorage.getItem("coenergygo_ui_theme_mode");
@@ -340,6 +347,18 @@ export default function CoenergyGODashboard() {
 
   const totalChargersInstalledKW = configuredChargers.reduce((sum, c) => sum + (c.powerKW * c.quantity), 0);
   const totalChargersCount = configuredChargers.reduce((sum, c) => sum + c.quantity, 0);
+
+  // Total de Pontos/Pistolas de Recarga Simultâneos (ex: 60kW DC = 2 pistolas por unidade)
+  const totalChargingPointsCount = configuredChargers.reduce((sum, c) => {
+    const isDualGun = (c.powerKW >= 60 && c.type === 'DC') || (c.connector && c.connector.includes('2x'));
+    return sum + ((isDualGun ? 2 : 1) * c.quantity);
+  }, 0);
+
+  // Total de Vagas VE Atendidas (respeita o valor cadastrado pelo usuário se informado, senão computa pelos pontos de recarga)
+  const totalEvBaysCount = (clientProjectData.evBaysCount && clientProjectData.evBaysCount > 0)
+    ? clientProjectData.evBaysCount
+    : Math.max(totalChargersCount, totalChargingPointsCount);
+
   const highestChargerPowerKW = configuredChargers.length > 0
     ? Math.max(...configuredChargers.map(c => c.powerKW))
     : 7.4;
@@ -460,15 +479,18 @@ export default function CoenergyGODashboard() {
   const fieldPhases = clientProjectData.fieldPhasesConfirmed || (utilityAnalysis.currentCategory?.phases === 3 ? '3F' : utilityAnalysis.currentCategory?.phases === 2 ? '2F' : '1F');
   
   // Limite em kW do padrão existente baseado na vistoria de campo ou categoria teórica
+  // Normativamente na CEMIG ND-5.1 Tabela 2, Padrão C6 com disjuntor de 200A corresponde a 75 kW (limite regulatório contratual)
   const fieldCalculatedLimitKW = clientProjectData.fieldBreakerConfirmedA
-    ? Number(
-        (fieldPhases === '3F'
-          ? (Math.sqrt(3) * (selectedUtility === 'CEMIG' ? 220 : 380) * fieldBreakerAmps * 0.95) / 1000
-          : fieldPhases === '2F'
-          ? (220 * fieldBreakerAmps * 0.95) / 1000
-          : (220 * fieldBreakerAmps) / 1000
-        ).toFixed(1)
-      )
+    ? (clientProjectData.fieldBreakerConfirmedA === 200 && fieldPhases === '3F'
+        ? 75.0
+        : Number(
+            (fieldPhases === '3F'
+              ? (Math.sqrt(3) * (selectedUtility === 'CEMIG' ? 220 : 380) * fieldBreakerAmps * 0.95) / 1000
+              : fieldPhases === '2F'
+              ? (220 * fieldBreakerAmps * 0.95) / 1000
+              : (220 * fieldBreakerAmps) / 1000
+            ).toFixed(1)
+          ))
     : (utilityAnalysis.currentCategory?.maxLimitKW || 75);
 
   // Limites e Cenários de Simulação para o Passo 2
@@ -483,12 +505,31 @@ export default function CoenergyGODashboard() {
     : homologatedStandardLimitKW;
 
   // ─── MOTOR DLM E CURVA DE CARGA (Passo 2) ──────────────────────────────────
-  const baseCurve = customCurvePoints || generateScaledHourlyCurve(
-    dlmProfileType,
-    dlmPeakDemandKW,
-    dlmEnableSolarSurplus ? dlmSolarPeakKW : 0,
-    dlmProfileType === 'custom_usuario' ? customHourlyFactors : undefined
-  );
+  // Se houver medição real customizada carregada e o perfil for smartmeter_real,
+  // ou se for qualquer outro perfil, recalcula os 24 pontos respeitando a demanda de base e a geração solar ativa
+  const baseCurve = (() => {
+    if (dlmProfileType === 'smartmeter_real' && customCurvePoints) {
+      return customCurvePoints.map((pt, hour) => {
+        const solarGenKW = dlmEnableSolarSurplus
+          ? Number(((SOLAR_GENERATION_NORMALIZED[hour] || 0) * dlmSolarPeakKW).toFixed(1))
+          : 0;
+        const baseKW = pt.baseLoadKW;
+        return {
+          ...pt,
+          baseLoadKW: baseKW,
+          solarGenerationKW: solarGenKW,
+          netBuildingLoadKW: Number(Math.max(0, baseKW - solarGenKW).toFixed(1))
+        };
+      });
+    }
+
+    return generateScaledHourlyCurve(
+      dlmProfileType,
+      dlmPeakDemandKW,
+      dlmEnableSolarSurplus ? dlmSolarPeakKW : 0,
+      (dlmProfileType === 'custom_usuario' || dlmProfileType === 'smartmeter_real') ? customHourlyFactors : undefined
+    );
+  })();
 
   const dlmResult: DLMSimulationResult = simulateDLM(baseCurve, {
     gridLimitKW: effectiveDlmGridLimitKW,
@@ -720,8 +761,15 @@ export default function CoenergyGODashboard() {
     } else {
       setApplicationMode('individual');
     }
-    if (p.existingLoadKW) {
+    if (p.loadSourceMode) {
+      setLoadSourceMode(p.loadSourceMode);
+    } else if (p.attachedSheetsList?.length > 0 || p.smartMeterSummary) {
+      setLoadSourceMode('smartmeter');
+    } else if (p.existingLoadKW) {
       setLoadSourceMode('fatura');
+      setManualExistingLoadKW(Number(p.existingLoadKW));
+    }
+    if (p.existingLoadKW) {
       setManualExistingLoadKW(Number(p.existingLoadKW));
     }
     if (p.existingEntranceCategory && availableCategories[p.existingEntranceCategory]) {
@@ -797,8 +845,19 @@ export default function CoenergyGODashboard() {
       if (Array.isArray(p.dailyPeaksState)) {
         setDailyPeaksState(p.dailyPeaksState);
       }
+      if (p.smartMeterSummary) {
+        const realPoints = buildWorstCaseEnvelope24h(p.smartMeterSummary);
+        setCustomCurvePoints(realPoints);
+        setCustomCurveBackup(realPoints);
+      }
     } else if (p.smartMeterSummary) {
       setSmartMeterSummary(p.smartMeterSummary);
+      const realPoints = buildWorstCaseEnvelope24h(p.smartMeterSummary);
+      setCustomCurvePoints(realPoints);
+      setCustomCurveBackup(realPoints);
+    }
+    if (p.realCurveExtractionMode) {
+      setRealCurveExtractionMode(p.realCurveExtractionMode);
     }
 
     // Restaurar Circuitos Customizados dos Painéis 220V e 380V
@@ -1012,18 +1071,51 @@ export default function CoenergyGODashboard() {
       setDailyPeaksState(compilation.dailyPeaks);
       setDlmPeakDemandKW(compilation.globalMaxPowerKW);
 
-      // Curva horária 24h: usa a da última ou a agregada consolidada
-      const lastEntry = newParsedEntries[newParsedEntries.length - 1];
-      if (lastEntry) {
-        setCustomCurvePoints(lastEntry.hourlyCurve);
-        setCustomCurveBackup(lastEntry.hourlyCurve);
-      }
+      // Curva horária 24h: usa a Envoltória dos Piores Casos NBR 5410 da medição real consolidada
+      const realPoints = buildWorstCaseEnvelope24h(compilation.consolidatedSummary);
+      setCustomCurvePoints(realPoints);
+      setCustomCurveBackup(realPoints);
+      setDlmProfileType('smartmeter_real');
+      setRealCurveExtractionMode('worst_case_envelope');
+
+      // Preencher automaticamente as 24 caixas do editor do Passo 2 com os fatores reais
+      const maxRealKW = Math.max(...realPoints.map((p: any) => p.baseLoadKW), 1);
+      const calculatedFactors = realPoints.map((p: any) => Number((p.baseLoadKW / maxRealKW).toFixed(3)));
+      setCustomHourlyFactors(calculatedFactors);
 
       setIsLoadingFile(false);
     } catch (err: any) {
       alert("Erro ao ler planilhas de medição: " + (err.message || "Formato inválido"));
       setIsLoadingFile(false);
     }
+  };
+
+  // Alternador da Estratégia de Extração de Curva Real (Envoltória vs Dia de Pico vs Média)
+  const handleSelectRealCurveExtractionMode = (mode: RealCurveExtractionMode) => {
+    setRealCurveExtractionMode(mode);
+    setDlmProfileType('smartmeter_real');
+    if (!smartMeterSummary) return;
+
+    let pts: any[];
+    if (mode === 'worst_day_peak') {
+      const res = findWorstPeakDay24h(smartMeterSummary);
+      pts = res.curve24h;
+      setDlmPeakDemandKW(res.maxPowerKW);
+    } else if (mode === 'average_real') {
+      pts = buildAverageReal24h(smartMeterSummary);
+      setDlmPeakDemandKW(smartMeterSummary.averagePowerKW);
+    } else {
+      pts = buildWorstCaseEnvelope24h(smartMeterSummary);
+      setDlmPeakDemandKW(smartMeterSummary.maxPowerKW);
+    }
+
+    setCustomCurvePoints(pts);
+    setCustomCurveBackup(pts);
+
+    // Atualiza os fatores no editor 24h
+    const maxVal = Math.max(...pts.map((p: any) => p.baseLoadKW), 1);
+    const factors = pts.map((p: any) => Number((p.baseLoadKW / maxVal).toFixed(3)));
+    setCustomHourlyFactors(factors);
   };
 
   // Remover uma planilha individual da lista anexada e recalcular automaticamente
@@ -1179,6 +1271,8 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
       distance: circuitDistanceMeters,
       installationMethod: installationMethod,
       applicationMode: applicationMode,
+      loadSourceMode: loadSourceMode,
+      realCurveExtractionMode: realCurveExtractionMode,
       isCollective: applicationMode !== 'individual',
       isOutdoor: isOutdoor,
       demandControlEnabled: dlmEnableDLM,
@@ -1622,6 +1716,15 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
             >
               <Award className="w-4 h-4 text-amber-300" />
               <span>Resultado & Dossiê</span>
+            </button>
+
+            <button
+              onClick={() => setShowEngineeringReportsHubModal(true)}
+              className="px-3.5 py-2 rounded-xl font-bold text-xs transition-all flex items-center gap-2 bg-[#00B356] hover:bg-emerald-600 text-white shadow-md shadow-emerald-900/30 cursor-pointer border border-emerald-400/40"
+              title="Emissão dos 5 Relatórios de Engenharia do Pilar 4 (Executivo, Memorial Descritivo, Cálculo NBR 5410, Caderno de Obra e Comissionamento)"
+            >
+              <FileText className="w-4 h-4 text-white" />
+              <span>Relatórios Oficiais (5 em 1)</span>
             </button>
           </div>
         </div>
@@ -2326,6 +2429,35 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
                           <span>Pico: {smartMeterSummary.peakTimestamp || '08:30'}</span>
                           <span>{smartMeterSummary.totalReadings} leituras {dailyPeaksState.length > 1 ? `(${dailyPeaksState.length} dias)` : ''}</span>
                         </p>
+
+                        {/* Lista Discriminada de Planilhas Anexadas */}
+                        {attachedSheetsList.length > 0 && (
+                          <div className="pt-2 border-t border-emerald-200/60 space-y-1">
+                            <span className="text-[9px] font-bold uppercase text-emerald-900 block">
+                              Planilhas Processadas ({attachedSheetsList.length}):
+                            </span>
+                            <div className="max-h-28 overflow-y-auto space-y-1 pr-1">
+                              {attachedSheetsList.map((sheet, sIdx) => (
+                                <div key={sheet.id || sIdx} className="flex items-center justify-between bg-white/80 px-2 py-1 rounded text-[10px] border border-emerald-200">
+                                  <div className="truncate max-w-[170px]">
+                                    <span className="font-semibold text-slate-800 block truncate">{sheet.name}</span>
+                                    <span className="text-[9px] text-slate-500 font-mono">
+                                      Pico: {sheet.summary?.maxPowerKW?.toFixed(1)} kW • {sheet.summary?.totalReadings} leituras
+                                    </span>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveAttachedSheet(sheet.id)}
+                                    className="text-slate-400 hover:text-rose-600 p-0.5 rounded cursor-pointer transition-colors"
+                                    title={`Remover planilha ${sheet.name}`}
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
 
                         {/* Botão para anexar mais planilhas ou substituir */}
                         <div className="pt-1 border-t border-emerald-200/60 flex justify-end">
@@ -3042,12 +3174,18 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
             profileType={dlmProfileType}
             setProfileType={(val) => {
               setDlmProfileType(val);
-              setCustomCurvePoints(null);
+              if (val === 'smartmeter_real' && smartMeterSummary) {
+                handleSelectRealCurveExtractionMode(realCurveExtractionMode);
+              } else {
+                setCustomCurvePoints(null);
+              }
             }}
             peakDemandKW={dlmPeakDemandKW}
             setPeakDemandKW={(val) => {
               setDlmPeakDemandKW(val);
-              setCustomCurvePoints(null);
+              if (dlmProfileType !== 'smartmeter_real') {
+                setCustomCurvePoints(null);
+              }
             }}
             gridLimitKW={effectiveDlmGridLimitKW}
             setGridLimitKW={() => {}}
@@ -3116,6 +3254,14 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
             onUpdateCustomHourlyFactors={setCustomHourlyFactors}
             customProfileName={customProfileName}
             onUpdateCustomProfileName={setCustomProfileName}
+            realCurveExtractionMode={realCurveExtractionMode}
+            onSelectRealCurveExtractionMode={handleSelectRealCurveExtractionMode}
+            realPeakInfo={{
+              maxPowerKW: smartMeterSummary?.maxPowerKW || dlmPeakDemandKW,
+              peakTimestamp: smartMeterSummary?.peakTimestamp || '',
+              daysCount: dailyPeaksState.length || (attachedSheetsList.length > 0 ? attachedSheetsList.length : 1),
+              worstDayDate: smartMeterSummary?.peakTimestamp?.split(' ')[0]
+            }}
           />
 
           <LoadCurveChart
@@ -3189,6 +3335,24 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
             onUpdateChargerPower={(id, newPowerKW) => {
               handleUpdateCharger(id, { powerKW: newPowerKW });
             }}
+            onAddCharger={(node: any) => {
+              const newC: ConfiguredCharger = {
+                id: node.id || `ch-${Date.now()}`,
+                name: node.name || `${node.brand || 'WEG'} ${node.model || 'Charger'}`,
+                powerKW: node.powerKW,
+                phases: (node.phases === 3 ? 3 : node.phases === 2 ? 2 : 1) as (1 | 2 | 3),
+                voltage: node.voltageV || (node.phases === 3 ? 380 : 220),
+                type: node.type || (node.powerKW >= 30 ? 'DC' : 'AC'),
+                quantity: 1,
+                connector: node.connector || (node.type === 'DC' ? 'CCS2' : 'Tipo 2'),
+                distanceMeters: node.distanceMeters || 15,
+                marginPercent: node.marginPercent || 10,
+                conductorMaterial: node.conductorMaterial || 'copper',
+                installationMethod: node.installationMethod || 'B1'
+              };
+              handleAddCharger(newC);
+            }}
+            onRemoveCharger={handleRemoveCharger}
             onUpdateChargerFull={(id, updates) => {
               setConfiguredChargers(prev => prev.map(c => {
                 if (c.id === id) {
@@ -3222,226 +3386,44 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
                 customTransformerLossesKW: params.customTransformerLossesKW
               }));
               if (params.chargers && params.chargers.length > 0) {
-                setConfiguredChargers(prev => prev.map(ch => {
-                  const node = params.chargers?.find(cn => cn.id === ch.id);
-                  if (node) {
+                setConfiguredChargers(prev => {
+                  return params.chargers!.map(node => {
+                    const existing = prev.find(ch => ch.id === node.id);
+                    if (existing) {
+                      return {
+                        ...existing,
+                        powerKW: node.powerKW ?? existing.powerKW,
+                        distanceMeters: node.distanceMeters,
+                        marginPercent: node.marginPercent,
+                        conductorMaterial: node.conductorMaterial,
+                        installationMethod: node.installationMethod,
+                        internalLossesKW: node.internalLossesKW,
+                        efficiencyPercent: node.efficiencyPercent
+                      };
+                    }
                     return {
-                      ...ch,
-                      distanceMeters: node.distanceMeters,
-                      marginPercent: node.marginPercent,
-                      conductorMaterial: node.conductorMaterial,
-                      installationMethod: node.installationMethod,
+                      id: node.id,
+                      name: node.name,
+                      powerKW: node.powerKW,
+                      phases: (node.phases === 3 ? 3 : node.phases === 2 ? 2 : 1) as (1 | 2 | 3),
+                      voltage: node.voltageV || (node.phases === 3 ? 380 : 220),
+                      type: (node.type as ('AC' | 'DC')) || 'AC',
+                      quantity: 1,
+                      connector: node.connector || 'Tipo 2',
+                      distanceMeters: node.distanceMeters || 15,
+                      marginPercent: node.marginPercent || 10,
+                      conductorMaterial: node.conductorMaterial || 'copper',
+                      installationMethod: node.installationMethod || 'B1',
                       internalLossesKW: node.internalLossesKW,
                       efficiencyPercent: node.efficiencyPercent
                     };
-                  }
-                  return ch;
-                }));
+                  });
+                });
               }
               handleAutoSaveSnapshot();
             }}
             onConcludeTopology={() => {
               handleAutoSaveSnapshot();
-            }}
-          />
-
-          {/* Painel de Identificação e Integração dos Parâmetros */}
-          <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-5">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-4">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-black uppercase text-[#E45318] tracking-wider bg-orange-50 px-2.5 py-0.5 rounded-full">
-                    Passo 3: Engenharia Eletrotécnica Interna & BOM
-                  </span>
-                  <span className="text-[10px] font-bold text-slate-400">NBR 5410 & NBR 17019</span>
-                </div>
-                <h3 className="text-xl font-black text-slate-800 mt-1">
-                  Dimensionamento do Circuito Alimentador & Lista de Materiais
-                </h3>
-                <p className="text-xs text-slate-500">
-                  Cálculo normativo da bitola de cobre (critério de capacidade de corrente $I_z$ e queda de tensão &le; 2,0%), especificação do quadro QDC-VE e quantitativos.
-                </p>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-xs font-bold text-slate-700 bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl flex items-center gap-1.5 shadow-xs">
-                  <CheckCircle2 className="w-4 h-4 text-[#00B356]" />
-                  Cargas Herdados: <strong>{totalChargersInstalledKW} kW ({totalChargersCount} VEs)</strong> + <strong>{effectiveExistingLoadKW} kW Imóvel</strong>
-                  {totalAuxiliaryPowerKW > 0 && (
-                    <span> + <strong className="text-slate-600">{totalAuxiliaryPowerKW} kW Auxiliares</strong></span>
-                  )}
-                  <span className="ml-1 text-[11px] text-[#E45318] font-mono">
-                    = {(totalChargersInstalledKW + effectiveExistingLoadKW + totalAuxiliaryPowerKW).toFixed(1)} kW Total
-                  </span>
-                </span>
-              </div>
-            </div>
-
-            {/* Informações Complementares da Instalação */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1 text-xs">
-              <div>
-                <label className="text-[10px] font-bold text-slate-500 block uppercase">Método de Instalação dos Eletrodutos</label>
-                <select
-                  value={installationMethod}
-                  onChange={(e) => setInstallationMethod(e.target.value as any)}
-                  className="w-full text-xs font-bold border border-slate-200 rounded-xl p-2.5 bg-slate-50 text-slate-800 mt-1"
-                >
-                  <option value="B1">B1 - Eletroduto em alvenaria</option>
-                  <option value="B2">B2 - Eletroduto aparente</option>
-                  <option value="C">C - Eletrocalha / perfilado</option>
-                  <option value="D">D - Eletroduto subterrâneo</option>
-                </select>
-              </div>
-
-              <div className="flex items-center pt-5">
-                <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={isOutdoor}
-                    onChange={(e) => setIsOutdoor(e.target.checked)}
-                    className="rounded text-[#E45318]"
-                  />
-                  Instalação ao Tempo (Grau de Proteção IP65 / NBR 17019)
-                </label>
-              </div>
-            </div>
-          </div>
-
-          {/* Visualização dos Dados Medidos Importados ou Origem de Carga */}
-          {smartMeterSummary ? (
-            <ImportedDataViewer
-              summary={smartMeterSummary}
-              chargerPowerKW={highestChargerPowerKW}
-              gridLimitKW={effectiveHomologatedCategory.maxLimitKW || 75}
-              dailyPeaks={dailyPeaksState}
-              attachedFiles={attachedSheetsList.map(s => ({
-                id: s.id,
-                name: s.name,
-                maxKW: s.summary.maxPowerKW,
-                readings: s.summary.totalReadings
-              }))}
-              onRemoveFile={handleRemoveAttachedSheet}
-              onClear={handleClearAllSheets}
-            />
-          ) : loadSourceMode === 'spot' ? (
-            <div className="bg-orange-50/80 border border-orange-200 rounded-3xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <Calculator className="w-5 h-5 text-[#E45318]" />
-                  <h4 className="text-sm font-bold text-orange-950">
-                    Carga Existente Definida via Medição Spot de Campo ({effectiveExistingLoadKW.toFixed(1)} kW)
-                  </h4>
-                </div>
-                <p className="text-xs text-orange-900 leading-relaxed">
-                  Cálculo realizado no Passo 1B com base em medição de campo de {spotCurrentA}A ({spotPhases}F {spotVoltage}V). O dimensionamento do alimentador e proteções abaixo já considera essa carga de forma integrada.
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => handleTabChange('concessionarias')}
-                  className="bg-white hover:bg-orange-100 border border-orange-300 text-orange-950 font-bold text-xs px-3.5 py-2 rounded-xl transition-all whitespace-nowrap cursor-pointer"
-                >
-                  Ajustar Medição Spot (Passo 1B)
-                </button>
-                <label className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-3.5 py-2 rounded-xl shadow whitespace-nowrap cursor-pointer flex items-center gap-1.5">
-                  <Upload className="w-3.5 h-3.5" />
-                  <span>Anexar Planilha(s) SmartMeter</span>
-                  <input
-                    type="file"
-                    multiple
-                    accept=".xlsx,.xls,.csv,.txt"
-                    onChange={(e) => {
-                      if (e.target.files && e.target.files.length > 0) {
-                        handleMultiFileUpload(e.target.files);
-                      }
-                    }}
-                    className="hidden"
-                  />
-                </label>
-              </div>
-            </div>
-          ) : loadSourceMode === 'fatura' ? (
-            <div className="bg-blue-50/80 border border-blue-200 rounded-3xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <FileText className="w-5 h-5 text-blue-600" />
-                  <h4 className="text-sm font-bold text-blue-950">
-                    Carga Existente Definida via Fatura de Energia ({effectiveExistingLoadKW.toFixed(1)} kW)
-                  </h4>
-                </div>
-                <p className="text-xs text-blue-900 leading-relaxed">
-                  Demanda faturada informada no Passo 1B. O dimensionamento do alimentador e proteções abaixo já considera essa carga de forma integrada.
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setActiveTab('concessionarias')}
-                  className="bg-white hover:bg-blue-100 border border-blue-300 text-blue-950 font-bold text-xs px-3.5 py-2 rounded-xl transition-all whitespace-nowrap cursor-pointer"
-                >
-                  Ajustar Fatura (Passo 1B)
-                </button>
-                <label className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-3.5 py-2 rounded-xl shadow whitespace-nowrap cursor-pointer flex items-center gap-1.5">
-                  <Upload className="w-3.5 h-3.5" />
-                  <span>Anexar Planilha(s) SmartMeter</span>
-                  <input
-                    type="file"
-                    multiple
-                    accept=".xlsx,.xls,.csv,.txt"
-                    onChange={(e) => {
-                      if (e.target.files && e.target.files.length > 0) {
-                        handleMultiFileUpload(e.target.files);
-                      }
-                    }}
-                    className="hidden"
-                  />
-                </label>
-              </div>
-            </div>
-          ) : (
-            <div className="bg-amber-50/70 border border-amber-200/80 rounded-3xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <AlertCircle className="w-5 h-5 text-amber-600" />
-                  <h4 className="text-sm font-bold text-amber-950">Nenhuma planilha SmartMeter importada no momento</h4>
-                </div>
-                <p className="text-xs text-amber-800">
-                  Carregue uma ou mais planilhas de medição (ex: <i>Usina SmartMeter (29-09 a 06-10)</i>) para compilar os picos de cada dia e dimensionar o sistema.
-                </p>
-              </div>
-              <label className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow whitespace-nowrap cursor-pointer flex items-center gap-2">
-                <Upload className="w-4 h-4" />
-                <span>Selecionar Planilha(s) SmartMeter</span>
-                <input
-                  type="file"
-                  multiple
-                  accept=".xlsx,.xls,.csv,.txt"
-                  onChange={(e) => {
-                    if (e.target.files && e.target.files.length > 0) {
-                      handleMultiFileUpload(e.target.files);
-                    }
-                  }}
-                  className="hidden"
-                />
-              </label>
-            </div>
-          )}
-
-          {/* Painel de Infraestrutura Eletrotécnica e Lista de Materiais (BOM) */}
-          <InfrastructurePanel
-            sizing={infrastructureSizing}
-            utility={selectedUtility}
-            chargerPowerKW={highestChargerPowerKW}
-            chargerVoltage={primaryCharger?.voltage || (highestChargerPowerKW >= 11 ? 380 : 220)}
-            chargerPhases={(primaryCharger?.phases || (highestChargerPowerKW >= 11 ? 3 : 1)) as (1 | 3)}
-            cableLengthMeters={circuitDistanceMeters}
-            chargerName={primaryCharger.name}
-            chargerBrand={primaryCharger.brand || 'WEG'}
-            chargerModel={primaryCharger.model || primaryCharger.name}
-            chargerCurrentInA={primaryCharger.currentInA}
-            chargerCount={totalChargersCount}
-            onUpdateAuxiliaryConfig={setAuxiliaryConfig}
-            onSimulateChargerToggle={(voltage, powerKW, phases) => {
-              handleSelectIndividualPower(powerKW, phases, 'AC', `${powerKW} kW (${voltage}V)`);
             }}
           />
         </div>
@@ -3902,6 +3884,81 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
           </div>
         </div>
       )}
+
+      {/* ─── MODAL CENTRAL DA SUÍTE DE 5 RELATÓRIOS OFICIAIS (PILAR 4) ─────────── */}
+      <EVEngineeringReportsHub
+        isOpen={showEngineeringReportsHubModal}
+        onClose={() => setShowEngineeringReportsHubModal(false)}
+        projectData={{
+          projectName: clientProjectData.projectName || 'Projeto de Eletromobilidade CoenergyGO',
+          clientName: clientProjectData.clientName || 'Cliente Cordeiro Energia',
+          technicalResponsible: clientProjectData.technicalResponsible || 'Eng. Eletricista Responsável',
+          creaCft: clientProjectData.creaCft || 'CREA-MG 148293/D',
+          utility: clientProjectData.utility || selectedUtility || 'CEMIG Distribuição',
+          address: clientProjectData.address || 'Belo Horizonte / MG',
+          standardCategory: currentStandardCategoryId,
+          standardBreakerA: 100,
+          voltageV: 220,
+          totalPowerKW: Number(totalChargersInstalledKW.toFixed(1)),
+          chargers: configuredChargers.map(c => ({
+            id: c.id,
+            name: c.name,
+            powerKW: c.powerKW,
+            phases: c.phases,
+            voltage: c.voltage,
+            type: c.type,
+            connector: c.connector
+          })),
+          sections: {
+            section1: {
+              name: 'Ramal de Entrada até QGBT 220V',
+              cableGaugeMM2: 35,
+              breakerA: 100,
+              dropVoltagePercent: 0.85,
+              distanceM: 25,
+              currentA: 82
+            },
+            section2: {
+              name: 'Alimentador do Trafo Dyn1 220V-380V',
+              cableGaugeMM2: 50,
+              breakerA: 125,
+              dropVoltagePercent: 1.12,
+              distanceM: 15,
+              currentA: 95
+            },
+            section3: {
+              name: 'Sub-ramal QDC-VE até Carregadores',
+              cableGaugeMM2: 10,
+              breakerA: 40,
+              dropVoltagePercent: 0.94,
+              distanceM: 18,
+              currentA: 32
+            }
+          },
+          hasTransformer: configuredChargers.some(c => c.voltage === 380 || c.powerKW >= 22),
+          transformerKVA: 45,
+          transformerLossesKW: 0.9,
+          fireSafety: fireSafety,
+          bomItems: [
+            { category: 'Padrão Entrada', name: 'Disjuntor Caixa Moldada 100A Homologado CEMIG PEC-11', quantity: 1, unit: 'un', unitPrice: 850 },
+            { category: 'Proteções', name: 'Disjuntor Termomagnético Bipolar/Tripolar DIN Curva C Soprano', quantity: configuredChargers.length, unit: 'un', unitPrice: 95 },
+            { category: 'Segurança NBR 17019', name: 'Interruptor Diferencial Residual IDR Tipo B / A-EV 30mA', quantity: configuredChargers.length, unit: 'un', unitPrice: 680 },
+            { category: 'Emergência', name: 'Botão de Emergência Cogumelo com Trava Giratória + Bobina MX', quantity: 1, unit: 'kit', unitPrice: 320 },
+            { category: 'Quadros', name: 'Quadro Metálico de Sobrepor Cemar / Strahl IP65 com Barramentos', quantity: 2, unit: 'un', unitPrice: 1250 }
+          ],
+          totalInvestmentBRL: Number((totalChargersInstalledKW * 1450 + 12000).toFixed(2)),
+          capexSavingsBRL: 18500,
+          evBaysCount: totalEvBaysCount,
+          chargingPointsCount: totalChargingPointsCount,
+          parkingLocation: clientProjectData.parkingLocation || 'aberto',
+          parkingAccessControl: clientProjectData.parkingAccessControl || 'livre',
+          hasPcdAccessibleBay: clientProjectData.hasPcdAccessibleBay || false,
+          parkingSurfaceType: clientProjectData.parkingSurfaceType || 'concreto',
+          realLoadCurveMode: realCurveExtractionMode,
+          realPeakKW: smartMeterSummary?.maxPowerKW,
+          realPeakDate: smartMeterSummary?.peakTimestamp
+        }}
+      />
     </div>
   );
 }

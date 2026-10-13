@@ -677,6 +677,135 @@ export default function ClientProjectForm({
         </div>
       </div>
 
+      {/* ─── BLOCO NOVO: INFRAESTRUTURA DO ESTACIONAMENTO & VAGAS VE (NBR 9050 / IT-41 CBMMG) ─── */}
+      <div className="p-5 rounded-2xl bg-white border border-slate-200 space-y-4 shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-200 pb-2.5 gap-2">
+          <div>
+            <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+              <Building2 className="w-4 h-4 text-[#E45318]" />
+              Infraestrutura do Pátio, Vagas e Acessibilidade (NBR 9050 / CBMMG IT-41)
+            </span>
+            <p className="text-[11px] text-slate-500 mt-0.5">
+              Defina a quantidade de vagas atendidas, pontos de recarga e características do ambiente para os relatórios técnicos e memoriais descritivos.
+            </p>
+          </div>
+          <span className="text-[10px] bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full uppercase font-black tracking-wider self-start sm:self-auto">
+            Layout & Operação
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+          {/* 1. Vagas Atendidas */}
+          <div>
+            <label className="text-slate-600 font-semibold block mb-1">
+              Vagas VE Atendidas:
+            </label>
+            <input
+              type="number"
+              min="1"
+              value={data.evBaysCount !== undefined && data.evBaysCount !== null ? data.evBaysCount : ''}
+              onChange={(e) => onChange({ evBaysCount: e.target.value === '' ? undefined : Number(e.target.value) })}
+              className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#E45318]"
+              placeholder="Ex: 2 vagas"
+            />
+            <span className="text-[10px] text-slate-400 mt-0.5 block">
+              Auto: 2 vagas p/ cada carregador DC de 60 kW
+            </span>
+          </div>
+
+          {/* 2. Pontos Simultâneos de Recarga */}
+          <div>
+            <label className="text-slate-600 font-semibold block mb-1">
+              Pontos / Conectores Físicos:
+            </label>
+            <input
+              type="number"
+              min="1"
+              value={data.chargingPointsCount !== undefined && data.chargingPointsCount !== null ? data.chargingPointsCount : ''}
+              onChange={(e) => onChange({ chargingPointsCount: e.target.value === '' ? undefined : Number(e.target.value) })}
+              className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#E45318]"
+              placeholder="Ex: 2 conectores"
+            />
+            <span className="text-[10px] text-slate-400 mt-0.5 block">
+              Pistolas físicas utilizáveis simultaneamente
+            </span>
+          </div>
+
+          {/* 3. Localização da Instalação */}
+          <div>
+            <label className="text-slate-600 font-semibold block mb-1">
+              Ambiente de Instalação:
+            </label>
+            <select
+              value={data.parkingLocation || 'aberto'}
+              onChange={(e) => onChange({ parkingLocation: e.target.value as any })}
+              className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#E45318]"
+            >
+              <option value="aberto">Área Aberta / Descoberta</option>
+              <option value="terreo_coberto">Térreo Coberto</option>
+              <option value="subsolo_g1">Subsolo 1º Piso (G1) - IT-41</option>
+              <option value="subsolo_g2_inferior">Subsolo 2º Piso ou Inferior (G2+) - IT-41</option>
+            </select>
+            <span className="text-[10px] text-slate-400 mt-0.5 block">
+              Critério para exaustão e sprinklers
+            </span>
+          </div>
+
+          {/* 4. Gestão de Acesso */}
+          <div>
+            <label className="text-slate-600 font-semibold block mb-1">
+              Gestão de Acesso e Tarifação:
+            </label>
+            <select
+              value={data.parkingAccessControl || 'livre'}
+              onChange={(e) => onChange({ parkingAccessControl: e.target.value as any })}
+              className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#E45318]"
+            >
+              <option value="livre">Livre / Plug & Play</option>
+              <option value="rfid">Cartão RFID / Tag</option>
+              <option value="ocpp_app">Aplicativo OCPP 1.6J / Comercial</option>
+              <option value="rateio_condominio">Medição Individual / Rateio</option>
+            </select>
+            <span className="text-[10px] text-slate-400 mt-0.5 block">
+              Controle de usuários autorizados
+            </span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1 border-t border-slate-100 text-xs">
+          {/* Tipo de Pavimento / Infra de Encaminhamento */}
+          <div>
+            <label className="text-slate-600 font-semibold block mb-1">
+              Tipo de Pavimento / Encaminhamento:
+            </label>
+            <select
+              value={data.parkingSurfaceType || 'concreto'}
+              onChange={(e) => onChange({ parkingSurfaceType: e.target.value as any })}
+              className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 focus:outline-none focus:border-[#E45318]"
+            >
+              <option value="concreto">Piso de Concreto (Canaleta / Eletroduto Embutido)</option>
+              <option value="asfalto">Pavimento Asfáltico (Vala Enterrada / Duto PEAD)</option>
+              <option value="intertravado">Bloco Intertravado (Dutos Subterrâneos Envelopados)</option>
+              <option value="eletrocalha_aerea">Eletrocalha / Perfilado Aéreo Suspenso</option>
+            </select>
+          </div>
+
+          {/* Checkbox Acessibilidade NBR 9050 */}
+          <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
+            <input
+              type="checkbox"
+              id="hasPcdAccessibleBay"
+              checked={Boolean(data.hasPcdAccessibleBay)}
+              onChange={(e) => onChange({ hasPcdAccessibleBay: e.target.checked })}
+              className="w-4 h-4 rounded text-[#E45318] focus:ring-[#E45318] cursor-pointer"
+            />
+            <label htmlFor="hasPcdAccessibleBay" className="text-xs text-slate-700 font-medium cursor-pointer leading-tight">
+              <strong>Vaga Reservada PCD Inclusiva (NBR 9050):</strong> Incluir sinalização horizontal com faixa de transferência de 1,20m e altura do conector adaptada (0,80m a 1,20m do solo).
+            </label>
+          </div>
+        </div>
+      </div>
+
       {/* ─── BLOCO 3: VISTORIA TÉCNICA OBRIGATÓRIA DE CAMPO (INSPEÇÃO FÍSICA DO PADRÃO) ─── */}
       <div className="p-6 rounded-3xl bg-slate-50 border-2 border-slate-200 shadow-sm space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-3">

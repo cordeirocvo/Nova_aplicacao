@@ -22,8 +22,20 @@ import {
   Gauge,
   Sliders,
   Cable,
-  X
+  Download,
+  ExternalLink,
+  FileCode,
+  AlertTriangle,
+  DollarSign,
+  Building2,
+  Boxes,
+  X,
+  FileText
 } from 'lucide-react';
+import { enrichBillOfMaterialsWithPricing } from '@/lib/coenergygo/database/bomPricingDatabase';
+import { EVEngineeringReportsHub } from './EVEngineeringReportsHub';
+import { InteractiveUnifilarViewer } from './InteractiveUnifilarViewer';
+import { PanelUnifilarDiagram, PanelCircuitItem } from './PanelUnifilarDiagram';
 
 export interface EVTopologyChainViewerProps {
   externalClientBaseLoadKW?: number;
@@ -88,6 +100,8 @@ export interface EVTopologyChainViewerProps {
     chargers?: TopologyChargerNode[];
   }) => void;
   onConcludeTopology?: () => void;
+  onAddCharger?: (newCharger: any) => void;
+  onRemoveCharger?: (id: string) => void;
 }
 
 export function EVTopologyChainViewer({
@@ -118,7 +132,9 @@ export function EVTopologyChainViewer({
   onUpdateChargerPower,
   cemigStandardBOM,
   onSaveTopologyParams,
-  onConcludeTopology
+  onConcludeTopology,
+  onAddCharger,
+  onRemoveCharger
 }: EVTopologyChainViewerProps = {}) {
   const {
     chargers,
@@ -224,7 +240,7 @@ export function EVTopologyChainViewer({
     externalStandardCategory,
     externalStandardBreakerA,
     externalGridSupplyVoltage,
-    externalChargers?.length,
+    JSON.stringify(externalChargers),
     externalSection1DistanceM,
     externalSection1MarginPercent,
     externalSection1ConductorMaterial,
@@ -244,10 +260,14 @@ export function EVTopologyChainViewer({
     externalMaxChargerCapKW
   ]);
 
-  const [activeTab, setActiveTab] = useState<'vis' | 'bom' | 'sections'>('vis');
+  const [activeTab, setActiveTab] = useState<'vis' | 'bom'>('vis');
   const [showAddChargerModal, setShowAddChargerModal] = useState(false);
   const [includeEntranceStandardInBOM, setIncludeEntranceStandardInBOM] = useState<boolean>(true);
+  const [useMetalEnclosureCemar, setUseMetalEnclosureCemar] = useState<boolean>(true);
+  const [includeEmergencyShutdown, setIncludeEmergencyShutdown] = useState<boolean>(true);
+  const [customLaborPercent, setCustomLaborPercent] = useState<number>(28);
   const [showDemandBreakdown, setShowDemandBreakdown] = useState<boolean>(false);
+  const [showReportsHubModal, setShowReportsHubModal] = useState<boolean>(false);
 
   // Seleção individual de cargas associadas nos painéis (conforme Foto 04 e Figura 05)
   const [selectedLoads220V, setSelectedLoads220V] = useState<Record<string, boolean>>({
@@ -277,25 +297,6 @@ export function EVTopologyChainViewer({
       [id]: prev[id] === undefined ? false : !prev[id]
     }));
   };
-
-  const [uiMode, setUiMode] = useState<'STUDIO_DARK' | 'CLASSIC'>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('coenergygo_ui_theme_mode');
-      if (saved === 'CLASSIC' || saved === 'STUDIO_DARK') return saved;
-    }
-    return 'STUDIO_DARK';
-  });
-
-  const handleToggleUiMode = (mode: 'STUDIO_DARK' | 'CLASSIC') => {
-    setUiMode(mode);
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem('coenergygo_ui_theme_mode', mode);
-      } catch (e) {}
-    }
-  };
-
-  const isDark = uiMode === 'STUDIO_DARK';
 
   const {
     standardAlert,
@@ -368,6 +369,42 @@ export function EVTopologyChainViewer({
 
   const panel380VSelectedCurrentA = Number(((panel380VSelectedKW * 1000) / (Math.sqrt(3) * 380 * 0.98)).toFixed(1));
 
+  // Dimensionamento dinâmico e reativo dos disjuntores gerais dos painéis 220V e 380V
+  const STANDARD_BREAKERS = [10, 16, 20, 25, 32, 40, 50, 63, 70, 80, 100, 125, 150, 160, 175, 200, 225, 250, 300, 350, 400, 500, 630];
+
+  const dynamicBreaker220VA = React.useMemo(() => {
+    if (panel220VSelectedCurrentA <= 0) return 0;
+    return STANDARD_BREAKERS.find(b => b >= panel220VSelectedCurrentA * 1.15) || 40;
+  }, [panel220VSelectedCurrentA]);
+
+  const dynamicBreaker380VA = React.useMemo(() => {
+    if (panel380VSelectedCurrentA <= 0) return 0;
+    // Se for 1 único carregador e sem circuitos extras 380V, disjuntor unificado é o do próprio carregador
+    const active380Chargers = chargers.filter(c => selectedLoads380V[c.id] !== false);
+    const active380Custom = customCircuits380V.filter(c => selectedLoads380V[`custom_${c.id}`] !== false);
+    if (active380Chargers.length === 1 && active380Custom.length === 0) {
+      const ch = active380Chargers[0];
+      const brk = individualChargerBreakers.find(b => b.chargerId === ch.id);
+      if (brk) return brk.breakerA;
+      const calcA = (ch.powerKW * 1000) / (Math.sqrt(ch.phases === 3 ? 3 : 1) * (ch.voltageV || 380) * 0.98) * 1.15;
+      return STANDARD_BREAKERS.find(b => b >= calcA) || 40;
+    }
+    return STANDARD_BREAKERS.find(b => b >= panel380VSelectedCurrentA * 1.15) || 40;
+  }, [panel380VSelectedCurrentA, chargers, selectedLoads380V, customCircuits380V, individualChargerBreakers]);
+
+  const dynamicFormula220V = React.useMemo(() => {
+    return `Disjuntor Geral 220V (Cargas Ativas): P_sel = ${panel220VSelectedKW.toFixed(2)} kW. Corrente Ib = P_sel / (√3 × 220V × 0.98) = ${panel220VSelectedCurrentA} A. Com margem inrush 1.15x: In ≥ ${(panel220VSelectedCurrentA * 1.15).toFixed(1)} A ➔ Disjuntor Geral ${dynamicBreaker220VA}A Caixa Moldada.`;
+  }, [panel220VSelectedKW, panel220VSelectedCurrentA, dynamicBreaker220VA]);
+
+  const dynamicFormula380V = React.useMemo(() => {
+    const active380Chargers = chargers.filter(c => selectedLoads380V[c.id] !== false);
+    const active380Custom = customCircuits380V.filter(c => selectedLoads380V[`custom_${c.id}`] !== false);
+    if (active380Chargers.length === 1 && active380Custom.length === 0) {
+      return `Disjuntor Geral 380V Unificado: Configuração com 1 único carregador ativo (${active380Chargers[0]?.name}). O disjuntor geral é o próprio disjuntor de proteção do carregador (${dynamicBreaker380VA}A Curva C) dispensando barramento secundário (Regra de Ouro NBR 17019).`;
+    }
+    return `Disjuntor Geral 380V (Cargas Ativas): Soma das cargas selecionadas = ${panel380VSelectedKW.toFixed(2)} kW. Corrente Secundária Ib = ${panel380VSelectedCurrentA} A. Com margem inrush 1.15x: In ≥ ${(panel380VSelectedCurrentA * 1.15).toFixed(1)} A ➔ Disjuntor Geral ${dynamicBreaker380VA}A Tripolar.`;
+  }, [chargers, selectedLoads380V, customCircuits380V, dynamicBreaker380VA, panel380VSelectedKW, panel380VSelectedCurrentA]);
+
   // BOM combinada considerando a seleção de inclusão ou não do padrão de entrada
   const effectiveBOM = React.useMemo(() => {
     let items = [...totalBOM];
@@ -386,6 +423,46 @@ export function EVTopologyChainViewer({
     return items;
   }, [totalBOM, includeEntranceStandardInBOM, cemigStandardBOM]);
 
+  // Lista de Materiais Hiper-Rica com Precificação e Itens de Emergência
+  const enrichedBOMSummary = React.useMemo(() => {
+    return enrichBillOfMaterialsWithPricing(effectiveBOM, {
+      includeEmergencyCircuit: includeEmergencyShutdown,
+      useMetalEnclosureCemar,
+      customLaborPercent
+    });
+  }, [effectiveBOM, includeEmergencyShutdown, useMetalEnclosureCemar, customLaborPercent]);
+
+  // Alternador da exibição integrada do Diagrama Unifilar Nativo Vetorial
+  const [showNativeUnifilarModal, setShowNativeUnifilarModal] = useState<boolean>(false);
+
+  // Exportador de Planilha Orçamentária BOM em CSV (Excel compatível)
+  const handleExportBOMCSV = () => {
+    const headers = ['Categoria', 'Descricao', 'Fabricante', 'Modelo/Ref', 'Qtd', 'Unidade', 'Preco_Unit_R$', 'Preco_Total_R$', 'Norma', 'Especificacao'];
+    const rows = enrichedBOMSummary.items.map(it => [
+      `"${it.category}"`,
+      `"${it.description.replace(/"/g, '""')}"`,
+      `"${it.manufacturer || ''}"`,
+      `"${(it.modelRef || '').replace(/"/g, '""')}"`,
+      it.quantity,
+      it.unit,
+      it.unitPriceBRL?.toFixed(2) || '0.00',
+      it.totalPriceBRL?.toFixed(2) || '0.00',
+      `"${it.normReference}"`,
+      `"${it.spec.replace(/"/g, '""')}"`
+    ]);
+    const csvContent = '\uFEFF' + [headers.join(';'), ...rows.map(r => r.join(';'))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'lista_materiais_orcamento_coenergygo.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  // Motor nativo SVG integrado via InteractiveUnifilarViewer
   return (
     <div className="bg-[#0A192F] text-slate-100 rounded-2xl border border-slate-800 shadow-2xl p-6 relative overflow-hidden font-sans">
       {/* Background Accent Gradients */}
@@ -414,38 +491,10 @@ export function EVTopologyChainViewer({
 
         {/* Botões de Ação Rápida e Abas */}
         <div className="flex items-center gap-2 flex-wrap">
-          {/* Seletor do Modo de Exibição (Reversível) */}
-          <div className="bg-slate-900/90 p-1 rounded-xl flex gap-1 border border-slate-700/80 shadow-md">
-            <button
-              type="button"
-              onClick={() => handleToggleUiMode('STUDIO_DARK')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                isDark
-                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-              title="Interface escura ergonômica com contraste WCAG AAA para menor fadiga visual"
-            >
-              <span>🌙</span> Studio Ergonômico
-            </button>
-            <button
-              type="button"
-              onClick={() => handleToggleUiMode('CLASSIC')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                !isDark
-                  ? 'bg-white text-slate-900 shadow-sm font-black'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-              title="Voltar ao layout clássico original a qualquer momento"
-            >
-              <span>☀️</span> Modo Clássico
-            </button>
-          </div>
-
           <button
             type="button"
             onClick={() => setActiveTab('vis')}
-            className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
               activeTab === 'vis'
                 ? 'bg-[#E45318] text-white shadow-lg shadow-[#E45318]/30'
                 : 'bg-slate-800/80 text-slate-300 hover:bg-slate-700'
@@ -456,20 +505,8 @@ export function EVTopologyChainViewer({
           </button>
           <button
             type="button"
-            onClick={() => setActiveTab('sections')}
-            className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-              activeTab === 'sections'
-                ? 'bg-[#E45318] text-white shadow-lg shadow-[#E45318]/30'
-                : 'bg-slate-800/80 text-slate-300 hover:bg-slate-700'
-            }`}
-          >
-            <Cable className="w-3.5 h-3.5" />
-            Trechos & Eletrodutos
-          </button>
-          <button
-            type="button"
             onClick={() => setActiveTab('bom')}
-            className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
               activeTab === 'bom'
                 ? 'bg-[#E45318] text-white shadow-lg shadow-[#E45318]/30'
                 : 'bg-slate-800/80 text-slate-300 hover:bg-slate-700'
@@ -477,6 +514,17 @@ export function EVTopologyChainViewer({
           >
             <FileSpreadsheet className="w-3.5 h-3.5" />
             Lista de Materiais (BOM)
+          </button>
+
+          {/* Botão de Acesso Direto à Suíte Completa de 5 Relatórios (Pilar 4) */}
+          <button
+            type="button"
+            onClick={() => setShowReportsHubModal(true)}
+            className="px-3.5 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-[#00B356] to-emerald-600 hover:from-emerald-500 hover:to-[#00B356] text-white shadow-lg shadow-emerald-900/30 transition-all cursor-pointer flex items-center gap-2 border border-emerald-400/40"
+            title="Acessar os 5 Relatórios de Engenharia Oficiais (Executivo, Memorial Descritivo, Cálculo NBR 5410, Caderno de Obra e Comissionamento)"
+          >
+            <FileText className="w-4 h-4 text-white" />
+            <span>Relatórios Técnicos (5 em 1)</span>
           </button>
         </div>
 
@@ -639,7 +687,13 @@ export function EVTopologyChainViewer({
               onClick={() => setShowDemandBreakdown(prev => !prev)}
               className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-amber-400 hover:text-amber-300 rounded-lg text-xs font-bold transition-all border border-amber-500/30 flex items-center gap-1.5 cursor-pointer"
             >
-              <span>{showDemandBreakdown ? '▲ Ocultar Memorial' : '🔍 Detalhar Demanda (93,77 kW & Déficit 18,8 kW)'}</span>
+              <span>
+                {showDemandBreakdown
+                  ? '▲ Ocultar Memorial'
+                  : standardAlert.isOverloaded
+                  ? `🔍 Detalhar Demanda (${breakdownTotalRequiredKW} kW • Déficit ${breakdownDeficitKW > 0 ? breakdownDeficitKW : 0} kW)`
+                  : `🔍 Detalhar Demanda (${breakdownTotalRequiredKW} kW • Sobra +${Math.abs(breakdownDeficitKW).toFixed(1)} kW)`}
+              </span>
             </button>
           </div>
 
@@ -652,7 +706,9 @@ export function EVTopologyChainViewer({
                     Memorial de Cálculo Eletrotécnico Discriminado (NBR 5410 & CEMIG ND-5.1)
                   </span>
                   <h5 className="font-bold text-white text-sm">
-                    Composição Analítica da Demanda Total ({breakdownTotalRequiredKW} kW) e Déficit ({breakdownDeficitKW > 0 ? breakdownDeficitKW : 0} kW)
+                    {standardAlert.isOverloaded
+                      ? `Composição Analítica da Demanda Total (${breakdownTotalRequiredKW} kW) e Déficit (${breakdownDeficitKW > 0 ? breakdownDeficitKW : 0} kW)`
+                      : `Composição Analítica da Demanda Total (${breakdownTotalRequiredKW} kW) e Sobra Segura (+${Math.abs(breakdownDeficitKW).toFixed(1)} kW)`}
                   </h5>
                 </div>
                 <span className="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded">
@@ -795,43 +851,6 @@ export function EVTopologyChainViewer({
         </div>
       </div>
 
-      {/* ─── TABS DE NAVEGAÇÃO ────────────────────────────────────────────── */}
-      <div className="flex items-center gap-3 mt-6 border-b border-slate-800 pb-2">
-        <button
-          onClick={() => setActiveTab('vis')}
-          className={`flex items-center gap-2 px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
-            activeTab === 'vis'
-              ? 'bg-slate-800 text-[#E45318] border border-[#E45318]/30 shadow'
-              : 'text-slate-400 hover:text-white'
-          }`}
-        >
-          <Activity className="w-4 h-4" />
-          Topologia Visual & Cadeia em Série ({chargers.length} Carregadores)
-        </button>
-        <button
-          onClick={() => setActiveTab('sections')}
-          className={`flex items-center gap-2 px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
-            activeTab === 'sections'
-              ? 'bg-slate-800 text-[#E45318] border border-[#E45318]/30 shadow'
-              : 'text-slate-400 hover:text-white'
-          }`}
-        >
-          <Cable className="w-4 h-4" />
-          Trechos & Dutos (Ocupação ≤ 40% & Queda ΔV)
-        </button>
-        <button
-          onClick={() => setActiveTab('bom')}
-          className={`flex items-center gap-2 px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
-            activeTab === 'bom'
-              ? 'bg-slate-800 text-[#E45318] border border-[#E45318]/30 shadow'
-              : 'text-slate-400 hover:text-white'
-          }`}
-        >
-          <FileSpreadsheet className="w-4 h-4" />
-          Lista Consolidada de Materiais (BOM)
-        </button>
-      </div>
-
       {/* ─── CONTEÚDO PRINCIPAL: ESTEIRA VISUAL DA CADEIA ─────────────────── */}
       {activeTab === 'vis' && (
         <div className="mt-6">
@@ -942,7 +961,7 @@ export function EVTopologyChainViewer({
                     {gridSupplyVoltage === 380 ? 'Painel Geral de Proteção 380V' : 'Painel Proteção 220V'}
                   </h3>
                   <p className="text-xs text-slate-400 mt-1 leading-snug">
-                    Disjuntor Geral {panel220V.mainBreakerA}A (Curva {panel220V.mainBreakerCurve}) + Barramento {panel220V.busbarRatingA}A
+                    Disjuntor Geral {dynamicBreaker220VA}A (Curva {panel220V.mainBreakerCurve}) + Barramento {dynamicBreaker220VA}A
                     {gridSupplyVoltage === 380 && ` • Protege ${chargers.length} Carregadores + Cargas Auxiliares`}
                   </p>
                 </div>
@@ -1073,7 +1092,7 @@ export function EVTopologyChainViewer({
                           )}
                           <div className="flex items-center justify-between text-[8px] font-mono text-slate-300">
                             <span className="bg-slate-950 px-1 rounded text-amber-400">
-                              {panel380V.requiresBusbar ? `Geral ${panel380V.mainBreakerA}A` : `Disjuntor Único ${panel380V.mainBreakerA}A`}
+                              {panel380V.requiresBusbar ? `Geral ${dynamicBreaker380VA}A` : `Disjuntor Único ${dynamicBreaker380VA}A`}
                             </span>
                             <span className="text-emerald-400 font-bold">DR Tipo B 30mA</span>
                           </div>
@@ -1083,7 +1102,7 @@ export function EVTopologyChainViewer({
                           </div>
                         </div>
                         <span className="text-[10px] text-slate-400 mt-1 font-mono">
-                          {panel380V.requiresBusbar ? `Barramento Cobre ${panel380V.busbarRatingA}A` : 'Dispensado Barramento'}
+                          {panel380V.requiresBusbar ? `Barramento Cobre ${dynamicBreaker380VA}A` : 'Dispensado Barramento'}
                         </span>
                       </div>
 
@@ -1092,8 +1111,8 @@ export function EVTopologyChainViewer({
                       </h3>
                       <p className="text-xs text-slate-400 mt-1 leading-snug">
                         {panel380V.requiresBusbar
-                          ? `Geral ${panel380V.mainBreakerA}A + Barramento ${panel380V.busbarRatingA}A + ${chargers.length} Disj. Dedicados`
-                          : `1 Único Disjuntor ${panel380V.mainBreakerA}A (Zero Barramento - Regra de Ouro)`}
+                          ? `Geral ${dynamicBreaker380VA}A + Barramento ${dynamicBreaker380VA}A + ${chargers.length} Disj. Dedicados`
+                          : `1 Único Disjuntor ${dynamicBreaker380VA}A (Zero Barramento - Regra de Ouro)`}
                       </p>
                     </div>
 
@@ -1153,6 +1172,9 @@ export function EVTopologyChainViewer({
                       onClick={(e) => {
                         e.stopPropagation();
                         removeCharger(charger.id);
+                        if (onRemoveCharger) {
+                          onRemoveCharger(charger.id);
+                        }
                       }}
                       className="absolute top-3 right-3 p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 border border-slate-700 transition-all cursor-pointer z-20"
                       title="Remover este carregador"
@@ -1301,215 +1323,214 @@ export function EVTopologyChainViewer({
         </div>
       )}
 
-      {/* ─── TAB TRECHOS, CONDUTORES E DUTOS (OCUPAÇÃO <= 40%) ─────────────── */}
-      {activeTab === 'sections' && (
+      {/* ─── TAB LISTA DE MATERIAIS CONSOLIDADA & ORÇAMENTO HIPER-RICO (BOM) ─── */}
+      {activeTab === 'bom' && (
         <div className="mt-6 space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Trecho 1 */}
-            <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-4">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-                <h4 className="font-bold text-sm text-white flex items-center gap-2">
-                  <Cable className="w-4 h-4 text-[#E45318]" />
-                  {sections.section1_standardToPanel220.name}
-                </h4>
-                <span className="text-xs font-mono px-2 py-0.5 rounded bg-slate-800 text-amber-400">
-                  {sections.section1_standardToPanel220.voltageV}V Trifásico
-                </span>
+          {/* 1. KPIs Financeiros de Investimento da Infraestrutura */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-4 shadow-lg flex flex-col justify-between">
+              <div className="flex items-center justify-between text-slate-400 text-xs mb-1">
+                <span>Materiais & Insumos</span>
+                <Boxes className="w-4 h-4 text-[#E45318]" />
               </div>
-              <div className="grid grid-cols-2 gap-3 mt-3 text-xs">
-                <div>
-                  <span className="text-slate-400">Comprimento Nominal:</span>
-                  <div className="flex items-center gap-2 mt-1">
-                    <input
-                      type="number"
-                      value={section1DistanceM}
-                      onChange={(e) => updateSectionDistanceAndMargin('trecho_1', Number(e.target.value) || 0, section1MarginPercent)}
-                      className="w-20 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white font-mono"
-                    />
-                    <span className="text-slate-400">m</span>
-                  </div>
-                </div>
-                <div>
-                  <span className="text-slate-400">Margem de Erro (%):</span>
-                  <div className="flex items-center gap-2 mt-1">
-                    <input
-                      type="number"
-                      value={section1MarginPercent}
-                      onChange={(e) => updateSectionDistanceAndMargin('trecho_1', section1DistanceM, Number(e.target.value) || 0)}
-                      className="w-20 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white font-mono"
-                    />
-                    <span className="text-slate-400">%</span>
-                  </div>
-                </div>
+              <div className="text-xl font-bold font-mono text-white">
+                {enrichedBOMSummary.totalMaterialsCostBRL.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
               </div>
-              <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs font-mono">
-                <span>Distância Total (com margem): <b>{sections.section1_standardToPanel220.distanceTotalM}m</b></span>
-                <span>Bitola Fase: <b className="text-amber-400">
-                  {sections.section1_standardToPanel220.conductorsPerPhase > 1
-                    ? `${sections.section1_standardToPanel220.conductorsPerPhase}x (${sections.section1_standardToPanel220.cableGaugePhaseMM2}mm²)`
-                    : `${sections.section1_standardToPanel220.cableGaugePhaseMM2}mm²`}
-                </b></span>
-                <span>Duto {sections.section1_standardToPanel220.conduitInches} (Ocupação: <b className="text-emerald-400">{sections.section1_standardToPanel220.conduitFillingRatePercent}%</b> ≤ 40%)</span>
+              <span className="text-[10px] text-slate-400 mt-1 font-mono">
+                {enrichedBOMSummary.items.length} itens homologados NBR 5410/PEC-11
+              </span>
+            </div>
+
+            <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-4 shadow-lg flex flex-col justify-between">
+              <div className="flex items-center justify-between text-slate-400 text-xs mb-1">
+                <span>Mão de Obra e Instalação</span>
+                <Building2 className="w-4 h-4 text-emerald-400" />
+              </div>
+              <div className="text-xl font-bold font-mono text-emerald-400">
+                {enrichedBOMSummary.estimatedLaborCostBRL.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+              </div>
+              <div className="flex items-center justify-between text-[10px] text-slate-400 mt-1 font-mono">
+                <span>Taxa montagem civil/eletro:</span>
+                <span className="text-emerald-300 font-bold">{customLaborPercent}%</span>
               </div>
             </div>
 
-            {/* Trecho 2 (Se trafo ativo) */}
-            {sections.section2_panel220ToTrafo && (
-              <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-4">
-                <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-                  <h4 className="font-bold text-sm text-white flex items-center gap-2">
-                    <Cable className="w-4 h-4 text-[#E45318]" />
-                    {sections.section2_panel220ToTrafo.name}
-                  </h4>
-                  <span className="text-xs font-mono px-2 py-0.5 rounded bg-slate-800 text-amber-400">
-                    220V Primário Trafo
-                  </span>
-                </div>
-                <div className="grid grid-cols-2 gap-3 mt-3 text-xs">
-                  <div>
-                    <span className="text-slate-400">Comprimento Nominal:</span>
-                    <div className="flex items-center gap-2 mt-1">
-                      <input
-                        type="number"
-                        value={section2DistanceM}
-                        onChange={(e) => updateSectionDistanceAndMargin('trecho_2', Number(e.target.value) || 0, section2MarginPercent)}
-                        className="w-20 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white font-mono"
-                      />
-                      <span className="text-slate-400">m</span>
-                    </div>
-                  </div>
-                  <div>
-                    <span className="text-slate-400">Margem de Erro (%):</span>
-                    <div className="flex items-center gap-2 mt-1">
-                      <input
-                        type="number"
-                        value={section2MarginPercent}
-                        onChange={(e) => updateSectionDistanceAndMargin('trecho_2', section2DistanceM, Number(e.target.value) || 0)}
-                        className="w-20 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white font-mono"
-                      />
-                      <span className="text-slate-400">%</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs font-mono">
-                  <span>Distância Total: <b>{sections.section2_panel220ToTrafo.distanceTotalM}m</b></span>
-                  <span>Bitola Fase: <b className="text-amber-400">
-                    {sections.section2_panel220ToTrafo.conductorsPerPhase > 1
-                      ? `${sections.section2_panel220ToTrafo.conductorsPerPhase}x (${sections.section2_panel220ToTrafo.cableGaugePhaseMM2}mm²)`
-                      : `${sections.section2_panel220ToTrafo.cableGaugePhaseMM2}mm²`}
-                  </b></span>
-                  <span>Duto {sections.section2_panel220ToTrafo.conduitInches} (Ocupação: <b className="text-emerald-400">{sections.section2_panel220ToTrafo.conduitFillingRatePercent}%</b>)</span>
-                </div>
+            <div className="bg-slate-900/90 border border-amber-500/30 rounded-xl p-4 shadow-lg flex flex-col justify-between bg-gradient-to-br from-slate-900 to-amber-950/20">
+              <div className="flex items-center justify-between text-amber-400 text-xs mb-1">
+                <span className="font-bold">Investimento Total Estimado</span>
+                <DollarSign className="w-4 h-4 text-amber-400" />
               </div>
-            )}
+              <div className="text-xl font-black font-mono text-amber-300">
+                {enrichedBOMSummary.totalProjectInvestmentBRL.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+              </div>
+              <span className="text-[10px] text-slate-400 mt-1">
+                Materiais + Montagem + Comissionamento ART
+              </span>
+            </div>
 
-            {/* Trecho 3 (Trafo -> Painel 380V) */}
-            {sections.section3_trafoToPanel380 && (
-              <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-4">
-                <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-                  <h4 className="font-bold text-sm text-white flex items-center gap-2">
-                    <Cable className="w-4 h-4 text-[#00B356]" />
-                    {sections.section3_trafoToPanel380.name}
-                  </h4>
-                  <span className="text-xs font-mono px-2 py-0.5 rounded bg-slate-800 text-emerald-400">
-                    380V Secundário Trafo
-                  </span>
-                </div>
-                <div className="grid grid-cols-2 gap-3 mt-3 text-xs">
-                  <div>
-                    <span className="text-slate-400">Comprimento Nominal:</span>
-                    <div className="flex items-center gap-2 mt-1">
-                      <input
-                        type="number"
-                        value={section3DistanceM}
-                        onChange={(e) => updateSectionDistanceAndMargin('trecho_3', Number(e.target.value) || 0, section3MarginPercent)}
-                        className="w-20 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white font-mono"
-                      />
-                      <span className="text-slate-400">m</span>
-                    </div>
-                  </div>
-                  <div>
-                    <span className="text-slate-400">Margem de Erro (%):</span>
-                    <div className="flex items-center gap-2 mt-1">
-                      <input
-                        type="number"
-                        value={section3MarginPercent}
-                        onChange={(e) => updateSectionDistanceAndMargin('trecho_3', section3DistanceM, Number(e.target.value) || 0)}
-                        className="w-20 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white font-mono"
-                      />
-                      <span className="text-slate-400">%</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs font-mono">
-                  <span>Distância Total: <b>{sections.section3_trafoToPanel380.distanceTotalM}m</b></span>
-                  <span>Bitola Fase: <b className="text-emerald-400">
-                    {sections.section3_trafoToPanel380.conductorsPerPhase > 1
-                      ? `${sections.section3_trafoToPanel380.conductorsPerPhase}x (${sections.section3_trafoToPanel380.cableGaugePhaseMM2}mm²)`
-                      : `${sections.section3_trafoToPanel380.cableGaugePhaseMM2}mm²`}
-                  </b></span>
-                  <span>Duto {sections.section3_trafoToPanel380.conduitInches} (Ocupação: <b className="text-emerald-400">{sections.section3_trafoToPanel380.conduitFillingRatePercent}%</b>)</span>
-                </div>
+            <div className="bg-slate-900/90 border border-rose-500/40 rounded-xl p-4 shadow-lg flex flex-col justify-between bg-gradient-to-br from-slate-900 to-rose-950/20">
+              <div className="flex items-center justify-between text-rose-300 text-xs mb-1">
+                <span className="font-bold">Segurança NBR 17019</span>
+                <ShieldAlert className="w-4 h-4 text-rose-400" />
               </div>
-            )}
+              <div className="text-sm font-bold text-white flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse" />
+                Desligamento Emergência
+              </div>
+              <span className="text-[10px] text-rose-300/80 mt-1">
+                Botão ≥ 5m + Bobina MX Shunt Trip CEMIG
+              </span>
+            </div>
           </div>
 
-          {/* Feeders dos Carregadores (Trecho 4) */}
-          <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-4 mt-4">
-            <h4 className="font-bold text-sm text-white mb-3">
-              Alimentadores dos Carregadores (Trecho 4) — Margem e Distância Individual
-            </h4>
+          {/* 2. Banner de Segurança e Comando de Emergência NBR 17019 & CEMIG */}
+          <div className="p-3.5 bg-rose-950/20 border border-rose-500/40 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+            <div className="flex items-start gap-2.5">
+              <AlertTriangle className="w-5 h-5 text-rose-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <span className="font-bold text-white text-xs block">
+                  Sistema Obrigatório de Desligamento de Emergência (NBR 17019, Norma CEMIG e Bombeiros)
+                </span>
+                <span className="text-[11px] text-slate-300">
+                  Botão cogumelo de travamento instalado a no mínimo 5 metros do totem de recarga, interligado eletricamente à bobina de disparo (Shunt Trip MX) no disjuntor geral para desenergização total imediata (&lt; 50ms).
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <span className="px-3 py-1 bg-rose-500/20 border border-rose-500/50 text-rose-300 rounded-lg text-xs font-bold font-mono">
+                Desarme MX &lt; 50ms Integrado
+              </span>
+            </div>
+          </div>
+
+          {/* 3. Tabela Hiper-Rica com Opções de Customização de Orçamento */}
+          <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-4">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between pb-3 border-b border-slate-800 mb-4 gap-3">
+              <div>
+                <h3 className="font-bold text-base text-white flex items-center gap-2">
+                  <span>Orçamento Executivo & Lista de Materiais Homologados</span>
+                  <span className="text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-700/60 px-2 py-0.5 rounded font-mono font-bold">
+                    PEC-11 CEMIG
+                  </span>
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Preços médios de mercado brasileiro • Fabricantes líderes: Soprano, WEG, Schneider, Cemar Legrand, Strahl, Prysmian e Clamper
+                </p>
+              </div>
+
+              {/* Controles de Configuração da BOM */}
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <label className="flex items-center gap-1.5 bg-slate-800/80 hover:bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 cursor-pointer text-xs transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={includeEntranceStandardInBOM}
+                    onChange={(e) => setIncludeEntranceStandardInBOM(e.target.checked)}
+                    className="rounded accent-[#E45318]"
+                  />
+                  <span className={includeEntranceStandardInBOM ? 'text-white font-semibold text-[11px]' : 'text-slate-400 text-[11px]'}>
+                    Padrão CEMIG
+                  </span>
+                </label>
+
+                <label className="flex items-center gap-1.5 bg-slate-800/80 hover:bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 cursor-pointer text-xs transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={useMetalEnclosureCemar}
+                    onChange={(e) => setUseMetalEnclosureCemar(e.target.checked)}
+                    className="rounded accent-[#E45318]"
+                  />
+                  <span className={useMetalEnclosureCemar ? 'text-white font-semibold text-[11px]' : 'text-slate-400 text-[11px]'}>
+                    Quadro Cemar Metálico
+                  </span>
+                </label>
+
+                <label className="flex items-center gap-1.5 bg-slate-800/80 hover:bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 cursor-pointer text-xs transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={includeEmergencyShutdown}
+                    onChange={(e) => setIncludeEmergencyShutdown(e.target.checked)}
+                    className="rounded accent-rose-500"
+                  />
+                  <span className={includeEmergencyShutdown ? 'text-rose-300 font-semibold text-[11px]' : 'text-slate-400 text-[11px]'}>
+                    Botão + Bobina MX
+                  </span>
+                </label>
+
+                <button
+                  type="button"
+                  onClick={handleExportBOMCSV}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-[#E45318] hover:bg-[#c24310] text-white rounded-lg text-xs font-bold transition-all cursor-pointer shadow-md"
+                  title="Exportar planilha de orçamento completa compatível com Excel e LibreOffice"
+                >
+                  <FileSpreadsheet className="w-3.5 h-3.5" />
+                  <span>Exportar Planilha (CSV)</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Tabela de Itens com Preços Unitários e Totais */}
             <div className="overflow-x-auto">
               <table className="w-full text-xs text-left">
-                <thead className="bg-slate-800/60 text-slate-400 uppercase font-mono text-[10px]">
+                <thead className="bg-slate-800/90 text-slate-400 uppercase font-mono text-[10px]">
                   <tr>
-                    <th className="p-2.5">Carregador</th>
-                    <th className="p-2.5">Tensão / Potência</th>
-                    <th className="p-2.5">Dist. Nominal</th>
-                    <th className="p-2.5">Margem (%)</th>
-                    <th className="p-2.5">Dist. Total</th>
-                    <th className="p-2.5">Bitola Fase</th>
-                    <th className="p-2.5">Duto Indicado</th>
-                    <th className="p-2.5">Ocupação</th>
-                    <th className="p-2.5">Queda ΔV</th>
+                    <th className="p-2.5">Categoria</th>
+                    <th className="p-2.5">Descrição do Material</th>
+                    <th className="p-2.5">Fabricante Homologado</th>
+                    <th className="p-2.5 text-center">Qtd</th>
+                    <th className="p-2.5 text-center">Un</th>
+                    <th className="p-2.5 text-right">Unitário (R$)</th>
+                    <th className="p-2.5 text-right">Subtotal (R$)</th>
+                    <th className="p-2.5">Norma / Ref</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800 font-mono">
-                  {sections.section4_chargersFeeders.map((feeder, i) => (
-                    <tr key={i} className="hover:bg-slate-800/30">
-                      <td className="p-2.5 font-sans font-bold text-white">{chargers[i]?.name}</td>
-                      <td className="p-2.5 text-slate-300">{chargers[i]?.voltageV}V / {chargers[i]?.powerKW} kW</td>
-                      <td className="p-2.5">
-                        <input
-                          type="number"
-                          value={chargers[i]?.distanceMeters || 10}
-                          onChange={(e) => {
-                            const d = Number(e.target.value) || 0;
-                            updateCharger(chargers[i].id, { distanceMeters: d });
-                            if (onUpdateChargerFull) onUpdateChargerFull(chargers[i].id, { distanceMeters: d });
-                          }}
-                          className="w-16 bg-slate-800 border border-slate-700 rounded px-1.5 py-0.5 text-white"
-                        /> m
-                      </td>
-                      <td className="p-2.5">
-                        <input
-                          type="number"
-                          value={chargers[i]?.marginPercent || 10}
-                          onChange={(e) => {
-                            const m = Number(e.target.value) || 0;
-                            updateCharger(chargers[i].id, { marginPercent: m });
-                            if (onUpdateChargerFull) onUpdateChargerFull(chargers[i].id, { marginPercent: m });
-                          }}
-                          className="w-14 bg-slate-800 border border-slate-700 rounded px-1.5 py-0.5 text-white"
-                        /> %
-                      </td>
-                      <td className="p-2.5 text-slate-300 font-bold">{feeder.distanceTotalM}m</td>
-                      <td className="p-2.5 text-amber-400 font-bold">{feeder.cableGaugePhaseMM2}mm²</td>
-                      <td className="p-2.5 text-slate-300">{feeder.conduitInches}</td>
-                      <td className="p-2.5 text-emerald-400 font-bold">{feeder.conduitFillingRatePercent}%</td>
-                      <td className="p-2.5 text-slate-300">{feeder.voltageDropPercent}% ({feeder.voltageDropVolts}V)</td>
-                    </tr>
-                  ))}
+                <tbody className="divide-y divide-slate-800/80 font-sans">
+                  {enrichedBOMSummary.items.map((item) => {
+                    const isEmerg = item.category === 'segurança_emergencia';
+                    return (
+                      <tr
+                        key={item.id}
+                        className={`transition-colors ${
+                          isEmerg
+                            ? 'bg-rose-950/15 hover:bg-rose-950/30'
+                            : 'hover:bg-slate-800/30'
+                        }`}
+                      >
+                        <td className="p-2.5 uppercase font-mono text-[10px]">
+                          <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${
+                            isEmerg
+                              ? 'bg-rose-900/60 text-rose-300 border border-rose-700/60'
+                              : 'bg-slate-800 text-slate-300'
+                          }`}>
+                            {item.category.replace(/_/g, ' ')}
+                          </span>
+                        </td>
+                        <td className="p-2.5 font-semibold text-white">
+                          <div>{item.description}</div>
+                          {item.spec && (
+                            <div className="text-[10px] text-slate-400 font-normal mt-0.5">{item.spec}</div>
+                          )}
+                        </td>
+                        <td className="p-2.5 text-emerald-400 font-mono text-[11px]">
+                          {item.manufacturer || 'Nacional Homologado'}
+                        </td>
+                        <td className="p-2.5 text-center font-mono font-bold text-amber-400">
+                          {item.quantity}
+                        </td>
+                        <td className="p-2.5 text-center font-mono text-slate-400">
+                          {item.unit}
+                        </td>
+                        <td className="p-2.5 text-right font-mono text-slate-300">
+                          {item.unitPriceBRL ? item.unitPriceBRL.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '-'}
+                        </td>
+                        <td className="p-2.5 text-right font-mono font-bold text-white">
+                          {item.totalPriceBRL ? item.totalPriceBRL.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '-'}
+                        </td>
+                        <td className="p-2.5 font-mono text-[10px] text-slate-400">
+                          {item.normReference}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -1517,71 +1538,18 @@ export function EVTopologyChainViewer({
         </div>
       )}
 
-      {/* ─── TAB LISTA DE MATERIAIS CONSOLIDADA (BOM) ─────────────────────── */}
-      {activeTab === 'bom' && (
-        <div className="mt-6 bg-slate-900/90 border border-slate-800 rounded-xl p-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-800 mb-4 gap-3">
-            <div>
-              <h3 className="font-bold text-base text-white">Lista Quantitativa de Materiais (BOM)</h3>
-              <p className="text-xs text-slate-400">Consolidado automático NBR 5410 com margens de cabo, quadros e padrão de entrada</p>
-            </div>
-            <div className="flex items-center gap-3">
-              {/* Toggle de inclusão dos itens do padrão de entrada na BOM */}
-              <label className="flex items-center gap-2 bg-slate-800/80 hover:bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 cursor-pointer text-xs transition-colors">
-                <input
-                  type="checkbox"
-                  checked={includeEntranceStandardInBOM}
-                  onChange={(e) => setIncludeEntranceStandardInBOM(e.target.checked)}
-                  className="rounded accent-[#E45318]"
-                />
-                <span className={includeEntranceStandardInBOM ? 'text-white font-semibold' : 'text-slate-400'}>
-                  Incluir Padrão de Entrada na BOM
-                </span>
-              </label>
-
-              <span className="text-xs font-mono font-bold px-3 py-1 bg-[#E45318]/20 text-[#E45318] border border-[#E45318]/30 rounded-lg">
-                {effectiveBOM.length} Itens Dimensionados
-              </span>
-            </div>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs text-left">
-              <thead className="bg-slate-800/80 text-slate-400 uppercase font-mono text-[10px]">
-                <tr>
-                  <th className="p-3">Categoria</th>
-                  <th className="p-3">Descrição do Material</th>
-                  <th className="p-3 text-center">Qtd</th>
-                  <th className="p-3 text-center">Unidade</th>
-                  <th className="p-3">Especificação Técnica</th>
-                  <th className="p-3">Norma</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800">
-                {effectiveBOM.map((item) => (
-                  <tr key={item.id} className="hover:bg-slate-800/30">
-                    <td className="p-3 uppercase font-mono text-[10px] text-slate-400">{item.category}</td>
-                    <td className="p-3 font-semibold text-white">{item.description}</td>
-                    <td className="p-3 text-center font-mono font-bold text-amber-400">{item.quantity}</td>
-                    <td className="p-3 text-center font-mono text-slate-400">{item.unit}</td>
-                    <td className="p-3 text-slate-300">{item.spec}</td>
-                    <td className="p-3 font-mono text-slate-400">{item.normReference}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
       {/* ─── MODAL POPUP DE CONFIGURAÇÃO DO BLOCO SELECIONADO (CENTRALIZADO NA TELA) ───────────── */}
       {selectedDrawerNodeId && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 sm:p-6 transition-opacity overflow-y-auto">
-          <div className="w-full max-w-2xl bg-[#0A192F] border border-slate-700/80 rounded-2xl shadow-2xl p-6 text-slate-200 flex flex-col max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-3 sm:p-6 transition-opacity overflow-y-auto">
+          <div className={`w-full ${
+            selectedDrawerNodeId === 'panel220v' || selectedDrawerNodeId === 'panel380v' 
+              ? 'max-w-7xl w-[96vw]' 
+              : 'max-w-2xl'
+          } bg-[#0A192F] border border-slate-700/80 rounded-2xl shadow-2xl p-5 sm:p-6 text-slate-200 flex flex-col max-h-[92vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-150`}>
             <div>
               <div className="flex items-center justify-between pb-4 border-b border-slate-800">
                 <div>
-                  <span className="text-xs font-mono text-[#E45318] uppercase font-bold">Memorial & Configuração</span>
+                  <span className="text-xs font-mono text-[#E45318] uppercase font-bold">Memorial & Diagrama Unifilar Interativo</span>
                   <h3 className="text-lg font-bold text-white capitalize">{selectedDrawerNodeId.replace(/_/g, ' ')}</h3>
                 </div>
                 <button
@@ -1740,7 +1708,7 @@ export function EVTopologyChainViewer({
                       <div>
                         <span className="text-[10px] text-slate-400 block uppercase font-sans">Disjuntor Geral Recomendado:</span>
                         <strong className="text-base text-[#E45318] font-bold">
-                          {panel220V.mainBreakerA} A (Curva {panel220V.mainBreakerCurve})
+                          {dynamicBreaker220VA} A (Curva {panel220V.mainBreakerCurve})
                         </strong>
                       </div>
                     </div>
@@ -2165,180 +2133,129 @@ export function EVTopologyChainViewer({
                       </form>
                     </div>
 
-                    {/* ── DIAGRAMA UNIFILAR INTERATIVO DO PAINEL 220V (CONFORME FOTO 04 / NBR 5410 & NBR 17019) ── */}
-                    <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3 font-mono">
-                      <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-                        <div>
-                          <span className="text-[10px] uppercase font-bold text-[#E45318] block">Diagrama Unifilar Interativo (NBR 5410 / NBR 17019)</span>
-                          <span className="text-white text-xs font-bold">Quadro de Distribuição 220V (QGBT-VE)</span>
-                        </div>
-                        <span className="text-[10px] bg-slate-800 text-amber-400 px-2 py-0.5 rounded font-bold">
-                          Tensão Barramento: {panel220V.voltageV}V (3F+N+PE)
-                        </span>
-                      </div>
+                    {/* ── DIAGRAMA UNIFILAR AUTÊNTICO DO PAINEL 220V (CONFORME MODELO NBR 5410 / NBR 17019) ── */}
+                    {(() => {
+                      const panel220VCircuitsList: PanelCircuitItem[] = [];
 
-                      {/* Visualização Esquemática Unifilar Vetorial */}
-                      <div className="bg-slate-900/90 p-4 rounded-lg border border-slate-800 space-y-4">
-                        {/* 1. Entrada: Disjuntor Geral Caixa Moldada */}
-                        <div className="flex flex-col items-center">
-                          <span className="text-[9px] text-slate-400 uppercase font-bold mb-1">Entrada da Concessionária (Trecho 1)</span>
-                          <div className="w-1 bg-[#E45318] h-4" />
-                          <div className="bg-slate-800 border-2 border-[#E45318] rounded-lg px-4 py-2 text-center shadow-md">
-                            <span className="text-[10px] text-slate-400 block font-sans">Disjuntor Geral QGBT</span>
-                            <span className="text-white text-sm font-bold block">{panel220V.mainBreakerA}A Caixa Moldada</span>
-                            <span className="text-[9px] text-amber-400">Curva {panel220V.mainBreakerCurve} • Tripolar 3P • Icu ≥ 25kA</span>
-                          </div>
-                          <div className="w-1 bg-amber-500 h-4" />
-                        </div>
+                      // 1. Carga do Imóvel / Cliente (se selecionada)
+                      if (selectedLoads220V.clientBase !== false && panel220V.auxiliaryLoads.clientBaseBreaker && panel220V.auxiliaryLoads.clientBaseBreaker.powerKW > 0) {
+                        panel220VCircuitsList.push({
+                          id: 'circ-client-base',
+                          name: 'Carga Existente do Imóvel',
+                          breakerAmps: panel220V.auxiliaryLoads.clientBaseBreaker.breakerA,
+                          curve: 'C',
+                          phases: 3,
+                          voltageV: 220,
+                          powerKW: panel220V.auxiliaryLoads.clientBaseBreaker.powerKW,
+                          cableGaugeMM2: 16
+                        });
+                      }
 
-                        {/* 2. DPS Classe II e Proteção de Surto */}
-                        <div className="flex items-center justify-center gap-2">
-                          <div className="bg-slate-950 border border-emerald-500/60 rounded px-2.5 py-1 text-center">
-                            <span className="text-[9px] text-emerald-400 font-bold block">3x DPS Classe II (275V / 45kA)</span>
-                            <span className="text-[8px] text-slate-400">Proteção contra sobretensões transitórias</span>
-                          </div>
-                          <div className="bg-slate-950 border border-cyan-500/60 rounded px-2.5 py-1 text-center">
-                            <span className="text-[9px] text-cyan-400 font-bold block">Medidor Modbus RTU RS-485</span>
-                            <span className="text-[8px] text-slate-400">Leitura exclusiva do Hub</span>
-                          </div>
-                        </div>
+                      // 2. Proteção do Transformador Dyn1 220/380V (SE HOUVER TRAFO)
+                      if (transformer.needed && selectedLoads220V.trafoFeeder !== false) {
+                        panel220VCircuitsList.push({
+                          id: 'circ-trafo-feeder',
+                          name: `Proteção Transformador (${transformer.nominalKVA}kVA)`,
+                          breakerAmps: panel220V.transformerProtectionBreakerA || 300,
+                          curve: 'D',
+                          phases: 3,
+                          voltageV: 220,
+                          powerKW: transformer.activePowerKW || 45,
+                          cableGaugeMM2: sections.section2_panel220ToTrafo?.cableGaugePhaseMM2 || 50,
+                          isTrafoProtection: true
+                        });
+                      }
 
-                        {/* 3. Barramento Principal em Cobre (Degraus R, S, T) */}
-                        <div className="space-y-1 my-2">
-                          <div className="flex items-center justify-between text-[9px] text-slate-400 px-1 font-sans">
-                            <span>Barramento de Distribuição de Cobre Eletrolítico</span>
-                            <span className="text-amber-400 font-bold">{panel220V.busbarRatingA}A (99.9% Cu)</span>
-                          </div>
-                          <div className="h-2 bg-gradient-to-r from-red-600 via-amber-500 to-blue-600 rounded-sm w-full shadow-inner" title="Fases R, S, T" />
-                        </div>
+                      // 3. Cargas Auxiliares da Garagem
+                      if (selectedLoads220V.auxLighting !== false && auxiliaryConfig.lightingEnabled) {
+                        panel220VCircuitsList.push({
+                          id: 'circ-lighting',
+                          name: 'Iluminação Técnica LED',
+                          breakerAmps: panel220V.auxiliaryLoads.lighting.breakerA,
+                          curve: 'B',
+                          phases: 1,
+                          voltageV: 127,
+                          powerKW: auxiliaryConfig.lightingPowerW / 1000,
+                          cableGaugeMM2: 2.5
+                        });
+                      }
 
-                        {/* 4. Derivações dos Circuitos Terminais Derivados (Conforme Foto 04) */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 pt-2">
-                          {/* Circuito 0: Carga Existente do Cliente */}
-                          {panel220V.auxiliaryLoads.clientBaseBreaker && panel220V.auxiliaryLoads.clientBaseBreaker.powerKW > 0 && (
-                            <div className="p-2.5 rounded-lg border text-xs bg-slate-950 border-blue-500/50">
-                              <div className="flex items-center justify-between mb-1">
-                                <span className="text-white font-bold text-[11px] truncate">Circ. Cliente: Carga Existente</span>
-                                <span className="text-[9px] bg-blue-950 text-blue-300 border border-blue-700/60 px-1.5 py-0.2 rounded font-bold">
-                                  {panel220V.auxiliaryLoads.clientBaseBreaker.breakerA}A Curva C (3P)
-                                </span>
-                              </div>
-                              <span className="text-[10px] text-blue-300 block">
-                                Trifásico 220V • {panel220V.auxiliaryLoads.clientBaseBreaker.powerKW.toFixed(2)} kW ({panel220V.auxiliaryLoads.clientBaseBreaker.designCurrentA} A)
-                              </span>
-                              <span className="text-[9px] text-slate-400 font-mono">
-                                Medição SmartMeter (Passos 1A e 1B)
-                              </span>
-                            </div>
-                          )}
+                      if (selectedLoads220V.auxOutlet !== false && auxiliaryConfig.outletEnabled) {
+                        panel220VCircuitsList.push({
+                          id: 'circ-outlet',
+                          name: 'Tomadas de Serviço 2P+T',
+                          breakerAmps: panel220V.auxiliaryLoads.maintenanceOutlet.breakerA,
+                          curve: 'C',
+                          phases: 1,
+                          voltageV: 127,
+                          powerKW: auxiliaryConfig.outletPowerW / 1000,
+                          cableGaugeMM2: 2.5
+                        });
+                      }
 
-                          {/* Circuito 1: Iluminação */}
-                          <div className={`p-2.5 rounded-lg border text-xs transition-all ${
-                            auxiliaryConfig.lightingEnabled ? 'bg-slate-950 border-slate-700' : 'bg-slate-950/40 border-slate-900 opacity-60'
-                          }`}>
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-white font-bold text-[11px]">Circ. 1: Iluminação LED</span>
-                              <span className="text-[9px] bg-slate-800 px-1.5 py-0.2 rounded text-emerald-400 font-bold">
-                                {panel220V.auxiliaryLoads.lighting.breakerA}A Curva B
-                              </span>
-                            </div>
-                            <span className="text-[10px] text-slate-400 block">Monofásico 127V • {auxiliaryConfig.lightingPowerW}W</span>
-                            <span className="text-[9px] text-slate-500 font-mono">Cabo 2.5 mm² • Duto 3/4"</span>
-                          </div>
+                      if (selectedLoads220V.auxCctv !== false && auxiliaryConfig.cctvEnabled) {
+                        panel220VCircuitsList.push({
+                          id: 'circ-cctv',
+                          name: 'CFTV & Telecomunicações',
+                          breakerAmps: panel220V.auxiliaryLoads.cctv.breakerA,
+                          curve: 'C',
+                          phases: 1,
+                          voltageV: 127,
+                          powerKW: auxiliaryConfig.cctvPowerW / 1000,
+                          cableGaugeMM2: 2.5
+                        });
+                      }
 
-                          {/* Circuito 2: Tomada Manutenção */}
-                          <div className={`p-2.5 rounded-lg border text-xs transition-all ${
-                            auxiliaryConfig.outletEnabled ? 'bg-slate-950 border-slate-700' : 'bg-slate-950/40 border-slate-900 opacity-60'
-                          }`}>
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-white font-bold text-[11px]">Circ. 2: Tomada de Serviço</span>
-                              <span className="text-[9px] bg-slate-800 px-1.5 py-0.2 rounded text-emerald-400 font-bold">
-                                {panel220V.auxiliaryLoads.maintenanceOutlet.breakerA}A Curva C
-                              </span>
-                            </div>
-                            <span className="text-[10px] text-slate-400 block">Monofásico 127V • {auxiliaryConfig.outletPowerW}W</span>
-                            <span className="text-[9px] text-slate-500 font-mono">Cabo 2.5 mm² + DR 30mA</span>
-                          </div>
+                      // 4. Circuitos Extras Inseridos pelo Usuário
+                      customCircuits220V.filter(c => selectedLoads220V['custom_' + c.id] !== false).forEach(c => {
+                        panel220VCircuitsList.push({
+                          id: `custom-${c.id}`,
+                          name: c.name,
+                          breakerAmps: c.breakerA,
+                          curve: c.curve || 'C',
+                          phases: c.voltageV === 220 ? 2 : 1,
+                          voltageV: c.voltageV,
+                          powerKW: c.powerW / 1000,
+                          cableGaugeMM2: c.cableMM2
+                        });
+                      });
 
-                          {/* Circuito 3: CFTV & Wi-Fi */}
-                          <div className={`p-2.5 rounded-lg border text-xs transition-all ${
-                            auxiliaryConfig.cctvEnabled ? 'bg-slate-950 border-slate-700' : 'bg-slate-950/40 border-slate-900 opacity-60'
-                          }`}>
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-white font-bold text-[11px]">Circ. 3: CFTV & Automação</span>
-                              <span className="text-[9px] bg-slate-800 px-1.5 py-0.2 rounded text-emerald-400 font-bold">
-                                {panel220V.auxiliaryLoads.cctv.breakerA}A Curva C
-                              </span>
-                            </div>
-                            <span className="text-[10px] text-slate-400 block">Monofásico 127V • {auxiliaryConfig.cctvPowerW}W</span>
-                            <span className="text-[9px] text-slate-500 font-mono">Cabo 2.5 mm² • DPS Cl. III</span>
-                          </div>
+                      // 5. Carregadores alimentados diretamente em 220V (se não usar trafo)
+                      if (!transformer.needed || gridSupplyVoltage === 380) {
+                        chargers.filter(ch => selectedLoads220V['ch_' + ch.id] !== false).forEach(ch => {
+                          const v = ch.voltageV >= 380 ? 380 : 220;
+                          const inrushFactor = 1.15;
+                          const calcA = (ch.powerKW * 1000) / (Math.sqrt(ch.phases === 3 ? 3 : 1) * v * 0.98) * inrushFactor;
+                          const breakerA = [16, 20, 25, 32, 40, 50, 63, 80, 100, 125, 150, 175, 200, 225, 250, 300].find(b => b >= calcA) || 40;
+                          
+                          panel220VCircuitsList.push({
+                            id: `ch-${ch.id}`,
+                            name: `VE: ${ch.name}`,
+                            breakerAmps: breakerA,
+                            curve: 'C',
+                            phases: ch.phases,
+                            voltageV: v,
+                            powerKW: ch.powerKW,
+                            cableGaugeMM2: ch.powerKW >= 22 ? 10 : 6
+                          });
+                        });
+                      }
 
-                          {/* Circuitos Extras Cadastrados */}
-                          {customCircuits220V.map((circ, idx) => (
-                            <div key={circ.id} className="p-2.5 bg-slate-950 rounded-lg border border-slate-700 text-xs">
-                              <div className="flex items-center justify-between mb-1">
-                                <span className="text-white font-bold text-[11px] truncate">Circ. {4 + idx}: {circ.name}</span>
-                                <span className="text-[9px] bg-slate-800 px-1.5 py-0.2 rounded text-amber-400 font-bold">
-                                  {circ.breakerA}A Curva {circ.curve || 'C'}
-                                </span>
-                              </div>
-                              <span className="text-[10px] text-slate-400 block">{circ.voltageV}V • {circ.powerW}W</span>
-                              <span className="text-[9px] text-slate-500 font-mono">
-                                Cabo {circ.cableMM2} mm² {circ.drRequired ? '• DR 30mA' : ''} {circ.dpsClass && circ.dpsClass !== 'Dispensado' ? `• DPS ${circ.dpsClass}` : ''}
-                              </span>
-                            </div>
-                          ))}
-
-                          {/* Circuito Dedicado: Alimentação do Transformador Elevador (se aplicável) */}
-                          {transformer.needed && (
-                            <div className="p-2.5 bg-[#E45318]/10 rounded-lg border border-[#E45318]/60 text-xs col-span-full sm:col-span-2 md:col-span-3">
-                              <div className="flex items-center justify-between mb-1">
-                                <div className="flex items-center gap-1.5">
-                                  <Zap className="w-3.5 h-3.5 text-[#E45318]" />
-                                  <span className="text-white font-bold text-[11px]">Circuito Alimentador do Transformador Elevador 220/380V (Dyn1)</span>
-                                </div>
-                                <span className="text-[10px] bg-[#E45318] text-white px-2 py-0.5 rounded font-bold">
-                                  Disjuntor {panel220V.transformerProtectionBreakerA || 300}A Curva D (3P)
-                                </span>
-                              </div>
-                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2 text-[10px] text-slate-300 font-sans">
-                                <div>
-                                  <span className="text-slate-400 block">Carga do Trafo:</span>
-                                  <strong className="text-white">{transformer.nominalKVA} kVA ({transformer.activePowerKW} kW)</strong>
-                                </div>
-                                <div>
-                                  <span className="text-slate-400 block">Corrente Primária 220V:</span>
-                                  <strong className="text-amber-400">{transformer.primaryCurrentA} A</strong>
-                                </div>
-                                <div>
-                                  <span className="text-slate-400 block">Alimentador Primário:</span>
-                                  <strong className="text-emerald-400">{sections.section2_panel220ToTrafo ? `${sections.section2_panel220ToTrafo.conductorsPerPhase}x ${sections.section2_panel220ToTrafo.cableGaugePhaseMM2}mm²` : 'Dimensionado'}</strong>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Circuitos de Proteção Exclusiva dos Carregadores VE (Rede 380V ou Bypass) */}
-                          {(!transformer.needed || gridSupplyVoltage === 380) && chargers.map((ch, idx) => {
-                            const inrushFactor = 1.15;
-                            const v = ch.voltageV >= 380 ? 380 : (gridSupplyVoltage === 380 ? 380 : 220);
-                            const calcA = (ch.powerKW * 1000) / (Math.sqrt(ch.phases === 3 ? 3 : 1) * v * 0.98) * inrushFactor;
-                            const breakerA = [16, 20, 25, 32, 40, 50, 63, 80, 100, 125, 150, 175, 200, 225, 250, 300, 400, 500, 630].find(b => b >= calcA) || 40;
-                            return (
-                              <div key={`ch-unifilar-${ch.id}`} className="p-2.5 bg-emerald-950/30 rounded-lg border border-emerald-500/40 text-xs">
-                                <div className="flex items-center justify-between mb-1">
-                                  <span className="text-white font-bold text-[11px] truncate">VE {idx + 1}: {ch.name}</span>
-                                  <span className="text-[9px] bg-emerald-900 text-emerald-300 px-1.5 py-0.2 rounded font-bold">{breakerA}A Curva C ({ch.phases === 3 ? '3P' : '2P'})</span>
-                                </div>
-                                <span className="text-[10px] text-emerald-400 block">{ch.powerKW} kW ({v}V) • DR 30mA Tipo B</span>
-                                <span className="text-[9px] text-slate-400 font-mono">Alimentador Trecho 4 • Conector {ch.connector || 'Tipo 2'}</span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    </div>
+                      return (
+                        <PanelUnifilarDiagram
+                          panelType="220V"
+                          utilityName="Cemig Distribuição"
+                          entranceCategory={standardAlert.currentStandardCategory}
+                          entranceBreakerAmps={standardAlert.currentStandardBreakerA}
+                          entranceCableConduitDesc={`${sections.section1_standardToPanel220.cableDescription || `Cabo ${sections.section1_standardToPanel220.conductorsPerPhase}x ${sections.section1_standardToPanel220.cableGaugePhaseMM2}mm²`} • ${sections.section1_standardToPanel220.conduitInches.includes('Aéreo') ? sections.section1_standardToPanel220.conduitInches : `Eletroduto ${sections.section1_standardToPanel220.conduitInches}"`}`}
+                          panelMainBreakerAmps={dynamicBreaker220VA}
+                          panelVoltageV={panel220V.voltageV}
+                          busbarRatingA={panel220V.busbarRatingA}
+                          hasTransformer={transformer.needed}
+                          circuits={panel220VCircuitsList}
+                        />
+                      );
+                    })()}
 
                     {/* Memorial de Cálculo Passo a Passo de Todos os Componentes do Painel 220V */}
                     <div className="p-3.5 bg-slate-900/90 rounded-xl border border-slate-800 font-mono text-xs space-y-2">
@@ -2349,9 +2266,9 @@ export function EVTopologyChainViewer({
                       
                       <div className="space-y-1.5 text-[11px]">
                         <div className="p-2 rounded bg-slate-950 border border-slate-800">
-                          <strong className="text-white block font-sans">1. Disjuntor Geral do Painel 220V:</strong>
+                          <strong className="text-white block font-sans">1. Disjuntor Geral do Painel 220V (Cargas Selecionadas):</strong>
                           <span className="text-amber-300 block">
-                            {panel220V.calculationBreakdown?.formulaMainBreaker || `In = ${panel220V.mainBreakerA}A Caixa Moldada Curva ${panel220V.mainBreakerCurve}`}
+                            {dynamicFormula220V}
                           </span>
                         </div>
 
@@ -2842,115 +2759,62 @@ export function EVTopologyChainViewer({
                       <div>
                         <span className="text-[10px] text-slate-400 block uppercase font-sans">Disjuntor Geral 380V:</span>
                         <strong className="text-base text-white font-bold">
-                          {panel380V.mainBreakerA} A Tripolar
+                          {dynamicBreaker380VA} A Tripolar
                         </strong>
                       </div>
                     </div>
 
-                    {/* ── DIAGRAMA UNIFILAR INTERATIVO DO PAINEL 380V (CONFORME FOTO 01 / NBR 5410 & NBR 17019) ── */}
-                    <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3 font-mono">
-                      <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-                        <div>
-                          <span className="text-[10px] uppercase font-bold text-[#00B356] block">Diagrama Unifilar Interativo (NBR 5410 / NBR 17019)</span>
-                          <span className="text-white text-xs font-bold">Quadro de Distribuição 380V (QDC-VE)</span>
-                        </div>
-                        <span className="text-[10px] bg-slate-800 text-emerald-400 px-2 py-0.5 rounded font-bold">
-                          Tensão Barramento: 380V (3F+N+PE)
-                        </span>
-                      </div>
+                    {/* ── DIAGRAMA UNIFILAR AUTÊNTICO DO PAINEL 380V (CONFORME MODELO NBR 5410 / NBR 17019) ── */}
+                    {(() => {
+                      const panel380VCircuitsList: PanelCircuitItem[] = [];
 
-                      {/* Visualização Esquemática Unifilar Vetorial 380V */}
-                      <div className="bg-slate-900/90 p-4 rounded-lg border border-slate-800 space-y-4">
-                        {/* 1. Entrada: Alimentação do Secundário Trafo Dyn1 (Trecho 3) */}
-                        <div className="flex flex-col items-center">
-                          <span className="text-[9px] text-slate-400 uppercase font-bold mb-1">
-                            Alimentação Secundário Trafo 380V (Trecho 3)
-                          </span>
-                          <div className="w-1 bg-[#00B356] h-4" />
-                          <div className="bg-slate-800 border-2 border-[#00B356] rounded-lg px-4 py-2 text-center shadow-md">
-                            <span className="text-[10px] text-slate-400 block font-sans">
-                              {panel380V.requiresBusbar ? 'Disjuntor Geral QDC-VE' : 'Disjuntor Unificado QDC-VE (1 Carregador)'}
-                            </span>
-                            <span className="text-white text-sm font-bold block">{panel380V.mainBreakerA}A Tripolar</span>
-                            <span className="text-[9px] text-emerald-400">Curva {panel380V.mainBreakerCurve} • Tripolar 3P • Icu ≥ 16kA</span>
-                          </div>
-                          <div className="w-1 bg-emerald-500 h-4" />
-                        </div>
+                      // 1. Carregadores VE em 380V Habilitados
+                      chargers.filter(ch => selectedLoads380V[ch.id] !== false).forEach((ch, idx) => {
+                        const brk = individualChargerBreakers.find(b => b.chargerId === ch.id);
+                        const brkAmp = brk ? brk.breakerA : (ch.phases === 3 ? 40 : 32);
+                        const curve = brk?.curve || 'C';
 
-                        {/* 2. DPS Classe II e Esquema de Proteção */}
-                        <div className="flex items-center justify-center gap-2">
-                          <div className="bg-slate-950 border border-emerald-500/60 rounded px-2.5 py-1 text-center">
-                            <span className="text-[9px] text-emerald-400 font-bold block">4x DPS Classe II (385V / 40kA)</span>
-                            <span className="text-[8px] text-slate-400">Proteção contra sobretensões transitórias (Fases + Neutro)</span>
-                          </div>
-                          <div className="bg-slate-950 border border-cyan-500/60 rounded px-2.5 py-1 text-center">
-                            <span className="text-[9px] text-cyan-400 font-bold block">Aterramento BEP TN-S</span>
-                            <span className="text-[8px] text-slate-400">Neutro aterrado na saída do Trafo Dyn1</span>
-                          </div>
-                        </div>
+                        panel380VCircuitsList.push({
+                          id: `ch-380-${ch.id}`,
+                          name: `VE ${idx + 1}: ${ch.name}`,
+                          breakerAmps: brkAmp,
+                          curve: curve,
+                          phases: ch.phases,
+                          voltageV: ch.voltageV || 380,
+                          powerKW: ch.powerKW,
+                          cableGaugeMM2: ch.powerKW >= 30 ? 16 : (ch.powerKW >= 22 ? 10 : 6)
+                        });
+                      });
 
-                        {/* 3. Barramento Principal em Cobre 380V (ou indicação de unificado) */}
-                        <div className="space-y-1 my-2">
-                          <div className="flex items-center justify-between text-[9px] text-slate-400 px-1 font-sans">
-                            <span>Barramento de Distribuição de Cobre 380V</span>
-                            <span className={panel380V.requiresBusbar ? 'text-emerald-400 font-bold' : 'text-slate-500 font-bold'}>
-                              {panel380V.requiresBusbar ? `${panel380V.busbarRatingA}A (99.9% Cu)` : 'Dispensado (1 Carregador)'}
-                            </span>
-                          </div>
-                          {panel380V.requiresBusbar ? (
-                            <div className="h-2 bg-gradient-to-r from-red-600 via-amber-500 to-blue-600 rounded-sm w-full shadow-inner" title="Fases R, S, T (380V)" />
-                          ) : (
-                            <div className="h-1 bg-slate-800 rounded-sm w-full border border-dashed border-slate-700" title="Ligação direta sem barramento" />
-                          )}
-                        </div>
+                      // 2. Circuitos Extras Adicionados em 380V
+                      customCircuits380V.filter(circ => selectedLoads380V['custom_' + circ.id] !== false).forEach(circ => {
+                        panel380VCircuitsList.push({
+                          id: `custom-380-${circ.id}`,
+                          name: circ.name,
+                          breakerAmps: circ.breakerA,
+                          curve: circ.curve || 'C',
+                          phases: 3,
+                          voltageV: circ.voltageV || 380,
+                          powerKW: circ.powerW / 1000,
+                          cableGaugeMM2: circ.cableMM2
+                        });
+                      });
 
-                        {/* 4. Derivações dos Circuitos Terminais dos Carregadores VE e Auxiliares */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 pt-2">
-                          {chargers.map((ch, idx) => {
-                            const brk = individualChargerBreakers.find(b => b.chargerId === ch.id);
-                            const brkAmp = brk ? brk.breakerA : (ch.phases === 3 ? 40 : 32);
-                            const curve = brk?.curve || 'C';
-                            const dr = brk?.drType || 'Tetrapolar 40A / 30mA Tipo B';
-
-                            return (
-                              <div key={`unifilar-380-ch-${ch.id}`} className="p-2.5 rounded-lg border text-xs bg-slate-950 border-emerald-500/50">
-                                <div className="flex items-center justify-between mb-1">
-                                  <span className="text-white font-bold text-[11px] truncate">VE {idx + 1}: {ch.name}</span>
-                                  <span className="text-[9px] bg-emerald-950 text-emerald-300 border border-emerald-700/60 px-1.5 py-0.2 rounded font-bold">
-                                    {brkAmp}A Curva {curve} ({ch.phases}P)
-                                  </span>
-                                </div>
-                                <span className="text-[10px] text-emerald-300 block">
-                                  {ch.phases === 3 ? 'Trifásico 380V' : 'Monofásico 220V'} • {ch.powerKW.toFixed(2)} kW ({Number(((ch.powerKW * 1000) / (Math.sqrt(ch.phases === 3 ? 3 : 1) * (ch.voltageV || 380) * 0.98)).toFixed(1))} A)
-                                </span>
-                                <span className="text-[9px] text-slate-400 font-mono block">
-                                  {dr}
-                                </span>
-                                <span className="text-[9px] text-amber-400/90 font-mono block">
-                                  Alimentador Trecho 4 • Conector {ch.connector || 'Tipo 2'}
-                                </span>
-                              </div>
-                            );
-                          })}
-
-                          {/* Circuitos Extras em 380V */}
-                          {customCircuits380V.map((circ, idx) => (
-                            <div key={`unifilar-380-custom-${circ.id}`} className="p-2.5 bg-slate-950 rounded-lg border border-slate-700 text-xs">
-                              <div className="flex items-center justify-between mb-1">
-                                <span className="text-white font-bold text-[11px] truncate">Circ. {chargers.length + idx + 1}: {circ.name}</span>
-                                <span className="text-[9px] bg-slate-800 px-1.5 py-0.2 rounded text-amber-400 font-bold">
-                                  {circ.breakerA}A Curva {circ.curve || 'C'}
-                                </span>
-                              </div>
-                              <span className="text-[10px] text-slate-400 block">{circ.voltageV}V • {circ.powerW}W</span>
-                              <span className="text-[9px] text-slate-500 font-mono">
-                                Cabo {circ.cableMM2} mm² {circ.drRequired ? '• DR 30mA' : ''}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
+                      return (
+                        <PanelUnifilarDiagram
+                          panelType="380V"
+                          utilityName="Secundário Trafo Dyn1"
+                          entranceCategory="Subestação Abrigada"
+                          entranceBreakerAmps={panel220V.transformerProtectionBreakerA || 300}
+                          entranceCableConduitDesc={sections.section3_trafoToPanel380 ? `${sections.section3_trafoToPanel380.cableDescription || `Cabo ${sections.section3_trafoToPanel380.conductorsPerPhase}x ${sections.section3_trafoToPanel380.cableGaugePhaseMM2}mm²`} • ${sections.section3_trafoToPanel380.conduitInches.includes('Aéreo') ? sections.section3_trafoToPanel380.conduitInches : `Eletroduto ${sections.section3_trafoToPanel380.conduitInches}"`}` : 'Cabo 3x 35mm² + 35mm² N + 16mm² PE'}
+                          panelMainBreakerAmps={dynamicBreaker380VA}
+                          panelVoltageV={380}
+                          busbarRatingA={panel380V.busbarRatingA || dynamicBreaker380VA || 200}
+                          hasTransformer={false} // No 380V o trafo fica a montante, NÃO há disjuntor de proteção de trafo no interior do QDC-VE
+                          circuits={panel380VCircuitsList}
+                        />
+                      );
+                    })()}
 
                     {/* Lista Completa de Cargas Associadas no 380V com Checkboxes (Estilo Figura 05) */}
                     <div className="bg-slate-900 p-3.5 rounded-xl border border-slate-800 space-y-2.5">
@@ -3088,12 +2952,12 @@ export function EVTopologyChainViewer({
                     <div className="bg-slate-900/90 rounded-xl p-3.5 border border-slate-800 space-y-2 text-xs font-mono">
                       <div className="flex justify-between">
                         <span className="text-slate-400">Disjuntor Geral 380V:</span>
-                        <span className="text-amber-400 font-bold">{panel380V.mainBreakerA} A Tripolar (Curva C)</span>
+                        <span className="text-amber-400 font-bold">{dynamicBreaker380VA} A Tripolar (Curva C)</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-400">Barramento de Cobre:</span>
                         <span className={`font-bold ${panel380V.requiresBusbar ? 'text-emerald-400' : 'text-slate-500'}`}>
-                          {panel380V.requiresBusbar ? `${panel380V.busbarRatingA} A` : 'Dispensado (1 Carregador)'}
+                          {panel380V.requiresBusbar ? `${dynamicBreaker380VA} A` : 'Dispensado (1 Carregador)'}
                         </span>
                       </div>
                       <div className="flex justify-between">
@@ -3117,10 +2981,10 @@ export function EVTopologyChainViewer({
                         {/* 1. Disjuntor Geral 380V */}
                         <div className="p-2.5 rounded bg-slate-950 border border-slate-800 space-y-1">
                           <strong className="text-white block font-sans">
-                            1. Disjuntor Geral 380V {panel380V.calculationBreakdown?.isSingleChargerUnified ? '(Unificado - 1 Carregador)' : '(Soma de Cargas + Perdas)'}:
+                            1. Disjuntor Geral 380V (Cargas Selecionadas):
                           </strong>
                           <span className="text-amber-300 block leading-relaxed">
-                            {panel380V.calculationBreakdown?.formulaMainBreaker || `In = ${panel380V.mainBreakerA}A Tripolar`}
+                            {dynamicFormula380V}
                           </span>
                           <div className="text-[10px] text-slate-400 pt-1 flex flex-wrap gap-2 border-t border-slate-800/60">
                             <span>Potência Nominal Carregadores: <b>{panel380V.calculationBreakdown?.totalChargersNominalKW ?? totalChargersKW} kW</b></span>
@@ -3651,8 +3515,8 @@ export function EVTopologyChainViewer({
 
                                 <div className="bg-slate-950/40 p-2 rounded space-y-1 text-[11px]">
                                   <div className="flex justify-between">
-                                    <span className="text-slate-400">Distância Total:</span>
-                                    <span className="text-slate-200">{feeder.distanceTotalM} m (+{c.marginPercent}% folga)</span>
+                                    <span className="text-slate-400">Distância Terminal (Do QDC-VE 380V ao Carregador):</span>
+                                    <span className="text-slate-200 font-bold">{feeder.distanceTotalM} m ({c.distanceMeters ?? 15}m nominais + {c.marginPercent}% folga)</span>
                                   </div>
                                   <div className="flex justify-between">
                                     <span className="text-slate-400">Queda de Tensão (ΔV):</span>
@@ -3743,7 +3607,9 @@ export function EVTopologyChainViewer({
                 <div
                   key={cat.id}
                   onClick={() => {
-                    addCharger({
+                    const newId = `ch-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`;
+                    const newChargerObj = {
+                      id: newId,
                       name: `${cat.brand} ${cat.model}`,
                       brand: cat.brand,
                       model: cat.model,
@@ -3752,10 +3618,14 @@ export function EVTopologyChainViewer({
                       voltageV: cat.voltageV,
                       currentInA: cat.currentInA,
                       connector: cat.connectorType,
-                      type: cat.powerKW >= 30 ? 'DC' : 'AC',
+                      type: cat.powerKW >= 30 ? ('DC' as const) : ('AC' as const),
                       distanceMeters: 15,
                       marginPercent: 10
-                    });
+                    };
+                    addCharger(newChargerObj);
+                    if (onAddCharger) {
+                      onAddCharger(newChargerObj);
+                    }
                     setShowAddChargerModal(false);
                   }}
                   className="bg-slate-900 border border-slate-800 hover:border-[#E45318] rounded-xl p-3 cursor-pointer hover:bg-slate-800/50 transition-all flex flex-col justify-between"
@@ -3788,6 +3658,94 @@ export function EVTopologyChainViewer({
           </div>
         </div>
       )}
+
+      {/* ─── MODAL DO DIAGRAMA UNIFILAR NATIVO VETORIAL & DLM ─────────────── */}
+      {showNativeUnifilarModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-[#0A192F] border border-slate-700 w-full max-w-6xl max-h-[92vh] overflow-y-auto rounded-3xl shadow-2xl p-6 flex flex-col gap-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="flex items-center gap-2">
+                <span className="p-2 rounded-xl bg-[#E45318]/20 text-[#E45318]">
+                  <Zap className="w-5 h-5" />
+                </span>
+                <div>
+                  <h3 className="text-base font-black text-white">
+                    Diagrama Unifilar Dinâmico & Balanceamento de Carga EVSE
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Motor Gráfico Vetorial Nativo • Roteamento Ortogonal 90° • ABNT NBR 5410 & NBR 17019
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowNativeUnifilarModal(false)}
+                className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-all cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <InteractiveUnifilarViewer
+              initialGridLimitKW={standardAlert.currentStandardLimitKW}
+              initialBuildingLoadKW={clientBaseLoadKW || 20}
+              gridVoltageV={gridSupplyVoltage}
+              hasTrafo={transformer.needed}
+              trafoKVA={transformer.nominalKVA}
+              chargers={chargers.map(c => ({
+                id: c.id,
+                name: c.name,
+                powerKW: c.powerKW,
+                phases: c.phases,
+                voltageV: c.voltageV,
+                currentInA: c.currentInA || 32,
+                connector: c.connector
+              }))}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* ─── MODAL DA SUÍTE DE 5 RELATÓRIOS TÉCNICOS (PILAR 4) ─────────────── */}
+      <EVEngineeringReportsHub
+        isOpen={showReportsHubModal}
+        onClose={() => setShowReportsHubModal(false)}
+        projectData={{
+          projectName: 'Infraestrutura de Recarga VE',
+          clientName: 'Cliente Cordeiro Energia',
+          technicalResponsible: 'Eng. Eletricista Responsável',
+          creaCft: 'CREA-MG 148293/D',
+          utility: 'CEMIG Distribuição',
+          address: 'Belo Horizonte / MG',
+          standardCategory: standardAlert.currentStandardCategory,
+          standardBreakerA: standardAlert.currentStandardBreakerA,
+          voltageV: gridSupplyVoltage,
+          totalPowerKW: panel220VSelectedKW,
+          chargers: chargers.map(c => ({
+            id: c.id,
+            name: c.name,
+            brand: c.brand,
+            powerKW: c.powerKW,
+            phases: c.phases,
+            voltage: c.voltageV,
+            currentA: c.currentInA,
+            type: c.type,
+            connector: c.connector
+          })),
+          sections: sections,
+          hasTransformer: transformer.needed,
+          transformerKVA: transformer.nominalKVA,
+          transformerLossesKW: transformer.lossesKW,
+          totalInvestmentBRL: enrichedBOMSummary.totalProjectInvestmentBRL,
+          capexSavingsBRL: 18500,
+          evBaysCount: chargers.reduce((acc, c) => acc + (c.powerKW >= 50 ? 2 : 1), 0),
+          chargingPointsCount: chargers.reduce((acc, c) => acc + (c.powerKW >= 50 ? 2 : 1), 0),
+          parkingLocation: 'aberto',
+          parkingAccessControl: 'livre',
+          hasPcdAccessibleBay: false,
+          parkingSurfaceType: 'concreto'
+        }}
+      />
     </div>
   );
 }

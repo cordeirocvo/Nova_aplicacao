@@ -84,8 +84,8 @@ export default function LoadCurveChart({
           <span className="flex items-center gap-1.5 text-red-600">
             <span className="w-3 h-0.5 bg-red-500 rounded border-dashed"></span> Limite Padrão ({gridLimitKW} kW)
           </span>
-          <span className="flex items-center gap-1.5 text-red-500">
-            <span className="w-3 h-1 bg-red-400 rounded"></span> Carga Total Sem DLM
+          <span className="flex items-center gap-1.5 text-[#1E3A8A]">
+            <span className="w-3 h-1 bg-[#1E3A8A] rounded"></span> Carga Total Sem DLM
           </span>
           {enableDLM && (
             <span className="flex items-center gap-1.5 text-[#00B356]">
@@ -178,14 +178,14 @@ export default function LoadCurveChart({
             strokeWidth="2"
           />
 
-          {/* Curva de Sobrecarga SEM DLM */}
+          {/* Curva de Sobrecarga SEM DLM (Azul Escuro) */}
           <path
             d={pathUncontrolled}
             fill="none"
-            stroke="#EF4444"
+            stroke="#1E3A8A"
             strokeWidth="2.5"
             strokeDasharray="4 2"
-            opacity="0.75"
+            opacity="0.9"
           />
 
           {/* Curva Protegida COM DLM */}
@@ -252,7 +252,7 @@ export default function LoadCurveChart({
                       cx={x}
                       cy={getY(enableDLM ? d.totalControlledKW : d.totalUncontrolledKW)}
                       r="5"
-                      fill={enableDLM ? "#00B356" : "#EF4444"}
+                      fill={enableDLM ? "#00B356" : "#1E3A8A"}
                       stroke="#FFFFFF"
                       strokeWidth="2"
                     />

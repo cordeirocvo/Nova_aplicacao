@@ -14,7 +14,6 @@ import {
   AuxiliaryCircuitsConfig,
   UtilityId 
 } from "@/lib/coenergygo";
-import DynamicPowerFlow from "./DynamicPowerFlow";
 import ElectrotechnicalCADViewer from "./ElectrotechnicalCADViewer";
 
 interface InfrastructurePanelProps {
@@ -49,8 +48,8 @@ export default function InfrastructurePanel({
   onSimulateChargerToggle
 }: InfrastructurePanelProps) {
   const [activeElectrotechnicalTab, setActiveElectrotechnicalTab] = useState<
-    'fluxo_dinamico' | 'cad_unifilar' | 'paineis_segregados' | 'analise_trafo' | 'auxiliares' | 'nr10_compliance' | 'bom'
-  >('fluxo_dinamico');
+    'cad_unifilar' | 'paineis_segregados' | 'analise_trafo' | 'auxiliares' | 'nr10_compliance' | 'bom'
+  >('cad_unifilar');
 
   const [copiedBOM, setCopiedBOM] = useState(false);
   const [selectedBOMCategory, setSelectedBOMCategory] = useState<string>("all");
@@ -178,18 +177,6 @@ export default function InfrastructurePanel({
       {/* ─── 2. NAVEGAÇÃO POR ABAS DO PASSO ELETROTÉCNICO ─── */}
       <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 pb-3">
         <button
-          onClick={() => setActiveElectrotechnicalTab('fluxo_dinamico')}
-          className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-xs ${
-            activeElectrotechnicalTab === 'fluxo_dinamico'
-              ? "bg-[#0A192F] text-white shadow-md"
-              : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-          }`}
-        >
-          <Zap className="w-4 h-4 text-[#00B356]" />
-          <span>1. Fluxo Dinâmico de Energia</span>
-        </button>
-
-        <button
           onClick={() => setActiveElectrotechnicalTab('cad_unifilar')}
           className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-xs ${
             activeElectrotechnicalTab === 'cad_unifilar'
@@ -198,7 +185,7 @@ export default function InfrastructurePanel({
           }`}
         >
           <FolderTree className="w-4 h-4 text-[#E45318]" />
-          <span>2. Diagrama Unifilar & Quadros DIN</span>
+          <span>1. Diagrama Unifilar & Quadros DIN</span>
         </button>
 
         <button
@@ -210,7 +197,7 @@ export default function InfrastructurePanel({
           }`}
         >
           <Shield className="w-4 h-4 text-blue-400" />
-          <span>3. Painéis Segregados</span>
+          <span>2. Painéis Segregados</span>
         </button>
 
         <button
@@ -224,7 +211,7 @@ export default function InfrastructurePanel({
           }`}
         >
           <RefreshCw className={`w-4 h-4 ${isTrafoActive ? "text-[#E45318]" : "text-slate-400"}`} />
-          <span>4. Análise Antes & Depois do Trafo</span>
+          <span>3. Análise Antes & Depois do Trafo</span>
           {isTrafoActive && (
             <span className="text-[9px] bg-orange-600 text-white px-1.5 py-0.2 rounded-full font-black">
               {transformerDetails.nominalKVA} kVA
@@ -241,7 +228,7 @@ export default function InfrastructurePanel({
           }`}
         >
           <Sliders className="w-4 h-4 text-amber-500" />
-          <span>5. Circuitos Auxiliares</span>
+          <span>4. Circuitos Auxiliares</span>
         </button>
 
         <button
@@ -253,7 +240,7 @@ export default function InfrastructurePanel({
           }`}
         >
           <ShieldCheck className="w-4 h-4 text-[#00B356]" />
-          <span>6. Conformidade NR-10 & Segurança</span>
+          <span>5. Conformidade NR-10 & Segurança</span>
           <span className="text-[9px] bg-[#00B356] text-white px-1.5 py-0.2 rounded-full font-black">
             Mandatório
           </span>
@@ -268,24 +255,9 @@ export default function InfrastructurePanel({
           }`}
         >
           <FileSpreadsheet className="w-4 h-4 text-emerald-500" />
-          <span>7. Lista Quantitativa (BOM)</span>
+          <span>6. Lista Quantitativa (BOM)</span>
         </button>
       </div>
-
-      {/* ─── CONTEÚDO DA ABA 1: FLUXO DINÂMICO DE ENERGIA ─── */}
-      {activeElectrotechnicalTab === 'fluxo_dinamico' && (
-        <DynamicPowerFlow
-          sizing={sizing}
-          utility={utility}
-          chargerPowerKW={chargerPowerKW}
-          chargerVoltage={chargerVoltage}
-          chargerPhases={chargerPhases}
-          chargerBrand={chargerBrand}
-          chargerModel={chargerModel}
-          cableLengthMeters={cableLengthMeters}
-          onSimulateChargerToggle={onSimulateChargerToggle}
-        />
-      )}
 
       {/* ─── CONTEÚDO DA ABA 2: DIAGRAMA UNIFILAR & QUADROS DIN ─── */}
       {activeElectrotechnicalTab === 'cad_unifilar' && (

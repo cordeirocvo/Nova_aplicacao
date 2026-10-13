@@ -68,6 +68,14 @@ export const TYPICAL_PROFILES_NORMALIZED: Record<TypicalProfileType, number[]> =
     1.00, 1.00, 1.00, 1.00, 1.00, 1.00, // 06h - 11h
     1.00, 1.00, 1.00, 1.00, 1.00, 1.00, // 12h - 17h
     1.00, 1.00, 1.00, 1.00, 1.00, 1.00  // 18h - 23h
+  ],
+
+  // Perfil Real da Medição (SmartMeter / Memória de Massa) - Fallback inicial 1.0
+  smartmeter_real: [
+    1.00, 1.00, 1.00, 1.00, 1.00, 1.00, // 00h - 05h
+    1.00, 1.00, 1.00, 1.00, 1.00, 1.00, // 06h - 11h
+    1.00, 1.00, 1.00, 1.00, 1.00, 1.00, // 12h - 17h
+    1.00, 1.00, 1.00, 1.00, 1.00, 1.00  // 18h - 23h
   ]
 };
 

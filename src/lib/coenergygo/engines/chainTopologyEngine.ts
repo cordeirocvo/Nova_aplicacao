@@ -349,6 +349,28 @@ export function sizeCableAndConduitSection(params: {
     ? `P_perda = 3 × R_fase × Ib² = 3 × (${resistivity} × ${distanceTotalM}m / ${equivalentPhaseGauge}mm²) × (${designCurrentA.toFixed(1)}A)² = 3 × ${cableResistanceOhm}Ω × ${(designCurrentA ** 2).toFixed(0)} = ${jouleLossesWatts} W (${jouleLossesKW} kW • ${jouleLossesPercent}%)`
     : `P_perda = 2 × R_fase × Ib² = 2 × (${resistivity} × ${distanceTotalM}m / ${equivalentPhaseGauge}mm²) × (${designCurrentA.toFixed(1)}A)² = 2 × ${cableResistanceOhm}Ω × ${(designCurrentA ** 2).toFixed(0)} = ${jouleLossesWatts} W (${jouleLossesKW} kW • ${jouleLossesPercent}%)`;
 
+  // Construção da especificação normatizada do cabo
+  // Regras NBR 5410 / CEMIG ND-5.1:
+  // - Alumínio: Trifásico = Quadruplex (3F+N), Bifásico = Triplex (2F+N), Monofásico = Biplex (1F+N)
+  // - Cobre: Enterrado em duto (Método D) = Isolamento 0,6/1kV (NBR 7286/7288); Em alvenaria (Método B1) = Isolamento 450/750V (NBR NM 247-3)
+  let cableDescription = '';
+  const viasStr = chosenConductors > 1 ? `${chosenConductors}x ` : '';
+  if (isAluminum) {
+    const multiplexType = phases === 3 ? 'Quadruplex (3F+N)' : phases === 2 ? 'Triplex (2F+N)' : 'Biplex (1F+N)';
+    const neutroStr = includeNeutral ? ` + ${cableGaugePhaseMM2}mm² N` : '';
+    cableDescription = `Cabo Alumínio ${multiplexType} ${viasStr}${cableGaugePhaseMM2}mm²${neutroStr} (0,6/1kV XLPE)`;
+  } else {
+    // Cobre
+    const numFasesStr = phases === 3 ? '3x' : phases === 2 ? '2x' : '1x';
+    const isolamentoStr = installationMethod === 'D' 
+      ? '0,6/1kV (Enterrado NBR 5410)' 
+      : '750V (Alvenaria NBR 5410)';
+    const neutroPE = includeNeutral 
+      ? ` + ${cableGaugePhaseMM2}mm² N + ${cableGaugeGroundMM2}mm² PE` 
+      : ` + ${cableGaugeGroundMM2}mm² PE`;
+    cableDescription = `Cabo Cobre ${viasStr}${numFasesStr} ${cableGaugePhaseMM2}mm²${neutroPE} (${isolamentoStr})`;
+  }
+
   return {
     sectionId,
     name,
@@ -367,6 +389,7 @@ export function sizeCableAndConduitSection(params: {
     cableGaugeNeutralMM2: includeNeutral ? cableGaugePhaseMM2 : undefined,
     cableGaugeGroundMM2,
     totalConductorsCount,
+    cableDescription,
     conduitDiameterMM: isAerial ? 0 : selectedConduit.internalDiameterMM,
     conduitInches: isAerial ? 'Aéreo (Sem Duto)' : conduitQuantity > 1 ? `${conduitQuantity}x(${selectedConduit.inches})` : selectedConduit.inches,
     conduitQuantity: isAerial ? 0 : conduitQuantity,

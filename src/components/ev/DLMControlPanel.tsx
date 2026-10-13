@@ -5,7 +5,7 @@ import {
   Building, Sun, Zap, Sliders, ShieldCheck, 
   BatteryCharging, Clock, CheckCircle2, ArrowRight, Sparkles
 } from "lucide-react";
-import { TypicalProfileType } from "@/lib/coenergygo/types";
+import { TypicalProfileType, RealCurveExtractionMode } from "@/lib/coenergygo/types";
 import { HOMOLOGATED_CHARGERS, ChargerDatasheet } from "@/lib/ev/chargersDatabase";
 
 export interface DLMControlPanelProps {
@@ -57,6 +57,10 @@ export interface DLMControlPanelProps {
   onUpdateCustomHourlyFactors?: (factors: number[]) => void;
   customProfileName?: string;
   onUpdateCustomProfileName?: (name: string) => void;
+  // Extração Real do SmartMeter (Envoltória, Dia do Pico, Média Real)
+  realCurveExtractionMode?: RealCurveExtractionMode;
+  onSelectRealCurveExtractionMode?: (mode: RealCurveExtractionMode) => void;
+  realPeakInfo?: { maxPowerKW: number; peakTimestamp: string; daysCount: number; worstDayDate?: string };
 }
 
 export default function DLMControlPanel({
@@ -95,7 +99,10 @@ export default function DLMControlPanel({
   customHourlyFactors,
   onUpdateCustomHourlyFactors,
   customProfileName = "Perfil Customizado",
-  onUpdateCustomProfileName
+  onUpdateCustomProfileName,
+  realCurveExtractionMode = 'worst_case_envelope',
+  onSelectRealCurveExtractionMode,
+  realPeakInfo
 }: DLMControlPanelProps) {
   // Cálculo de engenharia solar (Módulos 550Wp e HSP CEMIG/MG = 5.1 kWh/m2/dia)
   const estimatedModuleCount = Math.round((solarPeakKW * 1000) / 550);
@@ -201,21 +208,32 @@ export default function DLMControlPanel({
             💡 <strong>Padrão Ouro:</strong> Para projetos definitivos, recomenda-se monitorar no mínimo <strong>7 dias</strong> com SmartMeter.
           </span>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2">
           {[
-            { id: 'posto_combustivel_constante', label: 'Carga Constante 24h', desc: 'Linha plana contínua (Postos, indústrias, etc.)' },
-            { id: 'condominio_residencial', label: 'Condomínio Residencial', desc: 'Pico noturno 18h-22h' },
-            { id: 'edificio_comercial', label: 'Edifício Comercial', desc: 'Pico diurno 09h-17h' },
-            { id: 'centro_comercial', label: 'Shopping / Varejo', desc: 'Pico estendido 14h-21h' },
-            { id: 'industrial', label: 'Indústria / Turnos', desc: 'Oscilação por turnos' },
-            { id: 'custom_usuario', label: customProfileName || 'Perfil do Projetista', desc: 'Valores hora a hora editáveis pelo projetista' }
+            // Se houver medição por planilha/SmartMeter, oferecer como primeira opção de destaque
+            ...(smartMeterFileName || isCustomCurveActive ? [{
+              id: 'smartmeter_real' as const,
+              label: '📊 Medição Real (SmartMeter)',
+              desc: `Dados reais de ${realPeakInfo?.daysCount ? `${realPeakInfo.daysCount} dias` : 'campo'} (${smartMeterFileName || 'Planilha'})`
+            }] : []),
+            { id: 'posto_combustivel_constante' as const, label: 'Carga Constante 24h', desc: 'Linha plana contínua (Postos, indústrias, etc.)' },
+            { id: 'condominio_residencial' as const, label: 'Condomínio Residencial', desc: 'Pico noturno 18h-22h' },
+            { id: 'edificio_comercial' as const, label: 'Edifício Comercial', desc: 'Pico diurno 09h-17h' },
+            { id: 'centro_comercial' as const, label: 'Shopping / Varejo', desc: 'Pico estendido 14h-21h' },
+            { id: 'industrial' as const, label: 'Indústria / Turnos', desc: 'Oscilação por turnos' },
+            { id: 'custom_usuario' as const, label: customProfileName || 'Perfil do Projetista', desc: 'Valores hora a hora editáveis pelo projetista' }
           ].map((p) => {
             const isSelected = profileType === p.id;
+            const isReal = p.id === 'smartmeter_real';
             return (
               <button
                 key={p.id}
                 onClick={() => {
                   setProfileType(p.id as any);
+                  if (p.id === 'smartmeter_real') {
+                    if (onToggleCustomCurve && !isCustomCurveActive) onToggleCustomCurve();
+                    return;
+                  }
                   // Ao selecionar qualquer perfil pré-definido, carregar seus fatores típicos normalizados para o editor
                   const templateMap: Record<string, number[]> = {
                     condominio_residencial: [
@@ -248,13 +266,22 @@ export default function DLMControlPanel({
                     onUpdateCustomHourlyFactors?.(templateMap[p.id]);
                   }
                 }}
-                className={`p-3 rounded-2xl border text-left transition-all ${
+                className={`p-3 rounded-2xl border text-left transition-all relative ${
                   isSelected
-                    ? 'border-[#E45318] bg-orange-50/50 shadow-sm ring-1 ring-[#E45318]'
-                    : 'border-slate-100 hover:border-slate-200 bg-slate-50/50'
+                    ? isReal
+                      ? 'border-[#00B356] bg-emerald-50/70 shadow-sm ring-2 ring-[#00B356]'
+                      : 'border-[#E45318] bg-orange-50/50 shadow-sm ring-1 ring-[#E45318]'
+                    : isReal
+                      ? 'border-emerald-200 bg-emerald-50/30 hover:border-emerald-400'
+                      : 'border-slate-100 hover:border-slate-200 bg-slate-50/50'
                 }`}
               >
-                <p className="text-xs font-bold text-slate-800">{p.label}</p>
+                {isReal && (
+                  <span className="absolute -top-2 right-2 bg-[#00B356] text-white text-[8px] font-black uppercase px-2 py-0.5 rounded-full shadow-xs">
+                    Dados Reais
+                  </span>
+                )}
+                <p className={`text-xs font-bold ${isReal ? 'text-emerald-900' : 'text-slate-800'}`}>{p.label}</p>
                 <p className="text-[10px] text-slate-500 mt-0.5">{p.desc}</p>
               </button>
             );
@@ -264,10 +291,11 @@ export default function DLMControlPanel({
         {/* Editor de Pontos Horários Disponível para Qualquer Perfil Selecionado */}
         <div className="mt-3 p-4 bg-slate-900 text-slate-100 rounded-2xl border border-slate-800 space-y-3">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-2">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <Sliders className="w-4 h-4 text-[#E45318]" />
               <span className="text-xs font-bold uppercase tracking-wider text-white">
                 Editor de Curva de Carga 24 Horas ({
+                  profileType === 'smartmeter_real' ? `Curva Real da Edificação (${realCurveExtractionMode === 'worst_case_envelope' ? 'Envoltória de Piores Picos' : realCurveExtractionMode === 'worst_day_peak' ? `Dia Crítico: ${realPeakInfo?.worstDayDate || 'Pico Máx'}` : 'Média Real'})` :
                   profileType === 'posto_combustivel_constante' ? 'Carga Constante 24h' :
                   profileType === 'condominio_residencial' ? 'Condomínio Residencial' :
                   profileType === 'edificio_comercial' ? 'Edifício Comercial' :
@@ -277,31 +305,78 @@ export default function DLMControlPanel({
                 })
               </span>
             </div>
-            <div className="flex items-center gap-2">
-              <input
-                type="text"
-                value={customProfileName}
-                onChange={(e) => onUpdateCustomProfileName?.(e.target.value)}
-                placeholder="Nome do Perfil Customizado"
-                className="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white font-semibold focus:outline-none focus:border-[#E45318]"
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  setProfileType('custom_usuario');
-                  const flat = Array(24).fill(1.0);
-                  onUpdateCustomHourlyFactors?.(flat);
-                }}
-                className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-amber-400 rounded-lg text-[10px] font-bold border border-slate-700"
-                title="Ajusta todas as 24 horas para 100% (linha reta contínua) no Perfil do Projetista"
-              >
-                24h Linha Reta (100%)
-              </button>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              {profileType === 'smartmeter_real' && onSelectRealCurveExtractionMode ? (
+                /* Seletores de Estratégia de Curva Real */
+                <div className="flex items-center gap-1 bg-slate-800 p-1 rounded-xl border border-slate-700">
+                  <button
+                    type="button"
+                    onClick={() => onSelectRealCurveExtractionMode('worst_case_envelope')}
+                    className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all ${
+                      realCurveExtractionMode === 'worst_case_envelope'
+                        ? 'bg-[#E45318] text-white shadow'
+                        : 'text-slate-300 hover:text-white'
+                    }`}
+                    title="Pega o maior pico de cada hora entre todos os dias medidos (Pior Caso de Segurança NBR 5410)"
+                  >
+                    🛡️ Envoltória dos Picos (Pior Caso)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onSelectRealCurveExtractionMode('worst_day_peak')}
+                    className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all ${
+                      realCurveExtractionMode === 'worst_day_peak'
+                        ? 'bg-[#E45318] text-white shadow'
+                        : 'text-slate-300 hover:text-white'
+                    }`}
+                    title="Plota o dia exato do pico máximo registrado"
+                  >
+                    ⚡ Dia do Maior Pico {realPeakInfo?.worstDayDate ? `(${realPeakInfo.worstDayDate})` : ''}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onSelectRealCurveExtractionMode('average_real')}
+                    className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all ${
+                      realCurveExtractionMode === 'average_real'
+                        ? 'bg-[#E45318] text-white shadow'
+                        : 'text-slate-300 hover:text-white'
+                    }`}
+                    title="Média aritmética das leituras reais de cada hora"
+                  >
+                    📊 Média Real
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <input
+                    type="text"
+                    value={customProfileName}
+                    onChange={(e) => onUpdateCustomProfileName?.(e.target.value)}
+                    placeholder="Nome do Perfil Customizado"
+                    className="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white font-semibold focus:outline-none focus:border-[#E45318]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setProfileType('custom_usuario');
+                      const flat = Array(24).fill(1.0);
+                      onUpdateCustomHourlyFactors?.(flat);
+                    }}
+                    className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-amber-400 rounded-lg text-[10px] font-bold border border-slate-700"
+                    title="Ajusta todas as 24 horas para 100% (linha reta contínua) no Perfil do Projetista"
+                  >
+                    24h Linha Reta (100%)
+                  </button>
+                </>
+              )}
             </div>
           </div>
 
           <p className="text-[11px] text-slate-400 leading-tight">
-            Ajuste a intensidade de cada hora do dia (% da Demanda Base de {peakDemandKW.toFixed(1)} kW). Ao alterar os horários, o sistema adota automaticamente o <strong>Perfil do Projetista</strong> e recalcula a curva em tempo real.
+            {profileType === 'smartmeter_real'
+              ? `Curva real calculada a partir de ${realPeakInfo?.daysCount || 1} dia(s) monitorados (${smartMeterFileName || 'SmartMeter'}). Demanda de pico histórico: ${peakDemandKW.toFixed(1)} kW ${realPeakInfo?.peakTimestamp ? `(${realPeakInfo.peakTimestamp})` : ''}. Valores hora a hora editáveis.`
+              : `Ajuste a intensidade de cada hora do dia (% da Demanda Base de ${peakDemandKW.toFixed(1)} kW). Ao alterar os horários, o sistema adota automaticamente o Perfil do Projetista e recalcula a curva em tempo real.`}
           </p>
 
           <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-12 gap-1.5 pt-1">

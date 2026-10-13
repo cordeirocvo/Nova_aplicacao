@@ -14,8 +14,8 @@
  */
 
 import * as XLSX from 'xlsx';
-import { TypicalHourlyPoint } from '../database/typicalLoadProfiles';
-import { MeasuredIntervalPoint, PeriodMeasurementSummary } from '../types';
+import { TypicalHourlyPoint, SOLAR_GENERATION_NORMALIZED } from '../database/typicalLoadProfiles';
+import { MeasuredIntervalPoint, PeriodMeasurementSummary, RealCurveExtractionMode } from '../types';
 
 export interface ParsedLoadFileResult {
   fileName: string;
@@ -327,15 +327,139 @@ export function parseLoadCsvWithPeriod(
   };
 }
 
-// ─── GERADOR DA CURVA DE 24 HORAS NORMALIZADA A PARTIR DAS MEDIÇÕES ───────────
+// ─── GERADORES DA CURVA DE 24 HORAS REAL A PARTIR DAS MEDIÇÕES ────────────────
 
 /**
- * Converte as medições de um período em uma curva horária de 24 horas contínua.
- * Horários sem medição no arquivo são preenchidos de forma coerente a partir da
- * média do período e do perfil típico da madrugada.
+ * 1. ENVOLTÓRIA DE PIORES CASOS (WORST-CASE ENVELOPE 24H):
+ * Para cada hora do dia (00h a 23h), seleciona a MAIOR carga de pico registrada
+ * em qualquer um dos dias medidos no histórico.
+ * Esta é a diretriz mais segura por NBR 5410/17019 para evitar desarmes térmicos.
  */
-export function build24hCurveFromPeriodSummary(
-  summary: PeriodMeasurementSummary
+export function buildWorstCaseEnvelope24h(
+  summary: PeriodMeasurementSummary,
+  solarPeakKW: number = 0
+): TypicalHourlyPoint[] {
+  const hourlyMax = new Array(24).fill(0);
+  const hourlyCounts = new Array(24).fill(0);
+
+  for (const pt of summary.intervalPoints) {
+    const hour = parseHourFromTimeStr(pt.timeStr);
+    if (hour >= 0 && hour < 24) {
+      if (pt.powerKW > hourlyMax[hour]) {
+        hourlyMax[hour] = pt.powerKW;
+      }
+      hourlyCounts[hour] += 1;
+    }
+  }
+
+  const baselineDayKW = summary.averagePowerKW;
+  const baselineNightKW = summary.minPowerKW > 0 ? summary.minPowerKW : Math.max(0.2, summary.averagePowerKW * 0.25);
+
+  const curve24h: TypicalHourlyPoint[] = [];
+
+  for (let h = 0; h < 24; h++) {
+    let kw = 0;
+    if (hourlyCounts[h] > 0) {
+      kw = hourlyMax[h]; // Pior caso ocorrido nesta hora
+    } else {
+      // Interpolação para horários não medidos
+      kw = (h < 6 || h === 23) ? baselineNightKW : baselineDayKW;
+    }
+
+    const roundedKW = Number(kw.toFixed(2));
+    const solarGenerationKW = Number(((SOLAR_GENERATION_NORMALIZED[h] || 0) * solarPeakKW).toFixed(1));
+    const netBuildingLoadKW = Number(Math.max(0, roundedKW - solarGenerationKW).toFixed(1));
+
+    curve24h.push({
+      hour: h,
+      hourLabel: `${String(h).padStart(2, '0')}:00`,
+      baseLoadKW: roundedKW,
+      solarGenerationKW,
+      netBuildingLoadKW
+    });
+  }
+
+  return curve24h;
+}
+
+/**
+ * 2. DIA DO PICO ABSOLUTO (WORST-DAY PEAK 24H):
+ * Localiza a data exata do maior pico registrado na medição (ex: 14/03 com 48.2 kW)
+ * e reconstrói o perfil de 24 horas contínuo daquele dia específico.
+ */
+export function findWorstPeakDay24h(
+  summary: PeriodMeasurementSummary,
+  solarPeakKW: number = 0
+): {
+  worstDayDate: string;
+  peakTimestamp: string;
+  maxPowerKW: number;
+  curve24h: TypicalHourlyPoint[];
+} {
+  let worstPt = summary.intervalPoints[0];
+  for (const pt of summary.intervalPoints) {
+    if (pt.powerKW > (worstPt?.powerKW || 0)) {
+      worstPt = pt;
+    }
+  }
+
+  const targetDate = worstPt?.dateStr || '';
+  const dayPoints = summary.intervalPoints.filter(p => p.dateStr === targetDate);
+
+  const hourlyMax = new Array(24).fill(0);
+  const hourlyCounts = new Array(24).fill(0);
+
+  for (const pt of dayPoints) {
+    const hour = parseHourFromTimeStr(pt.timeStr);
+    if (hour >= 0 && hour < 24) {
+      if (pt.powerKW > hourlyMax[hour]) {
+        hourlyMax[hour] = pt.powerKW;
+      }
+      hourlyCounts[hour] += 1;
+    }
+  }
+
+  const baselineDayKW = summary.averagePowerKW;
+  const baselineNightKW = summary.minPowerKW > 0 ? summary.minPowerKW : Math.max(0.2, summary.averagePowerKW * 0.25);
+
+  const curve24h: TypicalHourlyPoint[] = [];
+
+  for (let h = 0; h < 24; h++) {
+    let kw = 0;
+    if (hourlyCounts[h] > 0) {
+      kw = hourlyMax[h];
+    } else {
+      kw = (h < 6 || h === 23) ? baselineNightKW : baselineDayKW;
+    }
+
+    const roundedKW = Number(kw.toFixed(2));
+    const solarGenerationKW = Number(((SOLAR_GENERATION_NORMALIZED[h] || 0) * solarPeakKW).toFixed(1));
+    const netBuildingLoadKW = Number(Math.max(0, roundedKW - solarGenerationKW).toFixed(1));
+
+    curve24h.push({
+      hour: h,
+      hourLabel: `${String(h).padStart(2, '0')}:00`,
+      baseLoadKW: roundedKW,
+      solarGenerationKW,
+      netBuildingLoadKW
+    });
+  }
+
+  return {
+    worstDayDate: targetDate,
+    peakTimestamp: `${targetDate} ${worstPt?.timeStr || ''}`.trim(),
+    maxPowerKW: worstPt?.powerKW || summary.maxPowerKW,
+    curve24h
+  };
+}
+
+/**
+ * 3. MÉDIA HORÁRIA REAL DA MEDIÇÃO:
+ * Calcula a média aritmética ponderada dos pontos medidos de cada hora.
+ */
+export function buildAverageReal24h(
+  summary: PeriodMeasurementSummary,
+  solarPeakKW: number = 0
 ): TypicalHourlyPoint[] {
   const hourlySums = new Array(24).fill(0);
   const hourlyCounts = new Array(24).fill(0);
@@ -348,7 +472,6 @@ export function build24hCurveFromPeriodSummary(
     }
   }
 
-  // Preenchimento inteligente para horas fora da janela de medição
   const baselineDayKW = summary.averagePowerKW;
   const baselineNightKW = summary.minPowerKW > 0 ? summary.minPowerKW : Math.max(0.2, summary.averagePowerKW * 0.25);
 
@@ -359,26 +482,41 @@ export function build24hCurveFromPeriodSummary(
     if (hourlyCounts[h] > 0) {
       kw = hourlySums[h] / hourlyCounts[h];
     } else {
-      // Madrugada (00h-06h): carga mínima do local
-      // Manhã (07h-11h): rampa até a média do dia
-      if (h < 6 || h === 23) {
-        kw = baselineNightKW;
-      } else {
-        kw = baselineDayKW;
-      }
+      kw = (h < 6 || h === 23) ? baselineNightKW : baselineDayKW;
     }
 
-    const roundedKW = Number(kw.toFixed(1));
+    const roundedKW = Number(kw.toFixed(2));
+    const solarGenerationKW = Number(((SOLAR_GENERATION_NORMALIZED[h] || 0) * solarPeakKW).toFixed(1));
+    const netBuildingLoadKW = Number(Math.max(0, roundedKW - solarGenerationKW).toFixed(1));
+
     curve24h.push({
       hour: h,
       hourLabel: `${String(h).padStart(2, '0')}:00`,
       baseLoadKW: roundedKW,
-      solarGenerationKW: 0,
-      netBuildingLoadKW: roundedKW
+      solarGenerationKW,
+      netBuildingLoadKW
     });
   }
 
   return curve24h;
+}
+
+/**
+ * Converte as medições de um período em uma curva horária de 24 horas contínua
+ * aplicando o modo de extração solicitado (padrão: worst_case_envelope).
+ */
+export function build24hCurveFromPeriodSummary(
+  summary: PeriodMeasurementSummary,
+  mode: RealCurveExtractionMode = 'worst_case_envelope',
+  solarPeakKW: number = 0
+): TypicalHourlyPoint[] {
+  if (mode === 'worst_day_peak') {
+    return findWorstPeakDay24h(summary, solarPeakKW).curve24h;
+  }
+  if (mode === 'average_real') {
+    return buildAverageReal24h(summary, solarPeakKW);
+  }
+  return buildWorstCaseEnvelope24h(summary, solarPeakKW);
 }
 
 // ─── FUNÇÃO UNIFICADA DE DISPARO DE PARSER (UNIVERSAL) ───────────────────────

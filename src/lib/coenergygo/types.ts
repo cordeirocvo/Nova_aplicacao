@@ -162,7 +162,21 @@ export interface ClientProjectData {
   customTransformerKVA?: number;
   customTransformerEfficiencyPercent?: number;
   customTransformerLossesKW?: number;
+
+  // ─── Infraestrutura do Estacionamento & Vagas VE ──────────────────────────
+  evBaysCount?: number; // Total de vagas de veículos elétricos atendidas
+  chargingPointsCount?: number; // Total de pontos/pistolas de recarga simultâneos
+  parkingLocation?: CondoEnvironmentLocation; // Aberto, Térreo Coberto, Subsolo G1, Subsolo G2+
+  parkingAccessControl?: 'livre' | 'rfid' | 'ocpp_app' | 'rateio_condominio'; // Gestão de Acesso
+  hasPcdAccessibleBay?: boolean; // Vaga PCD reservada para VE (NBR 9050)
+  parkingSurfaceType?: 'concreto' | 'asfalto' | 'intertravado' | 'eletrocalha_aerea'; // Tipo de piso
+
+  // ─── Extração de Curva Real SmartMeter ────────────────────────────────────
+  smartMeterExtractionMode?: RealCurveExtractionMode;
+  smartMeterWorstDayDate?: string;
 }
+
+export type RealCurveExtractionMode = 'worst_case_envelope' | 'worst_day_peak' | 'average_real';
 
 // ─── 2.2 AMBIENTE DE INSTALAÇÃO & BOMBEIROS (IT-41 / IT-30) ─────────────────
 export type CondoEnvironmentLocation = 
@@ -354,7 +368,8 @@ export type TypicalProfileType =
   | 'centro_comercial' 
   | 'industrial'
   | 'posto_combustivel_constante'
-  | 'custom_usuario';
+  | 'custom_usuario'
+  | 'smartmeter_real';
 
 export interface HourlyLoadPoint {
   hour: number;                      // 0 a 23
@@ -479,12 +494,16 @@ export interface MultiSheetMeasurementSummary {
 
 export interface BillOfMaterialItem {
   id: string;
-  category: 'condutores' | 'protecao' | 'quadro' | 'infraestrutura' | 'seguranca' | 'auxiliares' | 'medicao' | 'transformador';
+  category: 'condutores' | 'protecao' | 'quadro' | 'infraestrutura' | 'seguranca' | 'auxiliares' | 'medicao' | 'transformador' | 'segurança_emergencia' | string;
   description: string;
   quantity: number;
   unit: 'm' | 'pç' | 'cj' | 'kit';
   spec: string;
   normReference: string;
+  manufacturer?: string;
+  modelRef?: string;
+  unitPriceBRL?: number;
+  totalPriceBRL?: number;
 }
 
 export interface AuxiliaryCircuitsConfig {
@@ -767,6 +786,7 @@ export interface SectionCableConduitSizing {
   cableGaugeNeutralMM2?: number;
   cableGaugeGroundMM2: number;
   totalConductorsCount: number;
+  cableDescription?: string;    // Descrição normatizada rica (ex: Cabo Quadruplex Alumínio 3x120+1x70mm², ou Cabo de Cobre 1kV Enterrado)
   conduitDiameterMM: number;
   conduitInches: string;
   conduitFillingRatePercent: number; // Max 40% NBR 5410 para 3 ou mais condutores

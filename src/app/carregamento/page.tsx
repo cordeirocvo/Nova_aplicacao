@@ -253,17 +253,41 @@ export default function CoenergyGODashboard() {
       .then(dbProjects => {
         const dbList = Array.isArray(dbProjects) ? dbProjects : [];
         
-        // 1. Deduplicar registros do banco se houver duplicatas legadas com o mesmo nome
+        // 1. Deduplicar registros do banco e deserializar snapshot de analysisNotes se presente
         const dedupedDb: any[] = [];
         const seenDbNames = new Set<string>();
         dbList.forEach(p => {
-          const normName = (p.projectName || "").trim().toLowerCase();
+          let enrichedProject = { ...p };
+          if (p.analysisNotes && typeof p.analysisNotes === 'string' && p.analysisNotes.trim().startsWith('{')) {
+            try {
+              const parsed = JSON.parse(p.analysisNotes);
+              if (parsed && typeof parsed === 'object') {
+                enrichedProject = {
+                  ...parsed,
+                  ...p,
+                  id: p.id,
+                  // Priorizar estruturas ricas do snapshot
+                  configuredChargers: parsed.configuredChargers || p.configuredChargers,
+                  attachedSheetsList: parsed.attachedSheetsList || p.attachedSheetsList,
+                  smartMeterSummary: parsed.smartMeterSummary || p.smartMeterSummary,
+                  dailyPeaksState: parsed.dailyPeaksState || p.dailyPeaksState,
+                  customCircuits220V: parsed.customCircuits220V || p.customCircuits220V,
+                  customCircuits380V: parsed.customCircuits380V || p.customCircuits380V,
+                  clientProjectData: parsed.clientProjectData || p.clientProjectData
+                };
+              }
+            } catch (e) {
+              console.warn("Aviso ao deserializar analysisNotes do projeto:", p.id, e);
+            }
+          }
+
+          const normName = (enrichedProject.projectName || "").trim().toLowerCase();
           if (normName && seenDbNames.has(normName)) {
             // Já existe um registro com esse nome; mantém o primeiro (mais recente)
             return;
           }
           if (normName) seenDbNames.add(normName);
-          dedupedDb.push(p);
+          dedupedDb.push(enrichedProject);
         });
 
         // 2. Mesclar projetos locais com projetos do banco evitando qualquer duplicação
@@ -1398,7 +1422,11 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
         hasEmergencyButton5m: auditHasEmergencyButton,
         requiresWarningSigns: auditHasSignaling,
         groundingType: "TN-S",
-        cosPhi: 0.98
+        cosPhi: 0.98,
+        analysisNotes: JSON.stringify({
+          isCoenergyGOSnapshot: true,
+          ...fullProjectSnapshot
+        })
       };
 
       // Verifica se já existe um projeto no banco com o mesmo id ou mesmo nome

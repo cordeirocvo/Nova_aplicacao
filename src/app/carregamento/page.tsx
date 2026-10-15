@@ -3984,7 +3984,9 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
           parkingSurfaceType: clientProjectData.parkingSurfaceType || 'concreto',
           realLoadCurveMode: realCurveExtractionMode,
           realPeakKW: smartMeterSummary?.maxPowerKW,
-          realPeakDate: smartMeterSummary?.peakTimestamp
+          realPeakDate: smartMeterSummary?.peakTimestamp,
+          commercialHub: commercialHub,
+          applicationMode: applicationMode
         }}
       />
     </div>

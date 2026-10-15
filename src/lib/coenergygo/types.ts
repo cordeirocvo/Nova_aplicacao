@@ -201,6 +201,80 @@ export interface CommercialHubOperationalData {
   hasCanopy: boolean; // Cobertura metálica/canopy para os veículos
   hasAutonomousPayment: boolean; // Totem ou aplicativo com tarifação integrada
   gridSupplyVoltage?: 220 | 380; // Tensão de fornecimento local da rede (ex: 220V CEMIG ou 380V)
+
+  // ─── PARÂMETROS DE NEGÓCIO & VIABILIDADE FINANCEIRA (MODELO BLEV / COENERGYGO) ───
+  sellingPricePerKWh?: number; // Preço de venda ao usuário final (R$/kWh, ex: R$ 2,00)
+  gridEnergyCostPerKWh?: number; // Custo de energia concessionária (TUSD + TE + Impostos, ex: R$ 1,00)
+  solarEnergyCostPerKWh?: number; // Custo de energia usina solar própria GD / Mercado Livre (ex: R$ 0,50)
+  variableOpexPercent?: number; // Gateway de pagamento + impostos (ex: 14% = 8% app + 6% tributos)
+  fixedOpexPerPointBRL?: number; // Seguro + link 4G + manutenção preventiva mensal por ponto (ex: R$ 474)
+  realEstateModel?: 'comodato' | 'aluguel_fixo' | 'revenue_share' | 'misto'; // Estrutura jurídica de cessão de vagas (CNAE 5229-0/99)
+  realEstateFixedRentBRL?: number; // Aluguel mensal fixo caso adotado (ex: R$ 1.500)
+  realEstateRevenueSharePercent?: number; // Participação percentual na receita bruta caso adotado (ex: 5% a 10%)
+  estimatedSetupCapexBRL?: number; // CAPEX total de implantação com carregadores, obras civis e sinalização (ex: R$ 195.000)
+  operationalReserveMonths?: number; // Meses de reserva operacional inclusos no CAPEX inicial (ex: 3 meses)
+  marketingLaunchBRL?: number; // Verba de lançamento, tráfego pago local e sinalização (ex: R$ 15.000)
+}
+
+// ─── INTERFACES DE VIABILIDADE FINANCEIRA DO ELETROPOSTO ───────────────────
+export interface ScenarioFinancialProjection {
+  scenarioName: 'conservador_4h' | 'realista_6h' | 'agressivo_9h';
+  label: string;
+  dailyHoursPerPoint: number;
+  monthlyDeliveredKWh: number;
+  monthlyGrossRevenueBRL: number;
+  energyCostGridBRL: number;
+  energyCostSolarBRL: number;
+  variableOpexBRL: number;
+  fixedOpexBRL: number;
+  realEstateCostBRL: number;
+  monthlyNetProfitGridBRL: number;
+  monthlyNetProfitSolarBRL: number;
+  annualNetProfitGridBRL: number;
+  annualNetProfitSolarBRL: number;
+  paybackMonthsGrid: number;
+  paybackMonthsSolar: number;
+  netMarginGridPercent: number;
+  netMarginSolarPercent: number;
+}
+
+export interface HubFinancialViabilityResult {
+  totalPowerKW: number;
+  chargersCount: number;
+  pointsCount: number;
+  totalCapexBRL: number;
+  equipmentCapexBRL: number;
+  infrastructureCapexBRL: number;
+  launchMarketingBRL: number;
+  operationalReserveBRL: number;
+  scenarios: {
+    conservative4h: ScenarioFinancialProjection;
+    realistic6h: ScenarioFinancialProjection;
+    aggressive9h: ScenarioFinancialProjection;
+  };
+  fiveYearsProjection: Array<{
+    year: number;
+    activePoints: number;
+    averageDailyHours: number;
+    energySource: 'concessionaria' | 'solar_mista' | 'solar_integral';
+    annualDeliveredKWh: number;
+    annualGrossRevenueBRL: number;
+    annualNetProfitBRL: number;
+    cumulativeCashFlowBRL: number;
+  }>;
+  irrPercentGrid: number; // TIR estimada cenário base (Concessionária)
+  irrPercentSolar: number; // TIR estimada cenário solar
+  npvGridBRL: number; // VPL 5 anos a 12% a.a.
+  npvSolarBRL: number;
+  locationScore: {
+    trafficFlow: number; // 0-10
+    visibility: number;
+    accessibility: number;
+    anchorConvenience: number;
+    energyCapacityBT: number;
+    overallScore: number;
+    verdict: 'EXCELENTE' | 'BOM' | 'REGULAR' | 'DESFAVORAVEL';
+  };
 }
 
 // ─── 2.3 DATASHEET E CATÁLOGO DE CARREGADORES (WEG / BENY) ──────────────────

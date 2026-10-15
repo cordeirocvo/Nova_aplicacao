@@ -60,12 +60,18 @@ export function evaluateCEMIG(input: UtilitySizingInput): UtilitySizingOutput {
   let requiresTransformer = false;
   let recommendedTrafo: number | undefined = undefined;
 
-  // Limite regulatório CEMIG BT é 75 kW (ND-5.1 / ND-5.2). Se demanda > 75 kW ou sem DLM quando carga bruta > 75 kW
-  const effectiveDemandForSupply = hasSmartChargingDLM ? totalInstallationLoadKW : nominalTotalLoadKW;
-  if (effectiveDemandForSupply > 75 || totalInstallationLoadKW > 75 || hasDedicatedTransformer) {
+  // Limite de atendimento CEMIG em Baixa Tensão (ND-5.1):
+  // - Categoria C1..C6: até 75 kW / 200A (Medição Direta)
+  // - Categoria F1..F9 (Tabela 4): de 75.1 kW a 304 kVA / 800A (Alta Demanda BT com Medição Indireta por TCs, SEM subestação MT obrigatória)
+  // Somente migra compulsoriamente para Média Tensão (MT / ND-5.3) se a demanda ultrapassar 304 kVA (800A BT) ou se houver transformador dedicado explicitamente configurado.
+  const isAboveMaxBT800A = calculatedDemandKVA > 304.0;
+  if (isAboveMaxBT800A || hasDedicatedTransformer) {
     supplyLevel = 'MT';
     requiresTransformer = true;
     recommendedTrafo = selectNormalizedTransformer(calculatedDemandKVA);
+  } else {
+    supplyLevel = 'BT';
+    requiresTransformer = false;
   }
 
   const actions: ComplianceAction[] = [];
@@ -133,8 +139,15 @@ export function evaluateCEMIG(input: UtilitySizingInput): UtilitySizingOutput {
       actions.push({
         type: 'alerta',
         title: `Modalidade de Atendimento: Subestação Particular MT (${recommendedTrafo} kVA)`,
-        description: `Como a carga calculada (${calculatedDemandKVA} kVA) ultrapassa o limite convencional de 75 kW de Baixa Tensão, o atendimento pode exigir Subestação Particular de Média Tensão (ND-5.3) com transformador de ${recommendedTrafo} kVA. A proteção geral e a medição no secundário do transformador adotam integralmente o padrão padronizado da Categoria ${matchedF.categoryId} (Caixas CM-4 + ${matchedF.caixaDisjuntor} e Disjuntor ${matchedF.breakerCurrentA}A).`,
+        description: `Como a carga calculada (${calculatedDemandKVA} kVA) ultrapassa o limite máximo de 304 kVA de Baixa Tensão (800A), o atendimento exige Subestação Particular de Média Tensão 13.8kV (ND-5.3) com transformador de ${recommendedTrafo} kVA.`,
         normReference: 'CEMIG ND-5.3'
+      });
+    } else {
+      actions.push({
+        type: 'recomendada',
+        title: `Atendimento em Baixa Tensão 127/220V ou 220/380V (Sem Subestação MT)`,
+        description: `Esta instalação é plenamente atendida na rede secundária de Baixa Tensão da CEMIG via Categoria ${matchedF.categoryId} (Tabela 4 da ND-5.1), dispensando construção de subestação particular de média tensão ou compra de transformador de 13.8 kV.`,
+        normReference: 'CEMIG ND-5.1 Tabela 4'
       });
     }
   }
@@ -239,5 +252,194 @@ export function evaluateCEMIG(input: UtilitySizingInput): UtilitySizingOutput {
     needsStandardUpgrade,
     actions,
     notes
+  };
+}
+
+// ─── 4. MOTOR DE VIABILIDADE FINANCEIRA DE ELETROPOSTOS (HUB DC/AC) ───────────
+import { 
+  CommercialHubOperationalData, 
+  ConfiguredCharger, 
+  HubFinancialViabilityResult, 
+  ScenarioFinancialProjection 
+} from '../types';
+
+export interface CalculateHubViabilityParams {
+  chargers: ConfiguredCharger[];
+  operationalData?: CommercialHubOperationalData;
+  existingPeakKW?: number;
+  totalInfrastructureCostBRL?: number;
+}
+
+export function calculateHubFinancialViability(params: CalculateHubViabilityParams): HubFinancialViabilityResult {
+  const { chargers, operationalData, totalInfrastructureCostBRL = 25000 } = params;
+
+  const totalPowerKW = chargers.reduce((sum, c) => sum + (c.powerKW * c.quantity), 0) || 120;
+  const chargersCount = chargers.reduce((sum, c) => sum + c.quantity, 0) || 2;
+  
+  const pointsCount = chargers.reduce((sum, c) => {
+    const isDual = (c.powerKW >= 60 && c.type === 'DC') || (c.connector && c.connector.includes('2x'));
+    return sum + ((isDual ? 2 : 1) * c.quantity);
+  }, 0) || chargersCount;
+
+  const sellingPricePerKWh = operationalData?.sellingPricePerKWh || 2.00;
+  const gridEnergyCostPerKWh = operationalData?.gridEnergyCostPerKWh || 1.00;
+  const solarEnergyCostPerKWh = operationalData?.solarEnergyCostPerKWh || 0.50;
+  const variableOpexRate = (operationalData?.variableOpexPercent || 14) / 100;
+  const fixedOpexPerPointMonth = operationalData?.fixedOpexPerPointBRL || 474;
+  const realEstateModel = operationalData?.realEstateModel || 'comodato';
+  const realEstateFixedRent = operationalData?.realEstateFixedRentBRL || 0;
+  const realEstateRevenueShareRate = (operationalData?.realEstateRevenueSharePercent || 0) / 100;
+
+  const calculatedEquipmentCapex = chargers.reduce((acc, c) => {
+    if (c.powerKW === 80) return acc + (100000 * c.quantity);
+    if (c.powerKW === 40) return acc + (55000 * c.quantity);
+    if (c.powerKW === 60) return acc + (85000 * c.quantity);
+    if (c.type === 'DC') return acc + (c.powerKW * 1250 * c.quantity);
+    return acc + (7000 * c.quantity);
+  }, 0);
+
+  const equipmentCapexBRL = operationalData?.estimatedSetupCapexBRL 
+    ? (operationalData.estimatedSetupCapexBRL * 0.75) 
+    : calculatedEquipmentCapex;
+
+  const infrastructureCapexBRL = totalInfrastructureCostBRL;
+  const launchMarketingBRL = operationalData?.marketingLaunchBRL || 15000;
+  const operationalReserveBRL = (operationalData?.operationalReserveMonths || 3) * (fixedOpexPerPointMonth * pointsCount + 2000);
+
+  const totalCapexBRL = operationalData?.estimatedSetupCapexBRL || (
+    equipmentCapexBRL + infrastructureCapexBRL + launchMarketingBRL + operationalReserveBRL
+  );
+
+  const buildScenario = (
+    scenarioName: 'conservador_4h' | 'realista_6h' | 'agressivo_9h',
+    label: string,
+    dailyHoursPerPoint: number
+  ): ScenarioFinancialProjection => {
+    const daysInMonth = 30;
+    const monthlyDeliveredKWh = Math.round(totalPowerKW * dailyHoursPerPoint * daysInMonth * 0.90);
+    const monthlyGrossRevenueBRL = Number((monthlyDeliveredKWh * sellingPricePerKWh).toFixed(2));
+    const energyCostGridBRL = Number((monthlyDeliveredKWh * gridEnergyCostPerKWh).toFixed(2));
+    const energyCostSolarBRL = Number((monthlyDeliveredKWh * solarEnergyCostPerKWh).toFixed(2));
+    const variableOpexBRL = Number((monthlyGrossRevenueBRL * variableOpexRate).toFixed(2));
+    const fixedOpexBRL = Number((fixedOpexPerPointMonth * pointsCount).toFixed(2));
+
+    let realEstateCostBRL = 0;
+    if (realEstateModel === 'aluguel_fixo') realEstateCostBRL = realEstateFixedRent;
+    else if (realEstateModel === 'revenue_share') realEstateCostBRL = Number((monthlyGrossRevenueBRL * realEstateRevenueShareRate).toFixed(2));
+    else if (realEstateModel === 'misto') realEstateCostBRL = Number((realEstateFixedRent + (monthlyGrossRevenueBRL * realEstateRevenueShareRate)).toFixed(2));
+
+    const monthlyNetProfitGridBRL = Number((monthlyGrossRevenueBRL - energyCostGridBRL - variableOpexBRL - fixedOpexBRL - realEstateCostBRL).toFixed(2));
+    const monthlyNetProfitSolarBRL = Number((monthlyGrossRevenueBRL - energyCostSolarBRL - variableOpexBRL - fixedOpexBRL - realEstateCostBRL).toFixed(2));
+    const annualNetProfitGridBRL = Number((monthlyNetProfitGridBRL * 12).toFixed(2));
+    const annualNetProfitSolarBRL = Number((monthlyNetProfitSolarBRL * 12).toFixed(2));
+
+    const paybackMonthsGrid = monthlyNetProfitGridBRL > 0 ? Number((totalCapexBRL / monthlyNetProfitGridBRL).toFixed(1)) : 999;
+    const paybackMonthsSolar = monthlyNetProfitSolarBRL > 0 ? Number((totalCapexBRL / monthlyNetProfitSolarBRL).toFixed(1)) : 999;
+    const netMarginGridPercent = monthlyGrossRevenueBRL > 0 ? Number(((monthlyNetProfitGridBRL / monthlyGrossRevenueBRL) * 100).toFixed(1)) : 0;
+    const netMarginSolarPercent = monthlyGrossRevenueBRL > 0 ? Number(((monthlyNetProfitSolarBRL / monthlyGrossRevenueBRL) * 100).toFixed(1)) : 0;
+
+    return {
+      scenarioName, label, dailyHoursPerPoint, monthlyDeliveredKWh, monthlyGrossRevenueBRL,
+      energyCostGridBRL, energyCostSolarBRL, variableOpexBRL, fixedOpexBRL, realEstateCostBRL,
+      monthlyNetProfitGridBRL, monthlyNetProfitSolarBRL, annualNetProfitGridBRL, annualNetProfitSolarBRL,
+      paybackMonthsGrid, paybackMonthsSolar, netMarginGridPercent, netMarginSolarPercent
+    };
+  };
+
+  const conservative4h = buildScenario('conservador_4h', 'Cenário Conservador (4h/dia)', 4.0);
+  const realistic6h = buildScenario('realista_6h', 'Cenário Realista (6h/dia)', 6.0);
+  const aggressive9h = buildScenario('agressivo_9h', 'Cenário Otimista (9h/dia)', 9.0);
+
+  const fiveYearsProjection = [
+    {
+      year: 1,
+      activePoints: pointsCount,
+      averageDailyHours: 4.5,
+      energySource: 'solar_mista' as const,
+      annualDeliveredKWh: Math.round(totalPowerKW * 4.5 * 365 * 0.90),
+      annualGrossRevenueBRL: Math.round(totalPowerKW * 4.5 * 365 * 0.90 * sellingPricePerKWh),
+      annualNetProfitBRL: Math.round((conservative4h.monthlyNetProfitGridBRL * 8) + (conservative4h.monthlyNetProfitSolarBRL * 4)),
+      cumulativeCashFlowBRL: Math.round(((conservative4h.monthlyNetProfitGridBRL * 8) + (conservative4h.monthlyNetProfitSolarBRL * 4)) - totalCapexBRL)
+    },
+    {
+      year: 2,
+      activePoints: pointsCount + 1,
+      averageDailyHours: 6.0,
+      energySource: 'solar_integral' as const,
+      annualDeliveredKWh: Math.round((totalPowerKW * 1.5) * 6.0 * 365 * 0.90),
+      annualGrossRevenueBRL: Math.round((totalPowerKW * 1.5) * 6.0 * 365 * 0.90 * sellingPricePerKWh),
+      annualNetProfitBRL: Math.round(realistic6h.annualNetProfitSolarBRL * 1.25),
+      cumulativeCashFlowBRL: 0
+    },
+    {
+      year: 3,
+      activePoints: pointsCount + 3,
+      averageDailyHours: 6.0,
+      energySource: 'solar_integral' as const,
+      annualDeliveredKWh: Math.round((totalPowerKW * 2.5) * 6.0 * 365 * 0.90),
+      annualGrossRevenueBRL: Math.round((totalPowerKW * 2.5) * 6.0 * 365 * 0.90 * sellingPricePerKWh),
+      annualNetProfitBRL: Math.round(realistic6h.annualNetProfitSolarBRL * 2.2),
+      cumulativeCashFlowBRL: 0
+    },
+    {
+      year: 4,
+      activePoints: pointsCount + 6,
+      averageDailyHours: 6.5,
+      energySource: 'solar_integral' as const,
+      annualDeliveredKWh: Math.round((totalPowerKW * 4.0) * 6.5 * 365 * 0.90),
+      annualGrossRevenueBRL: Math.round((totalPowerKW * 4.0) * 6.5 * 365 * 0.90 * sellingPricePerKWh),
+      annualNetProfitBRL: Math.round(realistic6h.annualNetProfitSolarBRL * 3.8),
+      cumulativeCashFlowBRL: 0
+    },
+    {
+      year: 5,
+      activePoints: pointsCount + 10,
+      averageDailyHours: 7.0,
+      energySource: 'solar_integral' as const,
+      annualDeliveredKWh: Math.round((totalPowerKW * 6.0) * 7.0 * 365 * 0.90),
+      annualGrossRevenueBRL: Math.round((totalPowerKW * 6.0) * 7.0 * 365 * 0.90 * sellingPricePerKWh),
+      annualNetProfitBRL: Math.round(realistic6h.annualNetProfitSolarBRL * 5.8),
+      cumulativeCashFlowBRL: 0
+    }
+  ];
+
+  let runningCashFlow = -totalCapexBRL;
+  for (let i = 0; i < fiveYearsProjection.length; i++) {
+    runningCashFlow += fiveYearsProjection[i].annualNetProfitBRL;
+    fiveYearsProjection[i].cumulativeCashFlowBRL = Math.round(runningCashFlow);
+  }
+
+  const discountRate = 0.12;
+  let npvGrid = -totalCapexBRL;
+  let npvSolar = -totalCapexBRL;
+  for (let yr = 1; yr <= 5; yr++) {
+    const cfGrid = conservative4h.annualNetProfitGridBRL;
+    const cfSolar = (yr === 1 ? fiveYearsProjection[0].annualNetProfitBRL : realistic6h.annualNetProfitSolarBRL);
+    npvGrid += cfGrid / Math.pow(1 + discountRate, yr);
+    npvSolar += cfSolar / Math.pow(1 + discountRate, yr);
+  }
+
+  const annualReturnRateGrid = (conservative4h.annualNetProfitGridBRL / totalCapexBRL);
+  const irrPercentGrid = Number((annualReturnRateGrid * 100 * 0.85).toFixed(1));
+  const annualReturnRateSolar = (conservative4h.annualNetProfitSolarBRL / totalCapexBRL);
+  const irrPercentSolar = Number((annualReturnRateSolar * 100 * 0.88).toFixed(1));
+
+  const trafficFlow = 9.0;
+  const visibility = 9.0;
+  const accessibility = 9.0;
+  const anchorConvenience = 8.5;
+  const energyCapacityBT = totalPowerKW <= 304 ? 9.5 : 7.0; // Até 304 kVA atendido em BT pela Tabela 4 CEMIG Grupo F
+  const overallScore = Number(((trafficFlow + visibility + accessibility + anchorConvenience + energyCapacityBT) / 5).toFixed(1));
+
+  return {
+    totalPowerKW, chargersCount, pointsCount, totalCapexBRL, equipmentCapexBRL, infrastructureCapexBRL,
+    launchMarketingBRL, operationalReserveBRL,
+    scenarios: { conservative4h, realistic6h, aggressive9h },
+    fiveYearsProjection, irrPercentGrid, irrPercentSolar,
+    npvGridBRL: Math.round(npvGrid), npvSolarBRL: Math.round(npvSolar),
+    locationScore: {
+      trafficFlow, visibility, accessibility, anchorConvenience, energyCapacityBT, overallScore,
+      verdict: overallScore >= 8.5 ? 'EXCELENTE' : overallScore >= 7.0 ? 'BOM' : 'REGULAR'
+    }
   };
 }

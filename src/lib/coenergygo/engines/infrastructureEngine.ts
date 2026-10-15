@@ -432,27 +432,28 @@ export function sizeElectricalInfrastructure(
   const is220VGrid = gridSupplyVoltage === 220;
   const isCharger380V = chargerVoltage >= 380 || (chargerPhases === 3 && chargerPowerKW >= 11);
 
-  // Limite de atendimento em BT individual CEMIG ND-5.1: até 75 kW / 200A (Cat C6)
+  // Limite de atendimento em BT CEMIG ND-5.1:
+  // - Até 75 kW: BT Individual Direta (Cat A1..C6)
+  // - De 75.1 kW até 304 kVA: Padrão Alta Demanda BT com Medição Indireta (Tabela 4 / Categoria F1 a F9 até 800A) SEM subestação MT obrigatória
+  // - Acima de 304 kVA (800A): Subestação MT 13,8 kV (ND-5.3) obrigatória
   const isAboveIndividualBT = totalSimultaneousDemandKW > 75.0;
-  const isHighDemand = totalSimultaneousDemandKW > 100.0;
+  const isAboveMaxBT800A = totalSimultaneousDemandKW > 304.0;
 
   let transformerRecommendation: TransformerRecommendation;
   let transformerDetails: TransformerSizingDetails;
 
-  // CASO A: Média Tensão por Demanda Alta (> 75 kW / > 100 kW)
-  if (isAboveIndividualBT) {
+  // CASO A: Média Tensão Compulsória apenas se acima de 304 kVA (800A BT) ou solicitado
+  if (isAboveMaxBT800A) {
     const requiredTrafoKVA = Number((totalSimultaneousDemandKW / 0.92).toFixed(1));
-    const suggestedTrafoRatingKVA = STANDARD_TRAFOS_KVA.find(t => t >= requiredTrafoKVA * 1.15) || 150;
+    const suggestedTrafoRatingKVA = STANDARD_TRAFOS_KVA.find(t => t >= requiredTrafoKVA * 1.15) || 300;
 
     transformerRecommendation = {
       needed: true,
       recommendedKVA: suggestedTrafoRatingKVA,
-      supplyLevel: isHighDemand ? 'MT' : 'BT',
-      reason: isHighDemand
-        ? `A demanda total calculada de ${totalSimultaneousDemandKW} kW excede o limite convencional da rede pública de Baixa Tensão da CEMIG (75 kW). É obrigatória a implantação de Subestação Particular de Média Tensão 13,8 kV (Trafo de ${suggestedTrafoRatingKVA} kVA).`
-        : `A demanda de ${totalSimultaneousDemandKW} kW excede a Categoria C6 (75 kW / 200A). Pode ser atendida por Padrão de Alta Demanda BT (Tabela 4 CEMIG F1..F4 com medição indireta) ou por Transformador Próprio de ${suggestedTrafoRatingKVA} kVA (ND-5.3).`,
+      supplyLevel: 'MT',
+      reason: `A demanda total calculada de ${totalSimultaneousDemandKW} kW excede o limite máximo da rede pública de Baixa Tensão da CEMIG (304 kVA / 800A da Categoria F9). É obrigatória a implantação de Subestação Particular de Média Tensão 13,8 kV (Trafo de ${suggestedTrafoRatingKVA} kVA).`,
       suggestedTrafoRatingKVA,
-      applicableNorm: isHighDemand ? 'CEMIG ND-5.3 / ABNT NBR 14039 (Média Tensão)' : 'CEMIG ND-5.1 Tabela 4 / ND-5.3'
+      applicableNorm: 'CEMIG ND-5.3 / ABNT NBR 14039 (Média Tensão)'
     };
 
     transformerDetails = {
@@ -468,10 +469,40 @@ export function sizeElectricalInfrastructure(
       connectionGroup: 'Delta-Estrela Aterrada (Dyn1) com Neutro acessível',
       coolingType: 'A seco (AN) ou a Óleo Mineral',
       enclosureIp: isOutdoor ? 'IP54 (Externo/Poste/Cabine)' : 'IP23 (Abrigado)',
-      reason: `Subestação Particular de Média Tensão necessária devido à demanda total (${totalSimultaneousDemandKW} kW) superar o limite de fornecimento BT da concessionária.`,
+      reason: `Subestação Particular de Média Tensão necessária devido à demanda total (${totalSimultaneousDemandKW} kW) superar o limite máximo de 800A em Baixa Tensão.`,
       applicableNorm: 'CEMIG ND-5.3 / ABNT NBR 14039',
       inrushMultiplier: 10,
       lossesEstimatedKW: Number((suggestedTrafoRatingKVA * 0.02).toFixed(1))
+    };
+  }
+  // CASO B: Alta Demanda BT (75 kW a 304 kVA) — Padrão CEMIG Grupo F (Sem Subestação MT)
+  else if (isAboveIndividualBT) {
+    transformerRecommendation = {
+      needed: false,
+      recommendedKVA: 0,
+      supplyLevel: 'BT',
+      reason: `A demanda calculada de ${totalSimultaneousDemandKW} kW excede o limite convencional de 75 kW (C6), mas é plenamente atendida em Baixa Tensão pela CEMIG ND-5.1 (Tabela 4 / Categorias F1 a F9 até 800A) com medição indireta em Caixa CM-4 (3 TCs) e proteção em Caixa CM-18, DISPENSANDO subestação de média tensão e economizando mais de R$ 80.000 em obras de cabine.`,
+      suggestedTrafoRatingKVA: 0,
+      applicableNorm: 'CEMIG ND-5.1 Tabela 4 (Alta Demanda em Baixa Tensão)'
+    };
+
+    transformerDetails = {
+      needed: false,
+      type: 'dispensado_rede_compativel',
+      nominalKVA: 0,
+      primaryVoltageV: gridSupplyVoltage,
+      primaryPhases: 3,
+      primaryCurrentA: 0,
+      secondaryVoltageV: 380,
+      secondaryPhases: 3,
+      secondaryCurrentA: 0,
+      connectionGroup: 'N/A — Atendimento Direto da Rede Secundária CEMIG (Tabela 4)',
+      coolingType: 'N/A',
+      enclosureIp: 'N/A',
+      reason: 'Atendimento direto em Baixa Tensão secundária homologado pela CEMIG ND-5.1 Tabela 4.',
+      applicableNorm: 'CEMIG ND-5.1 Tabela 4',
+      inrushMultiplier: 1,
+      lossesEstimatedKW: 0
     };
   } 
   // CASO B: Carregador 380V em Rede BT 220V (ex: 22 kW ou 11 kW na CEMIG)

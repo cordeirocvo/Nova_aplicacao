@@ -447,6 +447,144 @@ export default function InstallationEnvironmentSelector({
               </div>
             </label>
           </div>
+
+          {/* ─── PAINEL DE MODELAGEM FINANCEIRA E BUSINESS PLAN (BLEV / COENERGYGO) ─── */}
+          <div className="p-5 rounded-2xl bg-[#0A192F] text-white space-y-4 border border-slate-800 shadow-md">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2.5">
+                <span className="p-1.5 rounded-lg bg-[#E45318]/20 text-[#E45318] font-bold text-xs">
+                  R$
+                </span>
+                <div>
+                  <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                    Modelagem Financeira & Viabilidade de Negócios (Padrão BLEV)
+                  </h4>
+                  <p className="text-[11px] text-slate-400">
+                    Parâmetros para cálculo automático de Faturamento, Margem Líquida, Payback, TIR e VPL.
+                  </p>
+                </div>
+              </div>
+              <span className="text-[10px] uppercase font-black tracking-wider bg-emerald-500/20 text-[#00B356] border border-emerald-500/30 px-2.5 py-1 rounded-full">
+                Hub Comercial Ativo
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {/* Tarifa de Venda ao Usuário */}
+              <div className="bg-slate-900/80 p-3 rounded-xl border border-slate-800">
+                <label className="block text-[11px] font-bold text-slate-300 mb-1">
+                  Preço de Venda (R$/kWh):
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-2 text-xs text-slate-400 font-bold">R$</span>
+                  <input
+                    type="number"
+                    step="0.10"
+                    min="1.0"
+                    max="5.0"
+                    value={commercialHub.sellingPricePerKWh ?? 2.00}
+                    onChange={(e) => onCommercialHubChange({ sellingPricePerKWh: Number(e.target.value) })}
+                    className="w-full pl-8 pr-3 py-1.5 text-xs font-bold bg-slate-800 border border-slate-700 rounded-lg text-emerald-400 focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+                <p className="text-[10px] text-slate-400 mt-1">Média BH: R$ 1,80 a R$ 2,40/kWh.</p>
+              </div>
+
+              {/* Custo de Energia Concessionária */}
+              <div className="bg-slate-900/80 p-3 rounded-xl border border-slate-800">
+                <label className="block text-[11px] font-bold text-slate-300 mb-1">
+                  Custo Concessionária (R$/kWh):
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-2 text-xs text-slate-400 font-bold">R$</span>
+                  <input
+                    type="number"
+                    step="0.05"
+                    min="0.5"
+                    max="3.0"
+                    value={commercialHub.gridEnergyCostPerKWh ?? 1.00}
+                    onChange={(e) => onCommercialHubChange({ gridEnergyCostPerKWh: Number(e.target.value) })}
+                    className="w-full pl-8 pr-3 py-1.5 text-xs font-bold bg-slate-800 border border-slate-700 rounded-lg text-amber-400 focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+                <p className="text-[10px] text-slate-400 mt-1">TUSD + TE + Impostos (CEMIG).</p>
+              </div>
+
+              {/* Custo de Energia Usina Solar (UFV) */}
+              <div className="bg-slate-900/80 p-3 rounded-xl border border-slate-800">
+                <label className="block text-[11px] font-bold text-slate-300 mb-1">
+                  Custo Solar Fotovoltaico (R$/kWh):
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-2 text-xs text-slate-400 font-bold">R$</span>
+                  <input
+                    type="number"
+                    step="0.05"
+                    min="0.2"
+                    max="1.5"
+                    value={commercialHub.solarEnergyCostPerKWh ?? 0.50}
+                    onChange={(e) => onCommercialHubChange({ solarEnergyCostPerKWh: Number(e.target.value) })}
+                    className="w-full pl-8 pr-3 py-1.5 text-xs font-bold bg-slate-800 border border-slate-700 rounded-lg text-[#00B356] focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+                <p className="text-[10px] text-slate-400 mt-1">Geração própria GD / Mercado Livre.</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {/* Estrutura Jurídica das Vagas */}
+              <div className="bg-slate-900/80 p-3 rounded-xl border border-slate-800">
+                <label className="block text-[11px] font-bold text-slate-300 mb-1">
+                  Modelo do Ponto (CNAE 5229-0/99):
+                </label>
+                <select
+                  value={commercialHub.realEstateModel ?? 'comodato'}
+                  onChange={(e) => onCommercialHubChange({ realEstateModel: e.target.value as any })}
+                  className="w-full text-xs font-bold bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white focus:outline-none focus:border-emerald-500 cursor-pointer"
+                >
+                  <option value="comodato">Comodato Gratuito (Ponto Próprio)</option>
+                  <option value="aluguel_fixo">Aluguel Fixo Mensal</option>
+                  <option value="revenue_share">Participação na Receita (%)</option>
+                  <option value="misto">Modelo Misto (Fixo + %)</option>
+                </select>
+                <p className="text-[10px] text-slate-400 mt-1">Cessão de vagas com âncora comercial.</p>
+              </div>
+
+              {/* OPEX Fixo por Ponto */}
+              <div className="bg-slate-900/80 p-3 rounded-xl border border-slate-800">
+                <label className="block text-[11px] font-bold text-slate-300 mb-1">
+                  OPEX Fixo Mensal / Ponto:
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-2 text-xs text-slate-400 font-bold">R$</span>
+                  <input
+                    type="number"
+                    value={commercialHub.fixedOpexPerPointBRL ?? 474}
+                    onChange={(e) => onCommercialHubChange({ fixedOpexPerPointBRL: Number(e.target.value) })}
+                    className="w-full pl-8 pr-3 py-1.5 text-xs font-bold bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+                <p className="text-[10px] text-slate-400 mt-1">Seguro + Link 4G + Manutenção.</p>
+              </div>
+
+              {/* OPEX Variável (Gateway + Impostos) */}
+              <div className="bg-slate-900/80 p-3 rounded-xl border border-slate-800">
+                <label className="block text-[11px] font-bold text-slate-300 mb-1">
+                  OPEX Variável (% Faturamento):
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    value={commercialHub.variableOpexPercent ?? 14}
+                    onChange={(e) => onCommercialHubChange({ variableOpexPercent: Number(e.target.value) })}
+                    className="w-full pr-8 pl-3 py-1.5 text-xs font-bold bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+                  />
+                  <span className="absolute right-3 top-2 text-xs text-slate-400 font-bold">%</span>
+                </div>
+                <p className="text-[10px] text-slate-400 mt-1">8% Gateway White-Label + 6% Tributos.</p>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

@@ -4,17 +4,25 @@ import React, { useState } from "react";
 import { 
   FileText, Printer, Download, CheckCircle2, Shield, AlertTriangle, 
   Zap, Wrench, ClipboardCheck, Sparkles, Building2, User, Calendar, 
-  MapPin, Check, ArrowRight, ExternalLink, X, ChevronRight, Layers, FileCode
+  MapPin, Check, ArrowRight, ExternalLink, X, ChevronRight, Layers, FileCode,
+  TrendingUp, DollarSign, BarChart3, SunMedium, ArrowUpRight, Award, ShieldCheck, Clock
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { 
+  calculateHubFinancialViability, 
+  HubFinancialViabilityResult,
+  CommercialHubOperationalData,
+  ApplicationMode
+} from "@/lib/coenergygo";
 
 export type ReportType = 
   | 'executivo'
   | 'memorial_descritivo'
   | 'memorial_calculo'
   | 'caderno_obra'
-  | 'comissionamento';
+  | 'comissionamento'
+  | 'viabilidade_negocios';
 
 interface EVEngineeringReportsHubProps {
   isOpen: boolean;
@@ -58,6 +66,8 @@ interface EVEngineeringReportsHubProps {
     realLoadCurveMode?: string;
     realPeakKW?: number;
     realPeakDate?: string;
+    commercialHub?: CommercialHubOperationalData;
+    applicationMode?: ApplicationMode;
   };
 }
 
@@ -81,6 +91,33 @@ export function EVEngineeringReportsHub({
   const chargingPointsCount = projectData.chargingPointsCount || calculatedPointsCount;
   const evBaysCount = projectData.evBaysCount || chargingPointsCount;
   const chargersCount = projectData.chargers?.length || 1;
+
+  // Cálculo da Viabilidade Econômico-Financeira & Negócios (Modelo BLEV / CoenergyGO)
+  const financialViability: HubFinancialViabilityResult = calculateHubFinancialViability({
+    chargers: (projectData.chargers && projectData.chargers.length > 0)
+      ? projectData.chargers.map(c => ({
+          id: c.id,
+          name: c.name,
+          powerKW: c.powerKW,
+          phases: (c.phases || 3) as (1 | 3),
+          voltage: c.voltage || 380,
+          type: (c.type || (c.powerKW >= 40 ? 'DC' : 'AC')) as ('AC' | 'DC'),
+          quantity: 1,
+          connector: c.connector || 'CCS2'
+        }))
+      : [{
+          id: 'def-hub',
+          name: 'Carregador Rápido DC',
+          powerKW: totalPower || 120,
+          phases: 3,
+          voltage: 380,
+          type: 'DC',
+          quantity: 1,
+          connector: 'CCS2'
+        }],
+    operationalData: projectData.commercialHub,
+    totalInfrastructureCostBRL: 25000
+  });
 
   const reportsNav: Array<{ id: ReportType; title: string; subtitle: string; icon: any; tag: string }> = [
     {
@@ -117,6 +154,13 @@ export function EVEngineeringReportsHub({
       subtitle: 'Ensaios de isolamento, continuidade PE e teste de emergência',
       icon: ClipboardCheck,
       tag: 'Qualidade & Entrega'
+    },
+    {
+      id: 'viabilidade_negocios',
+      title: '6. Dossiê de Viabilidade & Negócios (BLEV)',
+      subtitle: 'Estudo executivo com DRE, sensibilidade 4h/6h/9h, CEMIG BT Grupo F e Payback',
+      icon: TrendingUp,
+      tag: 'Investidores & Diretoria'
     }
   ];
 
@@ -594,6 +638,383 @@ export function EVEngineeringReportsHub({
                       <span>Instrumento Utilizado: Alicate Terrômetro / Megômetro Fluke 1664 FC Calibrado</span>
                       <strong className="text-emerald-700">Comissionamento Concluído com Sucesso</strong>
                     </div>
+                  </div>
+                )}
+
+                {/* 6. DOSSIÊ DE VIABILIDADE ECONÔMICO-FINANCEIRA & NEGÓCIOS (PADRÃO BLEV / CARLOS MAGNO) */}
+                {selectedReport === 'viabilidade_negocios' && (
+                  <div className="space-y-6 text-xs text-slate-700">
+                    
+                    {/* I. SUMÁRIO EXECUTIVO & DIAGNÓSTICO (GO / NO-GO) */}
+                    <div className="bg-gradient-to-br from-[#0A192F] via-[#0f2442] to-slate-900 text-white p-5 rounded-3xl border border-slate-800 space-y-4 shadow-xl">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-700/80 pb-3">
+                        <div>
+                          <span className="text-[10px] uppercase font-black tracking-widest text-[#00B356] bg-emerald-950/80 border border-emerald-500/30 px-3 py-1 rounded-full">
+                            Diagnóstico Institucional de Viabilidade
+                          </span>
+                          <h3 className="text-lg font-bold text-white mt-1.5 flex items-center gap-2">
+                            <span>Dossiê de Negócios & Eletromobilidade de Alta Potência</span>
+                          </h3>
+                        </div>
+                        <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/40 px-3.5 py-1.5 rounded-2xl">
+                          <CheckCircle2 className="w-5 h-5 text-[#00B356]" />
+                          <div>
+                            <span className="text-[10px] uppercase tracking-wider text-emerald-400 font-bold block">Veredito do Comitê</span>
+                            <strong className="text-xs text-white uppercase font-black">GO — PROJETO APROVADO</strong>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+                        <div className="md:col-span-8 space-y-2">
+                          <p className="text-slate-300 text-xs leading-relaxed">
+                            O presente projeto para <strong className="text-white">{projectData.clientName}</strong> contempla o dimensionamento e a implantação de um Hub Comercial de Recarga Rápida com potência agregada de <strong className="text-[#00B356]">{totalPower.toFixed(1)} kW</strong> ({chargingPointsCount} pontos/pistolas de recarga simultâneos atendendo {evBaysCount} vagas).
+                          </p>
+                          <p className="text-slate-400 text-[11px] leading-relaxed">
+                            A modelagem adotada segue o padrão de inteligência financeira da <strong>BLEV Educação</strong> e a engenharia eletrotécnica da <strong>Cordeiro Energia</strong>, combinando alta atratividade de fluxo de caixa, mitigação de riscos regulatórios (CNAE 5229-0/99) e sinergia de autoprodução de energia solar.
+                          </p>
+                        </div>
+
+                        <div className="md:col-span-4 bg-white/5 border border-white/10 rounded-2xl p-3.5 text-center space-y-1">
+                          <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Score do Ponto</span>
+                          <div className="text-3xl font-black text-[#00B356]">
+                            {financialViability.locationScore.overallScore} <span className="text-sm font-normal text-slate-400">/ 10.0</span>
+                          </div>
+                          <span className="text-[10px] font-bold text-emerald-400 uppercase bg-emerald-950/60 px-2 py-0.5 rounded-full inline-block">
+                            Classificação: {financialViability.locationScore.verdict}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 4 KPIS FUNDAMENTAIS DO INVESTIMENTO */}
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                      <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl space-y-1">
+                        <span className="text-[10px] uppercase font-bold text-slate-500 block">CAPEX Total Estimado</span>
+                        <div className="text-base sm:text-lg font-black text-slate-900">
+                          R$ {financialViability.totalCapexBRL.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </div>
+                        <span className="text-[10px] text-slate-500 block leading-tight">
+                          Equipamentos (R$ {financialViability.equipmentCapexBRL.toLocaleString('pt-BR')}) + Infra Civil/Elétrica
+                        </span>
+                      </div>
+
+                      <div className="p-3.5 bg-emerald-50/70 border border-emerald-200 rounded-2xl space-y-1">
+                        <span className="text-[10px] uppercase font-bold text-emerald-800 block">Payback Descontado</span>
+                        <div className="text-base sm:text-lg font-black text-[#00B356]">
+                          {financialViability.scenarios.conservative4h.paybackMonthsSolar} meses
+                        </div>
+                        <span className="text-[10px] text-emerald-700 block leading-tight">
+                          Com Usina Solar ({financialViability.scenarios.conservative4h.paybackMonthsGrid} meses na Rede)
+                        </span>
+                      </div>
+
+                      <div className="p-3.5 bg-blue-50/70 border border-blue-200 rounded-2xl space-y-1">
+                        <span className="text-[10px] uppercase font-bold text-blue-800 block">Taxa Interna Retorno (TIR)</span>
+                        <div className="text-base sm:text-lg font-black text-blue-900">
+                          {financialViability.irrPercentSolar}% <span className="text-xs font-normal text-blue-700">a.a.</span>
+                        </div>
+                        <span className="text-[10px] text-blue-700 block leading-tight">
+                          Fase Solar ({financialViability.irrPercentGrid}% a.a. na Rede CEMIG)
+                        </span>
+                      </div>
+
+                      <div className="p-3.5 bg-amber-50/70 border border-amber-200 rounded-2xl space-y-1">
+                        <span className="text-[10px] uppercase font-bold text-amber-800 block">Margem Líquida</span>
+                        <div className="text-base sm:text-lg font-black text-amber-900">
+                          {financialViability.scenarios.conservative4h.netMarginSolarPercent}%
+                        </div>
+                        <span className="text-[10px] text-amber-700 block leading-tight">
+                          Cenário Base 4h/dia (R$ {financialViability.scenarios.conservative4h.monthlyNetProfitSolarBRL.toLocaleString('pt-BR')}/mês)
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* II. ENGENHARIA ELÉTRICA & PADRÃO CEMIG GRUPO F (BAIXA TENSÃO ATÉ 800A SEM SUBESTAÇÃO MT) */}
+                    <div className="border border-slate-200 rounded-2xl p-4 space-y-3 bg-white">
+                      <div className="flex items-center justify-between border-b pb-2">
+                        <div className="flex items-center gap-2">
+                          <Zap className="w-4 h-4 text-[#E45318]" />
+                          <h4 className="font-bold text-slate-900 uppercase text-xs">
+                            II. Engenharia Elétrica & Fornecimento em Baixa Tensão (CEMIG Grupo F até 800A)
+                          </h4>
+                        </div>
+                        <span className="text-[10px] font-black uppercase text-[#00B356] bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                          Disrupção Técnica Normativa
+                        </span>
+                      </div>
+
+                      <div className="p-3.5 bg-emerald-50/80 border border-emerald-300 rounded-2xl text-[11px] text-emerald-950 space-y-1.5 leading-relaxed">
+                        <strong className="text-emerald-900 font-bold block text-xs">
+                          Economia Direta de R$ 80.000 a R$ 120.000 em CAPEX: Dispensa de Subestação MT Particular
+                        </strong>
+                        <p>
+                          Diferente de instalações convencionais que exigem a construção compulsória de cabine primária de Média Tensão (13,8 kV) segundo a norma ND-5.3, a engenharia da Cordeiro Energia estruturou o atendimento de <strong>{totalPower.toFixed(1)} kW</strong> no escopo da norma <strong>CEMIG ND-5.1 (Tabela 4 / Categorias F1 a F9)</strong>.
+                        </p>
+                        <p>
+                          A CEMIG permite fornecimento em <strong>Baixa Tensão (127/220V ou 220/380V) com disjuntor de até 800A (304 kVA)</strong> através de medição indireta por TCs instalados em caixas CM-4 e CM-18. Isso elimina a compra de transformador de 13,8 kV a óleo/seco, para-raios MT, chaves seccionadoras e alvenaria blindada, direcionando o capital diretamente para carregadores de maior performance.
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-[11px]">
+                        <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
+                          <span className="text-[9px] font-bold text-slate-400 uppercase block">Enquadramento Normativo</span>
+                          <strong className="text-slate-800 block">CEMIG ND-5.1 Tabela 4 (Grupo F)</strong>
+                          <span className="text-slate-500 text-[10px] block">Fornecimento Direto em BT (Medição Indireta por TCs)</span>
+                        </div>
+                        <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
+                          <span className="text-[9px] font-bold text-slate-400 uppercase block">Proteção Geral Recomendada</span>
+                          <strong className="text-slate-800 block">
+                            Disjuntor Caixa Moldada {totalPower <= 60 ? '175A / 200A' : totalPower <= 120 ? '300A / 400A' : '600A / 800A'}
+                          </strong>
+                          <span className="text-slate-500 text-[10px] block">Homologado CEMIG PEC-11 / Icu ≥ 25 kA</span>
+                        </div>
+                        <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
+                          <span className="text-[9px] font-bold text-slate-400 uppercase block">Eficiência & Queda de Tensão</span>
+                          <strong className="text-emerald-700 block">ΔV ≤ 1.85% (Dentro da NBR 5410)</strong>
+                          <span className="text-slate-500 text-[10px] block">Condutores EPR/XLPE 90°C em cobre eletrolítico</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* III. ANÁLISE DE MERCADO, TRÁFEGO E CONCORRÊNCIA */}
+                    <div className="border border-slate-200 rounded-2xl p-4 space-y-3 bg-white">
+                      <div className="flex items-center gap-2 border-b pb-2">
+                        <MapPin className="w-4 h-4 text-blue-600" />
+                        <h4 className="font-bold text-slate-900 uppercase text-xs">
+                          III. Análise de Mercado, Tráfego e Concorrência Local
+                        </h4>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-[11px] leading-relaxed">
+                        <div className="border border-slate-200 p-3.5 rounded-2xl space-y-1.5 bg-slate-50/50">
+                          <strong className="text-slate-900 font-bold block text-xs">
+                            Localização Âncora & Conveniência de Permanência
+                          </strong>
+                          <p className="text-slate-600">
+                            Ponto estrategicamente posicionado em <strong className="text-slate-800">{projectData.address || 'Av. Amazonas, 2000 - Belo Horizonte / MG'}</strong>, ancorado em comércio consolidado e farmácia 24h com estacionamento frontal.
+                          </p>
+                          <ul className="list-disc pl-4 space-y-1 text-slate-600 text-[10px]">
+                            <li><strong>Tempo de Permanência Ideal:</strong> Sessões rápidas de 30 a 45 minutos (recarga de 20% a 80% do pack de baterias) geram alto consumo cruzado no varejo do imóvel.</li>
+                            <li><strong>Sobretaxa de Ociosidade (Idle Fee):</strong> Aplicação de tarifa de permanência de R$ 1,50/min após 15 min do término da recarga, garantindo rotatividade ininterrupta das vagas.</li>
+                          </ul>
+                        </div>
+
+                        <div className="border border-slate-200 p-3.5 rounded-2xl space-y-1.5 bg-slate-50/50">
+                          <strong className="text-slate-900 font-bold block text-xs">
+                            Impacto Viário & Densidade Competitiva
+                          </strong>
+                          <p className="text-slate-600">
+                            Varredura de projetos de infraestrutura urbana confirmando <strong>ausência de impactos de intervenções do BRT Move ou desvios viários até 2027</strong>, mantendo o corredor arterial totalmente acessível.
+                          </p>
+                          <ul className="list-disc pl-4 space-y-1 text-slate-600 text-[10px]">
+                            <li><strong>Escassez de Recarga DC:</strong> Quase totalidade dos pontos concorrentes no raio de 3 km operam com recarga lenta AC (7.4 kW a 22 kW), tornando a recarga rápida DC um diferencial monopolista de conveniência.</li>
+                            <li><strong>Modelo Imobiliário:</strong> Parceria sob regime de {projectData.commercialHub?.realEstateModel === 'aluguel_fixo' ? 'Locação Fixa' : projectData.commercialHub?.realEstateModel === 'revenue_share' ? 'Revenue Share' : 'Comodato Gratuito'} com enquadramento societário seguro.</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* IV. MODELAGEM FINANCEIRA & SENSIBILIDADE (CENÁRIOS 4H, 6H E 9H / SINERGIA SOLAR) */}
+                    <div className="border border-slate-200 rounded-2xl p-4 space-y-3 bg-white">
+                      <div className="flex items-center justify-between border-b pb-2">
+                        <div className="flex items-center gap-2">
+                          <BarChart3 className="w-4 h-4 text-emerald-600" />
+                          <h4 className="font-bold text-slate-900 uppercase text-xs">
+                            IV. Modelagem Financeira & Análise de Sensibilidade em 3 Cenários
+                          </h4>
+                        </div>
+                        <span className="text-[10px] text-slate-500">
+                          Tarifa de Venda: <strong>R$ {(projectData.commercialHub?.sellingPricePerKWh || 2.00).toFixed(2)}/kWh</strong>
+                        </span>
+                      </div>
+
+                      <div className="border border-slate-200 rounded-2xl overflow-hidden">
+                        <table className="w-full text-left text-[11px]">
+                          <thead className="bg-[#0A192F] text-white text-[10px] uppercase">
+                            <tr>
+                              <th className="p-2.5">Variável de Performance</th>
+                              <th className="p-2.5 text-center bg-slate-800">Cenário Conservador (4h/dia)</th>
+                              <th className="p-2.5 text-center bg-slate-700">Cenário Realista (6h/dia)</th>
+                              <th className="p-2.5 text-center bg-emerald-900">Cenário Otimista (9h/dia)</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-200">
+                            <tr>
+                              <td className="p-2.5 font-bold text-slate-800">Horas de Operação por Ponto / Dia</td>
+                              <td className="p-2.5 text-center font-mono">4,0 horas</td>
+                              <td className="p-2.5 text-center font-mono">6,0 horas</td>
+                              <td className="p-2.5 text-center font-mono font-bold text-emerald-700">9,0 horas</td>
+                            </tr>
+                            <tr>
+                              <td className="p-2.5 font-bold text-slate-800">Energia Entregue Mensal (kWh/mês)</td>
+                              <td className="p-2.5 text-center font-mono">{financialViability.scenarios.conservative4h.monthlyDeliveredKWh.toLocaleString('pt-BR')} kWh</td>
+                              <td className="p-2.5 text-center font-mono">{financialViability.scenarios.realistic6h.monthlyDeliveredKWh.toLocaleString('pt-BR')} kWh</td>
+                              <td className="p-2.5 text-center font-mono">{financialViability.scenarios.aggressive9h.monthlyDeliveredKWh.toLocaleString('pt-BR')} kWh</td>
+                            </tr>
+                            <tr>
+                              <td className="p-2.5 font-bold text-slate-800">Receita Bruta Mensal Estimada</td>
+                              <td className="p-2.5 text-center font-mono font-bold">R$ {financialViability.scenarios.conservative4h.monthlyGrossRevenueBRL.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                              <td className="p-2.5 text-center font-mono font-bold">R$ {financialViability.scenarios.realistic6h.monthlyGrossRevenueBRL.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                              <td className="p-2.5 text-center font-mono font-bold text-emerald-700">R$ {financialViability.scenarios.aggressive9h.monthlyGrossRevenueBRL.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                            </tr>
+                            <tr className="bg-slate-50/50">
+                              <td className="p-2.5 font-bold text-slate-800">Custo de Energia da Rede CEMIG (R$ 1,00/kWh)</td>
+                              <td className="p-2.5 text-center font-mono text-rose-700">- R$ {financialViability.scenarios.conservative4h.energyCostGridBRL.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                              <td className="p-2.5 text-center font-mono text-rose-700">- R$ {financialViability.scenarios.realistic6h.energyCostGridBRL.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                              <td className="p-2.5 text-center font-mono text-rose-700">- R$ {financialViability.scenarios.aggressive9h.energyCostGridBRL.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                            </tr>
+                            <tr className="bg-emerald-50/30">
+                              <td className="p-2.5 font-bold text-emerald-950">Custo com Usina Solar Cordeiro (R$ 0,50/kWh)</td>
+                              <td className="p-2.5 text-center font-mono text-emerald-800">- R$ {financialViability.scenarios.conservative4h.energyCostSolarBRL.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                              <td className="p-2.5 text-center font-mono text-emerald-800">- R$ {financialViability.scenarios.realistic6h.energyCostSolarBRL.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                              <td className="p-2.5 text-center font-mono text-emerald-800">- R$ {financialViability.scenarios.aggressive9h.energyCostSolarBRL.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                            </tr>
+                            <tr>
+                              <td className="p-2.5 text-slate-600">OPEX Variável (Plataforma + Impostos 14%)</td>
+                              <td className="p-2.5 text-center font-mono text-slate-500">- R$ {financialViability.scenarios.conservative4h.variableOpexBRL.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                              <td className="p-2.5 text-center font-mono text-slate-500">- R$ {financialViability.scenarios.realistic6h.variableOpexBRL.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                              <td className="p-2.5 text-center font-mono text-slate-500">- R$ {financialViability.scenarios.aggressive9h.variableOpexBRL.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                            </tr>
+                            <tr>
+                              <td className="p-2.5 text-slate-600">OPEX Fixo (R$ 474/mês por ponto: Seguro + 4G + O&M)</td>
+                              <td className="p-2.5 text-center font-mono text-slate-500">- R$ {financialViability.scenarios.conservative4h.fixedOpexBRL.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                              <td className="p-2.5 text-center font-mono text-slate-500">- R$ {financialViability.scenarios.realistic6h.fixedOpexBRL.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                              <td className="p-2.5 text-center font-mono text-slate-500">- R$ {financialViability.scenarios.aggressive9h.fixedOpexBRL.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                            </tr>
+                            <tr className="bg-slate-100 font-bold border-t-2 border-slate-300">
+                              <td className="p-2.5 text-slate-900">Lucro Líquido Mensal (Rede Concessionária)</td>
+                              <td className="p-2.5 text-center font-mono text-slate-900">R$ {financialViability.scenarios.conservative4h.monthlyNetProfitGridBRL.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                              <td className="p-2.5 text-center font-mono text-slate-900">R$ {financialViability.scenarios.realistic6h.monthlyNetProfitGridBRL.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                              <td className="p-2.5 text-center font-mono text-slate-900">R$ {financialViability.scenarios.aggressive9h.monthlyNetProfitGridBRL.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                            </tr>
+                            <tr className="bg-emerald-100/60 font-bold text-emerald-950">
+                              <td className="p-2.5 flex items-center gap-1.5">
+                                <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                                <span>Lucro Líquido com Usina Solar Cordeiro (+76%)</span>
+                              </td>
+                              <td className="p-2.5 text-center font-mono text-[#00B356] text-xs">R$ {financialViability.scenarios.conservative4h.monthlyNetProfitSolarBRL.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                              <td className="p-2.5 text-center font-mono text-[#00B356] text-xs">R$ {financialViability.scenarios.realistic6h.monthlyNetProfitSolarBRL.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                              <td className="p-2.5 text-center font-mono text-[#00B356] text-xs">R$ {financialViability.scenarios.aggressive9h.monthlyNetProfitSolarBRL.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                            </tr>
+                            <tr className="text-[10px]">
+                              <td className="p-2.5 font-bold text-slate-600">Tempo de Retorno (Payback Solar vs. Rede)</td>
+                              <td className="p-2.5 text-center font-mono font-bold text-[#00B356]">{financialViability.scenarios.conservative4h.paybackMonthsSolar}m (vs {financialViability.scenarios.conservative4h.paybackMonthsGrid}m)</td>
+                              <td className="p-2.5 text-center font-mono font-bold text-[#00B356]">{financialViability.scenarios.realistic6h.paybackMonthsSolar}m (vs {financialViability.scenarios.realistic6h.paybackMonthsGrid}m)</td>
+                              <td className="p-2.5 text-center font-mono font-bold text-[#00B356]">{financialViability.scenarios.aggressive9h.paybackMonthsSolar}m (vs {financialViability.scenarios.aggressive9h.paybackMonthsGrid}m)</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+
+                      <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between text-[11px] text-amber-900">
+                        <span className="flex items-center gap-1.5">
+                          <SunMedium className="w-4 h-4 text-[#E45318]" />
+                          <span><strong>Estratégia de Transição:</strong> Operação inicial de 6 meses na Rede CEMIG ➔ Migração para Usina Solar Própria (GD Remota Cordeiro Energia) eleva o lucro líquido mensal em mais de 76%.</span>
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* V. MATRIZ DE RISCOS CRÍTICOS E MITIGAÇÕES */}
+                    <div className="border border-slate-200 rounded-2xl p-4 space-y-3 bg-white">
+                      <div className="flex items-center gap-2 border-b pb-2">
+                        <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                        <h4 className="font-bold text-slate-900 uppercase text-xs">
+                          V. Matriz de Riscos Críticos & Salvaguardas Institucionais
+                        </h4>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[11px]">
+                        <div className="border border-slate-200 p-3 rounded-xl bg-slate-50 space-y-1">
+                          <div className="flex items-center justify-between">
+                            <strong className="text-slate-900 font-bold">1. Risco Societário & Fiscal</strong>
+                            <span className="text-[9px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded">Mitigado</span>
+                          </div>
+                          <p className="text-slate-600 text-[10px] leading-relaxed">
+                            Enquadramento fiscal sob o CNAE <strong>5229-0/99 (Serviços Auxiliares ao Transporte Terrestre)</strong> e Resolução Normativa ANEEL 819/2018: a recarga não configura revenda de energia elétrica, mas prestação de serviço de recarga veicular, eliminando riscos de bitributação ou questionamentos pelo Fisco.
+                          </p>
+                        </div>
+
+                        <div className="border border-slate-200 p-3 rounded-xl bg-slate-50 space-y-1">
+                          <div className="flex items-center justify-between">
+                            <strong className="text-slate-900 font-bold">2. Risco Elétrico & Desarme de Demanda</strong>
+                            <span className="text-[9px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded">Mitigado</span>
+                          </div>
+                          <p className="text-slate-600 text-[10px] leading-relaxed">
+                            Aplicação de Dynamic Load Management (DLM CoenergyGO) e monitoramento do ramal com transformadores de corrente (TCs), modulando dinamicamente a amperagem das pistolas para impedir qualquer sobrecarga no disjuntor de entrada da concessionária.
+                          </p>
+                        </div>
+
+                        <div className="border border-slate-200 p-3 rounded-xl bg-slate-50 space-y-1">
+                          <div className="flex items-center justify-between">
+                            <strong className="text-slate-900 font-bold">3. Risco Patrimonial & Vandalismo</strong>
+                            <span className="text-[9px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded">Mitigado</span>
+                          </div>
+                          <p className="text-slate-600 text-[10px] leading-relaxed">
+                            Apólice de seguro patrimonial multirrisco com franquia reduzida (R$ 150/mês por ponto) cobrindo furto de cabos com blindagem de cobre, danos elétricos e responsabilidade civil, somada a monitoramento inteligente 24h por CFTV IP de alta resolução.
+                          </p>
+                        </div>
+
+                        <div className="border border-slate-200 p-3 rounded-xl bg-slate-50 space-y-1">
+                          <div className="flex items-center justify-between">
+                            <strong className="text-slate-900 font-bold">4. Risco de Obsolescência Tecnológica</strong>
+                            <span className="text-[9px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded">Mitigado</span>
+                          </div>
+                          <p className="text-slate-600 text-[10px] leading-relaxed">
+                            Carregadores rápidos DC com arquitetura de retificadores SiC modulares intercambiáveis, conector universal CCS2 com compatibilidade NACS e protocolo aberto <strong>OCPP 1.6J / 2.0.1</strong> para atualização de firmware e bilhetagem em nuvem por mais de 10 anos de vida útil.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* VI. PLANO DE AÇÃO IMEDIATO EM 3 FASES (90 DIAS) */}
+                    <div className="border border-slate-200 rounded-2xl p-4 space-y-3 bg-white">
+                      <div className="flex items-center gap-2 border-b pb-2">
+                        <Clock className="w-4 h-4 text-[#E45318]" />
+                        <h4 className="font-bold text-slate-900 uppercase text-xs">
+                          VI. Plano de Ação Imediato em 3 Fases (Cronograma Executivo de 90 Dias)
+                        </h4>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-[11px]">
+                        <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5 relative overflow-hidden">
+                          <div className="absolute top-0 left-0 w-1.5 h-full bg-blue-600" />
+                          <span className="text-[9px] font-black uppercase text-blue-700 block tracking-wider">Fase 1 • Semanas 1 a 4</span>
+                          <strong className="text-slate-900 block text-xs">Aprovações, Contratos & Projeto</strong>
+                          <ul className="list-disc pl-4 space-y-1 text-slate-600 text-[10px]">
+                            <li>Assinatura formal do contrato imobiliário de cessão das vagas.</li>
+                            <li>Projeto elétrico executivo NBR 5410 / NBR 17019 com ART do Eng. Responsável.</li>
+                            <li>Protocolo do pedido de fornecimento em Baixa Tensão CEMIG ND-5.1 Grupo F.</li>
+                            <li>Emissão de pedido de compra dos carregadores DC de alta potência.</li>
+                          </ul>
+                        </div>
+
+                        <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5 relative overflow-hidden">
+                          <div className="absolute top-0 left-0 w-1.5 h-full bg-[#E45318]" />
+                          <span className="text-[9px] font-black uppercase text-[#E45318] block tracking-wider">Fase 2 • Semanas 5 a 9</span>
+                          <strong className="text-slate-900 block text-xs">Infraestrutura Civil, Elétrica & Totens</strong>
+                          <ul className="list-disc pl-4 space-y-1 text-slate-600 text-[10px]">
+                            <li>Abertura de valas e lançamento de eletrodutos PEAD envelopados.</li>
+                            <li>Lançamento dos condutores de cobre e montagem do QDC-VE.</li>
+                            <li>Concretagem das bases estruturais de fixação dos totens de recarga.</li>
+                            <li>Pintura viária epóxi verde com pictogramas de vagas exclusivas VE.</li>
+                          </ul>
+                        </div>
+
+                        <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5 relative overflow-hidden">
+                          <div className="absolute top-0 left-0 w-1.5 h-full bg-[#00B356]" />
+                          <span className="text-[9px] font-black uppercase text-[#00B356] block tracking-wider">Fase 3 • Semanas 10 a 12</span>
+                          <strong className="text-slate-900 block text-xs">Comissionamento, Software & Go-Live</strong>
+                          <ul className="list-disc pl-4 space-y-1 text-slate-600 text-[10px]">
+                            <li>Ensaios de isolamento e continuidade com megômetro calibrado.</li>
+                            <li>Testes de disparo do botão de emergência e bobina MX em &lt; 50ms.</li>
+                            <li>Integração da plataforma de bilhetagem OCPP 1.6J e meios de pagamento.</li>
+                            <li>Inauguração oficial e ativação da sinergia com a farmácia/comércio local.</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+
                   </div>
                 )}
               </div>

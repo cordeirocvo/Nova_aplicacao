@@ -4,11 +4,6 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
 export async function GET() {
-  const session: any = await getServerSession(authOptions as any);
-  if (!session?.user?.canAccessBudgets && session?.user?.role !== "ADMIN") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   try {
     const itens = await prisma.orcamentoItemPadrao.findMany({
       orderBy: { descricao: "asc" }

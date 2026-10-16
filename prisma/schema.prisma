@@ -615,14 +615,18 @@ model OrcamentoItem {
 }
 
 model OrcamentoItemPadrao {
-  id                String   @id @default(cuid())
-  codigo            String?
-  descricao         String
-  tipo              String
-  unidade           String
-  precoBaseUnitario Float?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id                        String   @id @default(cuid())
+  codigo                    String?
+  descricao                 String
+  tipo                      String
+  unidade                   String
+  precoBaseUnitario         Float?
+  menorPreco                Float?
+  fornecedorMenorPreco      String?
+  numeroOrcamentoMenorPreco String?
+  dataUltimaCotacao         DateTime?
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
 }
 
 model OrcamentoTipoMaterial {
@@ -634,18 +638,60 @@ model OrcamentoTipoMaterial {
 }
 
 model CemigMaterialPreco {
-  id            String              @id @default(cuid())
-  codigo        String              @unique
-  descricao     String
-  categoria     String              // "POSTE", "CONDUTOR", "ELETRODUTO", "CAIXA", "DISJUNTOR", "ATERRAMENTO", "FERRAGEM", "ACESSORIO", "MAO_DE_OBRA"
-  unidade       String              // "un", "m", "kg", "cj"
-  precoUnitario Float
-  observacao    String?
-  ativo         Boolean             @default(true)
-  createdAt     DateTime            @default(now())
-  updatedAt     DateTime            @updatedAt
+  id                        String              @id @default(cuid())
+  codigo                    String              @unique
+  descricao                 String
+  categoria                 String              // "POSTE", "CONDUTOR", "ELETRODUTO", "CAIXA", "DISJUNTOR", "ATERRAMENTO", "FERRAGEM", "ACESSORIO", "MAO_DE_OBRA"
+  unidade                   String              // "un", "m", "kg", "cj"
+  precoUnitario             Float
+  menorPreco                Float?
+  fornecedorMenorPreco      String?
+  numeroOrcamentoMenorPreco String?
+  dataUltimaCotacao         DateTime?
+  observacao                String?
+  ativo                     Boolean             @default(true)
+  createdAt                 DateTime            @default(now())
+  updatedAt                 DateTime            @updatedAt
   
   itensProposta CemigPropostaItem[]
+}
+
+model MaterialAlias {
+  id                  String   @id @default(cuid())
+  fornecedorNome      String?
+  fornecedorCnpj      String?
+  codigoFornecedor    String?
+  descricaoFornecedor String
+  codigoOficial       String
+  descricaoOficial    String?
+  confianca           Float    @default(1.0)
+  origem              String   @default("USUARIO")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([fornecedorNome])
+  @@index([codigoFornecedor])
+  @@index([descricaoFornecedor])
+  @@index([codigoOficial])
+}
+
+model CotacaoHistorico {
+  id              String   @id @default(cuid())
+  codigoOficial   String
+  fornecedorNome  String
+  fornecedorCnpj  String?
+  numeroOrcamento String?
+  dataOrcamento   DateTime?
+  precoUnitario   Float
+  quantidade      Float?
+  unidade         String?
+  marca           String?
+  arquivoUrl      String?
+  createdAt       DateTime @default(now())
+
+  @@index([codigoOficial])
+  @@index([fornecedorNome])
+  @@index([createdAt])
 }
 
 model CemigPropostaPadrao {

@@ -56,17 +56,17 @@ const CABLE_SPECS: AmpacityRow[] = [
   { gaugeMM2: 2.5,  outerDiameterMM: 3.6,  areaExternalMM2: 10.2,  b1_2cond: 24,   b1_3cond: 21,   b2_2cond: 21,   b2_3cond: 18.5, c_2cond: 27,   c_3cond: 24 },
   { gaugeMM2: 4.0,  outerDiameterMM: 4.2,  areaExternalMM2: 13.9,  b1_2cond: 32,   b1_3cond: 28,   b2_2cond: 28,   b2_3cond: 25,   c_2cond: 37,   c_3cond: 32 },
   { gaugeMM2: 6.0,  outerDiameterMM: 4.8,  areaExternalMM2: 18.1,  b1_2cond: 41,   b1_3cond: 36,   b2_2cond: 36,   b2_3cond: 32,   c_2cond: 48,   c_3cond: 41 },
-  { gaugeMM2: 10.0, outerDiameterMM: 6.0,  areaExternalMM2: 28.3,  b1_2cond: 57,   b1_3cond: 50,   b2_2cond: 50,   b2_3cond: 44,   c_2cond: 66,   c_3cond: 57, al_b1_3cond: 38, al_aereo_3cond: 48 },
-  { gaugeMM2: 16.0, outerDiameterMM: 7.2,  areaExternalMM2: 40.7,  b1_2cond: 76,   b1_3cond: 68,   b2_2cond: 68,   b2_3cond: 60,   c_2cond: 89,   c_3cond: 76, al_b1_3cond: 53, al_aereo_3cond: 68 },
-  { gaugeMM2: 25.0, outerDiameterMM: 9.0,  areaExternalMM2: 63.6,  b1_2cond: 101,  b1_3cond: 89,   b2_2cond: 89,   b2_3cond: 77,   c_2cond: 118,  c_3cond: 101, al_b1_3cond: 70, al_aereo_3cond: 92 },
-  { gaugeMM2: 35.0, outerDiameterMM: 10.4, areaExternalMM2: 85.0,  b1_2cond: 125,  b1_3cond: 110,  b2_2cond: 110,  b2_3cond: 97,   c_2cond: 145,  c_3cond: 125, al_b1_3cond: 86, al_aereo_3cond: 115 },
-  { gaugeMM2: 50.0, outerDiameterMM: 12.2, areaExternalMM2: 116.9, b1_2cond: 151,  b1_3cond: 134,  b2_2cond: 134,  b2_3cond: 118,  c_2cond: 175,  c_3cond: 151, al_b1_3cond: 104, al_aereo_3cond: 142 },
-  { gaugeMM2: 70.0, outerDiameterMM: 14.2, areaExternalMM2: 158.4, b1_2cond: 192,  b1_3cond: 171,  b2_2cond: 171,  b2_3cond: 151,  c_2cond: 222,  c_3cond: 192, al_b1_3cond: 133, al_aereo_3cond: 185 },
-  { gaugeMM2: 95.0, outerDiameterMM: 16.4, areaExternalMM2: 211.2, b1_2cond: 232,  b1_3cond: 207,  b2_2cond: 207,  b2_3cond: 182,  c_2cond: 269,  c_3cond: 232, al_b1_3cond: 161, al_aereo_3cond: 228 },
-  { gaugeMM2: 120.0, outerDiameterMM: 18.2, areaExternalMM2: 260.2, b1_2cond: 269, b1_3cond: 239,  b2_2cond: 239,  b2_3cond: 210,  c_2cond: 312,  c_3cond: 269, al_b1_3cond: 186, al_aereo_3cond: 267 },
-  { gaugeMM2: 150.0, outerDiameterMM: 20.4, areaExternalMM2: 326.9, b1_2cond: 300, b1_3cond: 272,  b2_2cond: 272,  b2_3cond: 240,  c_2cond: 358,  c_3cond: 309, al_b1_3cond: 211, al_aereo_3cond: 308 },
-  { gaugeMM2: 185.0, outerDiameterMM: 22.8, areaExternalMM2: 408.3, b1_2cond: 341, b1_3cond: 310,  b2_2cond: 310,  b2_3cond: 273,  c_2cond: 408,  c_3cond: 353, al_b1_3cond: 240, al_aereo_3cond: 356 },
-  { gaugeMM2: 240.0, outerDiameterMM: 26.0, areaExternalMM2: 530.9, b1_2cond: 400, b1_3cond: 364,  b2_2cond: 364,  b2_3cond: 321,  c_2cond: 481,  c_3cond: 415, al_b1_3cond: 282, al_aereo_3cond: 425 }
+  { gaugeMM2: 10.0, outerDiameterMM: 6.0,  areaExternalMM2: 28.3,  b1_2cond: 57,   b1_3cond: 50,   b2_2cond: 50,   b2_3cond: 44,   c_2cond: 66,   c_3cond: 57, al_b1_3cond: 38, al_aereo_3cond: 55 },
+  { gaugeMM2: 16.0, outerDiameterMM: 7.2,  areaExternalMM2: 40.7,  b1_2cond: 76,   b1_3cond: 68,   b2_2cond: 68,   b2_3cond: 60,   c_2cond: 89,   c_3cond: 76, al_b1_3cond: 53, al_aereo_3cond: 78 },
+  { gaugeMM2: 25.0, outerDiameterMM: 9.0,  areaExternalMM2: 63.6,  b1_2cond: 101,  b1_3cond: 89,   b2_2cond: 89,   b2_3cond: 77,   c_2cond: 118,  c_3cond: 101, al_b1_3cond: 70, al_aereo_3cond: 105 },
+  { gaugeMM2: 35.0, outerDiameterMM: 10.4, areaExternalMM2: 85.0,  b1_2cond: 125,  b1_3cond: 110,  b2_2cond: 110,  b2_3cond: 97,   c_2cond: 145,  c_3cond: 125, al_b1_3cond: 86, al_aereo_3cond: 130 },
+  { gaugeMM2: 50.0, outerDiameterMM: 12.2, areaExternalMM2: 116.9, b1_2cond: 151,  b1_3cond: 134,  b2_2cond: 134,  b2_3cond: 118,  c_2cond: 175,  c_3cond: 151, al_b1_3cond: 104, al_aereo_3cond: 160 },
+  { gaugeMM2: 70.0, outerDiameterMM: 14.2, areaExternalMM2: 158.4, b1_2cond: 192,  b1_3cond: 171,  b2_2cond: 171,  b2_3cond: 151,  c_2cond: 222,  c_3cond: 192, al_b1_3cond: 133, al_aereo_3cond: 205 },
+  { gaugeMM2: 95.0, outerDiameterMM: 16.4, areaExternalMM2: 211.2, b1_2cond: 232,  b1_3cond: 207,  b2_2cond: 207,  b2_3cond: 182,  c_2cond: 269,  c_3cond: 232, al_b1_3cond: 161, al_aereo_3cond: 250 },
+  { gaugeMM2: 120.0, outerDiameterMM: 18.2, areaExternalMM2: 260.2, b1_2cond: 269, b1_3cond: 239,  b2_2cond: 239,  b2_3cond: 210,  c_2cond: 312,  c_3cond: 269, al_b1_3cond: 186, al_aereo_3cond: 290 },
+  { gaugeMM2: 150.0, outerDiameterMM: 20.4, areaExternalMM2: 326.9, b1_2cond: 300, b1_3cond: 272,  b2_2cond: 272,  b2_3cond: 240,  c_2cond: 358,  c_3cond: 309, al_b1_3cond: 211, al_aereo_3cond: 330 },
+  { gaugeMM2: 185.0, outerDiameterMM: 22.8, areaExternalMM2: 408.3, b1_2cond: 341, b1_3cond: 310,  b2_2cond: 310,  b2_3cond: 273,  c_2cond: 408,  c_3cond: 353, al_b1_3cond: 240, al_aereo_3cond: 380 },
+  { gaugeMM2: 240.0, outerDiameterMM: 26.0, areaExternalMM2: 530.9, b1_2cond: 400, b1_3cond: 364,  b2_2cond: 364,  b2_3cond: 321,  c_2cond: 481,  c_3cond: 415, al_b1_3cond: 282, al_aereo_3cond: 450 }
 ];
 
 // Eletrodutos comerciais de PVC / Aço Galvanizado (Diâmetro interno útil mm)
@@ -261,7 +261,9 @@ export function sizeCableAndConduitSection(params: {
     }
   }
 
-  // 2. Critério de Queda de Tensão (NBR 5410 / NBR 17019: máx 2.0% trecho parcial)
+  // 2. Critério de Queda de Tensão (NBR 5410 / NBR 17019: máx 2.0% a 3.0% trecho parcial)
+  const initialAmpacityGauge = selectedSpec.gaugeMM2;
+  const initialAmpacityA = ampacityPerCable;
   let cableGaugePhaseMM2 = selectedSpec.gaugeMM2;
   let voltageDropPercent = 0;
   let voltageDropVolts = 0;
@@ -281,6 +283,21 @@ export function sizeCableAndConduitSection(params: {
       voltageDropVolts = Number(vDrop.toFixed(2));
       voltageDropPercent = Number(pDrop.toFixed(2));
       selectedSpec = spec;
+
+      // Atualiza a ampacidade nominal de tabela para corresponder rigorosamente à nova bitola
+      let cap = isThreePhase ? spec.b1_3cond : spec.b1_2cond;
+      if (installationMethod === 'B2') cap = isThreePhase ? spec.b2_3cond : spec.b2_2cond;
+      else if (installationMethod === 'C') cap = isThreePhase ? spec.c_3cond : spec.c_2cond;
+      else if (isAerial) cap = isThreePhase ? (spec.c_3cond * 1.15) : (spec.c_2cond * 1.15);
+
+      if (isAluminum) {
+        if (isAerial) {
+          cap = spec.al_aereo_3cond || Math.round(cap * 0.85);
+        } else {
+          cap = spec.al_b1_3cond || Math.round(cap * 0.78);
+        }
+      }
+      ampacityPerCable = cap;
       break;
     }
   }
@@ -328,9 +345,14 @@ export function sizeCableAndConduitSection(params: {
     ? `Ib = P / (√3 × V × cos φ) = ${(powerKW ? powerKW * 1000 : designCurrentA * Math.sqrt(3) * voltageV * cosPhi).toFixed(0)}W / (1.732 × ${voltageV}V × ${cosPhi}) = ${designCurrentA.toFixed(1)} A`
     : `Ib = P / (V × cos φ) = ${designCurrentA.toFixed(1)} A`;
 
+  const isGaugeIncreasedByVoltageDrop = cableGaugePhaseMM2 > initialAmpacityGauge;
+  const reasonText = isGaugeIncreasedByVoltageDrop
+    ? ` (Nota Técnica: Pelo critério de ampacidade pura da NBR 5410, a bitola de ${initialAmpacityGauge}mm² com Iz = ${initialAmpacityA}A já atenderia à corrente Ib = ${designCurrentA.toFixed(1)}A. A bitola foi elevada para ${cableGaugePhaseMM2}mm² com Iz = ${totalAmpacityA}A exclusivamente para atender ao limite de Queda de Tensão máxima de ${maxAllowedVoltageDropPercent}% em virtude da distância de ${distanceTotalM}m a ${voltageV}V).`
+    : '';
+
   const formulaAmpacity = chosenConductors > 1
-    ? `Critério de Ampacidade: ${chosenConductors} vias em paralelo de ${matLabel}. ${methodLabel}. Temperatura: ${tempRef}, Agrupamento: ${groupedNote}. Fator de Correção Total FCT × FCA = ${(FCT * FCA).toFixed(2)}. Corrente de projeto por via: Ib/via = ${designCurrentA.toFixed(1)}A / ${chosenConductors} = ${(designCurrentA / chosenConductors).toFixed(1)}A. Capacidade nominal de tabela: ${ampacityPerCable}A por cabo. Capacidade corrigida total: Iz = ${chosenConductors} × (${ampacityPerCable}A × ${(FCT * FCA).toFixed(2)}) = ${totalAmpacityA}A (≥ Ib ${designCurrentA.toFixed(1)}A — CONFORME).`
-    : `Critério de Ampacidade: 1 condutor por fase de ${matLabel}. ${methodLabel}. Temperatura: ${tempRef}, Agrupamento: ${groupedNote}. Fator de Correção Total FCT × FCA = ${(FCT * FCA).toFixed(2)}. Cabo ${cableGaugePhaseMM2}mm² possui capacidade nominal de ${ampacityPerCable}A. Capacidade corrigida Iz = ${ampacityPerCable}A × ${(FCT * FCA).toFixed(2)} = ${totalAmpacityA}A (≥ Ib ${designCurrentA.toFixed(1)}A — CONFORME).`;
+    ? `Critério de Ampacidade: ${chosenConductors} vias em paralelo de ${matLabel}. ${methodLabel}. Temperatura: ${tempRef}, Agrupamento: ${groupedNote}. Fator de Correção Total FCT × FCA = ${(FCT * FCA).toFixed(2)}. Corrente de projeto por via: Ib/via = ${designCurrentA.toFixed(1)}A / ${chosenConductors} = ${(designCurrentA / chosenConductors).toFixed(1)}A. Capacidade nominal de tabela: ${ampacityPerCable}A por cabo. Capacidade corrigida total: Iz = ${chosenConductors} × (${ampacityPerCable}A × ${(FCT * FCA).toFixed(2)}) = ${totalAmpacityA}A (≥ Ib ${designCurrentA.toFixed(1)}A — CONFORME).${reasonText}`
+    : `Critério de Ampacidade: 1 condutor por fase de ${matLabel}. ${methodLabel}. Temperatura: ${tempRef}, Agrupamento: ${groupedNote}. Fator de Correção Total FCT × FCA = ${(FCT * FCA).toFixed(2)}. Cabo ${cableGaugePhaseMM2}mm² possui capacidade nominal de ${ampacityPerCable}A. Capacidade corrigida Iz = ${ampacityPerCable}A × ${(FCT * FCA).toFixed(2)} = ${totalAmpacityA}A (≥ Ib ${designCurrentA.toFixed(1)}A — CONFORME).${reasonText}`;
 
   const formulaVoltageDrop = isThreePhase
     ? `ΔV = (√3 × ρ_${isAluminum ? 'Al' : 'Cu'} × L × Ib × cos φ) / S_eq = (1.732 × ${resistivity} × ${distanceTotalM}m × ${designCurrentA.toFixed(1)}A × ${cosPhi}) / (${cableGaugePhaseMM2} × ${chosenConductors}mm²) = ${voltageDropVolts}V (${voltageDropPercent}% ≤ ${maxAllowedVoltageDropPercent}% - CONFORME).`
@@ -920,7 +942,7 @@ export function calculateChainTopology(params: ChainTopologyInputParams): ChainT
     voltageV: gridSupplyVoltage,
     conductorMaterial: section1ConductorMaterial,
     installationMethod: section1InstallationMethod,
-    maxAllowedVoltageDropPercent: 1.5,
+    maxAllowedVoltageDropPercent: 2.5,
     includeNeutral: true,
     minGaugeMM2: section1ConductorMaterial === 'aluminum' ? Math.max(16, standardMinGaugeMM2) : standardMinGaugeMM2,
     minConductorsPerPhase: standardConductorsPerPhase,

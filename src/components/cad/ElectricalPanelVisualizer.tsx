@@ -83,29 +83,8 @@ export default function ElectricalPanelVisualizer() {
           </p>
         </div>
 
-        {/* Abas, Alternador de Tema Ergonômico e Botão CAD */}
+        {/* Abas e Botão CAD */}
         <div className="flex items-center gap-2 flex-wrap">
-          {/* Seletor do Modo de Exibição (Reversível) */}
-          <div className="bg-slate-800/80 p-1 rounded-xl flex gap-1 border border-slate-700">
-            <button
-              onClick={() => setUiMode("STUDIO_DARK")}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
-                isDark ? "bg-amber-500/20 text-amber-300 border border-amber-500/30" : "text-slate-400 hover:text-white"
-              }`}
-              title="Interface escura ergonômica com contraste WCAG AAA para menor fadiga visual"
-            >
-              🌙 Studio Ergonômico
-            </button>
-            <button
-              onClick={() => setUiMode("CLASSIC")}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
-                !isDark ? "bg-white text-slate-900 shadow-sm" : "text-slate-400 hover:text-white"
-              }`}
-              title="Voltar ao layout clássico original a qualquer momento"
-            >
-              ☀️ Modo Clássico
-            </button>
-          </div>
 
           <div className="bg-slate-800 p-1 rounded-xl flex gap-1 border border-slate-700">
             <button

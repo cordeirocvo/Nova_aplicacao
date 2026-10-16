@@ -28,7 +28,7 @@ export default function ChargerCatalogSelector({
   onRemoveCharger
 }: ChargerCatalogSelectorProps) {
   // Estados de navegação e filtros
-  const [activeBrandFilter, setActiveBrandFilter] = useState<"ALL" | "WEG" | "BENY" | "AC" | "DC">("ALL");
+  const [activeBrandFilter, setActiveBrandFilter] = useState<"ALL" | "BENY" | "WEG" | "ABB" | "ENEL_X" | "SCHNEIDER" | "OEM" | "AC" | "DC">("ALL");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDatasheet, setSelectedDatasheet] = useState<ChargerDatasheet | null>(null);
   const [showManualModal, setShowManualModal] = useState(false);
@@ -64,6 +64,10 @@ export default function ChargerCatalogSelector({
     // Filtro de marca / tipo
     if (activeBrandFilter === "WEG" && item.brand !== "WEG") return false;
     if (activeBrandFilter === "BENY" && item.brand !== "BENY") return false;
+    if (activeBrandFilter === "ABB" && item.brand !== "ABB") return false;
+    if (activeBrandFilter === "ENEL_X" && item.brand !== "ENEL_X") return false;
+    if (activeBrandFilter === "SCHNEIDER" && item.brand !== "SCHNEIDER") return false;
+    if (activeBrandFilter === "OEM" && !["BYD", "GWM", "VOLVO"].includes(item.brand)) return false;
     if (activeBrandFilter === "AC" && (item.powerKW > 44 || item.connectorType.includes("CCS"))) return false;
     if (activeBrandFilter === "DC" && (item.powerKW <= 44 && !item.connectorType.includes("CCS"))) return false;
 
@@ -97,6 +101,12 @@ export default function ChargerCatalogSelector({
       efficiencyPercent: model.efficiencyPercent,
       powerFactor: model.powerFactor,
       thdiPercent: model.thdiPercent,
+      hasDLMSupport: model.hasDLMSupport,
+      dlmType: model.dlmType,
+      cableLengthMeters: model.cableLengthMeters,
+      operatingTempRange: model.operatingTempRange,
+      displayType: model.displayType,
+      rfidNfcReader: model.rfidNfcReader,
       datasheet: model
     };
     onAddCharger(newCharger);
@@ -442,11 +452,15 @@ export default function ChargerCatalogSelector({
         {/* Filtros por Fabricante e Tipo */}
         <div className="flex flex-wrap items-center gap-1.5 border-b border-slate-100 pb-2">
           {[
-            { id: "ALL", label: "Todos os Modelos" },
-            { id: "WEG", label: "WEG WEMOB (Easy / Wall / Parking / Station / HPC)" },
+            { id: "ALL", label: "Todos os Fabricantes" },
             { id: "BENY", label: "BENY Electric (BCP / BDC Fast)" },
-            { id: "AC", label: "Somente AC (7.4 kW a 44 kW)" },
-            { id: "DC", label: "Somente DC Rápido (30 kW a 320 kW)" }
+            { id: "WEG", label: "WEG WEMOB (Easy / Wall / Parking / Station / HPC)" },
+            { id: "ABB", label: "ABB E-mobility (Terra AC / DC)" },
+            { id: "ENEL_X", label: "Enel X Way (JuiceBox / JuicePump)" },
+            { id: "SCHNEIDER", label: "Schneider (EVlink Pro / Fast)" },
+            { id: "OEM", label: "Montadoras (BYD / GWM / Volvo)" },
+            { id: "AC", label: "Somente AC (7.4 a 44 kW)" },
+            { id: "DC", label: "Somente DC Rápido (20 a 320 kW)" }
           ].map((tab) => (
             <button
               key={tab.id}
@@ -474,15 +488,22 @@ export default function ChargerCatalogSelector({
                 className="p-3.5 rounded-2xl border border-slate-200/80 bg-white hover:border-slate-300 hover:shadow-xs transition-all flex flex-col justify-between gap-2.5"
               >
                 <div>
-                  <div className="flex items-center justify-between gap-1">
+                  <div className="flex items-center justify-between gap-1 flex-wrap">
                     <span className="text-[10px] font-black uppercase text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
                       {item.brand} • {item.series}
                     </span>
-                    <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded ${
-                      isDC ? "bg-amber-100 text-amber-800" : "bg-blue-100 text-blue-800"
-                    }`}>
-                      {item.powerKW} kW {isDC ? "DC" : "AC"}
-                    </span>
+                    <div className="flex items-center gap-1">
+                      {item.hasDLMSupport && (
+                        <span className="text-[9px] font-bold uppercase bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.5 rounded" title="Suporte nativo a Gestão Dinâmica de Carga">
+                          DLM {item.dlmType === 'hardware_local' ? 'TC Local' : item.dlmType === 'network_local' ? 'LAN' : 'Cloud'}
+                        </span>
+                      )}
+                      <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded ${
+                        isDC ? "bg-amber-100 text-amber-800" : "bg-blue-100 text-blue-800"
+                      }`}>
+                        {item.powerKW} kW {isDC ? "DC" : "AC"}
+                      </span>
+                    </div>
                   </div>
 
                   <h4 className="font-bold text-xs text-[#0A192F] mt-1.5 line-clamp-1">
@@ -491,7 +512,7 @@ export default function ChargerCatalogSelector({
 
                   <div className="text-[10px] text-slate-500 space-y-0.5 mt-1">
                     <div>Entrada: {item.currentInA}A • {item.voltageV}V ({item.phases === 3 ? "Trifásico" : "Monofásico"})</div>
-                    <div>Conector: {item.connectorType}</div>
+                    <div>Conector: {item.connectorType} ({item.connectorsCount}x)</div>
                     <div>Eficiência: {item.efficiencyPercent}% • FP: {item.powerFactor} • THDi: {item.thdiPercent}%</div>
                   </div>
                 </div>
@@ -522,7 +543,7 @@ export default function ChargerCatalogSelector({
       {/* ─── MODAL 1: FICHA TÉCNICA DETALHADA DO DATASHEET ───────────────────── */}
       {selectedDatasheet && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-xl w-full p-6 shadow-2xl border border-slate-100 space-y-4 animate-in zoom-in-95 duration-150">
+          <div className="bg-white rounded-3xl max-w-xl w-full p-6 shadow-2xl border border-slate-100 space-y-4 animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
                 <span className="text-[10px] font-black uppercase text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full">
@@ -570,16 +591,33 @@ export default function ChargerCatalogSelector({
               </div>
               <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
                 <span className="text-[10px] font-bold text-slate-500 uppercase">Tipo de Conector</span>
-                <div className="text-sm font-bold text-slate-700">{selectedDatasheet.connectorType}</div>
+                <div className="text-sm font-bold text-slate-700">{selectedDatasheet.connectorType} ({selectedDatasheet.connectorsCount}x)</div>
               </div>
               <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
                 <span className="text-[10px] font-bold text-slate-500 uppercase">Grau de Proteção</span>
                 <div className="text-sm font-bold text-slate-700">{selectedDatasheet.ipRating} / {selectedDatasheet.ikRating}</div>
               </div>
+              {selectedDatasheet.dcVoltageOutputRange && (
+                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase">Faixa de Tensão DC</span>
+                  <div className="text-sm font-bold text-amber-700">{selectedDatasheet.dcVoltageOutputRange}</div>
+                </div>
+              )}
+              {selectedDatasheet.maxDCOutputCurrentA && (
+                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase">Corrente Máx. Saída DC</span>
+                  <div className="text-sm font-bold text-amber-700">{selectedDatasheet.maxDCOutputCurrentA} A</div>
+                </div>
+              )}
             </div>
 
             <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-[11px] text-slate-600 space-y-1">
-              <div><strong>Refrigeração:</strong> {selectedDatasheet.coolingType}</div>
+              <div><strong>Gestão Dinâmica de Carga (DLM):</strong> {selectedDatasheet.hasDLMSupport ? `Sim (${selectedDatasheet.dlmType === 'hardware_local' ? 'Medição local via TC dedicado' : selectedDatasheet.dlmType === 'network_local' ? 'Rede Local LAN / Modbus / DLM Cluster' : 'Gestão Cloud OCPP Smart Charging'})` : 'Não (Carga Contínua Fixa)'}</div>
+              <div><strong>Comprimento do Cabo:</strong> {selectedDatasheet.cableLengthMeters ? `${selectedDatasheet.cableLengthMeters} metros` : 'Tomada Tipo 2 (cabo do usuário)'}</div>
+              <div><strong>Temperatura de Operação:</strong> {selectedDatasheet.operatingTempRange || '-25°C a +50°C'}</div>
+              <div><strong>Interface / Display:</strong> {selectedDatasheet.displayType || 'LED indicativo'} {selectedDatasheet.rfidNfcReader ? '• Leitor RFID/NFC incluso' : ''}</div>
+              {selectedDatasheet.dimensionsMM && <div><strong>Dimensões (LxAxP):</strong> {selectedDatasheet.dimensionsMM} {selectedDatasheet.weightKg ? `• Peso: ${selectedDatasheet.weightKg} kg` : ''}</div>}
+              <div><strong>Refrigeração:</strong> {selectedDatasheet.coolingType === 'liquido' ? 'Resfriamento Líquido de Alta Potência' : selectedDatasheet.coolingType === 'ar_forcado' ? 'Ar Forçado com controle térmico inteligente' : 'Convecção Natural Silenciosa'}</div>
               <div><strong>Proteção RDC-DD 6mA CC:</strong> {selectedDatasheet.hasBuiltinRDCDD ? "Embutida de Fábrica (IEC 62955)" : "Externa no QGBT"}</div>
               <div><strong>Botão EPO de Emergência:</strong> {selectedDatasheet.hasBuiltinEPO ? "Integrado no Painel Frontal" : "Externo via botoeira"}</div>
               <div><strong>Protocolo de Gerenciamento:</strong> {selectedDatasheet.protocolOCPP}</div>

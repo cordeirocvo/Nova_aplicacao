@@ -212,22 +212,6 @@ export default function CoenergyGODashboard() {
   const [isCopied, setIsCopied] = useState<boolean>(false);
   const [activeLoadedProjectId, setActiveLoadedProjectId] = useState<string | null>(null);
   const [showEngineeringReportsHubModal, setShowEngineeringReportsHubModal] = useState<boolean>(false);
-  const [uiThemeMode, setUiThemeMode] = useState<"STUDIO_DARK" | "CLASSIC">(() => {
-    if (typeof window !== "undefined") {
-      const s = localStorage.getItem("coenergygo_ui_theme_mode");
-      if (s === "CLASSIC" || s === "STUDIO_DARK") return s;
-    }
-    return "STUDIO_DARK";
-  });
-
-  const handleToggleThemeMode = (mode: "STUDIO_DARK" | "CLASSIC") => {
-    setUiThemeMode(mode);
-    if (typeof window !== "undefined") {
-      try {
-        localStorage.setItem("coenergygo_ui_theme_mode", mode);
-      } catch (e) {}
-    }
-  };
 
   // ─── CARREGAR PROJETOS EXISTENTES (BANCO SUPABASE + LOCALSTORAGE RESILIENTE) ─
   useEffect(() => {
@@ -1607,34 +1591,6 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
-              {/* Seletor do Modo de Exibição (Reversível a qualquer momento) */}
-              <div className="bg-slate-900/90 p-1 rounded-2xl flex gap-1 border border-slate-700/80 shadow-md">
-                <button
-                  type="button"
-                  onClick={() => handleToggleThemeMode('STUDIO_DARK')}
-                  className={`px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                    uiThemeMode === 'STUDIO_DARK'
-                      ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
-                      : 'text-slate-400 hover:text-white'
-                  }`}
-                  title="Interface escura ergonômica com contraste WCAG AAA para menor fadiga visual em sessões estendidas"
-                >
-                  <span>🌙</span> Studio Ergonômico
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleToggleThemeMode('CLASSIC')}
-                  className={`px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                    uiThemeMode === 'CLASSIC'
-                      ? 'bg-white text-slate-900 shadow-sm font-black'
-                      : 'text-slate-400 hover:text-white'
-                  }`}
-                  title="Voltar ao layout clássico original a qualquer momento com 1 clique"
-                >
-                  <span>☀️</span> Modo Clássico
-                </button>
-              </div>
-
               <Link 
                 href="/engenharia/padrao-cemig"
                 className="bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-3 rounded-2xl flex items-center gap-2 border border-slate-700 text-xs font-bold transition-all shadow-sm"
@@ -2790,8 +2746,17 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
                         <strong className="text-[#00B356] font-black">{utilityAnalysis.category.categoryId} ({utilityAnalysis.category.maxLimitKW} {utilityAnalysis.category.categoryId.startsWith('F') ? 'kVA' : 'kW'})</strong>
                       </div>
 
-                      <div className="pt-1.5 border-t border-slate-100 text-[10px] text-slate-500 leading-tight italic bg-amber-50/60 p-2 rounded-lg border border-amber-200/50">
-                        ℹ️ <strong>Nota de Dimensionamento:</strong> O dimensionamento global consolida a Demanda Base com os Carregadores VE e as Cargas Auxiliares do QGBT (iluminação, CFTV, tomadas de serviço e perdas de transformação). Caso haja déficit, no <strong>Passo 2</strong> é possível acionar o <strong>DLM (Gestão Dinâmica)</strong> para operar sem trocar o padrão, ou adequar o padrão no <strong>Passo 3</strong>.
+                      <div className="pt-1.5 border-t border-slate-100 text-[10px] text-slate-600 leading-relaxed bg-amber-50/80 p-2.5 rounded-xl border border-amber-200/70 space-y-1">
+                        <div className="flex items-center gap-1.5 font-bold text-amber-900">
+                          <Info className="w-3.5 h-3.5 text-amber-700 flex-shrink-0" />
+                          <span>Nota de Dimensionamento & Variação de Demanda:</span>
+                        </div>
+                        <p>
+                          O dimensionamento global consolida a Demanda Base com os Carregadores VE e as Cargas Auxiliares do QGBT (iluminação, CFTV, tomadas de serviço e perdas de transformação).
+                        </p>
+                        <p className="font-medium text-amber-950">
+                          ⚠️ <strong>Atenção:</strong> Estes valores podem ter alteração devido a outras cargas da instalação, fator de simultaneidade real e perdas adicionais do sistema que podem ser consideradas (perdas nos alimentadores longos, filtros harmônicos e rendimento do transformador). Caso haja déficit, no <strong>Passo 2</strong> é possível acionar o <strong>DLM (Gestão Dinâmica)</strong> para operar sem trocar o padrão, ou adequar o padrão no <strong>Passo 3</strong>.
+                        </p>
                       </div>
                     </div>
                   </div>

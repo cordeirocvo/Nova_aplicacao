@@ -277,12 +277,12 @@ export interface HubFinancialViabilityResult {
   };
 }
 
-// ─── 2.3 DATASHEET E CATÁLOGO DE CARREGADORES (WEG / BENY) ──────────────────
+// ─── 2.3 DATASHEET E CATÁLOGO DE CARREGADORES (WEG / BENY / ABB / ENEL X / OUTROS) ──
 export interface ChargerDatasheet {
   id: string;
-  brand: string; // Fabricante (ex: WEG, BENY)
-  model: string; // Modelo comercial (ex: WEMOB Station 60 kW)
-  series: string; // Linha (ex: WEMOB Easy, Parking, Station, HPC, BDC)
+  brand: string; // Fabricante (ex: WEG, BENY, ABB, ENEL X, SCHNEIDER)
+  model: string; // Modelo comercial (ex: WEMOB Station 60 kW, BENY BDC-60 kW)
+  series: string; // Linha (ex: WEMOB Easy, Parking, Station, HPC, BCP, BDC)
   powerKW: number;
   phases: 1 | 3;
   voltageV: number;
@@ -299,6 +299,19 @@ export interface ChargerDatasheet {
   hasBuiltinEPO: boolean; // Botão de emergência na carcaça
   protocolOCPP: string; // OCPP 1.6J / 2.0.1
   datasheetPdfUrl?: string;
+  
+  // Novos campos para dimensionamento avançado & DLM
+  hasDLMSupport?: boolean; // Suporte nativo a Gerenciamento Dinâmico de Carga
+  dlmType?: 'hardware_local' | 'network_local' | 'ocpp_cloud'; // Modalidade de controle do DLM
+  cableLengthMeters?: number; // Comprimento do cabo integrado em metros (ex: 5m, 7m)
+  operatingTempRange?: string; // Faixa de temperatura de operação (ex: -30°C a +55°C)
+  displayType?: string; // Tipo de display (ex: 7" LCD Touchscreen, LED indicador)
+  rfidNfcReader?: boolean; // Leitor RFID / NFC integrado para autenticação
+  weightKg?: number; // Peso líquido do equipamento em kg
+  dimensionsMM?: string; // Dimensões externas LxAxP em mm
+  standbyPowerW?: number; // Consumo em standby em Watts (ex: < 15W)
+  dcVoltageOutputRange?: string; // Tensão de saída DC (ex: 150V - 1000V DC)
+  maxDCOutputCurrentA?: number; // Corrente máxima de saída DC por pistola (ex: 200A, 250A)
 }
 
 export interface ConfiguredCharger {
@@ -324,6 +337,13 @@ export interface ConfiguredCharger {
   conductorMaterial?: 'copper' | 'aluminum';
   installationMethod?: 'B1' | 'B2' | 'C' | 'D' | 'F' | 'E';
   internalLossesKW?: number;
+  hasDLMSupport?: boolean;
+  dlmType?: 'hardware_local' | 'network_local' | 'ocpp_cloud';
+  cableLengthMeters?: number;
+  displayType?: string;
+  rfidNfcReader?: boolean;
+  operatingTempRange?: string;
+  dimensionsMM?: string;
 }
 
 export interface UtilitySizingInput {

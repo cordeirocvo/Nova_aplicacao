@@ -30,11 +30,15 @@ import {
   Check,
   ExternalLink,
   History,
-  Database
+  Database,
+  Sparkles,
+  UploadCloud,
+  TrendingDown
 } from "lucide-react";
 import AdicionarMaterialModal from "@/components/cemig/AdicionarMaterialModal";
 import PropostaModal from "@/components/cemig/PropostaModal";
 import CotacaoDistribuidoresModal from "@/components/cemig/CotacaoDistribuidoresModal";
+import ConciliacaoOrcamentoModal from "@/components/orcamentos/ConciliacaoOrcamentoModal";
 import {
   dimensionarPadraoCemig,
   TipoPadrao,
@@ -92,11 +96,14 @@ export default function PadraoCemigPage() {
   const [resumoTecnico, setResumoTecnico] = useState<ResultadoDimensionamentoPadrao | null>(null);
   const [precosDB, setPrecosDB] = useState<Record<string, number>>({});
   const [carregandoPrecos, setCarregandoPrecos] = useState(false);
+  const [statusSalvamentoPreco, setStatusSalvamentoPreco] = useState<string | null>(null);
+  const debounceTimerRef = React.useRef<NodeJS.Timeout | null>(null);
 
   // Modais
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isPropostaModalOpen, setIsPropostaModalOpen] = useState(false);
   const [isCotacaoModalOpen, setIsCotacaoModalOpen] = useState(false);
+  const [isConciliacaoModalOpen, setIsConciliacaoModalOpen] = useState(false);
   const [propostaParaModal, setPropostaParaModal] = useState<any>(null);
 
   // Histórico de Propostas Salvas
@@ -123,8 +130,20 @@ export default function PadraoCemigPage() {
         data.materiais.forEach((m: any) => {
           map[m.codigo] = m.precoUnitario;
         });
-        setPrecosDB(map);
-        return map;
+
+        // Carregar overrides do localStorage se houver
+        let localOverrides: Record<string, number> = {};
+        if (typeof window !== "undefined") {
+          try {
+            const raw = localStorage.getItem("padrao_cemig_custom_precos");
+            if (raw) localOverrides = JSON.parse(raw);
+          } catch (e) {}
+        }
+
+        const mapFinal = { ...map, ...localOverrides };
+        setPrecosDB(mapFinal);
+        calcularListaPadrao(mapFinal);
+        return mapFinal;
       }
     } catch (err) {
       console.error("Erro ao carregar preços do banco:", err);
@@ -152,9 +171,62 @@ export default function PadraoCemigPage() {
     carregarPropostasSalvas();
   }, []);
 
+  // Persistir preço no banco de dados com debounce ou onBlur
+  const persistirPrecoNoBanco = async (codigo: string, novoPreco: number) => {
+    if (!codigo || novoPreco === undefined || isNaN(novoPreco)) return;
+
+    try {
+      setStatusSalvamentoPreco("Salvando no banco...");
+
+      // 1. Atualizar localStorage imediatamente
+      if (typeof window !== "undefined") {
+        try {
+          const raw = localStorage.getItem("padrao_cemig_custom_precos");
+          const map = raw ? JSON.parse(raw) : {};
+          map[codigo] = novoPreco;
+          localStorage.setItem("padrao_cemig_custom_precos", JSON.stringify(map));
+        } catch (e) {}
+      }
+
+      // 2. Atualizar precosDB e catálogo local
+      setPrecosDB((prev) => ({ ...prev, [codigo]: novoPreco }));
+      setCatalogoMateriais((prev) =>
+        prev.map((m) => (m.codigo === codigo ? { ...m, precoUnitario: novoPreco } : m))
+      );
+
+      // 3. Persistir via PATCH /api/cemig/materiais
+      const res = await fetch("/api/cemig/materiais", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ codigo, precoUnitario: novoPreco })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setStatusSalvamentoPreco("Preço salvo com sucesso!");
+        setTimeout(() => setStatusSalvamentoPreco(null), 2500);
+      } else {
+        console.warn("Aviso ao persistir preço:", data.error);
+        setStatusSalvamentoPreco(null);
+      }
+    } catch (err) {
+      console.error("Erro de rede ao salvar preço:", err);
+      setStatusSalvamentoPreco(null);
+    }
+  };
+
   // Recalcular lista padrão sempre que os parâmetros essenciais mudarem
   const calcularListaPadrao = (customPrecos?: Record<string, number>) => {
-    const mapa = customPrecos || precosDB;
+    let localOverrides: Record<string, number> = {};
+    if (typeof window !== "undefined") {
+      try {
+        const raw = localStorage.getItem("padrao_cemig_custom_precos");
+        if (raw) localOverrides = JSON.parse(raw);
+      } catch (e) {}
+    }
+
+    const mapa = { ...(precosDB || {}), ...localOverrides, ...(customPrecos || {}) };
+
     const resultado = dimensionarPadraoCemig(
       {
         tipoPadrao,
@@ -174,8 +246,21 @@ export default function PadraoCemigPage() {
       mapa
     );
 
+    // Garantir que os itens sugeridos mantenham os preços unitários salvos e calculem os totais
+    const itensComPrecosAtualizados = resultado.itensSugeridos.map((it) => {
+      const precoUnit =
+        mapa[it.codigo] !== undefined && mapa[it.codigo] > 0
+          ? mapa[it.codigo]
+          : it.precoUnitarioEstimado;
+      return {
+        ...it,
+        precoUnitarioEstimado: precoUnit,
+        precoTotal: it.quantidade * precoUnit
+      };
+    });
+
     setResumoTecnico(resultado);
-    setItens(resultado.itensSugeridos);
+    setItens(itensComPrecosAtualizados);
   };
 
   useEffect(() => {
@@ -245,15 +330,42 @@ export default function PadraoCemigPage() {
   // Alterar preço unitário de item na lista
   const handleAlterarPrecoUnitario = (index: number, novoPreco: number) => {
     if (novoPreco < 0) novoPreco = 0;
+    const itemAlvo = itens[index];
+    if (!itemAlvo) return;
+
+    const valorNumerico = Number(novoPreco);
+
+    // 1. Atualização imediata do estado da tabela
     setItens((prev) => {
       const copy = [...prev];
       copy[index] = {
         ...copy[index],
-        precoUnitarioEstimado: Number(novoPreco),
-        precoTotal: copy[index].quantidade * Number(novoPreco)
+        precoUnitarioEstimado: valorNumerico,
+        precoTotal: copy[index].quantidade * valorNumerico
       };
       return copy;
     });
+
+    // 2. Atualização imediata do mapa de preços em memória
+    setPrecosDB((prev) => ({ ...prev, [itemAlvo.codigo]: valorNumerico }));
+
+    // 3. Gravação imediata no localStorage para não perder ao recalcular
+    if (typeof window !== "undefined") {
+      try {
+        const raw = localStorage.getItem("padrao_cemig_custom_precos");
+        const map = raw ? JSON.parse(raw) : {};
+        map[itemAlvo.codigo] = valorNumerico;
+        localStorage.setItem("padrao_cemig_custom_precos", JSON.stringify(map));
+      } catch (e) {}
+    }
+
+    // 4. Debounce para persistência no banco de dados (evita chamadas excessivas durante a digitação)
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    debounceTimerRef.current = setTimeout(() => {
+      persistirPrecoNoBanco(itemAlvo.codigo, valorNumerico);
+    }, 600);
   };
 
   // Remover item da lista
@@ -1527,15 +1639,40 @@ export default function PadraoCemigPage() {
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
             <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 border-b border-slate-100 pb-4">
               <div>
-                <h3 className="font-bold text-base text-slate-900 flex items-center gap-2">
-                  <Package className="w-5 h-5 text-[#00BFA5]" /> Lista de Materiais & Custos (Banco de Dados)
-                </h3>
-                <p className="text-xs text-slate-500">
-                  Os quantitativos podem ser alterados livremente. Você também pode inserir novos itens do catálogo ou retirar itens.
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="font-bold text-base text-slate-900 flex items-center gap-2 flex-wrap">
+                    <Package className="w-5 h-5 text-[#00BFA5]" /> Lista de Materiais & Custos (Padrão CEMIG)
+                    {statusSalvamentoPreco && (
+                      <span className="text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full flex items-center gap-1 animate-pulse">
+                        <Check className="w-3.5 h-3.5" /> {statusSalvamentoPreco}
+                      </span>
+                    )}
+                  </h3>
+                  <a
+                    href="/orcamentos/configuracoes"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[10px] font-black uppercase px-2.5 py-1 rounded-full bg-[#0A192F] text-white hover:bg-[#E45318] transition-colors flex items-center gap-1"
+                    title="Ver catálogo master na Gestão de Orçamentos (CAPEX)"
+                  >
+                    <span>Sincronizado com CAPEX Master Data</span>
+                    <ExternalLink className="w-2.5 h-2.5" />
+                  </a>
+                </div>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Preços base e menores cotações são alimentados diretamente da Gestão de Orçamentos (CAPEX) como Fonte Única da Verdade.
                 </p>
               </div>
 
               <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => setIsConciliacaoModalOpen(true)}
+                  className="bg-[#00B356] hover:bg-[#009447] text-white px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 shadow-sm transition active:scale-95"
+                  title="Importar orçamentos de fornecedores em PDF ou Foto com IA multimodal"
+                >
+                  <Sparkles className="w-4 h-4" /> Importar Orçamento (PDF / Foto)
+                </button>
                 <button
                   type="button"
                   onClick={() => setIsCotacaoModalOpen(true)}
@@ -1581,8 +1718,8 @@ export default function PadraoCemigPage() {
                       <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
                         <td className="p-3 text-center text-slate-400 font-mono">{idx + 1}</td>
                         <td className="p-3">
-                          <p className="font-bold text-slate-900">{item.descricao}</p>
-                          <div className="flex items-center gap-2 mt-0.5">
+                          <p className="font-bold text-slate-900 leading-snug">{item.descricao}</p>
+                          <div className="flex items-center gap-2 flex-wrap mt-0.5">
                             {item.codigo && (
                               <span className="font-mono text-[10px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
                                 {item.codigo}
@@ -1593,6 +1730,18 @@ export default function PadraoCemigPage() {
                                 Norma CEMIG
                               </span>
                             )}
+                            {(() => {
+                              const matDb = catalogoMateriais.find((m) => m.codigo === item.codigo);
+                              if (matDb?.fornecedorMenorPreco) {
+                                return (
+                                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded inline-flex items-center gap-1">
+                                    🏷️ Menor: R$ {matDb.menorPreco?.toFixed(2)} ({matDb.fornecedorMenorPreco}
+                                    {matDb.numeroOrcamentoMenorPreco ? ` • Orç. ${matDb.numeroOrcamentoMenorPreco}` : ""})
+                                  </span>
+                                );
+                              }
+                              return null;
+                            })()}
                           </div>
                         </td>
                         <td className="p-3">
@@ -1640,6 +1789,7 @@ export default function PadraoCemigPage() {
                               step="0.1"
                               value={item.precoUnitarioEstimado}
                               onChange={(e) => handleAlterarPrecoUnitario(idx, Number(e.target.value))}
+                              onBlur={() => persistirPrecoNoBanco(item.codigo, item.precoUnitarioEstimado)}
                               className="w-20 text-right text-xs font-bold p-1 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:ring-1 focus:ring-[#00BFA5]"
                             />
                           </div>
@@ -2045,6 +2195,26 @@ export default function PadraoCemigPage() {
           proposta={propostaParaModal}
         />
       )}
+
+      <ConciliacaoOrcamentoModal
+        isOpen={isConciliacaoModalOpen}
+        onClose={() => setIsConciliacaoModalOpen(false)}
+        catalogoMateriais={catalogoMateriais}
+        onSucesso={async (novosPrecos) => {
+          if (typeof window !== "undefined") {
+            try {
+              const raw = localStorage.getItem("padrao_cemig_custom_precos");
+              const current = raw ? JSON.parse(raw) : {};
+              const merged = { ...current, ...novosPrecos };
+              localStorage.setItem("padrao_cemig_custom_precos", JSON.stringify(merged));
+            } catch (e) {}
+          }
+          const mapa = await carregarPrecosDB();
+          calcularListaPadrao({ ...mapa, ...novosPrecos });
+          setStatusSalvamentoPreco("Catálogo atualizado via IA com sucesso!");
+          setTimeout(() => setStatusSalvamentoPreco(null), 3500);
+        }}
+      />
     </>
   );
 }

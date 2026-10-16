@@ -3764,15 +3764,13 @@ export function EVTopologyChainViewer({
 
       {/* ─── MODAL DO HUB DE ENGENHARIA DO TRANSFORMADOR (TRIFILAR / UNIFILAR / CADERNO / BOM) ─── */}
       {showTransformerHubModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
-          <div className="relative w-full max-w-5xl my-8">
-            <button
-              onClick={() => setShowTransformerHubModal(false)}
-              className="absolute -top-3 -right-3 z-10 bg-slate-800 hover:bg-slate-700 text-white rounded-full p-2 border border-slate-600 shadow-xl transition-all"
-              title="Fechar Caderno de Engenharia"
-            >
-              <X className="w-5 h-5" />
-            </button>
+        <div 
+          className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 overflow-y-auto animate-in fade-in duration-200"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowTransformerHubModal(false);
+          }}
+        >
+          <div className="relative w-full max-w-[1750px] my-auto">
             <TransformerEngineeringHub
               nominalKVA={transformer.nominalKVA}
               primaryVoltageV={220}
@@ -3780,6 +3778,7 @@ export function EVTopologyChainViewer({
               efficiencyPercent={transformer.efficiencyPercent}
               lossesKW={transformer.lossesKW}
               projectName="Subestação / Transformador Dyn1 para VE"
+              onClose={() => setShowTransformerHubModal(false)}
             />
           </div>
         </div>

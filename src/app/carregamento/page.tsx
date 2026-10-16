@@ -54,6 +54,8 @@ import ImportedDataViewer from "@/components/ev/ImportedDataViewer";
 import { EVTopologyChainViewer } from "@/components/ev/EVTopologyChainViewer";
 import ClientProjectForm from "@/components/ev/ClientProjectForm";
 import { EVEngineeringReportsHub } from "@/components/ev/EVEngineeringReportsHub";
+import DLMMarketSimulator from "@/components/ev/DLMMarketSimulator";
+import DLMSystemVisualizer from "@/components/ev/DLMSystemVisualizer";
 import InstallationEnvironmentSelector from "@/components/ev/InstallationEnvironmentSelector";
 import ChargerCatalogSelector from "@/components/ev/ChargerCatalogSelector";
 import { 
@@ -1231,13 +1233,16 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
 - Condutor PE: Exclusivo interligado ao BEP
 - Botoeira EPO e Bombeiros: ${auditHasEmergencyButton ? 'Conforme IT-41 / IT-30' : 'Pendente'}
 
-4. GESTÃO DINÂMICA DLM (Passo 2):
+4. GESTÃO DINÂMICA DLM & SISTEMAS DE MERCADO (Passo 2):
 - Limite da Rede Configurado: ${effectiveDlmGridLimitKW} kW
 - Carga Existente Medida (Pico): ${effectiveExistingLoadKW.toFixed(1)} kW ${smartMeterSummary ? '(via SmartMeter)' : '(Manual)'}
 - Economia Estimada em Obras: R$ ${dlmResult.capexSavingsEstimateBRL.toLocaleString('pt-BR')}
+- Ecossistema DLM Compatível: BENY DLB Box (Hardwired RS485 com TCs locais), WEG WEMOB DLM, Schneider LMS ou ABB Terra
+- Faixa de Modulação Efetiva: 6A a 32A por conector (IEC 61851-1) com Watchdog Fail-Safe de 5s
 
 5. INFRAESTRUTURA ELETROTÉCNICA & QGBT (Passo 3):
 - Disjuntor Geral QGBT: ${infrastructureSizing.qgbtMainBreakerA}A Tripolar (Demanda QGBT: ${infrastructureSizing.qgbtTotalInstalledKW} kW)
+- Transformador Dyn1: ${configuredChargers.some(c => c.voltage === 380 || c.powerKW >= 22) ? `Instalado a Seco ${infrastructureSizing.transformerRecommendation.recommendedKVA || 75} kVA 220V/380V Dyn1 com Proteção Primária Curva D, Neutro Aterrado no BEP e Proibição TN-C a Jusante (NBR 17019 item 722.312.2)` : 'Dispensado (Atendimento direto na tensão de rede)'}
 - Barramento 380V (Potência VE): ${infrastructureSizing.panelSpecification.busbar380VRatingA}A
 - Barramento 220V (Auxiliares): ${infrastructureSizing.panelSpecification.busbar220VRatingA}A (${infrastructureSizing.auxiliaryCircuits.length} circuitos ativos)
 - Condutor Alimentador Carregador: ${infrastructureSizing.cableGaugePhaseMM2} mm² Cobre (Queda: ${infrastructureSizing.calculatedVoltageDropPercent}% a ${circuitDistanceMeters}m)
@@ -3265,6 +3270,18 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
           />
 
           <LoadFeasibilityReport simulation={dlmResult} />
+
+          {/* ─── SIMULADOR DE SISTEMAS PRONTOS DE MERCADO DLM & HARDWARE ─── */}
+          <div className="pt-4 border-t border-slate-800">
+            <DLMMarketSimulator
+              initialGridLimitKW={dlmResult.gridEffectiveLimitKW || 75}
+              initialBuildingLoadKW={effectiveExistingLoadKW || 35}
+              initialChargersPowerKW={totalChargersInstalledKW || 44}
+              onApplyPresetToProject={(_systemId, _safePowerKW) => {
+                setDlmEnableDLM(true);
+              }}
+            />
+          </div>
         </div>
       )}
 
@@ -3951,7 +3968,11 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
           realPeakKW: smartMeterSummary?.maxPowerKW,
           realPeakDate: smartMeterSummary?.peakTimestamp,
           commercialHub: commercialHub,
-          applicationMode: applicationMode
+          applicationMode: applicationMode,
+          enableDLM: dlmEnableDLM || dlmResult.isLimitationAccepted,
+          hasDLM: dlmEnableDLM || dlmResult.isLimitationAccepted || (dlmResult.maxOverloadWithoutDLMKW > 0),
+          dlmSystemType: 'beny',
+          deficitKW: dlmResult.maxOverloadWithoutDLMKW
         }}
       />
     </div>

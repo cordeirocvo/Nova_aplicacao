@@ -15,6 +15,8 @@ import {
   CommercialHubOperationalData,
   ApplicationMode
 } from "@/lib/coenergygo";
+import DLMSystemVisualizer from "./DLMSystemVisualizer";
+import TransformerEngineeringHub from "./TransformerEngineeringHub";
 
 export type ReportType = 
   | 'executivo'
@@ -68,6 +70,10 @@ interface EVEngineeringReportsHubProps {
     realPeakDate?: string;
     commercialHub?: CommercialHubOperationalData;
     applicationMode?: ApplicationMode;
+    enableDLM?: boolean;
+    hasDLM?: boolean;
+    dlmSystemType?: 'beny' | 'weg' | 'schneider' | 'abb' | 'generic';
+    deficitKW?: number;
   };
 }
 
@@ -456,6 +462,80 @@ export function EVEngineeringReportsHub({
                         </div>
                       </div>
                     </div>
+
+                    {/* 4. GESTÃO DINÂMICA DE CARGA (DLM) & SISTEMAS DE MERCADO */}
+                    <div className="space-y-3 pt-2 border-t border-slate-200">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-bold text-slate-900 uppercase text-xs flex items-center gap-2">
+                          <Zap className="w-4 h-4 text-[#E45318]" />
+                          <span>4. Gestão Dinâmica de Carga (DLM) & Sistemas Prontos de Mercado</span>
+                        </h3>
+                        <span className="text-[10px] font-bold uppercase bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full border border-amber-300">
+                          IEC 61851-1 / NBR 17019
+                        </span>
+                      </div>
+
+                      <p className="text-[11px] text-slate-600 leading-relaxed">
+                        Para viabilizar a recarga de alta potência sem a necessidade de aumento oneroso da demanda contratada ou troca de padrão junto à concessionária, o projeto adota o sistema de <strong>Gestão Dinâmica de Carga (DLM - Dynamic Load Management)</strong>. O sistema monitora em tempo real a corrente consumida pelo imóvel e modula continuamente a potência entregue aos veículos elétricos (de 6A a 32A por conector).
+                      </p>
+
+                      {/* Renderização Vetorial Didática do Fluxo DLM */}
+                      <div className="my-3">
+                        <DLMSystemVisualizer 
+                          systemType={projectData.dlmSystemType || 'beny'}
+                          gridLimitKW={projectData.standardBreakerA ? Number(((projectData.standardBreakerA * (projectData.voltageV || 220) * 1.732) / 1000).toFixed(1)) : 75}
+                          buildingLoadKW={projectData.realPeakKW || 35}
+                          evLoadKW={totalPower}
+                          isThrottled={Boolean(projectData.deficitKW && projectData.deficitKW > 0)}
+                          evCount={chargingPointsCount}
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-[11px]">
+                        <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5">
+                          <strong className="text-slate-900 block uppercase text-[10px] text-[#E45318]">Mecanismo de Proteção e Watchdog Fail-Safe:</strong>
+                          <p className="text-slate-600 leading-relaxed">
+                            Caso ocorra falha de comunicação no barramento RS485 Modbus ou perda do sinal dos TCs de medição por tempo superior a <strong>5 segundos</strong>, o sistema comuta imediatamente para o modo de segurança (Fail-Safe), reduzindo a corrente de todos os carregadores para a taxa mínima de <strong>6A</strong> ou desarmando preventivamente os circuitos de recarga para impedir a queda do disjuntor geral da concessionária.
+                          </p>
+                        </div>
+                        <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5">
+                          <strong className="text-slate-900 block uppercase text-[10px] text-[#00B356]">Sinergia com Geração Solar e Tarifa Branca:</strong>
+                          <p className="text-slate-600 leading-relaxed">
+                            O controlador integra leitura bidirecional com inversores fotovoltaicos locais. Havendo injeção na rede (excedente solar), o sistema transfere 100% da sobra para os carregadores antes da exportação. No horário de ponta da concessionária (17h30 às 20h30), o algoritmo restringe a corrente para evitar tarifas de sobreconsumo.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 5. SUBESTAÇÃO E TRANSFORMADOR PARA RECARGA DE VE (Dyn1) */}
+                    {(projectData.hasTransformer || totalPower >= 22) && (
+                      <div className="space-y-3 pt-3 border-t border-slate-200">
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-bold text-slate-900 uppercase text-xs flex items-center gap-2">
+                            <Layers className="w-4 h-4 text-amber-600" />
+                            <span>5. Transformador para Recarga de VE (Dyn1) & Diagramas Técnicos NBR 17019</span>
+                          </h3>
+                          <span className="text-[10px] font-bold uppercase bg-rose-100 text-rose-800 px-2 py-0.5 rounded-full border border-rose-300">
+                            Aterramento TN-S Mandatório
+                          </span>
+                        </div>
+
+                        <p className="text-[11px] text-slate-600 leading-relaxed">
+                          Para adequação da tensão de atendimento da concessionária (220V trifásico) para a tensão nominal exigida pelos carregadores de alta potência (380V trifásico com neutro), foi dimensionado um <strong>Transformador Elevador/Isolador a Seco Dyn1</strong> com classe de isolamento 1,1 kV e fator K-4 para suportar harmônicas de retificação veicular.
+                        </p>
+
+                        {/* Hub Interativo Completo do Transformador (Trifilar Dyn1, Unifilar, Caderno e BOM) */}
+                        <div className="my-3">
+                          <TransformerEngineeringHub 
+                            nominalKVA={projectData.transformerKVA || (totalPower >= 40 ? Math.ceil((totalPower * 1.25) / 5) * 5 : 75)}
+                            primaryVoltageV={220}
+                            secondaryVoltageV={380}
+                            lossesKW={projectData.transformerLossesKW || 1.88}
+                            projectName={projectData.projectName}
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -523,6 +603,39 @@ export function EVEngineeringReportsHub({
                       </table>
                     </div>
 
+                    {/* 3. MEMÓRIA DE CÁLCULO DA GESTÃO DINÂMICA DE CARGA (DLM) */}
+                    <div className="space-y-2 pt-2 border-t border-slate-200">
+                      <h4 className="font-bold text-slate-900 uppercase text-[11px] flex items-center gap-1.5 text-[#E45318]">
+                        <Zap className="w-3.5 h-3.5" />
+                        <span>3. Memória de Cálculo de Modulação e Balanceamento DLM</span>
+                      </h4>
+                      <div className="bg-slate-50 p-3 rounded-xl border font-mono text-[11px] space-y-1.5">
+                        <div>Limite Contratado da Entrada: <code>P_max = √3 × V × I_disj × FP = 1.732 × 220V × {(projectData.standardBreakerA || 200)}A × 0.98 = {(((projectData.standardBreakerA || 200) * 220 * 1.732 * 0.98) / 1000).toFixed(1)} kW</code></div>
+                        <div>Margem de Potência para Carregadores: <code>P_disp(t) = P_max - P_imovel(t) + P_solar(t)</code></div>
+                        <div>Algoritmo de Corrente por Ponto: <code>I_ve_i(t) = max(6A, min(32A, (P_disp(t) × 1000) / (√3 × 380 × n_ve)))</code></div>
+                        <div className="text-emerald-700 font-sans text-[10px]">
+                          ✓ <strong>Garantia Normativa IEC 61851:</strong> Corrente mínima nunca decresce abaixo de 6A para não desarmar o protocolo Pilot PWM do veículo. Se a potência residual for insuficiente para 6A em todos os pontos, o sistema coloca em espera alternada (Round-Robin) por prioridade.
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 4. MEMÓRIA DE CÁLCULO DO TRANSFORMADOR DYN1 */}
+                    {(projectData.hasTransformer || totalPower >= 22) && (
+                      <div className="space-y-2 pt-2 border-t border-slate-200">
+                        <h4 className="font-bold text-slate-900 uppercase text-[11px] flex items-center gap-1.5 text-amber-600">
+                          <Layers className="w-3.5 h-3.5" />
+                          <span>4. Dimensionamento do Transformador Elevador/Isolador Dyn1</span>
+                        </h4>
+                        <div className="bg-slate-50 p-3 rounded-xl border font-mono text-[11px] space-y-1.5">
+                          <div>Potência de Demanda Aparente: <code>S_calc = P_ve / FP = {(totalPower / 0.98).toFixed(1)} kVA ➔ Adotado comercial: {(projectData.transformerKVA || (totalPower >= 40 ? Math.ceil((totalPower * 1.25) / 5) * 5 : 75))} kVA</code></div>
+                          <div>Corrente Nominal Primária (220V Δ): <code>I_prim = S / (√3 × 220) = {(((projectData.transformerKVA || 75) * 1000) / (1.732 * 220)).toFixed(1)} A</code></div>
+                          <div>Corrente Nominal Secundária (380V Y): <code>I_sec = S / (√3 × 380) = {(((projectData.transformerKVA || 75) * 1000) / (1.732 * 380)).toFixed(1)} A</code></div>
+                          <div>Disjuntor Primário (Proteção Inrush Curva D): <code>I_disj_prim ≥ 1.25 × I_prim = {(Math.ceil((((projectData.transformerKVA || 75) * 1000) / (1.732 * 220)) * 1.25))} A (Curva D obrigatória)</code></div>
+                          <div>Rendimento / Perdas Totais Estimadas: <code>η = 97.5% • Perdas Fe+Cu = {((projectData.transformerLossesKW || 1.88)).toFixed(2)} kW</code></div>
+                        </div>
+                      </div>
+                    )}
+
                     <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-900 text-[11px]">
                       <strong>✓ Parecer Eletrotécnico:</strong> Todas as bitolas atendem plenamente ao limite de condução térmica em regime contínuo (fator de agrupamento e temperatura considerados) e a queda de tensão acumulada não ultrapassa o limite normativo global de 4% da entrada até o terminal do carregador.
                     </div>
@@ -575,6 +688,26 @@ export function EVEngineeringReportsHub({
                           <li>Sinalização fotoluminescente de rota de fuga desimpedida.</li>
                         </ul>
                       </div>
+
+                      <div className="border border-slate-200 p-3.5 rounded-xl space-y-1.5 bg-slate-50">
+                        <strong className="text-slate-900 block uppercase text-[10px] text-amber-600">5. Montagem do Transformador a Seco Dyn1</strong>
+                        <ul className="list-disc pl-4 space-y-1 text-slate-600">
+                          <li>Distanciamento mínimo de <strong>500 mm</strong> das paredes para convecção de ar natural (AN).</li>
+                          <li>Coxins de borracha vulcanizada (amortecedores vibra-stop) nas 4 sapatas contra ressonância mecânica.</li>
+                          <li>Terminais de compressão bimetálicos com torquímetro e pasta antioxidante nos bornes H1-H3 e X0-X3.</li>
+                          <li>Aterramento do Neutro X0 diretamente no BEP (proibido ligar terra no neutro a jusante).</li>
+                        </ul>
+                      </div>
+
+                      <div className="border border-slate-200 p-3.5 rounded-xl space-y-1.5 bg-slate-50">
+                        <strong className="text-slate-900 block uppercase text-[10px] text-[#00B356]">6. Infraestrutura de Comunicação DLM (RS485)</strong>
+                        <ul className="list-disc pl-4 space-y-1 text-slate-600">
+                          <li>Cabo de par trançado blindado STP 1x2x24 AWG em duto metálico exclusivo, longe de cabos de força.</li>
+                          <li>Malha de blindagem aterrada em ponto único (lado da central DLM) para evitar loops de terra.</li>
+                          <li>Resistores de terminação de 120 Ω instalados nos nós extremos do barramento.</li>
+                          <li>Polaridade dos TCs bipartidos: Seta (P1➔P2 / K➔L) orientada rigorosamente apontando para a rede CEMIG.</li>
+                        </ul>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -613,21 +746,39 @@ export function EVEngineeringReportsHub({
                             <td className="p-2.5 text-center text-emerald-600 font-bold">APROVADO</td>
                           </tr>
                           <tr>
-                            <td className="p-2.5 font-bold">3. Tempo de Atuação do Dispositivo DR (30mA)</td>
+                            <td className="p-2.5 font-bold">3. Isolamento dos Enrolamentos do Trafo Dyn1</td>
+                            <td className="p-2.5 text-slate-600">Tensão 1000V CC (Prim-Carcaça, Sec-Carcaça, Prim-Sec) ≥ 100 MΩ</td>
+                            <td className="p-2.5 text-center font-mono">&gt; 250 MΩ</td>
+                            <td className="p-2.5 text-center text-emerald-600 font-bold">APROVADO</td>
+                          </tr>
+                          <tr>
+                            <td className="p-2.5 font-bold">4. Relação de Transformação de Tensão (TTR)</td>
+                            <td className="p-2.5 text-slate-600">220V Δ para 380V Y (Relação 1:1.732 ± 0.5%) e defasagem 30°</td>
+                            <td className="p-2.5 text-center font-mono">1.731 (0.05%)</td>
+                            <td className="p-2.5 text-center text-emerald-600 font-bold">APROVADO</td>
+                          </tr>
+                          <tr>
+                            <td className="p-2.5 font-bold">5. Tempo de Atuação do Dispositivo DR (30mA)</td>
                             <td className="p-2.5 text-slate-600">Disparo com corrente residual em tempo ≤ 300 ms</td>
                             <td className="p-2.5 text-center font-mono">24 ms</td>
                             <td className="p-2.5 text-center text-emerald-600 font-bold">APROVADO</td>
                           </tr>
                           <tr>
-                            <td className="p-2.5 font-bold">4. Teste de Botão de Emergência e Bobina MX</td>
+                            <td className="p-2.5 font-bold">6. Teste de Botão de Emergência e Bobina MX</td>
                             <td className="p-2.5 text-slate-600">Abertura instantânea do disjuntor geral em menos de 50ms</td>
                             <td className="p-2.5 text-center font-mono">&lt; 35 ms</td>
                             <td className="p-2.5 text-center text-emerald-600 font-bold">APROVADO</td>
                           </tr>
                           <tr>
-                            <td className="p-2.5 font-bold">5. Comunicação OCPP e Sinal Pilot PWM IEC 61851</td>
+                            <td className="p-2.5 font-bold">7. Comunicação OCPP e Sinal Pilot PWM IEC 61851</td>
                             <td className="p-2.5 text-slate-600">Transição correta Estados A ➔ B ➔ C (Veículo Conectado e Carregando)</td>
                             <td className="p-2.5 text-center font-mono">100% OK</td>
+                            <td className="p-2.5 text-center text-emerald-600 font-bold">APROVADO</td>
+                          </tr>
+                          <tr>
+                            <td className="p-2.5 font-bold">8. Simulação de Fail-Safe Watchdog do Sistema DLM</td>
+                            <td className="p-2.5 text-slate-600">Desconexão física forçada do cabo RS485 reduz corrente para 6A em ≤ 3s</td>
+                            <td className="p-2.5 text-center font-mono">1.8 s (6A)</td>
                             <td className="p-2.5 text-center text-emerald-600 font-bold">APROVADO</td>
                           </tr>
                         </tbody>

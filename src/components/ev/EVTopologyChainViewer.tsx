@@ -34,6 +34,7 @@ import {
 } from 'lucide-react';
 import { enrichBillOfMaterialsWithPricing } from '@/lib/coenergygo/database/bomPricingDatabase';
 import { EVEngineeringReportsHub } from './EVEngineeringReportsHub';
+import TransformerEngineeringHub from './TransformerEngineeringHub';
 import { InteractiveUnifilarViewer } from './InteractiveUnifilarViewer';
 import { PanelUnifilarDiagram, PanelCircuitItem } from './PanelUnifilarDiagram';
 
@@ -268,6 +269,7 @@ export function EVTopologyChainViewer({
   const [customLaborPercent, setCustomLaborPercent] = useState<number>(28);
   const [showDemandBreakdown, setShowDemandBreakdown] = useState<boolean>(false);
   const [showReportsHubModal, setShowReportsHubModal] = useState<boolean>(false);
+  const [showTransformerHubModal, setShowTransformerHubModal] = useState<boolean>(false);
 
   // Seleção individual de cargas associadas nos painéis (conforme Foto 04 e Figura 05)
   const [selectedLoads220V, setSelectedLoads220V] = useState<Record<string, boolean>>({
@@ -2538,6 +2540,16 @@ export function EVTopologyChainViewer({
                       <p className="text-[11px] text-slate-400">Ligação Triângulo Dyn1 (Δ 220V primário / Y 380V secundário com Neutro acessível aterrado no BEP)</p>
                     </div>
 
+                    {/* Botão de Acesso Direto ao Hub Completo de Engenharia e Diagramas Dyn1 */}
+                    <button
+                      type="button"
+                      onClick={() => setShowTransformerHubModal(true)}
+                      className="w-full flex items-center justify-center gap-2 px-3.5 py-2.5 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-slate-950 font-bold text-xs rounded-xl shadow-lg transition-all"
+                    >
+                      <Layers className="w-4 h-4 text-slate-950" />
+                      <span>Ver Diagramas Trifilar/Unifilar Dyn1 & Caderno de Montagem</span>
+                    </button>
+
                     <div className="bg-slate-900/90 rounded-xl p-3.5 border border-slate-800 space-y-3 text-xs font-mono">
                       <h5 className="font-sans font-bold text-white text-xs border-b border-slate-800 pb-1.5 flex items-center justify-between">
                         <span>Contas e Fórmulas Passo a Passo:</span>
@@ -3743,9 +3755,35 @@ export function EVTopologyChainViewer({
           parkingLocation: 'aberto',
           parkingAccessControl: 'livre',
           hasPcdAccessibleBay: false,
-          parkingSurfaceType: 'concreto'
+          parkingSurfaceType: 'concreto',
+          enableDLM: Boolean(externalHasSmartChargingDLM),
+          hasDLM: Boolean(externalHasSmartChargingDLM),
+          dlmSystemType: 'beny'
         }}
       />
+
+      {/* ─── MODAL DO HUB DE ENGENHARIA DO TRANSFORMADOR (TRIFILAR / UNIFILAR / CADERNO / BOM) ─── */}
+      {showTransformerHubModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
+          <div className="relative w-full max-w-5xl my-8">
+            <button
+              onClick={() => setShowTransformerHubModal(false)}
+              className="absolute -top-3 -right-3 z-10 bg-slate-800 hover:bg-slate-700 text-white rounded-full p-2 border border-slate-600 shadow-xl transition-all"
+              title="Fechar Caderno de Engenharia"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <TransformerEngineeringHub
+              nominalKVA={transformer.nominalKVA}
+              primaryVoltageV={220}
+              secondaryVoltageV={380}
+              efficiencyPercent={transformer.efficiencyPercent}
+              lossesKW={transformer.lossesKW}
+              projectName="Subestação / Transformador Dyn1 para VE"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

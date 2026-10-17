@@ -339,7 +339,7 @@ export default function DLMMarketSimulator({
             <button
               type="button"
               onClick={() => setIsPeakHour(!isPeakHour)}
-              className={`w-full py-1.5 px-3 rounded-xl text-xs font-bold transition-all border ${
+              className={`w-full py-1.5 px-3 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
                 isPeakHour
                   ? 'bg-rose-600 border-rose-500 text-white'
                   : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'
@@ -350,6 +350,18 @@ export default function DLMMarketSimulator({
           </div>
         </div>
       </div>
+
+      {/* ─── DESENHO ILUSTRATIVO DE ARQUITETURA DLM (POSICIONADO ADJACENTE AOS CONTROLES) ─── */}
+      <DLMSystemVisualizer 
+        systemType={selectedSystem}
+        gridLimitKW={gridLimitKW}
+        buildingLoadKW={netBuildingLoadKW}
+        evLoadKW={simulationResults.totalControlledEVKW}
+        isThrottled={simulationResults.isThrottled}
+        evCount={vehicles.length}
+        enableSolarSurplus={solarGenerationKW > 0}
+        solarKW={solarGenerationKW}
+      />
 
       {/* ─── COMPARATIVO DE SEGURANÇA: SEM DLM VS COM DLM ─── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -493,18 +505,6 @@ export default function DLMMarketSimulator({
           ))}
         </div>
       </div>
-
-      {/* ─── DESENHO ILUSTRATIVO DE ARQUITETURA DLM ─── */}
-      <DLMSystemVisualizer 
-        systemType={selectedSystem}
-        gridLimitKW={gridLimitKW}
-        buildingLoadKW={netBuildingLoadKW}
-        evLoadKW={simulationResults.totalControlledEVKW}
-        isThrottled={simulationResults.isThrottled}
-        evCount={vehicles.length}
-        enableSolarSurplus={solarGenerationKW > 0}
-        solarKW={solarGenerationKW}
-      />
 
       {/* ─── LISTA DE MATERIAIS DE INSTALAÇÃO DO SISTEMA DLM (BOM) ─── */}
       <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3">

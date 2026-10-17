@@ -344,6 +344,7 @@ export interface ConfiguredCharger {
   rfidNfcReader?: boolean;
   operatingTempRange?: string;
   dimensionsMM?: string;
+  hasBuiltinRDCDD?: boolean;
 }
 
 export interface UtilitySizingInput {

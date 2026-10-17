@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { 
   Zap, Plus, FileText, Calendar, User, ChevronRight, Loader, 
@@ -8,7 +8,7 @@ import {
   BatteryCharging, Gauge, ArrowRight, BookOpen, Layers, Flame, Activity,
   Cable, FileSpreadsheet, Upload, AlertCircle, Printer, Check, Copy, Award,
   Building2, Trash2, Sliders, RefreshCw, Cpu, CheckSquare, Sparkles, Calculator,
-  Settings, Globe, ExternalLink, Save, Download
+  Settings, Globe, ExternalLink, Save, Download, Compass
 } from "lucide-react";
 import { 
   BRAZIL_ELECTRIC_VEHICLES, 
@@ -58,6 +58,9 @@ import DLMMarketSimulator from "@/components/ev/DLMMarketSimulator";
 import DLMSystemVisualizer from "@/components/ev/DLMSystemVisualizer";
 import InstallationEnvironmentSelector from "@/components/ev/InstallationEnvironmentSelector";
 import ChargerCatalogSelector from "@/components/ev/ChargerCatalogSelector";
+import EVStickySummary from "@/components/ev/EVStickySummary";
+import EVLocationScoringCockpit from "@/components/ev/EVLocationScoringCockpit";
+import { calculateUnifiedEVSizing } from "@/lib/ev/unifiedCalculationEngine";
 import { 
   ClientProjectData, 
   CondoEnvironmentLocation, 
@@ -66,7 +69,7 @@ import {
 } from "@/lib/coenergygo";
 
 export default function CoenergyGODashboard() {
-  const [activeTab, setActiveTab] = useState<'projetos' | 'veiculos' | 'concessionarias' | 'nbr17019' | 'curva_dlm' | 'infraestrutura' | 'resultado'>('projetos');
+  const [activeTab, setActiveTab] = useState<'projetos' | 'viabilidade' | 'veiculos' | 'concessionarias' | 'nbr17019' | 'curva_dlm' | 'infraestrutura' | 'resultado'>('projetos');
   const [projects, setProjects] = useState<any[]>([]);
   const [loadingProjects, setLoadingProjects] = useState(true);
 
@@ -1367,10 +1370,115 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
   };
 
   // Navegação protegida entre abas com auto-save automático
-  const handleTabChange = (nextTab: 'projetos' | 'veiculos' | 'concessionarias' | 'nbr17019' | 'curva_dlm' | 'infraestrutura' | 'resultado') => {
+  const handleTabChange = (nextTab: 'projetos' | 'viabilidade' | 'veiculos' | 'concessionarias' | 'nbr17019' | 'curva_dlm' | 'infraestrutura' | 'resultado') => {
     handleAutoSaveSnapshot();
     setActiveTab(nextTab);
   };
+
+  const handleApplyAHPToProject = (data: {
+    powerKW: number;
+    commercialAnchor: any;
+    vdm: number;
+    fleetDensity: number;
+    gridCategory: any;
+    recommendation: string;
+  }) => {
+    if (data.powerKW >= 120) {
+      setConfiguredChargers([
+        {
+          id: "chg_dc_120kw",
+          name: "BENY BDC-120KW Estação Ultrarrápida",
+          brand: "BENY",
+          model: "BDC-120KW",
+          powerKW: 120,
+          phases: 3,
+          voltage: 380,
+          type: "DC",
+          quantity: 1,
+          connector: "CCS2 + CHAdeMO",
+          currentInA: 182,
+          hasBuiltinRDCDD: true
+        }
+      ]);
+    } else if (data.powerKW >= 60) {
+      setConfiguredChargers([
+        {
+          id: "chg_dc_60kw",
+          name: "BENY BDC-60KW Rápido",
+          brand: "BENY",
+          model: "BDC-60KW",
+          powerKW: 60,
+          phases: 3,
+          voltage: 380,
+          type: "DC",
+          quantity: 1,
+          connector: "CCS2",
+          currentInA: 91,
+          hasBuiltinRDCDD: true
+        }
+      ]);
+    } else {
+      setConfiguredChargers([
+        {
+          id: "chg_ac_22kw",
+          name: "BENY BCP-A2N-L 22kW",
+          brand: "BENY",
+          model: "BCP-A2N-L",
+          powerKW: 22,
+          phases: 3,
+          voltage: 380,
+          type: "AC",
+          quantity: Math.max(1, Math.round(data.powerKW / 22)),
+          connector: "Tipo 2",
+          currentInA: 32,
+          hasBuiltinRDCDD: true
+        }
+      ]);
+    }
+
+    setSaveSuccessMessage(`Viabilidade AHP incorporada com sucesso! Alocados ${data.powerKW} kW conforme âncora "${data.commercialAnchor}".`);
+    handleAutoSaveSnapshot();
+    setActiveTab('veiculos');
+  };
+
+  // ─── MOTOR DE CÁLCULO UNIFICADO (SINGLE SOURCE OF TRUTH) ───────────────────
+  const unifiedCalculation = useMemo(() => {
+    return calculateUnifiedEVSizing({
+      chargers: configuredChargers.map(c => ({
+        id: c.id,
+        powerKW: c.powerKW,
+        phases: (c.phases as 1 | 3) || 3,
+        voltage: c.voltage || 380,
+        quantity: c.quantity || 1,
+        type: c.type,
+        connector: c.connector,
+        currentInA: c.currentInA,
+        brand: c.brand,
+        model: c.model,
+        hasBuiltinRDCDD: c.hasBuiltinRDCDD
+      })),
+      existingLoadKW: effectiveExistingLoadKW || 0,
+      simultaneityFactor: utilityAnalysis.simultaneityFactorApplied || 0.85,
+      utility: (selectedUtility as any) || 'CEMIG',
+      distanceMeters: circuitDistanceMeters || 25,
+      existingBreakerA: fieldBreakerAmps || 63,
+      dlmEnabled: dlmEnableDLM,
+      dlmLimitKW: effectiveDlmGridLimitKW || 0,
+      hasTransformer: Boolean(clientProjectData.customTransformerKVA && clientProjectData.customTransformerKVA > 0),
+      transformerPrimaryVoltage: 220,
+      transformerSecondaryVoltage: 380
+    });
+  }, [
+    configuredChargers,
+    effectiveExistingLoadKW,
+    utilityAnalysis.simultaneityFactorApplied,
+    selectedUtility,
+    circuitDistanceMeters,
+    fieldBreakerAmps,
+    dlmEnableDLM,
+    effectiveDlmGridLimitKW,
+    clientProjectData.customTransformerKVA
+  ]);
 
   const handleSaveCurrentProject = async () => {
     try {
@@ -1628,6 +1736,19 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
             </button>
 
             <button
+              onClick={() => handleTabChange('viabilidade')}
+              className={`px-3.5 py-2 rounded-xl font-bold text-xs transition-all flex items-center gap-2 ${
+                activeTab === 'viabilidade'
+                  ? 'bg-gradient-to-r from-[#E45318] to-orange-600 text-white shadow-sm ring-1 ring-orange-400 font-black'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/70'
+              }`}
+            >
+              <Compass className="w-4 h-4 text-orange-300" />
+              <span>Passo 1A: Viabilidade AHP & Concorrentes</span>
+              <span className="bg-slate-900/60 text-[9px] px-1.5 py-0.5 rounded-full font-bold">AHP</span>
+            </button>
+
+            <button
               onClick={() => handleTabChange('veiculos')}
               className={`px-3.5 py-2 rounded-xl font-bold text-xs transition-all flex items-center gap-2 ${
                 activeTab === 'veiculos'
@@ -1636,7 +1757,7 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
               }`}
             >
               <Car className="w-4 h-4" />
-              <span>Passo 1A: Veículos & Eletroposto</span>
+              <span>Passo 1B: Veículos & Eletroposto</span>
               <span className="bg-slate-900/60 text-[9px] px-1.5 py-0.5 rounded-full font-bold">{totalChargersCount} pts</span>
             </button>
 
@@ -1649,7 +1770,7 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
               }`}
             >
               <Zap className="w-4 h-4" />
-              <span>Passo 1B: Concessionárias & Padrão</span>
+              <span>Passo 2A: Concessionárias & Padrão</span>
               <span className="bg-slate-900/60 text-[9px] px-1.5 py-0.5 rounded-full font-bold">{selectedUtility}</span>
             </button>
 
@@ -1662,7 +1783,7 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
               }`}
             >
               <Shield className="w-4 h-4" />
-              <span>Passo 1C: NBR 17019 & Bombeiros</span>
+              <span>Passo 2B: NBR 17019 & Bombeiros</span>
             </button>
 
             <button
@@ -1674,7 +1795,7 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
               }`}
             >
               <Activity className="w-4 h-4 text-[#00B356]" />
-              <span>Passo 2: Curva de Carga & DLM</span>
+              <span>Passo 3: Curva de Carga & DLM</span>
               {customCurvePoints && (
                 <span className="bg-[#00B356] text-white text-[9px] px-1.5 py-0.5 rounded-full font-black">CURVA OK</span>
               )}
@@ -1689,7 +1810,7 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
               }`}
             >
               <Cable className="w-4 h-4 text-orange-200" />
-              <span>Passo 3: Infra & SmartMeter</span>
+              <span>Passo 4A: Infra & SmartMeter</span>
               {smartMeterSummary && (
                 <span className="bg-emerald-500 text-white text-[9px] px-1.5 py-0.5 rounded-full font-bold">XLSX OK</span>
               )}
@@ -1704,7 +1825,7 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
               }`}
             >
               <Award className="w-4 h-4 text-amber-300" />
-              <span>Resultado & Dossiê</span>
+              <span>Passo 4B: Diagramas, BOM & Dossiê</span>
             </button>
 
             <button
@@ -1718,6 +1839,18 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
           </div>
         </div>
       </div>
+
+      {/* ─── BARRA DE RESUMO EXECUTIVO EM TEMPO REAL (STICKY SUMMARY) ─── */}
+      <EVStickySummary
+        calculation={unifiedCalculation}
+        projectName={clientProjectData.projectName || projectName}
+        clientName={clientProjectData.clientName || clientName}
+        activeStep={activeTab}
+        onStepClick={handleTabChange}
+        onSaveProject={handleSaveCurrentProject}
+        onGenerateReport={() => setShowEngineeringReportsHubModal(true)}
+        isSaving={savingProject}
+      />
 
       {/* BANNER DE NOTIFICAÇÃO DE SUCESSO DE SALVAMENTO */}
       {saveSuccessMessage && (
@@ -1881,7 +2014,16 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
         </div>
       )}
 
-      {/* ─── TAB 2: PASSO 1A: CLIENTE, AMBIENTE & CARREGADORES HOMOLOGADOS ─── */}
+      {/* ─── TAB: PASSO 1A: VIABILIDADE LOCACIONAL AHP & CONCORRENTES GEOESPACIAIS ─── */}
+      {activeTab === 'viabilidade' && (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          <EVLocationScoringCockpit
+            onApplyToProject={handleApplyAHPToProject}
+          />
+        </div>
+      )}
+
+      {/* ─── TAB 2: PASSO 1B: CLIENTE, AMBIENTE & CARREGADORES HOMOLOGADOS ─── */}
       {activeTab === 'veiculos' && (
         <div className="space-y-6 animate-in fade-in duration-200">
           {/* 1. Identificação do Cliente, Responsável Técnico e Anexo Inteligente de Fatura */}

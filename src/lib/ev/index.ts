@@ -11,3 +11,4 @@ export * from './cemigEngine';
 export * from './sizingEngine';
 export * from './chargersDatabase';
 export * from './locationScoringEngine';
+export * from './unifiedCalculationEngine';

@@ -17,7 +17,18 @@ import {
 } from "@/lib/ev/locationScoringEngine";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 
-export default function EVLocationScoringCockpit() {
+export interface EVLocationScoringCockpitProps {
+  onApplyToProject?: (data: {
+    powerKW: number;
+    commercialAnchor: CommercialAnchorType;
+    vdm: number;
+    fleetDensity: number;
+    gridCategory: ElectricalGridCategory;
+    recommendation: string;
+  }) => void;
+}
+
+export default function EVLocationScoringCockpit({ onApplyToProject }: EVLocationScoringCockpitProps = {}) {
   // ─── ESTADOS DOS PARÂMETROS DO LOCAL ANALISADO ───────────────────────────
   const [vdm, setVdm] = useState<number>(32000);
   const [fleetDensity, setFleetDensity] = useState<number>(2.4);
@@ -146,6 +157,24 @@ export default function EVLocationScoringCockpit() {
               <CheckCircle2 className="w-6 h-6" />
             )}
           </div>
+
+          {onApplyToProject && (
+            <button
+              onClick={() => onApplyToProject({
+                powerKW: chargerPowerKW,
+                commercialAnchor: anchor,
+                vdm,
+                fleetDensity,
+                gridCategory,
+                recommendation: scoreResult.keyRecommendations[0] || scoreResult.executiveSummary
+              })}
+              className="bg-[#00B356] hover:bg-emerald-600 text-white px-3.5 py-2.5 rounded-xl text-xs font-black shadow-lg flex items-center gap-1.5 cursor-pointer transition-all hover:scale-[1.02]"
+              title="Transferir parâmetros calculados de potência e âncora diretamente para o projeto elétrico"
+            >
+              <Zap className="w-4 h-4" />
+              <span>Aplicar ao Projeto</span>
+            </button>
+          )}
         </div>
       </div>
 

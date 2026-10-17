@@ -56,3 +56,8 @@ lista_ids_usinas.md
 implementation_plan.md
 seed_manufacturers.ts
 .ag-kit-backups/
+
+# python
+__pycache__/
+*.pyc
+.pytest_cache/

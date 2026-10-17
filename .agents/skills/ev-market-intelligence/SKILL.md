@@ -10,48 +10,56 @@ tools: Read, Grep, Glob, Bash, Edit, Write
 
 ---
 
-## 1. Algoritmo Multicritério de Scoring de Ponto (Location Feasibility Index - LFI)
+## 1. O Modelo Multicritério Definitivo (MCDA / AHP - Analytic Hierarchy Process)
 
-O índice pondera 5 pilares fundamentais para determinar se um local possui viabilidade executiva para receber carregadores de veículos elétricos (0 a 100 pontos):
+A seleção e pontuação (*score*) de um local para eletroposto baseia-se na metodologia científica AHP acoplada a sistemas de informações geográficas (SIG), gerando um índice de **0 a 100 pontos** equilibrado em 4 macro-pilares:
 
-### Tabela de Pesos do Índice:
-| Pilar | Peso | Métrica Principal | Descrição |
-| :--- | :---: | :--- | :--- |
-| **1. Tráfego & Fluxo Viário (VDM)** | **25%** | Volume Diário Médio (veículos/dia) | Vias com VDM > 25.000 veículos/dia pontuam 100%. Vias secundárias pontuam proporcionalmente. |
-| **2. Densidade de Frota VE Local** | **25%** | Emplacamentos ABVE / Denatran | Percentual de veículos BEV/PHEV no município ou raio de 5 km da microrregião. |
-| **3. Âncora Comercial & Dwell Time** | **20%** | Tipo de Estabelecimento / Tempo de Permanência | Farmácias 24h, Supermercados, Centros Médicos, Shoppings e Postos com conveniência. |
-| **4. Infraestrutura Elétrica Disponível** | **20%** | Padrão CEMIG BT Grupo F vs MT | Padrão BT 127/220V até 800A (dispensa subestação de R$ 120k) pontua 100%. Necessidade de trafo novo penaliza CAPEX. |
-| **5. Raio de Concorrência & Exclusividade** | **10%** | Distância para o próximo DC Fast | Raio livre > 3 km sem carregador rápido concorrente pontua 100%. |
+### Matriz Padrão de Pesos do Mercado:
+| Macro-Critério | Peso Relativo ($W_i$) | O que avalia em campo |
+| :--- | :---: | :--- |
+| **1. Capacidade de Potência e Rede (Grid Readiness)** | **35%** | Proximidade de subestações, padrão CEMIG Grupo F (BT até 800A), capacidade do transformador local, queda de tensão e custo de conexão (fator eliminatório). |
+| **2. Demanda Estimada e Tráfego (Traffic & EV Density)** | **30%** | VDM (Volume Diário Médio), frota local de EVs cadastrada em raio de 3 a 5 km, quintis superiores de renda e Fator de Habitação Vertical. |
+| **3. Tempo de Permanência (Dwell Time & POIs)** | **20%** | Compatibilidade da velocidade do carregador com a âncora comercial (Oportunidade DC 15-30 min vs Destino AC 2-8h). |
+| **4. Concorrência e Logística (Competition & Catchment Area)** | **15%** | Área de captação (raio de 2 km a 50 km), índice de saturação da concorrência, ociosidade de carregadores vizinhos e facilidade de acesso. |
 
 ---
 
-## 2. Taxa de Conversão de Tráfego em Sessões de Recarga
+## 2. A Fórmula Matemática Combinada com Filtros Fatais
 
-Para estimar a demanda diária de recarga a partir do VDM e da frota:
-
-$$S_{\text{diárias}} = \text{VDM} \times P_{\text{frota\_ve}} \times T_{\text{captura}} \times F_{\text{âncora}}$$
+$$S_x = \left( \sum_{i=1}^n W_i \times C_{ix} \right) \times \prod_{j=1}^m F_j$$
 
 Onde:
-- $\text{VDM}$: Volume Diário Médio da via (ex: 35.000 veículos/dia).
-- $P_{\text{frota\_ve}}$: Penetração da frota de veículos elétricos na região (ex: 1.2% a 3.5%).
-- $T_{\text{captura}}$: Taxa de atração da via para o estacionamento (tipicamente 1.5% a 3.0%).
-- $F_{\text{âncora}}$: Fator de conversão da âncora comercial (ex: 1.4 para farmácia 24h, 1.8 para supermercado, 1.0 para comércio de rua).
+- $W_i$: Peso do macro-critério $i$ ($W_{\text{rede}} = 0.35, W_{\text{tráfego}} = 0.30, W_{\text{dwell}} = 0.20, W_{\text{concorrência}} = 0.15$).
+- $C_{ix}$: Nota normalizada de 0 a 100 do local $x$ para o critério $i$.
+- $\prod F_j$: Multiplicadores binários de restrição fatal ($F_j \in \{0, 1\}$). Se qualquer fator for zero, a nota final **$S_x = 0$**, abortando o projeto antes de gastar recursos com *site survey*:
+  - $F_1$ (Conectividade): Presença de sinal 4G/5G ou Wi-Fi estável no ponto (obrigatório para autorização OCPP e cobrança).
+  - $F_2$ (Segurança & Área): Fora de área de preservação ambiental (APP) ou risco hidrológico de inundação.
+  - $F_3$ (Acesso Físico): Acesso livre de veículos 24h sem restrições de manobra.
+  - $F_4$ (Viabilidade Concessionária): Ausência de veto absoluto ou inviabilidade técnica emitida pela concessionária local.
 
 ---
 
-## 3. Curva de Carga Horária Típica de Recarga (24 Horas)
+## 3. Detalhamento dos Componentes Analíticos
 
-A distribuição temporal das sessões varia conforme a tipologia do local:
-1. **Comercial / Farmácia / Conveniência:** Pico bimodal (11h30 às 14h00 e 17h30 às 20h30).
-2. **Residencial / Condomínio:** Pico noturno (19h00 às 06h00).
-3. **Frotas Corporativas / Logística:** Recarga noturna em baixa tarifa ou recarga de oportunidade ao meio-dia.
-4. **Hub de Rodovia:** Distribuição homogênea das 07h00 às 22h00 com picos nos finais de semana.
+### A. Viabilidade Técnica e Elétrica (Grid Readiness - 35%)
+- **Fator de Demanda Simultânea:** Impacto no padrão de entrada considerando a curva de carga simultânea do imóvel.
+- **Distância do Ponto de Entrega:** Metragem de condutores de cobre/alumínio entre o QGBT e os totens. Queda de tensão projetada $\Delta V \le 2.0\%$.
+- **Pontuação de Prontidão da Rede:**
+  - Padrão CEMIG ND-5.1 Grupo F Baixa Tensão até 800A (dispensa subestação MT de R$ 120k): Nota 100.
+  - Média Tensão existente com margem no transformador: Nota 90.
+  - Baixa Tensão saturada exigindo aumento de padrão: Nota 60.
+  - Necessidade de nova cabine MT particular (obra civil pesada): Nota 30 (ou veto econômico se CAPEX > R$ 150k).
 
----
+### B. Densidade de Frota e Perfil Demográfico (Traffic & Fleet - 30%)
+- **Volume Diário Médio (VDM):** Vias arteriais com tráfego > 25.000 veículos/dia pontuam no teto.
+- **Frota Regional:** Emplacamentos de BEV/PHEV registrados no Detran/ABVE na microrregião.
+- **Fator de Habitação Vertical:** Regiões com grande densidade de prédios sem tomada nas garagens pontuam com bônus de **+20%** para carregadores rápidos DC públicos.
 
-## 4. Modelagem de 3 Cenários Operacionais
+### C. Dwell Time & Correlação com POIs (20%)
+- **Carregamento de Oportunidade (15 a 45 min):** Farmácias 24h, postos com conveniência e fast-food. Requer obrigatoriamente **Fast DC (30 kW a 120 kW)**.
+- **Carregamento de Destino (2 a 6 horas):** Shoppings, hotéis, cinemas, supermercados de grande porte. Favorece **Wallboxes AC (7.4 kW a 22 kW)** com menor CAPEX unitário.
 
-Apresentar sempre 3 cenários para tomada de decisão de investidores:
-1. **Conservador:** Baixa taxa de giro (2 a 3 horas de recarga útil por dia por tomada).
-2. **Realista (Baseline):** Giro médio de mercado (5 a 6 horas de recarga útil por dia).
-3. **Otimista:** Ponto consolidado de alta demanda (8 a 10 horas de recarga útil por dia).
+### D. Concorrência e Área de Captação (Catchment Area - 15%)
+- Cálculo de Haversine para rastrear todas as estações existentes:
+  $$D = 2R \arcsin \left( \sqrt{\sin^2\left(\frac{\Delta \phi}{2}\right) + \cos(\phi_1)\cos(\phi_2)\sin^2\left(\frac{\Delta \lambda}{2}\right)} \right)$$
+- **Fator de Saturação:** Se o raio de 3 km possui menos de 2 carregadores DC operando com alta ocupação, a nota é máxima (demanda reprimida). Se houver hubs ociosos na mesma quadra, a nota cai drasticamente.

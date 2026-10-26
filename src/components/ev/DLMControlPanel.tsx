@@ -23,6 +23,7 @@ export interface DLMControlPanelProps {
     isDC: boolean;
   };
   // Cenários de Padrão (Passo 1B)
+  isNewConnection?: boolean;
   currentStandardLimitKW: number;
   currentStandardName: string;
   homologatedStandardLimitKW: number;
@@ -71,6 +72,7 @@ export default function DLMControlPanel({
   gridLimitKW,
   setGridLimitKW,
   configuredChargersSummary,
+  isNewConnection = false,
   currentStandardLimitKW,
   currentStandardName,
   homologatedStandardLimitKW,
@@ -119,7 +121,7 @@ export default function DLMControlPanel({
   let recommendedCharger: ChargerDatasheet | null = null;
   let recommendedChargerReason = "";
 
-  if (safeKW < nominalUnitPowerKW || safeKW < 75) {
+  if (safeKW < nominalUnitPowerKW) {
     // Filtrar equipamentos homologados de acordo com tipo (DC ou AC)
     const isDCScheme = configuredChargersSummary.isDC || safeKW >= 25;
     const candidateChargers = HOMOLOGATED_CHARGERS.filter(c => {
@@ -427,24 +429,32 @@ export default function DLMControlPanel({
             <Building className="w-4 h-4 text-[#0A192F]" /> Cenário do Padrão de Entrada
           </h4>
 
-          {/* Seletor de Cenário: Padrão Atual vs Homologado (ou Card Consolidado se já for adequado) */}
+          {/* Seletor de Cenário: Padrão Atual vs Homologado (ou Card Consolidado se for Ligação Nova ou já adequado) */}
           <div className="space-y-2">
-            {currentStandardLimitKW >= homologatedStandardLimitKW || currentStandardName === homologatedStandardName ? (
+            {isNewConnection || currentStandardLimitKW >= homologatedStandardLimitKW || currentStandardName === homologatedStandardName || currentStandardLimitKW >= (peakDemandKW + configuredChargersSummary.totalPowerKW) ? (
               <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-3.5 space-y-1.5 shadow-xs">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-black uppercase text-emerald-800 tracking-wider flex items-center gap-1.5">
                     <CheckCircle2 className="w-4 h-4 text-[#00B356]" />
-                    Padrão Atual Homologado & Adequado
+                    {isNewConnection ? 'Ligação Nova Dimensionada & Adequada' : 'Padrão Escolhido Homologado & Adequado'}
                   </span>
                   <span className="font-black text-xs text-[#00B356] bg-white px-2 py-0.5 rounded-lg border border-emerald-200">
-                    {currentStandardLimitKW} kW
+                    {Math.max(currentStandardLimitKW, homologatedStandardLimitKW)} kW
                   </span>
                 </div>
                 <strong className="block text-xs text-slate-800">
-                  {currentStandardName}
+                  {isNewConnection ? homologatedStandardName : currentStandardName}
                 </strong>
                 <p className="text-[11px] text-emerald-900 leading-snug">
-                  A capacidade da entrada atende integralmente à carga existente somada à recarga veicular. <strong>Não é necessário solicitar aumento de carga ou reforma de padrão junto à CEMIG.</strong>
+                  {isNewConnection ? (
+                    <>
+                      Trata-se de uma <strong>Ligação Nova</strong> cujo padrão de entrada (<strong>{homologatedStandardName} — {Math.max(currentStandardLimitKW, homologatedStandardLimitKW)} kW</strong>) já foi escolhido sob medida para suportar os <strong>{configuredChargersSummary.totalPowerKW} kW</strong> de recarga veicular com folga. <strong>Não há necessidade de sugerir novo padrão.</strong>
+                    </>
+                  ) : (
+                    <>
+                      A capacidade da entrada (<strong>{Math.max(currentStandardLimitKW, homologatedStandardLimitKW)} kW</strong>) atende integralmente à carga existente somada à recarga veicular. <strong>Não é necessário solicitar aumento de carga ou reforma de padrão junto à CEMIG.</strong>
+                    </>
+                  )}
                 </p>
               </div>
             ) : (
@@ -626,8 +636,26 @@ export default function DLMControlPanel({
               />
             </div>
 
-            {/* Painel Interativo de Limitação Segura de Potência do Carregador (IEC 61851-1 / NBR 17019) */}
-            {enableDLM && (
+            {/* Se o padrão já tem folga plena para 100% da potência nominal do carregador, confirmar operação plena sem limitação */}
+            {enableDLM && safeKW >= nominalUnitPowerKW && (
+              <div className="p-3.5 rounded-2xl border border-emerald-200 bg-emerald-50/70 mb-3 space-y-1.5 shadow-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 text-emerald-900">
+                    <CheckCircle2 className="w-4 h-4 text-[#00B356]" />
+                    Operação a 100% da Potência Nominal
+                  </span>
+                  <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-white text-[#00B356] border border-emerald-200">
+                    Sem Corte ({nominalUnitPowerKW} kW)
+                  </span>
+                </div>
+                <p className="text-[11px] text-emerald-950 leading-snug">
+                  O padrão selecionado (<strong>{gridLimitKW} kW</strong>) possui folga suficiente para alimentar 100% da estação (<strong>{configuredChargersSummary.totalPowerKW} kW</strong>) + demanda base (<strong>{peakDemandKW.toFixed(1)} kW</strong>). <strong>Não é necessário limitar o carregador nem exigir DLM para aprovação.</strong>
+                </p>
+              </div>
+            )}
+
+            {/* Painel Interativo de Limitação Segura de Potência do Carregador (Exibido apenas quando há restrição de rede: safeKW < nominalUnitPowerKW) */}
+            {enableDLM && safeKW < nominalUnitPowerKW && (
               <div className={`p-3.5 rounded-2xl border mb-3 space-y-2.5 transition-all ${
                 isLimitationAccepted
                   ? 'bg-emerald-50/70 border-emerald-300 shadow-xs'

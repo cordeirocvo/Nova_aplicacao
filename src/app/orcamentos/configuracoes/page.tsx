@@ -977,9 +977,19 @@ export default function OrcamentosConfigPage() {
                         )}
                       </td>
 
-                      {/* Fornecedor Menor Preço */}
-                      <td className="px-5 py-3 text-slate-500 font-medium truncate max-w-[140px]" title={item.fornecedorMenorPreco || ""}>
-                        {item.fornecedorMenorPreco || "---"}
+                      {/* Fornecedor Menor Preço / Alerta de Cotação */}
+                      <td className="px-5 py-3 text-slate-500 font-medium" title={item.fornecedorMenorPreco || ""}>
+                        {item.fornecedorMenorPreco === "ESTIMATIVA_WEB" ? (
+                          <span className="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-300 animate-pulse flex items-center gap-1 w-max">
+                            🌐 Estimativa Web (Cotar)
+                          </span>
+                        ) : item.numeroOrcamentoMenorPreco === "PENDENTE_HOMOLOGACAO" ? (
+                          <span className="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-rose-100 text-rose-800 border border-rose-300 flex items-center gap-1 w-max">
+                            ⚠️ Pendente Cotação
+                          </span>
+                        ) : (
+                          <span className="truncate block max-w-[140px]">{item.fornecedorMenorPreco || "---"}</span>
+                        )}
                       </td>
 
                       {/* Ação de Exclusão */}

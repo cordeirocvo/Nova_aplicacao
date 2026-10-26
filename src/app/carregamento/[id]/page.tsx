@@ -25,8 +25,9 @@ export default function ProjetoDetalhes() {
   const [saving, setSaving] = useState(false);
 
   // Recalculate sizing on the fly to get BOM and totalCost
+  const effectivePowerKW = project?.totalCalculatedPowerKW || project?.totalPowerKW || project?.charger?.power || 7.4;
   const sizingResult = project ? calculateSizing({
-    powerkW: project.charger?.power || 7.4,
+    powerkW: effectivePowerKW,
     voltage: project.hasTransformer ? project.transformerSecondaryVoltage : (project.charger?.voltage || 220),
     phases: project.charger?.phases as 1 | 3 || 1,
     distance: project.hasTransformer ? project.chargerDistance : project.distance,
@@ -93,7 +94,23 @@ export default function ProjetoDetalhes() {
     fetch(`/api/ev/sizing/${params.id}`)
       .then(res => res.json())
       .then(data => {
-        setProject(data);
+        let enriched = { ...data };
+        if (data.analysisNotes && typeof data.analysisNotes === 'string' && data.analysisNotes.trim().startsWith('{')) {
+          try {
+            const parsed = JSON.parse(data.analysisNotes);
+            if (parsed && typeof parsed === 'object') {
+              enriched = {
+                ...parsed,
+                ...data,
+                isCoenergyGOSnapshot: true,
+                totalCalculatedPowerKW: parsed.totalPowerKW || parsed.panel220VSelectedKW || data.charger?.power
+              };
+            }
+          } catch (e) {
+            console.warn("Aviso ao deserializar snapshot de analysisNotes:", e);
+          }
+        }
+        setProject(enriched);
         setEditData({
           projectName: data.projectName || "",
           clientName: data.clientName || "",
@@ -194,6 +211,13 @@ export default function ProjetoDetalhes() {
         <div className="flex gap-2">
           {!isEditing ? (
             <>
+              <button 
+                onClick={() => router.push(`/carregamento?loadId=${project.id}`)} 
+                className="flex items-center gap-2 px-4 py-2 bg-[#E45318] hover:bg-orange-600 text-white rounded-xl text-sm font-bold shadow-md transition-all cursor-pointer"
+                title="Abrir no CoenergyGO com a topologia completa, transformador e diagramas unifilares NBR 5410"
+              >
+                <Zap className="w-4 h-4" /> Abrir no CoenergyGO
+              </button>
               <button onClick={() => setIsEditing(true)} className="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all">
                 <Edit className="w-4 h-4" /> Editar Projeto
               </button>

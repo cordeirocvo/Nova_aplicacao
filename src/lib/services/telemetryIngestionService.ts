@@ -83,11 +83,19 @@ export class TelemetryIngestionService {
     if (payload.inversores && payload.inversores.length > 0) {
       let sumPotCA = 0;
       let sumEnergia = 0;
+      let sumCorrenteA = 0;
+      let sumCorrenteB = 0;
+      let sumCorrenteC = 0;
+      let maxTempIGBT = 0;
 
       payload.inversores.forEach((inv, idx) => {
         const invSn = inv.inversorSn || `INV_${idx + 1}`;
         sumPotCA += inv.potenciaKW || 0;
         sumEnergia += inv.energiaDiaKWh || 0;
+        sumCorrenteA += inv.correnteCA_A || 0;
+        sumCorrenteB += inv.correnteCA_B || 0;
+        sumCorrenteC += inv.correnteCA_C || 0;
+        if ((inv.tempIGBT || 0) > maxTempIGBT) maxTempIGBT = inv.tempIGBT || 0;
 
         inversoresConsolidados[invSn] = {
           potenciaKW: parseFloat((inv.potenciaKW || 0).toFixed(2)),
@@ -106,16 +114,27 @@ export class TelemetryIngestionService {
           });
         }
 
+        // Tensão de barramento em paralelo é referenciada pelo primeiro inversor ativo
         if (idx === 0) {
           tensaoCA_A = inv.tensaoCA_A || 0;
           tensaoCA_B = inv.tensaoCA_B || 0;
           tensaoCA_C = inv.tensaoCA_C || 0;
-          correnteCA_A = inv.correnteCA_A || 0;
-          correnteCA_B = inv.correnteCA_B || 0;
-          correnteCA_C = inv.correnteCA_C || 0;
-          tempIGBT = inv.tempIGBT || 45;
         }
       });
+
+      // A corrente AC total da usina é a soma das correntes dos inversores em paralelo
+      if (payload.correnteCA_A === undefined && sumCorrenteA > 0) {
+        correnteCA_A = parseFloat(sumCorrenteA.toFixed(1));
+        correnteCA_B = parseFloat(sumCorrenteB.toFixed(1));
+        correnteCA_C = parseFloat(sumCorrenteC.toFixed(1));
+      } else if (payload.correnteCA_A !== undefined) {
+        correnteCA_A = payload.correnteCA_A;
+        correnteCA_B = payload.correnteCA_B || 0;
+        correnteCA_C = payload.correnteCA_C || 0;
+      }
+      if (maxTempIGBT > 0) {
+        tempIGBT = maxTempIGBT;
+      }
 
       if (totalPotenciaCA <= 0 && sumPotCA > 0) {
         totalPotenciaCA = sumPotCA;

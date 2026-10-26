@@ -4,25 +4,9 @@
       "command": "npx",
       "args": [
         "-y",
-        "@context7/mcp-server"
+        "@upstash/context7-mcp"
       ],
-      "description": "Injeta documentações e especificações técnicas de bibliotecas (TailwindCSS, Radix, Lucide Icons, React, NBR) em tempo real."
-    },
-    "shadcn-ui": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "shadcn-ui-mcp"
-      ],
-      "description": "Componentes visuais e blocos interativos para aceleração e consistência de design do painel de recarga veicular."
-    },
-    "test-sprite-automation": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-puppeteer"
-      ],
-      "description": "Automação e testes de interface no navegador integrado, simulando adições e remoções sucessivas de carregadores e verificando recálculos."
+      "description": "Injeta documentações e especificações técnicas de bibliotecas (TailwindCSS, Radix, Lucide Icons, React, Next.js) em tempo real."
     },
     "postgres-database": {
       "command": "npx",

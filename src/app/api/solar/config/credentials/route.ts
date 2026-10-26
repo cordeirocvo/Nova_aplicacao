@@ -1,9 +1,16 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { CryptoService } from "@/lib/security/cryptoService";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 export async function GET() {
   try {
+    const session: any = await getServerSession(authOptions as any);
+    if (!session || (session.user.role !== "ADMIN" && session.user.role !== "ENGENHEIRO")) {
+      return NextResponse.json({ error: "Acesso não autorizado às credenciais de API" }, { status: 401 });
+    }
+
     const manufacturers = await prisma.manufacturerAPI.findMany();
     const huawei = manufacturers.find(m => m.name === "HUAWEI");
     const solis = manufacturers.find(m => m.name === "SOLIS");
@@ -25,6 +32,11 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
+    const session: any = await getServerSession(authOptions as any);
+    if (!session || session.user.role !== "ADMIN") {
+      return NextResponse.json({ error: "Apenas administradores podem atualizar credenciais de fabricantes" }, { status: 403 });
+    }
+
     const body = await req.json();
     const { huawei, solis } = body;
 

@@ -14,6 +14,8 @@ export interface ElectricalMatchingParams {
   modulo: any;
   quantidadeModulos: number;
   numStrings: number;
+  tempMinimaLocal?: number; // °C para Voc_max (padrão 0°C NBR 16690)
+  tempMaximaCelula?: number; // °C para Vmp_min (padrão 70°C NBR 16690)
 }
 
 /**
@@ -62,34 +64,58 @@ export async function buscarDadosPVGIS(lat: number, lon: number, tilt: number = 
  * Verifica compatibilidade elétrica entre strings e MPPTs
  */
 export function verificarCompatibilidadeEletrica(params: ElectricalMatchingParams) {
-  const { inversor, modulo, quantidadeModulos, numStrings } = params;
+  const { 
+    inversor, 
+    modulo, 
+    quantidadeModulos, 
+    numStrings,
+    tempMinimaLocal = 0,
+    tempMaximaCelula = 70
+  } = params;
   if (!inversor || !modulo || !quantidadeModulos || !numStrings) return null;
 
   const modulosPorString = Math.ceil(quantidadeModulos / numStrings);
   
-  // Tensão da String (STC)
-  const vocTotal = modulosPorString * modulo.Voc;
-  const vmpTotal = modulosPorString * modulo.Vmp;
+  // Coeficientes térmicos (NBR 16690 / IEC 62548)
+  const coefVoc = modulo.coeficienteVoc ?? -0.0030; // -0.30%/°C
+  const coefVmp = modulo.coeficienteVmp ?? -0.0035; // -0.35%/°C
+
+  // Tensão da String em STC (25°C)
+  const vocTotalSTC = modulosPorString * modulo.Voc;
+  const vmpTotalSTC = modulosPorString * modulo.Vmp;
   
+  // Correção de temperatura conforme NBR 16690:
+  // 1. Tensão máxima de circuito aberto no inverno rigoroso (Tmin)
+  const fatorVocMax = 1 + coefVoc * (tempMinimaLocal - 25);
+  const vocTotalMax = Number((vocTotalSTC * fatorVocMax).toFixed(1));
+
+  // 2. Tensão mínima de máxima potência no verão rigoroso (Tcell_max)
+  const fatorVmpMin = 1 + coefVmp * (tempMaximaCelula - 25);
+  const vmpTotalMin = Number((vmpTotalSTC * fatorVmpMin).toFixed(1));
+
   // Corrente da String (STC)
-  const iscTotal = modulo.Isc; // Strings em paralelo mantêm a corrente do módulo por string nas MPPTs
-  // Depende de como as strings são distribuídas nas MPPTs. 
-  // Simplificação: Assumimos 1 MPPT por string ou strings paralelas na mesma MPPT.
+  const iscTotal = modulo.Isc;
 
   const warnings: string[] = [];
-  
-  if (vocTotal > (inversor.tensaoEntradaMaxV || 1000)) {
-    warnings.push(`⚠️ Tensão de circuito aberto (${vocTotal.toFixed(1)}V) excede o limite do inversor (${inversor.tensaoEntradaMaxV}V). Perigo de queima!`);
+  const maxInversorV = inversor.tensaoEntradaMaxV || 1000;
+  const minMpptV = inversor.tensaoEntradaMinV || 180;
+
+  if (vocTotalMax > maxInversorV) {
+    warnings.push(`⚠️ Tensão máxima em dia frio (${vocTotalMax}V a ${tempMinimaLocal}°C) excede o limite do inversor (${maxInversorV}V). Perigo de queima do MPPT (NBR 16690)!`);
+  } else if (vocTotalSTC > maxInversorV) {
+    warnings.push(`⚠️ Tensão de circuito aberto em STC (${vocTotalSTC.toFixed(1)}V) excede o limite do inversor (${maxInversorV}V). Perigo de queima!`);
   }
   
-  if (vmpTotal < (inversor.tensaoEntradaMinV || 100)) {
-    warnings.push(`💡 Tensão de operação (${vmpTotal.toFixed(1)}V) está abaixo do mínimo da MPPT (${inversor.tensaoEntradaMinV}V). O inversor pode não dar partida.`);
+  if (vmpTotalMin < minMpptV) {
+    warnings.push(`💡 Tensão de operação no pico de calor (${vmpTotalMin}V a ${tempMaximaCelula}°C) cai abaixo do mínimo de rastreamento do MPPT (${minMpptV}V). Risco de perda de geração!`);
   }
 
   return {
     modulosPorString,
-    vocTotal,
-    vmpTotal,
+    vocTotal: vocTotalMax,
+    vocTotalSTC,
+    vmpTotal: vmpTotalMin,
+    vmpTotalSTC,
     iscTotal,
     warnings
   };
@@ -107,6 +133,7 @@ export interface PVSimulationInput {
   tempModulos?: number | null;  // Temp. medida do módulo (°C) - se nula, é estimada
   vento?: number;               // Velocidade do vento (m/s)
   capacidadeKWp: number;        // Potência pico da usina (kWp)
+  potenciaInversorKW?: number;  // Potência nominal CA do inversor (kW) para clipping real
   inclinacao?: number;          // Inclinação dos painéis (graus)
   orientacao?: number;          // Azimute dos painéis (graus, 180 = Norte no Hemisfério Sul)
   coefTemperatura?: number;     // Coef. temperatura de potência (%/°C ou decimal, ex: -0.0035)
@@ -152,6 +179,7 @@ export function pvlibSimulate(params: PVSimulationInput): number {
     tempModulos,
     vento = 2.0,
     capacidadeKWp,
+    potenciaInversorKW,
     inclinacao = 10,
     orientacao = 180,
     coefTemperatura = -0.0035,
@@ -262,8 +290,10 @@ export function pvlibSimulate(params: PVSimulationInput): number {
     P_ac = P_ac * attenuationFactor;
   }
 
-  // 8. Inverter Clipping (Corte do Inversor)
-  const capInversorLimit = capacidadeKWp * 1.05;
+  // 8. Inverter Clipping (Corte na potência nominal CA do inversor)
+  const capInversorLimit = potenciaInversorKW !== undefined && potenciaInversorKW > 0 
+    ? potenciaInversorKW 
+    : capacidadeKWp * 1.05;
   if (P_ac > capInversorLimit) {
     P_ac = capInversorLimit;
   }

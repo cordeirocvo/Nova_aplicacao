@@ -12,15 +12,17 @@ tools: Read, Grep, Glob, Bash, Edit, Write
 
 ## 1. O Modelo Multicritério Definitivo (MCDA / AHP - Analytic Hierarchy Process)
 
-A seleção e pontuação (*score*) de um local para eletroposto baseia-se na metodologia científica AHP acoplada a sistemas de informações geográficas (SIG), gerando um índice de **0 a 100 pontos** equilibrado em 4 macro-pilares:
+A seleção e pontuação (*score*) de um local para eletroposto baseia-se na metodologia científica AHP acoplada a sistemas de informações geográficas (SIG), calibrando dinamicamente os pesos para os **6 Nichos Reais de Eletromobilidade**:
 
-### Matriz Padrão de Pesos do Mercado:
-| Macro-Critério | Peso Relativo ($W_i$) | O que avalia em campo |
-| :--- | :---: | :--- |
-| **1. Capacidade de Potência e Rede (Grid Readiness)** | **35%** | Proximidade de subestações, padrão CEMIG Grupo F (BT até 800A), capacidade do transformador local, queda de tensão e custo de conexão (fator eliminatório). |
-| **2. Demanda Estimada e Tráfego (Traffic & EV Density)** | **30%** | VDM (Volume Diário Médio), frota local de EVs cadastrada em raio de 3 a 5 km, quintis superiores de renda e Fator de Habitação Vertical. |
-| **3. Tempo de Permanência (Dwell Time & POIs)** | **20%** | Compatibilidade da velocidade do carregador com a âncora comercial (Oportunidade DC 15-30 min vs Destino AC 2-8h). |
-| **4. Concorrência e Logística (Competition & Catchment Area)** | **15%** | Área de captação (raio de 2 km a 50 km), índice de saturação da concorrência, ociosidade de carregadores vizinhos e facilidade de acesso. |
+### Matriz Dinâmica de Pesos por Nicho de Mercado:
+| Critério de Análise | 1. Rodoviário (Rápido DC) | 2. Hub Urbano / Bairro (DC 60kW) | 3. Varejo / Shopping (AC/DC) | 4. Frotas Last-Mile (Pátio) | 5. Transporte Pesado (MCS) | 6. Residencial Coletivo (AC+DLM) |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Grid Readiness (Infra Elétrica)** | **35%** | **25%** | **20%** | **30%** | **45%** | **15%** |
+| **Tráfego & Fluxo da Via (VDM)** | **30%** | **30%** | **15%** | **5%** | **10%** | **5%** |
+| **Demanda Alvo & Frota VE** | **15%** | **25%** | **20%** | **45%** | **35%** | **45%** |
+| **Dwell Time & Âncora Comercial** | **10%** | **10%** | **35%** | **10%** | **5%** | **25%** |
+| **Concorrência & Vácuo de Mercado** | **10%** | **10%** | **10%** | **10%** | **5%** | **10%** |
+| **SOMA TOTAL** | **100%** | **100%** | **100%** | **100%** | **100%** | **100%** |
 
 ---
 

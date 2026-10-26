@@ -14,7 +14,7 @@ export interface CircuitoEletrico {
   curvaDisjuntor?: "B" | "C" | "D";
   drProtecao?: boolean;   // Se este circuito passa por um DR
   sensibilidadeDrMA?: number; // 30mA
-  dpsClasse?: "II";
+  dpsClasse?: "I" | "II" | "I+II";
   dpsKa?: number;         // 20kA, 40kA, 45kA
   tensaoV: 127 | 220 | 380;
   potenciaW?: number;
@@ -54,12 +54,12 @@ export function criarQuadroExemplo(): QuadroEletricoModel {
           {
             id: "dps-1",
             tag: "DPS",
-            descricao: "DPS Classe II 45kA (3 Fases + N)",
+            descricao: "DPS Classe I+II 45kA / Iimp 12.5kA (3 Fases + N - NBR 5419/NBR 5410)",
             tipo: "DPS",
             polos: 4,
             correnteNominalA: 45,
             dpsKa: 45,
-            dpsClasse: "II",
+            dpsClasse: "I+II",
             tensaoV: 380,
             bitolaCaboMm2: 10,
           },

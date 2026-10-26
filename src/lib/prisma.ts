@@ -15,7 +15,7 @@ export const getOrCreatePool = () => {
   const pool = new Pool({
     connectionString,
     ssl: isLocal ? false : { rejectUnauthorized: false },
-    max: 4,
+    max: 10,
     idleTimeoutMillis: 10000,
     connectionTimeoutMillis: 30000,
     keepAlive: true,

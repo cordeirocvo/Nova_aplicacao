@@ -92,3 +92,20 @@ def test_exportacao_pdf_retorna_stream(token_valido):
     assert resposta.status_code == 200
     assert resposta.headers["content-type"] == "application/pdf"
     assert len(resposta.content) > 500  # PDF válido gerado
+
+
+def test_mapeamento_geo_sete_lagoas(token_valido):
+    """Testa busca de estações reais em Sete Lagoas no raio de 15 km."""
+    headers = {"Authorization": f"Bearer {token_valido}"}
+    resposta = client.get(
+        "/api/v1/geo/mapear-raio?latitude_ponto=-19.471676&longitude_ponto=-44.258735&raio_km=15.0",
+        headers=headers
+    )
+    assert resposta.status_code == 200
+    dados = resposta.json()
+    assert dados["status"] == "sucesso"
+    assert dados["total_encontrado"] >= 4
+    nomes = [e["nome"] for e in dados["estacoes"]]
+    assert any("Olavo Bilac" in n for n in nomes)
+    assert any("Shopping Sete Lagoas" in n for n in nomes)
+

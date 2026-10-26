@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { 
   Zap, Shield, BatteryCharging, AlertTriangle, CheckCircle2, 
   AlertOctagon, Save, FileText, ChevronDown, ChevronUp, Layers, 
-  TrendingDown, Cable, Sparkles
+  TrendingDown, Cable, Sparkles, Plus
 } from "lucide-react";
 import { UnifiedCalculationOutput } from "@/lib/ev/unifiedCalculationEngine";
 
@@ -16,6 +16,7 @@ interface EVStickySummaryProps {
   onStepClick: (stepId: any) => void;
   onSaveProject: () => void;
   onGenerateReport: () => void;
+  onNewProject?: () => void;
   isSaving?: boolean;
 }
 
@@ -27,6 +28,7 @@ export default function EVStickySummary({
   onStepClick,
   onSaveProject,
   onGenerateReport,
+  onNewProject,
   isSaving = false
 }: EVStickySummaryProps) {
   const [isExpanded, setIsExpanded] = useState<boolean>(true);
@@ -131,6 +133,17 @@ export default function EVStickySummary({
 
         {/* Ações Rápidas & Botão Toggle */}
         <div className="flex items-center gap-2 shrink-0">
+          {onNewProject && (
+            <button
+              onClick={onNewProject}
+              className="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 hover:border-slate-600 px-3.5 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-md transition-all cursor-pointer"
+              title="Iniciar Novo Projeto em Branco (Limpa todos os dados)"
+            >
+              <Plus className="w-3.5 h-3.5 text-[#00B356]" />
+              <span className="hidden sm:inline">Novo Projeto</span>
+            </button>
+          )}
+
           <button
             onClick={onSaveProject}
             disabled={isSaving}

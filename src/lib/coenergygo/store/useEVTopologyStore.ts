@@ -81,6 +81,14 @@ interface EVTopologyStoreState {
   // Gaveta/Modal de Inspeção do Componente Selecionado
   selectedDrawerNodeId: string | null;
 
+  // Seleção e exclusão dinâmica de cargas e perdas nos painéis
+  selectedLoads220V: Record<string, boolean>;
+  selectedLoads380V: Record<string, boolean>;
+  toggleLoad220V: (key: string) => void;
+  toggleLoad380V: (key: string) => void;
+  setSelectedLoads220V: (loads: Record<string, boolean>) => void;
+  setSelectedLoads380V: (loads: Record<string, boolean>) => void;
+
   // Inteligência de Gestão de Carga DLM
   hasSmartChargingDLM?: boolean;
   maxChargerCapKW?: number;
@@ -114,6 +122,9 @@ interface EVTopologyStoreState {
     customTransformerKVA?: number;
     customTransformerEfficiencyPercent?: number;
     customTransformerLossesKW?: number;
+    selectedLoads220V?: Record<string, boolean>;
+    selectedLoads380V?: Record<string, boolean>;
+    auxiliaryConfig?: Partial<EVTopologyStoreState['auxiliaryConfig']>;
   }) => void;
   setDLMSettings: (hasDLM: boolean, maxCapKW?: number) => void;
   setCustomTransformerKVA: (kva: number | undefined) => void;
@@ -146,7 +157,23 @@ interface EVTopologyStoreState {
   ) => void;
   updateAuxiliaryConfig: (updates: Partial<EVTopologyStoreState['auxiliaryConfig']>) => void;
   setSelectedDrawerNodeId: (nodeId: string | null) => void;
+  resetToBlank: () => void;
 }
+
+const DEFAULT_SELECTED_LOADS_220V: Record<string, boolean> = {
+  clientBase: true,
+  trafoFeeder: true,
+  trafoLosses: true,
+  auxLighting: true,
+  auxOutlet: true,
+  auxCctv: true,
+  sectionLosses: true
+};
+
+const DEFAULT_SELECTED_LOADS_380V: Record<string, boolean> = {
+  feederLosses: true,
+  chargerInternalLosses: true
+};
 
 const INITIAL_CHARGERS: TopologyChargerNode[] = [
   {
@@ -167,19 +194,57 @@ const INITIAL_CHARGERS: TopologyChargerNode[] = [
 ];
 
 export const useEVTopologyStore = create<EVTopologyStoreState>((set, get) => {
-  // Ler circuitos customizados salvos no localStorage para persistência imediata
+  // Ler circuitos customizados e seleções de cargas salvos no localStorage para persistência imediata
   let initialSaved220V: any[] = [];
   let initialSaved380V: any[] = [];
+  let initialLoads220V: Record<string, boolean> = { ...DEFAULT_SELECTED_LOADS_220V };
+  let initialLoads380V: Record<string, boolean> = { ...DEFAULT_SELECTED_LOADS_380V };
+  let initialAuxConfig = {
+    cctvEnabled: true,
+    cctvPowerW: 300,
+    outletEnabled: true,
+    outletPowerW: 1000,
+    lightingEnabled: true,
+    lightingPowerW: 400
+  };
+
   if (typeof window !== 'undefined') {
     try {
       const s220 = localStorage.getItem('coenergygo_custom_circuits_220v');
       if (s220) initialSaved220V = JSON.parse(s220);
       const s380 = localStorage.getItem('coenergygo_custom_circuits_380v');
       if (s380) initialSaved380V = JSON.parse(s380);
+      const l220 = localStorage.getItem('coenergygo_selected_loads_220v');
+      if (l220) initialLoads220V = { ...DEFAULT_SELECTED_LOADS_220V, ...JSON.parse(l220) };
+      const l380 = localStorage.getItem('coenergygo_selected_loads_380v');
+      if (l380) initialLoads380V = { ...DEFAULT_SELECTED_LOADS_380V, ...JSON.parse(l380) };
+      const auxCfg = localStorage.getItem('coenergygo_topology_aux_config');
+      if (auxCfg) {
+        initialAuxConfig = { ...initialAuxConfig, ...JSON.parse(auxCfg) };
+      }
+      // Manter sincronia entre flags de auxiliaryConfig e selectedLoads220V
+      if (initialLoads220V.auxLighting === false) initialAuxConfig.lightingEnabled = false;
+      if (initialLoads220V.auxOutlet === false) initialAuxConfig.outletEnabled = false;
+      if (initialLoads220V.auxCctv === false) initialAuxConfig.cctvEnabled = false;
     } catch (e) {
-      console.warn('Erro ao carregar circuitos auxiliares do localStorage:', e);
+      console.warn('Erro ao carregar configurações da topologia do localStorage:', e);
     }
   }
+
+  const persistTopologySelectionToStorage = (
+    loads220?: Record<string, boolean>,
+    loads380?: Record<string, boolean>,
+    auxCfg?: EVTopologyStoreState['auxiliaryConfig']
+  ) => {
+    if (typeof window === 'undefined') return;
+    try {
+      if (loads220) localStorage.setItem('coenergygo_selected_loads_220v', JSON.stringify(loads220));
+      if (loads380) localStorage.setItem('coenergygo_selected_loads_380v', JSON.stringify(loads380));
+      if (auxCfg) localStorage.setItem('coenergygo_topology_aux_config', JSON.stringify(auxCfg));
+    } catch (e) {
+      console.warn('Erro ao salvar seleções da topologia no localStorage:', e);
+    }
+  };
 
   const computeOutput = (state: Partial<EVTopologyStoreState>): ChainTopologyOutput => {
     const currentState = { ...get(), ...state };
@@ -202,21 +267,16 @@ export const useEVTopologyStore = create<EVTopologyStoreState>((set, get) => {
       section3MarginPercent: currentState.section3MarginPercent ?? 10,
       section3ConductorMaterial: currentState.section3ConductorMaterial ?? 'copper',
       section3InstallationMethod: currentState.section3InstallationMethod ?? 'B1',
-      auxiliaryConfig: currentState.auxiliaryConfig || {
-        cctvEnabled: true,
-        cctvPowerW: 300,
-        outletEnabled: true,
-        outletPowerW: 1000,
-        lightingEnabled: true,
-        lightingPowerW: 400
-      },
+      auxiliaryConfig: currentState.auxiliaryConfig || initialAuxConfig,
       customCircuits220V: currentState.customCircuits220V || initialSaved220V,
       customCircuits380V: currentState.customCircuits380V || initialSaved380V,
       customTransformerKVA: currentState.customTransformerKVA,
       customTransformerEfficiencyPercent: currentState.customTransformerEfficiencyPercent,
       customTransformerLossesKW: currentState.customTransformerLossesKW,
       hasSmartChargingDLM: currentState.hasSmartChargingDLM,
-      maxChargerCapKW: currentState.maxChargerCapKW
+      maxChargerCapKW: currentState.maxChargerCapKW,
+      selectedLoads220V: currentState.selectedLoads220V || initialLoads220V,
+      selectedLoads380V: currentState.selectedLoads380V || initialLoads380V
     });
   };
 
@@ -239,16 +299,11 @@ export const useEVTopologyStore = create<EVTopologyStoreState>((set, get) => {
     section3MarginPercent: 10,
     section3ConductorMaterial: 'copper',
     section3InstallationMethod: 'B1',
-    auxiliaryConfig: {
-      cctvEnabled: true,
-      cctvPowerW: 300,
-      outletEnabled: true,
-      outletPowerW: 1000,
-      lightingEnabled: true,
-      lightingPowerW: 400
-    },
+    auxiliaryConfig: initialAuxConfig,
     customCircuits220V: initialSaved220V,
-    customCircuits380V: initialSaved380V
+    customCircuits380V: initialSaved380V,
+    selectedLoads220V: initialLoads220V,
+    selectedLoads380V: initialLoads380V
   });
 
   return {
@@ -278,20 +333,97 @@ export const useEVTopologyStore = create<EVTopologyStoreState>((set, get) => {
     customTransformerEfficiencyPercent: undefined,
     customTransformerLossesKW: undefined,
 
-    auxiliaryConfig: {
-      cctvEnabled: true,
-      cctvPowerW: 300,
-      outletEnabled: true,
-      outletPowerW: 1000,
-      lightingEnabled: true,
-      lightingPowerW: 400
-    },
+    auxiliaryConfig: initialAuxConfig,
 
     selectedDrawerNodeId: null,
+    selectedLoads220V: initialLoads220V,
+    selectedLoads380V: initialLoads380V,
     topologyOutput: initialOutput,
+
+    toggleLoad220V: (key: string) => {
+      set((state) => {
+        const nextVal = state.selectedLoads220V[key] === false ? true : false;
+        const nextLoads = {
+          ...state.selectedLoads220V,
+          [key]: nextVal
+        };
+        const nextAux = { ...state.auxiliaryConfig };
+        if (key === 'auxLighting') nextAux.lightingEnabled = nextVal;
+        if (key === 'auxOutlet') nextAux.outletEnabled = nextVal;
+        if (key === 'auxCctv') nextAux.cctvEnabled = nextVal;
+
+        persistTopologySelectionToStorage(nextLoads, undefined, nextAux);
+        const nextPartial = { selectedLoads220V: nextLoads, auxiliaryConfig: nextAux };
+        return {
+          ...nextPartial,
+          topologyOutput: computeOutput({ ...state, ...nextPartial })
+        };
+      });
+    },
+
+    toggleLoad380V: (key: string) => {
+      set((state) => {
+        const nextLoads = {
+          ...state.selectedLoads380V,
+          [key]: state.selectedLoads380V[key] === false ? true : false
+        };
+        persistTopologySelectionToStorage(undefined, nextLoads, undefined);
+        const nextPartial = { selectedLoads380V: nextLoads };
+        return {
+          ...nextPartial,
+          topologyOutput: computeOutput({ ...state, ...nextPartial })
+        };
+      });
+    },
+
+    setSelectedLoads220V: (loads) => {
+      set((state) => {
+        const nextAux = { ...state.auxiliaryConfig };
+        if (loads.auxLighting !== undefined) nextAux.lightingEnabled = loads.auxLighting !== false;
+        if (loads.auxOutlet !== undefined) nextAux.outletEnabled = loads.auxOutlet !== false;
+        if (loads.auxCctv !== undefined) nextAux.cctvEnabled = loads.auxCctv !== false;
+        persistTopologySelectionToStorage(loads, undefined, nextAux);
+        const nextPartial = { selectedLoads220V: loads, auxiliaryConfig: nextAux };
+        return {
+          ...nextPartial,
+          topologyOutput: computeOutput({ ...state, ...nextPartial })
+        };
+      });
+    },
+
+    setSelectedLoads380V: (loads) => {
+      set((state) => {
+        persistTopologySelectionToStorage(undefined, loads, undefined);
+        const nextPartial = { selectedLoads380V: loads };
+        return {
+          ...nextPartial,
+          topologyOutput: computeOutput({ ...state, ...nextPartial })
+        };
+      });
+    },
 
     syncFromProjectData: (data) => {
       set((state) => {
+        const mergedLoads220 = data.selectedLoads220V
+          ? { ...DEFAULT_SELECTED_LOADS_220V, ...data.selectedLoads220V }
+          : state.selectedLoads220V;
+        const mergedLoads380 = data.selectedLoads380V
+          ? { ...DEFAULT_SELECTED_LOADS_380V, ...data.selectedLoads380V }
+          : state.selectedLoads380V;
+        const mergedAux = data.auxiliaryConfig
+          ? { ...state.auxiliaryConfig, ...data.auxiliaryConfig }
+          : { ...state.auxiliaryConfig };
+
+        if (data.selectedLoads220V) {
+          if (mergedLoads220.auxLighting !== undefined) mergedAux.lightingEnabled = mergedLoads220.auxLighting !== false;
+          if (mergedLoads220.auxOutlet !== undefined) mergedAux.outletEnabled = mergedLoads220.auxOutlet !== false;
+          if (mergedLoads220.auxCctv !== undefined) mergedAux.cctvEnabled = mergedLoads220.auxCctv !== false;
+        }
+
+        if (data.selectedLoads220V || data.selectedLoads380V || data.auxiliaryConfig) {
+          persistTopologySelectionToStorage(mergedLoads220, mergedLoads380, mergedAux);
+        }
+
         const nextState: Partial<EVTopologyStoreState> = {
           clientBaseLoadKW: data.clientBaseLoadKW ?? state.clientBaseLoadKW,
           currentStandardCategory: data.currentStandardCategory ?? state.currentStandardCategory,
@@ -300,8 +432,8 @@ export const useEVTopologyStore = create<EVTopologyStoreState>((set, get) => {
           chargers: data.chargers && data.chargers.length > 0 ? data.chargers : state.chargers,
           hasSmartChargingDLM: data.hasSmartChargingDLM !== undefined ? data.hasSmartChargingDLM : state.hasSmartChargingDLM,
           maxChargerCapKW: data.maxChargerCapKW !== undefined ? data.maxChargerCapKW : state.maxChargerCapKW,
-          customCircuits220V: data.customCircuits220V && data.customCircuits220V.length > 0 ? data.customCircuits220V : state.customCircuits220V,
-          customCircuits380V: data.customCircuits380V && data.customCircuits380V.length > 0 ? data.customCircuits380V : state.customCircuits380V,
+          customCircuits220V: data.customCircuits220V !== undefined ? data.customCircuits220V : state.customCircuits220V,
+          customCircuits380V: data.customCircuits380V !== undefined ? data.customCircuits380V : state.customCircuits380V,
           section1DistanceM: data.section1DistanceM ?? state.section1DistanceM,
           section1MarginPercent: data.section1MarginPercent ?? state.section1MarginPercent,
           section1ConductorMaterial: data.section1ConductorMaterial ?? state.section1ConductorMaterial,
@@ -316,7 +448,10 @@ export const useEVTopologyStore = create<EVTopologyStoreState>((set, get) => {
           section3InstallationMethod: data.section3InstallationMethod ?? state.section3InstallationMethod,
           customTransformerKVA: data.customTransformerKVA !== undefined ? data.customTransformerKVA : state.customTransformerKVA,
           customTransformerEfficiencyPercent: data.customTransformerEfficiencyPercent !== undefined ? data.customTransformerEfficiencyPercent : state.customTransformerEfficiencyPercent,
-          customTransformerLossesKW: data.customTransformerLossesKW !== undefined ? data.customTransformerLossesKW : state.customTransformerLossesKW
+          customTransformerLossesKW: data.customTransformerLossesKW !== undefined ? data.customTransformerLossesKW : state.customTransformerLossesKW,
+          selectedLoads220V: mergedLoads220,
+          selectedLoads380V: mergedLoads380,
+          auxiliaryConfig: mergedAux
         };
         return {
           ...nextState,
@@ -580,15 +715,67 @@ export const useEVTopologyStore = create<EVTopologyStoreState>((set, get) => {
     updateAuxiliaryConfig: (updates) => {
       set((state) => {
         const updatedConfig = { ...state.auxiliaryConfig, ...updates };
+        const nextLoads220 = { ...state.selectedLoads220V };
+        if (updates.lightingEnabled !== undefined) nextLoads220.auxLighting = updates.lightingEnabled;
+        if (updates.outletEnabled !== undefined) nextLoads220.auxOutlet = updates.outletEnabled;
+        if (updates.cctvEnabled !== undefined) nextLoads220.auxCctv = updates.cctvEnabled;
+
+        persistTopologySelectionToStorage(nextLoads220, undefined, updatedConfig);
         return {
           auxiliaryConfig: updatedConfig,
-          topologyOutput: computeOutput({ auxiliaryConfig: updatedConfig })
+          selectedLoads220V: nextLoads220,
+          topologyOutput: computeOutput({ auxiliaryConfig: updatedConfig, selectedLoads220V: nextLoads220 })
         };
       });
     },
 
     setSelectedDrawerNodeId: (nodeId) => {
       set({ selectedDrawerNodeId: nodeId });
+    },
+
+    resetToBlank: () => {
+      set(() => {
+        const defaultAux = {
+          cctvEnabled: true,
+          cctvPowerW: 300,
+          outletEnabled: true,
+          outletPowerW: 1000,
+          lightingEnabled: true,
+          lightingPowerW: 400
+        };
+        persistTopologySelectionToStorage(
+          { ...DEFAULT_SELECTED_LOADS_220V },
+          { ...DEFAULT_SELECTED_LOADS_380V },
+          defaultAux
+        );
+        const resetState = {
+          chargers: INITIAL_CHARGERS,
+          gridSupplyVoltage: 220 as const,
+          utility: 'CEMIG' as const,
+          clientBaseLoadKW: 0,
+          currentStandardCategory: 'C1',
+          currentStandardBreakerA: undefined,
+          section1DistanceM: 15,
+          section1MarginPercent: 10,
+          section2DistanceM: 5,
+          section2MarginPercent: 10,
+          section3DistanceM: 5,
+          section3MarginPercent: 10,
+          customCircuits220V: [],
+          customCircuits380V: [],
+          customTransformerKVA: undefined,
+          customTransformerEfficiencyPercent: undefined,
+          customTransformerLossesKW: undefined,
+          selectedLoads220V: { ...DEFAULT_SELECTED_LOADS_220V },
+          selectedLoads380V: { ...DEFAULT_SELECTED_LOADS_380V },
+          auxiliaryConfig: defaultAux,
+          selectedDrawerNodeId: null
+        };
+        return {
+          ...resetState,
+          topologyOutput: computeOutput(resetState)
+        };
+      });
     }
   };
 });

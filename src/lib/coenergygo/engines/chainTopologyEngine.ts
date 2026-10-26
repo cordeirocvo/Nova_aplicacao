@@ -89,6 +89,10 @@ export interface ChainTopologyInputParams {
   currentStandardCategory: string; // Ex: 'B1', 'C6', 'F1'
   currentStandardBreakerA?: number;
   
+  // Seleção e exclusão dinâmica de cargas e perdas nos painéis
+  selectedLoads220V?: Record<string, boolean>;
+  selectedLoads380V?: Record<string, boolean>;
+
   // Distâncias e margens dos trechos gerais
   section1DistanceM: number;       // Padrão -> Painel 220V
   section1MarginPercent: number;
@@ -471,7 +475,9 @@ export function calculateChainTopology(params: ChainTopologyInputParams): ChainT
     customCircuits380V = [],
     customTransformerKVA,
     hasSmartChargingDLM,
-    maxChargerCapKW
+    maxChargerCapKW,
+    selectedLoads220V = {},
+    selectedLoads380V = {}
   } = params;
 
   const {
@@ -486,8 +492,17 @@ export function calculateChainTopology(params: ChainTopologyInputParams): ChainT
   const isGrid380V = gridSupplyVoltage === 380;
   const isTransformerNeeded = gridSupplyVoltage === 220 && hasCharger380V;
 
+  // Filtros dinâmicos de perdas selecionadas nos painéis
+  const includeFeederLosses380V = selectedLoads380V.feederLosses !== false;
+  const includeChargerLosses380V = selectedLoads380V.chargerInternalLosses !== false;
+
   // 1.1 Modelagem individual dos Carregadores com Rendimento e Perdas Internas
   const enrichedChargers = chargers.map(c => {
+    const is380 = c.voltageV >= 380;
+    const isSelected = is380
+      ? (selectedLoads380V[c.id] !== false)
+      : (selectedLoads220V[`ch_${c.id}`] !== false);
+
     const isDC = c.type === 'DC' || c.powerKW >= 30;
     // Rendimento padrão da indústria: 95.0% para retificadores DC industriais / 98.5% para AC Wallbox
     const defaultEff = isDC ? 95.0 : 98.5;
@@ -496,15 +511,19 @@ export function calculateChainTopology(params: ChainTopologyInputParams): ChainT
 
     // Perda interna calculada em kW: P_loss = P_nominal * (1/η - 1)
     const calcLossesKW = Number((c.powerKW * (1 / eff - 1)).toFixed(2));
-    const internalLossesKW = c.internalLossesKW !== undefined && c.internalLossesKW >= 0 ? c.internalLossesKW : calcLossesKW;
-    const inputPowerKW = Number((c.powerKW + internalLossesKW).toFixed(2));
+    const rawInternalLossesKW = c.internalLossesKW !== undefined && c.internalLossesKW >= 0 ? c.internalLossesKW : calcLossesKW;
+    const internalLossesKW = (is380 ? includeChargerLosses380V : true) ? rawInternalLossesKW : 0;
+    
+    // Potência de entrada: se não estiver selecionado na lista de cargas ativas, a potência alocada é zero
+    const inputPowerKW = isSelected ? Number((c.powerKW + internalLossesKW).toFixed(2)) : 0;
 
-    // Corrente de entrada na alimentação do carregador (considerando perdas internas)
+    // Corrente de entrada na alimentação do carregador (considerando perdas internas se ativas)
     const sqrtPhases = Math.sqrt(c.phases === 3 ? 3 : 1);
-    const designCurrentA = Number(((inputPowerKW * 1000) / (sqrtPhases * c.voltageV * 0.98)).toFixed(1));
+    const designCurrentA = inputPowerKW > 0 ? Number(((inputPowerKW * 1000) / (sqrtPhases * c.voltageV * 0.98)).toFixed(1)) : 0;
 
     return {
       ...c,
+      isSelected,
       efficiencyPercent: effPercent,
       internalLossesKW,
       inputPowerKW,
@@ -528,7 +547,7 @@ export function calculateChainTopology(params: ChainTopologyInputParams): ChainT
       toNode: charger.name,
       distanceNominalM: charger.distanceMeters,
       marginPercent: charger.marginPercent,
-      designCurrentA: charger.designCurrentA,
+      designCurrentA: charger.designCurrentA > 0 ? charger.designCurrentA : 10,
       phases: charger.phases,
       voltageV: charger.voltageV,
       conductorMaterial: charger.conductorMaterial || 'copper',
@@ -539,29 +558,38 @@ export function calculateChainTopology(params: ChainTopologyInputParams): ChainT
     });
   });
 
-  // Perdas Joule nos alimentadores do Trecho 4
-  const totalFeederLosses380VKW = Number(
-    section4_feeders
-      .filter((_, idx) => enrichedChargers[idx].voltageV >= 380)
-      .reduce((sum, f) => sum + (f.calculationBreakdown?.jouleLossesKW || 0), 0)
-      .toFixed(3)
-  );
-  const totalFeederLossesAllKW = Number(
-    section4_feeders
-      .reduce((sum, f) => sum + (f.calculationBreakdown?.jouleLossesKW || 0), 0)
-      .toFixed(3)
-  );
+  // Perdas Joule nos alimentadores do Trecho 4 (zeradas se o usuário desmarcar perdas de alimentadores)
+  const totalFeederLosses380VKW = includeFeederLosses380V
+    ? Number(
+        section4_feeders
+          .filter((_, idx) => enrichedChargers[idx].voltageV >= 380 && enrichedChargers[idx].isSelected)
+          .reduce((sum, f) => sum + (f.calculationBreakdown?.jouleLossesKW || 0), 0)
+          .toFixed(3)
+      )
+    : 0;
 
-  // Cargas Auxiliares no Painel 380V
-  const customCircuits380VKW = customCircuits380V.reduce((sum, c) => sum + (c.powerW || 0), 0) / 1000;
-  const customCircuits380VA = (customCircuits380VKW * 1000) / (Math.sqrt(3) * 380 * 0.98);
+  const totalFeederLossesAllKW = includeFeederLosses380V
+    ? Number(
+        section4_feeders
+          .filter((_, idx) => enrichedChargers[idx].isSelected)
+          .reduce((sum, f) => sum + (f.calculationBreakdown?.jouleLossesKW || 0), 0)
+          .toFixed(3)
+      )
+    : 0;
 
-  // 3. Potência Ativa e Corrente Total no Secundário 380V
+  // Cargas Auxiliares no Painel 380V (filtradas por circuitos marcados)
+  const activeCustomCircuits380V = customCircuits380V.filter(c => selectedLoads380V[`custom_${c.id}`] !== false);
+  const customCircuits380VKW = activeCustomCircuits380V.reduce((sum, c) => sum + (c.powerW || 0), 0) / 1000;
+  const customCircuits380VA = customCircuits380VKW > 0 ? (customCircuits380VKW * 1000) / (Math.sqrt(3) * 380 * 0.98) : 0;
+
+  // 3. Potência Ativa e Corrente Total no Secundário 380V (estritamente das cargas e perdas selecionadas)
   const chargers380VInputKW = Number(
-    enrichedChargers.filter(c => c.voltageV >= 380).reduce((sum, c) => sum + c.inputPowerKW, 0).toFixed(2)
+    enrichedChargers.filter(c => c.voltageV >= 380 && c.isSelected).reduce((sum, c) => sum + c.inputPowerKW, 0).toFixed(2)
   );
   const secondaryTotalActiveKW = Number((chargers380VInputKW + totalFeederLosses380VKW + customCircuits380VKW).toFixed(2));
-  const trafoSecondaryCurrentA = Number(((secondaryTotalActiveKW * 1000) / (Math.sqrt(3) * 380 * 0.98)).toFixed(1));
+  const trafoSecondaryCurrentA = secondaryTotalActiveKW > 0
+    ? Number(((secondaryTotalActiveKW * 1000) / (Math.sqrt(3) * 380 * 0.98)).toFixed(1))
+    : 0;
 
   // 4. Trecho 3: Secundário do Transformador (380V) ➔ Painel 380V
   let section3: SectionCableConduitSizing | undefined;
@@ -592,6 +620,8 @@ export function calculateChainTopology(params: ChainTopologyInputParams): ChainT
   // 5. Dimensionamento do Transformador Elevador (Dyn1 a seco)
   let transformerKVA = 0;
   let trafoPrimaryCurrentA = 0;
+  let trafoPrimaryActiveKW = 0;
+  let downstreamCables220LossesKW = 0;
   let trafoLossesKW = 0;
   let isTrafoOverloaded = false;
   let trafoOverloadPercent = 0;
@@ -601,15 +631,33 @@ export function calculateChainTopology(params: ChainTopologyInputParams): ChainT
   const trafoEffPercent = customTransformerEfficiencyPercent || defaultTrafoEff;
   const effTrafo = trafoEffPercent / 100;
 
+  const isTrafoFeederSelected = selectedLoads220V.trafoFeeder !== false;
+  const includeTrafoLosses220V = selectedLoads220V.trafoLosses !== false;
+  const includeSectionLosses220V = selectedLoads220V.sectionLosses !== false;
+  const effectiveSection3LossKW = includeSectionLosses220V ? section3LossKW : 0;
+
   if (isTransformerNeeded) {
-    // Demanda entregue pelo secundário somando cargas e perdas do cabo Trecho 3
-    const trafoOutputDemandKW = Number((secondaryTotalActiveKW + section3LossKW).toFixed(2));
+    // Demanda entregue pelo secundário somando cargas e perdas do cabo Trecho 3 (se selecionado o alimentador do trafo)
+    const trafoOutputDemandKW = isTrafoFeederSelected
+      ? Number((secondaryTotalActiveKW + effectiveSection3LossKW).toFixed(2))
+      : 0;
 
     // Perdas do transformador (ferro + cobre)
-    const calcTrafoLossesKW = Number((trafoOutputDemandKW * (1 / effTrafo - 1)).toFixed(2));
-    trafoLossesKW = customTransformerLossesKW !== undefined && customTransformerLossesKW >= 0 ? customTransformerLossesKW : calcTrafoLossesKW;
+    const calcTrafoLossesKW = includeTrafoLosses220V && trafoOutputDemandKW > 0
+      ? Number((trafoOutputDemandKW * (1 / effTrafo - 1)).toFixed(2))
+      : 0;
+    trafoLossesKW = customTransformerLossesKW !== undefined && customTransformerLossesKW >= 0
+      ? (includeTrafoLosses220V ? customTransformerLossesKW : 0)
+      : calcTrafoLossesKW;
 
-    const trafoPrimaryActiveKW = Number((trafoOutputDemandKW + trafoLossesKW).toFixed(2));
+    downstreamCables220LossesKW = includeSectionLosses220V
+      ? Number((effectiveSection3LossKW + (includeFeederLosses380V ? totalFeederLosses380VKW : 0)).toFixed(2))
+      : 0;
+
+    // Potência primária considerando estritamente as cargas e perdas ativas selecionadas no quadro
+    trafoPrimaryActiveKW = isTrafoFeederSelected
+      ? Number((totalChargersNominalKW + trafoLossesKW + downstreamCables220LossesKW).toFixed(2))
+      : 0;
     const loadApparentKVA = Number((trafoPrimaryActiveKW / cosPhiTrafo).toFixed(1));
     const safetyMarginFactor = 1.15; // NBR 17019 regime contínuo
     const requiredKVA = Number((loadApparentKVA * safetyMarginFactor).toFixed(1));
@@ -634,7 +682,9 @@ export function calculateChainTopology(params: ChainTopologyInputParams): ChainT
       transformerKVA = autoSelectedKVA;
     }
 
-    trafoPrimaryCurrentA = Number(((trafoPrimaryActiveKW * 1000) / (Math.sqrt(3) * 220 * cosPhiTrafo)).toFixed(1));
+    trafoPrimaryCurrentA = trafoPrimaryActiveKW > 0
+      ? Number(((trafoPrimaryActiveKW * 1000) / (Math.sqrt(3) * 220 * cosPhiTrafo)).toFixed(1))
+      : 0;
 
     trafoBreakdown = {
       totalLoadChargersKW: totalChargersNominalKW,
@@ -665,7 +715,7 @@ export function calculateChainTopology(params: ChainTopologyInputParams): ChainT
   let section2: SectionCableConduitSizing | undefined;
   let section2LossKW = 0;
   if (isTransformerNeeded) {
-    const trafoPrimaryActiveKW = trafoBreakdown?.totalPrimaryPowerKW || (chargers380VInputKW + trafoLossesKW);
+    const trafoPrimaryActiveKW = trafoBreakdown?.totalPrimaryPowerKW || 0;
     section2 = sizeCableAndConduitSection({
       sectionId: 'trecho_2',
       name: 'Trecho 2: Painel 220V ➔ Primário Transformador (220V)',
@@ -673,19 +723,19 @@ export function calculateChainTopology(params: ChainTopologyInputParams): ChainT
       toNode: 'Primário Transformador',
       distanceNominalM: section2DistanceM,
       marginPercent: section2MarginPercent,
-      designCurrentA: trafoPrimaryCurrentA,
+      designCurrentA: trafoPrimaryCurrentA > 0 ? trafoPrimaryCurrentA : 10,
       phases: 3,
       voltageV: 220,
       conductorMaterial: section2ConductorMaterial,
       installationMethod: section2InstallationMethod,
       maxAllowedVoltageDropPercent: 1.0,
-      includeNeutral: false,
+      includeNeutral: true,
       minGaugeMM2: section2ConductorMaterial === 'aluminum' ? 16 : 10,
       minConductorsPerPhase: trafoPrimaryCurrentA > 360 ? (trafoPrimaryCurrentA > 600 ? 3 : 2) : 1,
       standardOriginNote: `Alimentação primária em 220V considerando perdas totais (${trafoPrimaryCurrentA}A) • Trafo de ${transformerKVA} kVA • Condutor ${section2ConductorMaterial === 'aluminum' ? 'Alumínio' : 'Cobre'}`,
       powerKW: trafoPrimaryActiveKW
     });
-    section2LossKW = section2.calculationBreakdown?.jouleLossesKW || 0;
+    section2LossKW = includeSectionLosses220V ? (section2.calculationBreakdown?.jouleLossesKW || 0) : 0;
   }
 
   const transformerState: TransformerTopologyState = {
@@ -707,29 +757,38 @@ export function calculateChainTopology(params: ChainTopologyInputParams): ChainT
   };
 
   // 7. Cargas Auxiliares no Painel 220V
-  const cctvPowerW = auxiliaryConfig.cctvEnabled ? auxiliaryConfig.cctvPowerW : 0;
-  const outletPowerW = auxiliaryConfig.outletEnabled ? auxiliaryConfig.outletPowerW : 0;
-  const lightingPowerW = auxiliaryConfig.lightingEnabled ? auxiliaryConfig.lightingPowerW : 0;
-  const customAux220VKW = customCircuits220V.reduce((sum, c) => sum + (c.powerW || 0), 0) / 1000;
-  const totalAuxKW = (cctvPowerW + outletPowerW + lightingPowerW) / 1000 + customAux220VKW;
+  const isCctvSelected = (selectedLoads220V.auxCctv !== false && selectedLoads220V.cctv !== false) && auxiliaryConfig.cctvEnabled;
+  const isOutletSelected = (selectedLoads220V.auxOutlet !== false && selectedLoads220V.outlet !== false) && auxiliaryConfig.outletEnabled;
+  const isLightingSelected = (selectedLoads220V.auxLighting !== false && selectedLoads220V.lighting !== false) && auxiliaryConfig.lightingEnabled;
+
+  const cctvPowerW = isCctvSelected ? auxiliaryConfig.cctvPowerW : 0;
+  const outletPowerW = isOutletSelected ? auxiliaryConfig.outletPowerW : 0;
+  const lightingPowerW = isLightingSelected ? auxiliaryConfig.lightingPowerW : 0;
+  const activeCustomCircuits220V = customCircuits220V.filter(c => selectedLoads220V[`custom_${c.id}`] !== false);
+  const customAux220VKW = activeCustomCircuits220V.reduce((sum, c) => sum + (c.powerW || 0), 0) / 1000;
+  const totalAuxKW = Number(((cctvPowerW + outletPowerW + lightingPowerW) / 1000 + customAux220VKW).toFixed(2));
 
   // Correntes de cada circuito auxiliar dimensionadas pela sua carga lançada em projeto
   const cctvVoltage = isGrid380V ? 220 : 127;
   const cctvCurrentA = cctvPowerW > 0 ? Number((cctvPowerW / cctvVoltage).toFixed(1)) : 0;
-  const cctvBreakerA = STANDARD_BREAKERS.find(b => b >= cctvCurrentA * 1.25) || 10;
+  const cctvBreakerA = 16; // Padrão normativo de projeto: 16A Monofásico Curva C
 
   const outletVoltage = isGrid380V ? 220 : 127;
   const outletCurrentA = outletPowerW > 0 ? Number((outletPowerW / outletVoltage).toFixed(1)) : 0;
-  const outletBreakerA = STANDARD_BREAKERS.find(b => b >= outletCurrentA * 1.25) || 20;
+  const outletBreakerA = 25; // Padrão normativo de projeto: 25A Monofásico Curva C (Tomada de Manutenção TUG/TUE)
 
   const lightingVoltage = isGrid380V ? 220 : 127;
   const lightingCurrentA = lightingPowerW > 0 ? Number((lightingPowerW / lightingVoltage).toFixed(1)) : 0;
-  const lightingBreakerA = STANDARD_BREAKERS.find(b => b >= lightingCurrentA * 1.25) || 10;
+  const lightingBreakerA = 10; // Padrão normativo de projeto: 10A Monofásico Curva C (Iluminação LED)
+
+  // Carga de base do cliente (filtrada se selecionada)
+  const isClientBaseSelected = selectedLoads220V.clientBase !== false;
+  const effectiveClientBaseLoadKW = isClientBaseSelected ? clientBaseLoadKW : 0;
 
   // Disjuntor do Cliente dimensionado pela carga existente de medição (Passos 1A e 1B)
   const clientVoltage = isGrid380V ? 380 : 220;
-  const clientCurrentA = clientBaseLoadKW > 0
-    ? Number(((clientBaseLoadKW * 1000) / (Math.sqrt(3) * clientVoltage * 0.95)).toFixed(1))
+  const clientCurrentA = effectiveClientBaseLoadKW > 0
+    ? Number(((effectiveClientBaseLoadKW * 1000) / (Math.sqrt(3) * clientVoltage * 0.95)).toFixed(1))
     : 0;
   const clientBreakerA = clientCurrentA > 0
     ? (STANDARD_BREAKERS.find(b => b >= clientCurrentA * 1.15) || 40)
@@ -737,13 +796,13 @@ export function calculateChainTopology(params: ChainTopologyInputParams): ChainT
 
   // Medidor Exclusivo do Hub: Mede trafo/carregadores + auxiliares (NÃO mede carga de base do cliente)
   const hubDirectLoadKW = isTransformerNeeded
-    ? Number(((trafoBreakdown?.totalPrimaryPowerKW || 0) + section2LossKW).toFixed(2))
+    ? Number((trafoPrimaryActiveKW + (includeSectionLosses220V ? section2LossKW : 0)).toFixed(2))
     : Number((totalChargersInputKW + totalFeederLossesAllKW).toFixed(2));
   const hubAggregatedLoadKW = Number((hubDirectLoadKW + totalAuxKW).toFixed(2));
 
   const auxiliaryLoads: AuxiliaryLoadsState = {
     cctv: {
-      enabled: auxiliaryConfig.cctvEnabled,
+      enabled: auxiliaryConfig.cctvEnabled && isCctvSelected,
       voltageV: cctvVoltage as any,
       powerW: cctvPowerW,
       phases: 1,
@@ -754,7 +813,7 @@ export function calculateChainTopology(params: ChainTopologyInputParams): ChainT
       formulaSizing: `Ib = P / V = ${cctvPowerW}W / ${cctvVoltage}V = ${cctvCurrentA}A ➔ Disjuntor ${cctvBreakerA}A Curva C + DPS Classe III`
     },
     maintenanceOutlet: {
-      enabled: auxiliaryConfig.outletEnabled,
+      enabled: auxiliaryConfig.outletEnabled && isOutletSelected,
       voltageV: outletVoltage as any,
       powerW: outletPowerW,
       phases: 1,
@@ -767,25 +826,25 @@ export function calculateChainTopology(params: ChainTopologyInputParams): ChainT
       formulaSizing: `Ib = P / V = ${outletPowerW}W / ${outletVoltage}V = ${outletCurrentA}A ➔ Disjuntor ${outletBreakerA}A Curva C + DR 30mA (NBR 5410)`
     },
     lighting: {
-      enabled: auxiliaryConfig.lightingEnabled,
+      enabled: auxiliaryConfig.lightingEnabled && isLightingSelected,
       voltageV: lightingVoltage as any,
       powerW: lightingPowerW,
       phases: 1,
       breakerA: lightingBreakerA,
       cableMM2: 2.5,
-      curve: 'B',
+      curve: 'C',
       designCurrentA: lightingCurrentA,
-      formulaSizing: `Ib = P / V = ${lightingPowerW}W / ${lightingVoltage}V = ${lightingCurrentA}A ➔ Disjuntor ${lightingBreakerA}A Curva B`
+      formulaSizing: `Ib = P / V = ${lightingPowerW}W / ${lightingVoltage}V = ${lightingCurrentA}A ➔ Disjuntor ${lightingBreakerA}A Curva C`
     },
     clientBaseBreaker: {
-      enabled: clientBaseLoadKW > 0,
+      enabled: effectiveClientBaseLoadKW > 0,
       voltageV: clientVoltage as any,
-      powerKW: clientBaseLoadKW,
+      powerKW: effectiveClientBaseLoadKW,
       phases: 3,
       breakerA: clientBreakerA,
       designCurrentA: clientCurrentA,
       curve: 'C',
-      formulaSizing: `Ib = P / (√3 × ${clientVoltage}V × 0.95) = (${clientBaseLoadKW} × 1000) / (1.732 × ${clientVoltage} × 0.95) = ${clientCurrentA}A ➔ Disjuntor ${clientBreakerA}A Caixa Moldada`
+      formulaSizing: `Ib = P / (√3 × ${clientVoltage}V × 0.95) = (${effectiveClientBaseLoadKW} × 1000) / (1.732 × ${clientVoltage} × 0.95) = ${clientCurrentA}A ➔ Disjuntor ${clientBreakerA}A Caixa Moldada`
     },
     dps220V: {
       enabled: true,
@@ -803,17 +862,25 @@ export function calculateChainTopology(params: ChainTopologyInputParams): ChainT
 
   // 8. Painel Geral 220V: Disjuntor Geral dimensionado pela SOMA INTEGRAL:
   // Carga Carregadores + Auxiliares + Carga do Cliente + Perdas inerentes aos cabos e componentes a frente
-  const totalPanel220VActiveKW = Number((clientBaseLoadKW + hubAggregatedLoadKW).toFixed(2));
+  const totalPanel220VActiveKW = Number((effectiveClientBaseLoadKW + hubAggregatedLoadKW).toFixed(2));
   const panel220VVoltage = isGrid380V ? 380 : 220;
-  const panelMainCurrentA = Number(((totalPanel220VActiveKW * 1000) / (Math.sqrt(3) * panel220VVoltage * 0.98)).toFixed(1));
-  const panelMainBreakerRating = panelMainCurrentA * 1.15;
-  const panelMainBreakerA = STANDARD_BREAKERS.find(b => b >= panelMainBreakerRating) || (isGrid380V ? 100 : 125);
+  const panelMainCurrentA = totalPanel220VActiveKW > 0
+    ? Number(((totalPanel220VActiveKW * 1000) / (Math.sqrt(3) * panel220VVoltage * 0.98)).toFixed(1))
+    : 0;
+  const panelMainBreakerA = panelMainCurrentA > 0
+    ? (panelMainCurrentA > 200 && panelMainCurrentA <= 250
+        ? 250
+        : (STANDARD_BREAKERS.find(b => b >= panelMainCurrentA) || (isGrid380V ? 100 : 125)))
+    : 40;
 
   // Disjuntor dedicado de proteção do transformador 220/380V (no primário 220V do Painel)
-  // Dimensionado de acordo com a carga dos carregadores e perdas a frente dele (trafo + cabos trecho 3 + ramais)
-  const trafoPrimaryProtectionRating = isTransformerNeeded ? trafoPrimaryCurrentA * 1.15 : 0;
+  // Critério NBR 5410 (Ib <= In <= Iz) com suporte magnético Curva D para inrush
   const trafoPrimaryBreakerA = isTransformerNeeded
-    ? (STANDARD_BREAKERS.find(b => b >= trafoPrimaryProtectionRating) || 300)
+    ? (trafoPrimaryCurrentA > 0
+        ? (trafoPrimaryCurrentA > 200 && trafoPrimaryCurrentA <= 250
+            ? 250
+            : (STANDARD_BREAKERS.find(b => b >= trafoPrimaryCurrentA) || 250))
+        : 40)
     : undefined;
 
   // Disjuntores dos carregadores individuais (dimensionados pela potência e perdas internas)
@@ -838,9 +905,14 @@ export function calculateChainTopology(params: ChainTopologyInputParams): ChainT
     };
   });
 
-  const formula220VMain = `Disjuntor Geral 220V: P_tot = P_cliente (${clientBaseLoadKW.toFixed(2)} kW) + P_hub (${hubAggregatedLoadKW.toFixed(2)} kW com perdas trafo ${trafoLossesKW}kW e cabos) = ${totalPanel220VActiveKW.toFixed(2)} kW. Ib = P_tot / (√3 × 220V × 0.98) = ${panelMainCurrentA} A. Com margem inrush 1.15x: In ≥ ${(panelMainCurrentA * 1.15).toFixed(1)} A ➔ Disjuntor Geral ${panelMainBreakerA}A Caixa Moldada.`;
+  const panelMarginA = panelMainBreakerA > panelMainCurrentA ? Number((panelMainBreakerA - panelMainCurrentA).toFixed(1)) : 0;
+  const panelMarginPct = panelMainCurrentA > 0 ? Number((((panelMainBreakerA / panelMainCurrentA) - 1) * 100).toFixed(1)) : 0;
+  const trafoMarginA = (trafoPrimaryBreakerA && trafoPrimaryCurrentA > 0) ? Number((trafoPrimaryBreakerA - trafoPrimaryCurrentA).toFixed(1)) : 0;
+  const trafoMarginPct = (trafoPrimaryBreakerA && trafoPrimaryCurrentA > 0) ? Number((((trafoPrimaryBreakerA / trafoPrimaryCurrentA) - 1) * 100).toFixed(1)) : 0;
+
+  const formula220VMain = `Disjuntor Geral 220V: P_tot = P_cliente (${effectiveClientBaseLoadKW.toFixed(2)} kW) + P_hub (${hubAggregatedLoadKW.toFixed(2)} kW com perdas trafo ${trafoLossesKW}kW e cabos) = ${totalPanel220VActiveKW.toFixed(2)} kW. Ib = P_tot / (√3 × 220V × 0.98) = ${panelMainCurrentA} A. Critério NBR 5410 item 5.3.4.1 (Ib ≤ In ≤ Iz): Adotado Disjuntor Geral ${panelMainBreakerA}A Caixa Moldada Curva ${isTransformerNeeded ? 'D' : 'C'} (Folga térmica contínua: +${panelMarginA} A / +${panelMarginPct}%). O transitório de energização (inrush de trafo/retificadores de 10x a 14x In: ${panelMainBreakerA * 10}A a ${panelMainBreakerA * 14}A) é absorvido pela Curva ${isTransformerNeeded ? 'D' : 'C'} no disparo magnético instantâneo, dispensando sobredimensionamento térmico para 300A e otimizando a bitola dos condutores.`;
   const formulaTrafoBreaker = isTransformerNeeded
-    ? `Disjuntor do Trafo (Primário 220V): P_prim = ${trafoBreakdown?.totalPrimaryPowerKW || 0} kW (Cargas carregadores + perdas trafo + perdas cabos). I_prim = ${trafoPrimaryCurrentA} A. Margem inrush trafo Dyn1 (1.15x): In ≥ ${(trafoPrimaryCurrentA * 1.15).toFixed(1)} A ➔ Disjuntor ${trafoPrimaryBreakerA}A Curva D (Suporte inrush magnético 10x-12x In).`
+    ? `Disjuntor do Trafo (Primário 220V): P_prim = ${trafoPrimaryActiveKW} kW (Cargas carregadores ${isTrafoFeederSelected ? totalChargersNominalKW : 0} kW + perdas trafo ${trafoLossesKW} kW + perdas cabos ${downstreamCables220LossesKW} kW). I_prim = ${trafoPrimaryCurrentA} A. Critério NBR 5410 / NBR 17019: Adotado Disjuntor ${trafoPrimaryBreakerA}A Caixa Moldada Curva D (Folga térmica contínua: +${trafoMarginA} A / +${trafoMarginPct}%). O inrush magnético do trafo Dyn1 (10x-12x In: ${Number(trafoPrimaryBreakerA) * 10}A a ${Number(trafoPrimaryBreakerA) * 12}A) é suportado no limiar magnético da Curva D, eliminando a necessidade de disjuntor de 300A e garantindo coordenação seletiva precisa.`
     : undefined;
 
   const panel220V: Panel220VTopologyState = {
@@ -862,7 +934,7 @@ export function calculateChainTopology(params: ChainTopologyInputParams): ChainT
       totalLoadKW: totalPanel220VActiveKW,
       totalCurrentA: panelMainCurrentA,
       chargerLoadsKW: totalChargersNominalKW,
-      clientLoadKW: clientBaseLoadKW,
+      clientLoadKW: effectiveClientBaseLoadKW,
       auxLoadsKW: Number(totalAuxKW.toFixed(2)),
       lossesKW: Number((trafoLossesKW + section2LossKW + totalFeederLossesAllKW + totalChargersLossesKW).toFixed(2)),
       formulaMainBreaker: formula220VMain,
@@ -873,25 +945,22 @@ export function calculateChainTopology(params: ChainTopologyInputParams): ChainT
   };
 
   // 9. Painel 380V (Secundário)
-  // Regra do Usuário:
-  // - O disjuntor geral deve ser dimensionado de acordo com a carga dos carregadores e perdas inerentes dos componentes a frente dele.
-  // - Se for apenas um carregador, o disjuntor geral será o mesmo de proteção do carregador (zero barramento unificado).
-  // - Caso tenha mais de um carregador, o disjuntor geral é a soma das cargas dos carregadores mais perdas inerentes.
-  // - Disjuntor do carregador é dimensionado pela potência e perdas do carregador.
   const isPanel380VActive = isTransformerNeeded;
-  const chargers380V = enrichedChargers.filter(c => c.voltageV >= 380);
-  const chargersCount380V = chargers380V.length;
-  const isSingleChargerUnified = chargersCount380V === 1 && customCircuits380V.length === 0;
+  const active380Chargers = enrichedChargers.filter(c => c.voltageV >= 380 && c.isSelected);
+  const chargersCount380V = active380Chargers.length;
+  const isSingleChargerUnified = chargersCount380V === 1 && activeCustomCircuits380V.length === 0;
 
   const panel380VMainBreakerRating = (trafoSecondaryCurrentA + customCircuits380VA) * 1.15;
-  const panel380VCalculatedMainBreakerA = STANDARD_BREAKERS.find(b => b >= panel380VMainBreakerRating) || 40;
+  const panel380VCalculatedMainBreakerA = (trafoSecondaryCurrentA + customCircuits380VA) > 0
+    ? (STANDARD_BREAKERS.find(b => b >= panel380VMainBreakerRating) || 40)
+    : 40;
 
   const finalPanel380VMainBreakerA = isSingleChargerUnified
-    ? (individualChargerBreakers.find(b => b.chargerId === chargers380V[0]?.id)?.breakerA || individualChargerBreakers[0]?.breakerA || 40)
+    ? (individualChargerBreakers.find(b => b.chargerId === active380Chargers[0]?.id)?.breakerA || individualChargerBreakers[0]?.breakerA || 40)
     : panel380VCalculatedMainBreakerA;
 
   const formula380VMain = isSingleChargerUnified
-    ? `Disjuntor Geral 380V Unificado: Configuração com 1 único carregador (${chargers380V[0]?.name}). O disjuntor geral é o próprio disjuntor de proteção do carregador (${finalPanel380VMainBreakerA}A Curva C) dispensando barramento secundário (Regra de Ouro NBR 17019).`
+    ? `Disjuntor Geral 380V Unificado: Configuração com 1 único carregador (${active380Chargers[0]?.name}). O disjuntor geral é o próprio disjuntor de proteção do carregador (${finalPanel380VMainBreakerA}A Curva C) dispensando barramento secundário (Regra de Ouro NBR 17019).`
     : `Disjuntor Geral 380V: Soma das potências dos carregadores (${chargers380VInputKW.toFixed(2)} kW com perdas internas) + perdas nos cabos ramais (${totalFeederLosses380VKW.toFixed(2)} kW) = ${secondaryTotalActiveKW.toFixed(2)} kW. Corrente Secundária Ib = ${trafoSecondaryCurrentA} A. Com margem inrush 1.15x: In ≥ ${(trafoSecondaryCurrentA * 1.15).toFixed(1)} A ➔ Disjuntor Geral ${finalPanel380VMainBreakerA}A Tripolar.`;
 
   const panel380V: Panel380VTopologyState = {
@@ -899,8 +968,8 @@ export function calculateChainTopology(params: ChainTopologyInputParams): ChainT
     mainBreakerA: finalPanel380VMainBreakerA,
     mainBreakerPoles: 3,
     mainBreakerCurve: 'C',
-    requiresBusbar: !isSingleChargerUnified,
-    busbarRatingA: isSingleChargerUnified ? 0 : finalPanel380VMainBreakerA,
+    requiresBusbar: !isSingleChargerUnified && chargersCount380V > 0,
+    busbarRatingA: (!isSingleChargerUnified && chargersCount380V > 0) ? finalPanel380VMainBreakerA : 0,
     totalLoadWithLossesKW: secondaryTotalActiveKW,
     totalSecondaryCurrentA: trafoSecondaryCurrentA,
     dps380V: {
@@ -911,8 +980,8 @@ export function calculateChainTopology(params: ChainTopologyInputParams): ChainT
     },
     customCircuits: customCircuits380V,
     calculationBreakdown: {
-      totalChargersNominalKW: chargers.filter(c => c.voltageV >= 380).reduce((s, c) => s + c.powerKW, 0),
-      totalInternalLossesKW: Number((chargers380VInputKW - chargers.filter(c => c.voltageV >= 380).reduce((s, c) => s + c.powerKW, 0)).toFixed(2)),
+      totalChargersNominalKW: active380Chargers.reduce((s, c) => s + c.powerKW, 0),
+      totalInternalLossesKW: Number((chargers380VInputKW - active380Chargers.reduce((s, c) => s + c.powerKW, 0)).toFixed(2)),
       totalFeedersLossesKW: totalFeederLosses380VKW,
       totalCustomCircuitsKW: customCircuits380VKW,
       totalActiveKW: secondaryTotalActiveKW,
@@ -937,7 +1006,7 @@ export function calculateChainTopology(params: ChainTopologyInputParams): ChainT
     toNode: panel220V.panelName,
     distanceNominalM: section1DistanceM,
     marginPercent: section1MarginPercent,
-    designCurrentA: panelMainCurrentA,
+    designCurrentA: panelMainCurrentA > 0 ? panelMainCurrentA : 10,
     phases: 3,
     voltageV: gridSupplyVoltage,
     conductorMaterial: section1ConductorMaterial,
@@ -947,36 +1016,30 @@ export function calculateChainTopology(params: ChainTopologyInputParams): ChainT
     minGaugeMM2: section1ConductorMaterial === 'aluminum' ? Math.max(16, standardMinGaugeMM2) : standardMinGaugeMM2,
     minConductorsPerPhase: standardConductorsPerPhase,
     standardOriginNote: `Bitola alinhada à saída do padrão CEMIG Categoria ${activeStd.categoryId} (${standardConductorsPerPhase}x ${standardMinGaugeMM2}mm² por fase) • Condutor ${section1ConductorMaterial === 'aluminum' ? 'Alumínio (Al)' : 'Cobre (Cu)'}`,
-    powerKW: hubAggregatedLoadKW
+    powerKW: totalPanel220VActiveKW
   });
 
-  // 7. Alerta de Capacidade do Padrão de Entrada
+  // 11. Alerta de Capacidade do Padrão de Entrada
   const activeBreakerA = currentStandardBreakerA || activeStd.breakerCurrentA;
-  // Cálculo exato da capacidade física em kW do disjuntor instalado (ND-5.1: P = √3 * V * I * cosφ)
-  // Para 600A em 220V trifásico: √3 * 220 * 600 * 0.95 = 217.2 kW
-  // Para 630A em 220V trifásico: √3 * 220 * 630 * 0.95 = 228.0 kW
-  const calculatedBreakerLimitKW = Number(((Math.sqrt(3) * 220 * activeBreakerA * 0.95) / 1000).toFixed(1));
-  const activeLimitKW = (currentStandardCategory.startsWith('F') && activeBreakerA)
-    ? calculatedBreakerLimitKW
-    : activeStd.maxLimitKW;
+  const isCustomBreaker = Boolean(currentStandardBreakerA && currentStandardBreakerA !== activeStd.breakerCurrentA);
+  const calculatedBreakerLimitKW = Number(((Math.sqrt(3) * gridSupplyVoltage * activeBreakerA) / 1000).toFixed(1));
+  const activeLimitKW = isCustomBreaker ? calculatedBreakerLimitKW : activeStd.maxLimitKW;
 
   // Se houver limitação de potência aceita/aplicada por DLM aos carregadores, recalculamos a demanda efetiva do hub
-  const effectiveChargersPowerKW = (hasSmartChargingDLM && maxChargerCapKW !== undefined && maxChargerCapKW > 0)
-    ? (maxChargerCapKW * chargers.length)
-    : totalChargersNominalKW;
+  let effectiveHubAggregatedKW = hubAggregatedLoadKW;
+  if (hasSmartChargingDLM && maxChargerCapKW !== undefined && maxChargerCapKW > 0 && active380Chargers.length > 0) {
+    const dlmChargersPowerKW = maxChargerCapKW * active380Chargers.length;
+    const dlmHubDirectLoadKW = isTransformerNeeded
+      ? Number((dlmChargersPowerKW + trafoLossesKW + section2LossKW).toFixed(2))
+      : Number((dlmChargersPowerKW + totalFeederLossesAllKW).toFixed(2));
+    effectiveHubAggregatedKW = Number((dlmHubDirectLoadKW + totalAuxKW).toFixed(2));
+  }
 
-  const effectiveHubDirectLoadKW = isTransformerNeeded
-    ? (effectiveChargersPowerKW / (0.98 * 0.97))
-    : effectiveChargersPowerKW;
-  const effectiveHubAggregatedKW = Number((effectiveHubDirectLoadKW + totalAuxKW).toFixed(2));
-
-  const totalRequiredLoadKW = Number((clientBaseLoadKW + effectiveHubAggregatedKW).toFixed(2));
+  const totalRequiredLoadKW = Number((effectiveClientBaseLoadKW + effectiveHubAggregatedKW).toFixed(2));
   
   // Condição de sobrecarga física
   let isOverloaded = totalRequiredLoadKW > activeLimitKW;
   
-  // Se o DLM estiver ativo e a potência foi limitada para caber no disjuntor do padrão,
-  // ou se o DLM garante a modulação dinâmica contínua sem ultrapassar o padrão (IEC 61851-1 / NBR 17019):
   const isProtectedByDLM = Boolean(hasSmartChargingDLM && (!isOverloaded || (maxChargerCapKW !== undefined && maxChargerCapKW > 0)));
   if (isProtectedByDLM && totalRequiredLoadKW <= activeLimitKW) {
     isOverloaded = false;
@@ -987,7 +1050,7 @@ export function calculateChainTopology(params: ChainTopologyInputParams): ChainT
 
   let standardAlertMessage = '';
   if (isOverloaded) {
-    standardAlertMessage = `ATENÇÃO: A demanda total (${totalRequiredLoadKW} kW: cliente ${clientBaseLoadKW} kW + hub ${effectiveHubAggregatedKW} kW) supera o limite do padrão ${activeStd.categoryId} (${activeLimitKW} kW / ${activeBreakerA}A). Recomendado upgrade para Categoria ${recommendedCategorySpec.categoryId} (${recommendedCategorySpec.breakerCurrentA}A) ou ativação de Gestão Dinâmica DLM.`;
+    standardAlertMessage = `ATENÇÃO: A demanda total (${totalRequiredLoadKW} kW: cliente ${effectiveClientBaseLoadKW} kW + hub ${effectiveHubAggregatedKW} kW) supera o limite do padrão ${activeStd.categoryId} (${activeLimitKW} kW / ${activeBreakerA}A). Recomendado upgrade para Categoria ${recommendedCategorySpec.categoryId} (${recommendedCategorySpec.breakerCurrentA}A) ou ativação de Gestão Dinâmica DLM.`;
   } else if (hasSmartChargingDLM && maxChargerCapKW !== undefined && maxChargerCapKW > 0) {
     standardAlertMessage = `OPERAÇÃO CONFORME COM SMART CHARGING (DLM): Carregadores limitados a ${maxChargerCapKW} kW em tempo real. Demanda total contida em ${totalRequiredLoadKW} kW, eliminando risco de desarme do disjuntor geral de ${activeBreakerA}A (${activeLimitKW} kW) conforme ABNT NBR 17019 e IEC 61851-1.`;
   } else {
@@ -999,7 +1062,7 @@ export function calculateChainTopology(params: ChainTopologyInputParams): ChainT
     currentStandardCategory: activeStd.categoryId,
     currentStandardBreakerA: activeBreakerA,
     currentStandardLimitKW: activeLimitKW,
-    clientBaseLoadKW,
+    clientBaseLoadKW: effectiveClientBaseLoadKW,
     hubAdditionalLoadKW: effectiveHubAggregatedKW,
     totalRequiredLoadKW,
     requiredCapacityA: Number(((totalRequiredLoadKW * 1000) / (Math.sqrt(3) * 220 * 0.98)).toFixed(1)),

@@ -121,6 +121,13 @@ def inicializar_dados_se_necessario() -> None:
 
     if not os.path.exists(CAMINHO_ESTACOES):
         df_geo = pl.DataFrame([
+            {"id_estacao": "SL_001", "nome": "Hub Urbano Olavo Bilac Canaã (Cordeiro Energia)", "lat": -19.471676, "lon": -44.258735, "potencia_kw": 60.0, "status": "Disponível"},
+            {"id_estacao": "SL_002", "nome": "Shopping Sete Lagoas (Estacionamento Lazer)", "lat": -19.473734, "lon": -44.271598, "potencia_kw": 22.0, "status": "Disponível"},
+            {"id_estacao": "SL_003", "nome": "Posto Shell Rápido Centro (Av. Antônio Olinto)", "lat": -19.454817, "lon": -44.244584, "potencia_kw": 50.0, "status": "Ocupado"},
+            {"id_estacao": "SL_004", "nome": "Posto Ipiranga Rota Gruta Rei do Mato (BR-040 Sul)", "lat": -19.495040, "lon": -44.283044, "potencia_kw": 120.0, "status": "Disponível"},
+            {"id_estacao": "SL_005", "nome": "Posto Três Marias / Graal Sete Lagoas (BR-040 Norte)", "lat": -19.4350, "lon": -44.2210, "potencia_kw": 60.0, "status": "Disponível"},
+            {"id_estacao": "MG_001", "nome": "Posto Décio Curvelo (Trevo BR-040)", "lat": -18.7500, "lon": -44.4300, "potencia_kw": 180.0, "status": "Disponível"},
+            {"id_estacao": "MG_002", "nome": "Hub Pedro Leopoldo / Confins", "lat": -19.6200, "lon": -44.0500, "potencia_kw": 150.0, "status": "Disponível"},
             {"id_estacao": "E001", "nome": "Eletroposto Av. Amazonas 2000", "lat": -19.9275, "lon": -43.9558, "potencia_kw": 120.0, "status": "Disponível"},
             {"id_estacao": "E002", "nome": "Rodovia BR-040 Km 450", "lat": -19.9500, "lon": -44.0200, "potencia_kw": 150.0, "status": "Ocupado"},
             {"id_estacao": "E003", "nome": "Posto Urbano Savassi Sul", "lat": -19.9380, "lon": -43.9350, "potencia_kw": 60.0, "status": "Disponível"},

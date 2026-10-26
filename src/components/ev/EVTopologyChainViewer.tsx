@@ -30,15 +30,31 @@ import {
   Building2,
   Boxes,
   X,
-  FileText
+  FileText,
+  RotateCcw,
+  Edit3,
+  PlusCircle
 } from 'lucide-react';
-import { enrichBillOfMaterialsWithPricing } from '@/lib/coenergygo/database/bomPricingDatabase';
+import {
+  enrichBillOfMaterialsWithPricing,
+  generateStandardEntranceBOM
+} from '@/lib/coenergygo/database/bomPricingDatabase';
+import { BillOfMaterialItem } from '@/lib/coenergygo/types';
+import {
+  buildModularBOM,
+  ModularBOMOutput,
+  InstallationStageId
+} from '@/lib/coenergygo/engines/modularBomEngine';
+import { EVModularBOMTable } from './EVModularBOMTable';
 import { EVEngineeringReportsHub } from './EVEngineeringReportsHub';
 import TransformerEngineeringHub from './TransformerEngineeringHub';
 import { InteractiveUnifilarViewer } from './InteractiveUnifilarViewer';
 import { PanelUnifilarDiagram, PanelCircuitItem } from './PanelUnifilarDiagram';
 
 export interface EVTopologyChainViewerProps {
+  isNewConnection?: boolean;
+  isExistingStandardAdequate?: boolean;
+  targetNewCategory?: string;
   externalClientBaseLoadKW?: number;
   externalStandardCategory?: string;
   externalStandardBreakerA?: number;
@@ -82,6 +98,9 @@ export interface EVTopologyChainViewerProps {
   onUpdateChargerPower?: (id: string, newPowerKW: number) => void;
   onUpdateChargerFull?: (id: string, updates: Partial<TopologyChargerNode>) => void;
   cemigStandardBOM?: any[];
+  externalTerminalType?: 'COMPRESSAO_OLHAL' | 'TUBULAR';
+  onChangeTerminalType?: (type: 'COMPRESSAO_OLHAL' | 'TUBULAR') => void;
+  onChangeSelectedLoads?: (loads220V: Record<string, boolean>, loads380V: Record<string, boolean>) => void;
   onSaveTopologyParams?: (params: {
     section1DistanceM: number;
     section1MarginPercent: number;
@@ -99,13 +118,35 @@ export interface EVTopologyChainViewerProps {
     customTransformerEfficiencyPercent?: number;
     customTransformerLossesKW?: number;
     chargers?: TopologyChargerNode[];
+    selectedLoads220V?: Record<string, boolean>;
+    selectedLoads380V?: Record<string, boolean>;
   }) => void;
   onConcludeTopology?: () => void;
   onAddCharger?: (newCharger: any) => void;
   onRemoveCharger?: (id: string) => void;
+  forcedTab?: 'vis' | 'bom';
+  onNavigateToBOM?: () => void;
+  onNavigateToVis?: () => void;
+  onNavigateToFinancialModeling?: () => void;
+  onModularBOMChange?: (bom: ModularBOMOutput) => void;
+  externalUserBOMOverrides?: Record<string, { quantity?: number; unitPriceBRL?: number }>;
+  externalDeletedItemIds?: string[];
+  externalCustomAddedItems?: BillOfMaterialItem[];
+  externalLaborMode?: 'TABELADO' | 'PERCENTUAL';
+  externalLaborPercent?: number;
+  externalGlobalBdiPercent?: number;
+  onUpdateBOMOverrides?: (overrides: Record<string, { quantity?: number; unitPriceBRL?: number }>) => void;
+  onUpdateDeletedItemIds?: (ids: string[]) => void;
+  onUpdateCustomAddedItems?: (items: BillOfMaterialItem[]) => void;
+  onUpdateLaborMode?: (mode: 'TABELADO' | 'PERCENTUAL') => void;
+  onUpdateLaborPercent?: (labor: number) => void;
+  onUpdateGlobalBdiPercent?: (bdi: number) => void;
 }
 
 export function EVTopologyChainViewer({
+  isNewConnection = false,
+  isExistingStandardAdequate = true,
+  targetNewCategory,
   externalClientBaseLoadKW,
   externalStandardCategory,
   externalStandardBreakerA,
@@ -114,6 +155,11 @@ export function EVTopologyChainViewer({
   onUpdateStandard,
   externalHasSmartChargingDLM,
   externalMaxChargerCapKW,
+  forcedTab,
+  onNavigateToBOM,
+  onNavigateToVis,
+  onNavigateToFinancialModeling,
+  onModularBOMChange,
   externalSection1DistanceM,
   externalSection1MarginPercent,
   externalSection1ConductorMaterial,
@@ -132,10 +178,25 @@ export function EVTopologyChainViewer({
   onUpdateChargerFull,
   onUpdateChargerPower,
   cemigStandardBOM,
+  externalTerminalType,
+  onChangeTerminalType,
+  onChangeSelectedLoads,
   onSaveTopologyParams,
   onConcludeTopology,
   onAddCharger,
-  onRemoveCharger
+  onRemoveCharger,
+  externalUserBOMOverrides,
+  externalDeletedItemIds,
+  externalCustomAddedItems,
+  externalLaborMode,
+  externalLaborPercent,
+  externalGlobalBdiPercent,
+  onUpdateBOMOverrides,
+  onUpdateDeletedItemIds,
+  onUpdateCustomAddedItems,
+  onUpdateLaborMode,
+  onUpdateLaborPercent,
+  onUpdateGlobalBdiPercent
 }: EVTopologyChainViewerProps = {}) {
   const {
     chargers,
@@ -162,6 +223,10 @@ export function EVTopologyChainViewer({
     customCircuits220V,
     customCircuits380V,
     selectedDrawerNodeId,
+    selectedLoads220V,
+    selectedLoads380V,
+    toggleLoad220V,
+    toggleLoad380V,
     topologyOutput,
     syncFromProjectData,
     setCustomTransformerKVA,
@@ -261,7 +326,17 @@ export function EVTopologyChainViewer({
     externalMaxChargerCapKW
   ]);
 
-  const [activeTab, setActiveTab] = useState<'vis' | 'bom'>('vis');
+  const [internalTab, setInternalTab] = useState<'vis' | 'bom'>('vis');
+  const activeTab = forcedTab || internalTab;
+  const setActiveTab = (tab: 'vis' | 'bom') => {
+    if (tab === 'bom' && onNavigateToBOM) {
+      onNavigateToBOM();
+    } else if (tab === 'vis' && onNavigateToVis) {
+      onNavigateToVis();
+    } else {
+      setInternalTab(tab);
+    }
+  };
   const [showAddChargerModal, setShowAddChargerModal] = useState(false);
   const [includeEntranceStandardInBOM, setIncludeEntranceStandardInBOM] = useState<boolean>(true);
   const [useMetalEnclosureCemar, setUseMetalEnclosureCemar] = useState<boolean>(true);
@@ -270,35 +345,6 @@ export function EVTopologyChainViewer({
   const [showDemandBreakdown, setShowDemandBreakdown] = useState<boolean>(false);
   const [showReportsHubModal, setShowReportsHubModal] = useState<boolean>(false);
   const [showTransformerHubModal, setShowTransformerHubModal] = useState<boolean>(false);
-
-  // Seleção individual de cargas associadas nos painéis (conforme Foto 04 e Figura 05)
-  const [selectedLoads220V, setSelectedLoads220V] = useState<Record<string, boolean>>({
-    clientBase: true,
-    trafoFeeder: true,
-    auxLighting: true,
-    auxOutlet: true,
-    auxCctv: true,
-    sectionLosses: true
-  });
-
-  const [selectedLoads380V, setSelectedLoads380V] = useState<Record<string, boolean>>({
-    feederLosses: true,
-    chargerInternalLosses: true
-  });
-
-  const toggleLoad220V = (id: string) => {
-    setSelectedLoads220V(prev => ({
-      ...prev,
-      [id]: prev[id] === undefined ? false : !prev[id]
-    }));
-  };
-
-  const toggleLoad380V = (id: string) => {
-    setSelectedLoads380V(prev => ({
-      ...prev,
-      [id]: prev[id] === undefined ? false : !prev[id]
-    }));
-  };
 
   const {
     standardAlert,
@@ -313,25 +359,26 @@ export function EVTopologyChainViewer({
 
   const totalChargersKW = chargers.reduce((sum, c) => sum + c.powerKW, 0);
 
-  // Cálculos discriminados do memorial de demanda e déficit (93,77 kW vs 75,00 kW = 18,8 kW)
-  const breakdownClientKW = clientBaseLoadKW;
+  // Memorial de Demanda Unificado (SSOT absoluto via topologyOutput)
+  const breakdownClientKW = standardAlert.clientBaseLoadKW;
   const breakdownChargersNominalKW = totalChargersKW;
-  const breakdownTrafoLossesKW = transformer.needed
-    ? Number(((breakdownChargersNominalKW / 0.98) - breakdownChargersNominalKW).toFixed(2))
-    : 0;
-  const breakdownCableLossesKW = transformer.needed
-    ? Number((((breakdownChargersNominalKW / 0.98) / 0.97) - (breakdownChargersNominalKW / 0.98)).toFixed(2))
-    : Number((breakdownChargersNominalKW * 0.02).toFixed(2));
-  const breakdownAuxLightingKW = auxiliaryConfig.lightingEnabled ? Number((auxiliaryConfig.lightingPowerW / 1000).toFixed(2)) : 0;
-  const breakdownAuxOutletKW = auxiliaryConfig.outletEnabled ? Number((auxiliaryConfig.outletPowerW / 1000).toFixed(2)) : 0;
-  const breakdownAuxCctvKW = auxiliaryConfig.cctvEnabled ? Number((auxiliaryConfig.cctvPowerW / 1000).toFixed(2)) : 0;
-  const breakdownAuxTotalKW = Number((breakdownAuxLightingKW + breakdownAuxOutletKW + breakdownAuxCctvKW).toFixed(2));
-  const breakdownHubTotalKW = Number((breakdownChargersNominalKW + breakdownTrafoLossesKW + breakdownCableLossesKW + breakdownAuxTotalKW).toFixed(2));
-  const breakdownTotalRequiredKW = Number((breakdownClientKW + breakdownHubTotalKW).toFixed(2));
+  const breakdownTrafoLossesKW = transformer.needed ? transformer.lossesKW : 0;
+  const breakdownCableLossesKW = Number((
+    (sections.section1_standardToPanel220?.calculationBreakdown?.jouleLossesKW || 0) +
+    (sections.section2_panel220ToTrafo?.calculationBreakdown?.jouleLossesKW || 0) +
+    (sections.section3_trafoToPanel380?.calculationBreakdown?.jouleLossesKW || 0) +
+    (sections.section4_chargersFeeders?.reduce((s, f) => s + (f.calculationBreakdown?.jouleLossesKW || 0), 0) || 0)
+  ).toFixed(2));
+  const breakdownAuxLightingKW = panel220V.auxiliaryLoads.lighting.powerW / 1000;
+  const breakdownAuxOutletKW = panel220V.auxiliaryLoads.maintenanceOutlet.powerW / 1000;
+  const breakdownAuxCctvKW = panel220V.auxiliaryLoads.cctv.powerW / 1000;
+  const breakdownAuxTotalKW = panel220V.totalAuxKW;
+  const breakdownHubTotalKW = standardAlert.hubAdditionalLoadKW;
+  const breakdownTotalRequiredKW = standardAlert.totalRequiredLoadKW;
   const breakdownStandardLimitKW = standardAlert.currentStandardLimitKW;
   const breakdownDeficitKW = Number((breakdownTotalRequiredKW - breakdownStandardLimitKW).toFixed(2));
 
-  // Potência e corrente das cargas ativas selecionadas no Painel 220V (conforme Foto 01, Foto 04 e Figura 05)
+  // Potência e corrente das cargas ativas selecionadas nos painéis (soma exata dos itens marcados em tela)
   const panel220VSelectedKW = React.useMemo(() => {
     let sum = 0;
     if (selectedLoads220V.clientBase !== false) sum += breakdownClientKW;
@@ -351,37 +398,48 @@ export function EVTopologyChainViewer({
       if (selectedLoads220V[`custom_${c.id}`] !== false) sum += c.powerW / 1000;
     });
     return Number(sum.toFixed(2));
-  }, [selectedLoads220V, breakdownClientKW, transformer.needed, breakdownChargersNominalKW, breakdownTrafoLossesKW, chargers, auxiliaryConfig, breakdownAuxLightingKW, breakdownAuxOutletKW, breakdownAuxCctvKW, breakdownCableLossesKW, customCircuits220V]);
+  }, [
+    selectedLoads220V,
+    breakdownClientKW,
+    transformer.needed,
+    breakdownChargersNominalKW,
+    breakdownTrafoLossesKW,
+    chargers,
+    auxiliaryConfig,
+    breakdownAuxLightingKW,
+    breakdownAuxOutletKW,
+    breakdownAuxCctvKW,
+    breakdownCableLossesKW,
+    customCircuits220V
+  ]);
 
   const panel220VSelectedCurrentA = Number(((panel220VSelectedKW * 1000) / (Math.sqrt(3) * 220 * 0.98)).toFixed(1));
 
-  // Potência e corrente das cargas ativas selecionadas no Painel 380V (conforme Foto 04 e Figura 05)
   const panel380VSelectedKW = React.useMemo(() => {
     let sum = 0;
     chargers.forEach(c => {
       if (selectedLoads380V[c.id] !== false) sum += c.powerKW;
     });
-    if (selectedLoads380V.feederLosses !== false) sum += breakdownCableLossesKW;
+    if (selectedLoads380V.feederLosses !== false) sum += (panel380V.calculationBreakdown?.totalFeedersLossesKW ?? 0);
     if (selectedLoads380V.chargerInternalLosses !== false) sum += Number((breakdownChargersNominalKW * 0.02).toFixed(2));
     customCircuits380V.forEach(c => {
       if (selectedLoads380V[`custom_${c.id}`] !== false) sum += c.powerW / 1000;
     });
     return Number(sum.toFixed(2));
-  }, [selectedLoads380V, chargers, breakdownCableLossesKW, breakdownChargersNominalKW, customCircuits380V]);
+  }, [selectedLoads380V, chargers, panel380V.calculationBreakdown, breakdownChargersNominalKW, customCircuits380V]);
 
   const panel380VSelectedCurrentA = Number(((panel380VSelectedKW * 1000) / (Math.sqrt(3) * 380 * 0.98)).toFixed(1));
 
-  // Dimensionamento dinâmico e reativo dos disjuntores gerais dos painéis 220V e 380V
   const STANDARD_BREAKERS = [10, 16, 20, 25, 32, 40, 50, 63, 70, 80, 100, 125, 150, 160, 175, 200, 225, 250, 300, 350, 400, 500, 630];
 
   const dynamicBreaker220VA = React.useMemo(() => {
     if (panel220VSelectedCurrentA <= 0) return 0;
-    return STANDARD_BREAKERS.find(b => b >= panel220VSelectedCurrentA * 1.15) || 40;
+    if (panel220VSelectedCurrentA > 200 && panel220VSelectedCurrentA <= 250) return 250;
+    return STANDARD_BREAKERS.find(b => b >= panel220VSelectedCurrentA) || 40;
   }, [panel220VSelectedCurrentA]);
 
   const dynamicBreaker380VA = React.useMemo(() => {
     if (panel380VSelectedCurrentA <= 0) return 0;
-    // Se for 1 único carregador e sem circuitos extras 380V, disjuntor unificado é o do próprio carregador
     const active380Chargers = chargers.filter(c => selectedLoads380V[c.id] !== false);
     const active380Custom = customCircuits380V.filter(c => selectedLoads380V[`custom_${c.id}`] !== false);
     if (active380Chargers.length === 1 && active380Custom.length === 0) {
@@ -394,70 +452,459 @@ export function EVTopologyChainViewer({
     return STANDARD_BREAKERS.find(b => b >= panel380VSelectedCurrentA * 1.15) || 40;
   }, [panel380VSelectedCurrentA, chargers, selectedLoads380V, customCircuits380V, individualChargerBreakers]);
 
+  const panel220VDetails = React.useMemo(() => {
+    const selClientKW = selectedLoads220V.clientBase !== false ? breakdownClientKW : 0;
+    const selChargersKW = transformer.needed
+      ? (selectedLoads220V.trafoFeeder !== false ? breakdownChargersNominalKW : 0)
+      : chargers.filter(c => selectedLoads220V[`ch_${c.id}`] !== false).reduce((s, c) => s + c.powerKW, 0);
+    const selTrafoLossesKW = (transformer.needed && selectedLoads220V.trafoLosses !== false) ? breakdownTrafoLossesKW : 0;
+    const selCableLossesKW = selectedLoads220V.sectionLosses !== false ? breakdownCableLossesKW : 0;
+    const selLightingKW = (selectedLoads220V.auxLighting !== false && auxiliaryConfig.lightingEnabled) ? breakdownAuxLightingKW : 0;
+    const selOutletKW = (selectedLoads220V.auxOutlet !== false && auxiliaryConfig.outletEnabled) ? breakdownAuxOutletKW : 0;
+    const selCctvKW = (selectedLoads220V.auxCctv !== false && auxiliaryConfig.cctvEnabled) ? breakdownAuxCctvKW : 0;
+    const selCustomKW = customCircuits220V.filter(c => selectedLoads220V[`custom_${c.id}`] !== false).reduce((s, c) => s + c.powerW / 1000, 0);
+    const selAuxKW = Number((selLightingKW + selOutletKW + selCctvKW + selCustomKW).toFixed(2));
+    const selHubKW = Number((selChargersKW + selTrafoLossesKW + selCableLossesKW + selAuxKW).toFixed(2));
+
+    const trafoPrimKW = transformer.needed && selectedLoads220V.trafoFeeder !== false
+      ? Number((selChargersKW + selTrafoLossesKW + selCableLossesKW).toFixed(2))
+      : 0;
+    const trafoPrimCurrentA = trafoPrimKW > 0
+      ? Number(((trafoPrimKW * 1000) / (Math.sqrt(3) * 220 * 0.98)).toFixed(1))
+      : 0;
+    const trafoBreakerA = trafoPrimCurrentA > 0
+      ? (trafoPrimCurrentA > 200 && trafoPrimCurrentA <= 250
+          ? 250
+          : (STANDARD_BREAKERS.find(b => b >= trafoPrimCurrentA) || 40))
+      : 0;
+
+    return {
+      selClientKW,
+      selChargersKW,
+      selTrafoLossesKW,
+      selCableLossesKW,
+      selLightingKW,
+      selOutletKW,
+      selCctvKW,
+      selCustomKW,
+      selAuxKW,
+      selHubKW,
+      trafoPrimKW,
+      trafoPrimCurrentA,
+      trafoBreakerA
+    };
+  }, [
+    selectedLoads220V,
+    breakdownClientKW,
+    transformer.needed,
+    breakdownChargersNominalKW,
+    breakdownTrafoLossesKW,
+    breakdownCableLossesKW,
+    chargers,
+    auxiliaryConfig,
+    breakdownAuxLightingKW,
+    breakdownAuxOutletKW,
+    breakdownAuxCctvKW,
+    customCircuits220V
+  ]);
+
   const dynamicFormula220V = React.useMemo(() => {
-    return `Disjuntor Geral 220V (Cargas Ativas): P_sel = ${panel220VSelectedKW.toFixed(2)} kW. Corrente Ib = P_sel / (√3 × 220V × 0.98) = ${panel220VSelectedCurrentA} A. Com margem inrush 1.15x: In ≥ ${(panel220VSelectedCurrentA * 1.15).toFixed(1)} A ➔ Disjuntor Geral ${dynamicBreaker220VA}A Caixa Moldada.`;
-  }, [panel220VSelectedKW, panel220VSelectedCurrentA, dynamicBreaker220VA]);
+    if (panel220VSelectedKW <= 0) {
+      return 'Nenhuma carga ativa selecionada no Painel 220V (P_tot = 0.00 kW).';
+    }
+    const breakerType = dynamicBreaker220VA >= 100 ? 'Caixa Moldada' : 'DIN';
+    const curve = transformer.needed ? 'D' : 'C';
+
+    const clientText = panel220VDetails.selClientKW > 0
+      ? `P_cliente (${panel220VDetails.selClientKW.toFixed(2)} kW)`
+      : `P_cliente (0.00 kW desmarcada)`;
+
+    const hubParts: string[] = [];
+    if (panel220VDetails.selChargersKW > 0) hubParts.push(`VEs: ${panel220VDetails.selChargersKW.toFixed(2)} kW`);
+    if (panel220VDetails.selTrafoLossesKW > 0) hubParts.push(`Perdas trafo: +${panel220VDetails.selTrafoLossesKW.toFixed(2)} kW`);
+    else if (transformer.needed) hubParts.push(`Perdas trafo: 0 kW desmarcada`);
+    if (panel220VDetails.selCableLossesKW > 0) hubParts.push(`Cabos: +${panel220VDetails.selCableLossesKW.toFixed(2)} kW`);
+    if (panel220VDetails.selAuxKW > 0) hubParts.push(`Auxiliares: +${panel220VDetails.selAuxKW.toFixed(2)} kW`);
+
+    const marginA = dynamicBreaker220VA > panel220VSelectedCurrentA
+      ? Number((dynamicBreaker220VA - panel220VSelectedCurrentA).toFixed(1))
+      : 0;
+    const marginPct = panel220VSelectedCurrentA > 0
+      ? Number((((dynamicBreaker220VA / panel220VSelectedCurrentA) - 1) * 100).toFixed(1))
+      : 0;
+
+    return `Disjuntor Geral 220V: P_tot = ${clientText} + P_hub (${panel220VDetails.selHubKW.toFixed(2)} kW: ${hubParts.join(', ')}) = ${panel220VSelectedKW.toFixed(2)} kW. Ib = P_tot / (√3 × 220V × 0.98) = ${panel220VSelectedCurrentA} A. Critério NBR 5410 item 5.3.4.1 (Ib ≤ In ≤ Iz): Adotado Disjuntor Geral ${dynamicBreaker220VA}A ${breakerType} Curva ${curve} (Folga térmica contínua: +${marginA} A / +${marginPct}%). O pico transitório de energização (inrush de retificadores/trafo de 10x a 14x In: ${dynamicBreaker220VA * 10}A a ${dynamicBreaker220VA * 14}A) é absorvido pela Curva ${curve} no disparo magnético instantâneo, dispensando sobredimensionamento térmico para 300A, harmonizando com a entrada e otimizando a bitola dos condutores.`;
+  }, [panel220VSelectedKW, panel220VSelectedCurrentA, dynamicBreaker220VA, panel220VDetails, transformer.needed]);
+
+  const dynamicFormulaTrafoBreaker = React.useMemo(() => {
+    if (!transformer.needed) return null;
+    if (selectedLoads220V.trafoFeeder === false) {
+      return 'Disjuntor do Trafo (Primário 220V): Alimentador do transformador desmarcado no painel (0.00 kW). Disjuntor desenergizado.';
+    }
+    const subParts: string[] = [`Cargas carregadores: ${panel220VDetails.selChargersKW.toFixed(2)} kW`];
+    if (panel220VDetails.selTrafoLossesKW > 0) subParts.push(`Perdas trafo: +${panel220VDetails.selTrafoLossesKW.toFixed(2)} kW`);
+    else subParts.push(`Perdas trafo: 0 kW desmarcada`);
+    if (panel220VDetails.selCableLossesKW > 0) subParts.push(`Perdas cabos: +${panel220VDetails.selCableLossesKW.toFixed(2)} kW`);
+    
+    const marginA = panel220VDetails.trafoBreakerA > panel220VDetails.trafoPrimCurrentA
+      ? Number((panel220VDetails.trafoBreakerA - panel220VDetails.trafoPrimCurrentA).toFixed(1))
+      : 0;
+    const marginPct = panel220VDetails.trafoPrimCurrentA > 0
+      ? Number((((panel220VDetails.trafoBreakerA / panel220VDetails.trafoPrimCurrentA) - 1) * 100).toFixed(1))
+      : 0;
+
+    return `Disjuntor do Trafo (Primário 220V): P_prim = ${panel220VDetails.trafoPrimKW.toFixed(2)} kW (${subParts.join(', ')}). I_prim = ${panel220VDetails.trafoPrimCurrentA} A. Critério NBR 5410 / NBR 17019: Adotado Disjuntor ${panel220VDetails.trafoBreakerA}A Caixa Moldada Curva D (Folga térmica contínua: +${marginA} A / +${marginPct}%). O inrush magnético transitório do trafo Dyn1 (10x-12x In: ${panel220VDetails.trafoBreakerA * 10}A a ${panel220VDetails.trafoBreakerA * 12}A) é absorvido pela Curva D no disparo magnético instantâneo, eliminando a necessidade de elevar o disjuntor para 300A e preservando a coordenação seletiva.`;
+  }, [transformer.needed, selectedLoads220V.trafoFeeder, panel220VDetails]);
+
+  const panel380VDetails = React.useMemo(() => {
+    const selChargers380KW = chargers.filter(c => selectedLoads380V[c.id] !== false).reduce((s, c) => s + c.powerKW, 0);
+    const selInternalLosses380KW = selectedLoads380V.chargerInternalLosses !== false
+      ? (panel380V.calculationBreakdown?.totalInternalLossesKW ?? Number((breakdownChargersNominalKW * 0.02).toFixed(2)))
+      : 0;
+    const selFeederLosses380KW = selectedLoads380V.feederLosses !== false
+      ? (panel380V.calculationBreakdown?.totalFeedersLossesKW ?? 0)
+      : 0;
+    const selCustom380KW = customCircuits380V.filter(c => selectedLoads380V[`custom_${c.id}`] !== false).reduce((s, c) => s + c.powerW / 1000, 0);
+
+    return {
+      selChargers380KW,
+      selInternalLosses380KW,
+      selFeederLosses380KW,
+      selCustom380KW
+    };
+  }, [chargers, selectedLoads380V, panel380V.calculationBreakdown, breakdownChargersNominalKW, customCircuits380V]);
 
   const dynamicFormula380V = React.useMemo(() => {
+    if (panel380VSelectedKW <= 0) {
+      return 'Nenhuma carga ativa selecionada no Painel 380V (P_tot = 0.00 kW).';
+    }
     const active380Chargers = chargers.filter(c => selectedLoads380V[c.id] !== false);
     const active380Custom = customCircuits380V.filter(c => selectedLoads380V[`custom_${c.id}`] !== false);
     if (active380Chargers.length === 1 && active380Custom.length === 0) {
-      return `Disjuntor Geral 380V Unificado: Configuração com 1 único carregador ativo (${active380Chargers[0]?.name}). O disjuntor geral é o próprio disjuntor de proteção do carregador (${dynamicBreaker380VA}A Curva C) dispensando barramento secundário (Regra de Ouro NBR 17019).`;
+      return `Disjuntor Geral 380V Unificado: Configuração com 1 único carregador selecionado (${active380Chargers[0]?.name}). O disjuntor geral é o próprio disjuntor de proteção do carregador (${dynamicBreaker380VA}A Curva C) dispensando barramento secundário (Regra de Ouro NBR 17019).`;
     }
-    return `Disjuntor Geral 380V (Cargas Ativas): Soma das cargas selecionadas = ${panel380VSelectedKW.toFixed(2)} kW. Corrente Secundária Ib = ${panel380VSelectedCurrentA} A. Com margem inrush 1.15x: In ≥ ${(panel380VSelectedCurrentA * 1.15).toFixed(1)} A ➔ Disjuntor Geral ${dynamicBreaker380VA}A Tripolar.`;
-  }, [chargers, selectedLoads380V, customCircuits380V, dynamicBreaker380VA, panel380VSelectedKW, panel380VSelectedCurrentA]);
+    const inrushMin = (panel380VSelectedCurrentA * 1.15).toFixed(1);
+    const parts: string[] = [`Carregadores: ${panel380VDetails.selChargers380KW.toFixed(2)} kW`];
+    if (panel380VDetails.selInternalLosses380KW > 0) parts.push(`Perdas internas retificador: +${panel380VDetails.selInternalLosses380KW.toFixed(2)} kW`);
+    if (panel380VDetails.selFeederLosses380KW > 0) parts.push(`Perdas cabos ramais: +${panel380VDetails.selFeederLosses380KW.toFixed(2)} kW`);
+    if (panel380VDetails.selCustom380KW > 0) parts.push(`Circuitos extras: +${panel380VDetails.selCustom380KW.toFixed(2)} kW`);
 
-  // BOM combinada considerando a seleção de inclusão ou não do padrão de entrada
-  const effectiveBOM = React.useMemo(() => {
-    let items = [...totalBOM];
-    if (includeEntranceStandardInBOM && cemigStandardBOM && cemigStandardBOM.length > 0) {
-      const cemigBOMItems = cemigStandardBOM.map((cItem: any, idx: number) => ({
-        id: `bom-cemig-${idx}-${cItem.codigo || idx}`,
-        category: (cItem.categoria ? `PADRÃO CEMIG (${cItem.categoria})` : 'PADRÃO CEMIG') as any,
-        description: cItem.descricao,
-        quantity: cItem.quantidade,
-        unit: cItem.unidade,
-        spec: cItem.nota || `Material homologado CEMIG ND-5.1 (${cItem.codigo || 'Normativo'})`,
-        normReference: 'CEMIG ND-5.1 / ND-5.3'
-      }));
-      items = [...cemigBOMItems, ...items];
+    return `Disjuntor Geral 380V: Soma das potências selecionadas = ${panel380VSelectedKW.toFixed(2)} kW (${parts.join(', ')}). Corrente Secundária Ib = P_tot / (√3 × 380V × 0.98) = ${panel380VSelectedCurrentA} A. Com margem inrush 1.15x: In ≥ ${inrushMin} A ➔ Disjuntor Geral ${dynamicBreaker380VA}A Tripolar Curva C.`;
+  }, [
+    panel380VSelectedKW,
+    panel380VSelectedCurrentA,
+    dynamicBreaker380VA,
+    chargers,
+    selectedLoads380V,
+    customCircuits380V,
+    panel380VDetails
+  ]);
+
+  // ─── GESTÃO DO PADRÃO DE ENTRADA & ORÇAMENTO MODULAR INTEGRADO AO CAPEX ─────
+  // Overrides de usuário por item (quantidade e preço unitário editáveis em tempo real)
+  const [userBOMOverrides, setUserBOMOverrides] = useState<Record<string, { quantity?: number; unitPriceBRL?: number }>>(() => {
+    if (externalUserBOMOverrides && Object.keys(externalUserBOMOverrides).length > 0) return externalUserBOMOverrides;
+    try {
+      const saved = localStorage.getItem('coenergygo_bom_user_overrides');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return {};
+  });
+
+  const [deletedItemIds, setDeletedItemIds] = useState<string[]>(() => {
+    if (externalDeletedItemIds && externalDeletedItemIds.length > 0) return externalDeletedItemIds;
+    try {
+      const saved = localStorage.getItem('coenergygo_bom_deleted_items');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return [];
+  });
+
+  const [customAddedItems, setCustomAddedItems] = useState<BillOfMaterialItem[]>(() => {
+    if (externalCustomAddedItems && externalCustomAddedItems.length > 0) return externalCustomAddedItems;
+    try {
+      const saved = localStorage.getItem('coenergygo_bom_custom_items');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return [];
+  });
+
+  const [globalBdiPercent, setGlobalBdiPercent] = useState<number>(() => {
+    if (typeof externalGlobalBdiPercent === 'number') return externalGlobalBdiPercent;
+    return 20;
+  });
+
+  const [laborPercent, setLaborPercent] = useState<number>(() => {
+    if (typeof externalLaborPercent === 'number') return externalLaborPercent;
+    return 25;
+  });
+
+  const [laborMode, setLaborMode] = useState<'TABELADO' | 'PERCENTUAL'>(() => {
+    if (externalLaborMode) return externalLaborMode;
+    return 'TABELADO';
+  });
+
+  // Sincroniza com as props do projeto quando um novo projeto ou rascunho é carregado
+  React.useEffect(() => {
+    if (externalUserBOMOverrides !== undefined) {
+      setUserBOMOverrides(externalUserBOMOverrides);
     }
-    return items;
-  }, [totalBOM, includeEntranceStandardInBOM, cemigStandardBOM]);
+  }, [externalUserBOMOverrides]);
 
-  // Lista de Materiais Hiper-Rica com Precificação e Itens de Emergência
-  const enrichedBOMSummary = React.useMemo(() => {
-    return enrichBillOfMaterialsWithPricing(effectiveBOM, {
-      includeEmergencyCircuit: includeEmergencyShutdown,
-      useMetalEnclosureCemar,
-      customLaborPercent
+  React.useEffect(() => {
+    if (externalDeletedItemIds !== undefined) {
+      setDeletedItemIds(externalDeletedItemIds);
+    }
+  }, [externalDeletedItemIds]);
+
+  React.useEffect(() => {
+    if (externalCustomAddedItems !== undefined) {
+      setCustomAddedItems(externalCustomAddedItems);
+    }
+  }, [externalCustomAddedItems]);
+
+  React.useEffect(() => {
+    if (externalLaborMode !== undefined) {
+      setLaborMode(externalLaborMode);
+    }
+  }, [externalLaborMode]);
+
+  React.useEffect(() => {
+    if (typeof externalLaborPercent === 'number') {
+      setLaborPercent(externalLaborPercent);
+    }
+  }, [externalLaborPercent]);
+
+  React.useEffect(() => {
+    if (typeof externalGlobalBdiPercent === 'number') {
+      setGlobalBdiPercent(externalGlobalBdiPercent);
+    }
+  }, [externalGlobalBdiPercent]);
+
+  const [localTerminalType, setLocalTerminalType] = useState<'COMPRESSAO_OLHAL' | 'TUBULAR'>(externalTerminalType || 'COMPRESSAO_OLHAL');
+  React.useEffect(() => {
+    if (externalTerminalType) {
+      setLocalTerminalType(externalTerminalType);
+    }
+  }, [externalTerminalType]);
+  const effectiveTerminalType = externalTerminalType || localTerminalType;
+
+  // Sincroniza alterações nas cargas habilitadas/desabilitadas dos quadros 220V e 380V com o estado do projeto pai
+  const onChangeSelectedLoadsRef = React.useRef(onChangeSelectedLoads);
+  onChangeSelectedLoadsRef.current = onChangeSelectedLoads;
+  const lastLoadsSignatureRef = React.useRef<string>('');
+  React.useEffect(() => {
+    const sig = JSON.stringify({ l220: selectedLoads220V, l380: selectedLoads380V });
+    if (sig !== lastLoadsSignatureRef.current) {
+      lastLoadsSignatureRef.current = sig;
+      if (onChangeSelectedLoadsRef.current) {
+        onChangeSelectedLoadsRef.current(selectedLoads220V, selectedLoads380V);
+      }
+    }
+  }, [selectedLoads220V, selectedLoads380V]);
+  const [stageLaborOverrides, setStageLaborOverrides] = useState<Record<string, { mode?: 'TABELADO' | 'PERCENTUAL'; percent?: number; fixedAmountBRL?: number }>>({});
+  const [capexPricingCatalog, setCapexPricingCatalog] = useState<Record<string, {
+    unitPrice: number;
+    supplier: string;
+    source: 'CEMIG_DB' | 'CAPEX_DB' | 'ESTIMATIVA_WEB';
+    codigo?: string;
+  }>>({});
+  const [isSyncingCapex, setIsSyncingCapex] = useState<boolean>(false);
+  const [syncedOrcamentoId, setSyncedOrcamentoId] = useState<string | undefined>();
+  const [capexItemsList, setCapexItemsList] = useState<any[]>([]);
+
+  // Carrega em tempo real o catálogo de preços atualizado do CAPEX (CemigMaterialPreco + OrcamentoItemPadrao)
+  const loadCapexCatalog = React.useCallback(async () => {
+    try {
+      const res = await fetch('/api/ev/bom/sync-capex');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          if (data.catalog) setCapexPricingCatalog(data.catalog);
+          if (data.itemsList) setCapexItemsList(data.itemsList);
+        }
+      }
+    } catch (e) {
+      console.warn('Erro ao carregar catálogo CAPEX:', e);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    loadCapexCatalog();
+  }, [loadCapexCatalog]);
+
+  // Motor Unificado de BOM Modular particionado nas 10 etapas da instalação
+  const modularBOM = React.useMemo(() => {
+    return buildModularBOM(topologyOutput, cemigStandardBOM || [], {
+      includeEntranceStandardInBOM,
+      includeEmergencyShutdown,
+      terminalType: effectiveTerminalType,
+      globalBdiPercent,
+      laborPercent,
+      laborMode,
+      stageLaborOverrides,
+      userBOMOverrides,
+      deletedItemIds,
+      customAddedItems,
+      pricingCatalog: capexPricingCatalog
     });
-  }, [effectiveBOM, includeEmergencyShutdown, useMetalEnclosureCemar, customLaborPercent]);
+  }, [
+    topologyOutput,
+    cemigStandardBOM,
+    includeEntranceStandardInBOM,
+    includeEmergencyShutdown,
+    effectiveTerminalType,
+    globalBdiPercent,
+    laborPercent,
+    laborMode,
+    stageLaborOverrides,
+    userBOMOverrides,
+    deletedItemIds,
+    customAddedItems,
+    capexPricingCatalog
+  ]);
+
+  // Notifica o componente pai sobre qualquer atualização no cálculo da BOM e CAPEX (com guarda anti-loop)
+  const onModularBOMChangeRef = React.useRef(onModularBOMChange);
+  onModularBOMChangeRef.current = onModularBOMChange;
+  const lastBOMSignatureRef = React.useRef<string>('');
+
+  React.useEffect(() => {
+    if (!modularBOM) return;
+    const signature = `${modularBOM.totalProjectInvestmentBRL}_${modularBOM.totalItemsCount}_${modularBOM.stages.length}`;
+    if (lastBOMSignatureRef.current !== signature) {
+      lastBOMSignatureRef.current = signature;
+      onModularBOMChangeRef.current?.(modularBOM);
+    }
+  }, [modularBOM]);
+
+  // Sincronização em segundo plano com o CAPEX (OrcamentoProjeto + 9 OrcamentoEtapas)
+  React.useEffect(() => {
+    const timer = setTimeout(async () => {
+      if (!modularBOM || modularBOM.stages.length === 0) return;
+      setIsSyncingCapex(true);
+      try {
+        const res = await fetch('/api/ev/bom/sync-capex', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            projectId: syncedOrcamentoId,
+            projectName: `Eletroposto ${chargers.length} Estações (${totalChargersKW} kW)`,
+            clientName: 'Cliente Cordeiro Energia',
+            stages: modularBOM.stages,
+            globalBdiPercent
+          })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.orcamentoProjetoId) {
+            setSyncedOrcamentoId(data.orcamentoProjetoId);
+          }
+        }
+      } catch (err) {
+        console.warn('Erro na sincronização silenciosa com o CAPEX:', err);
+      } finally {
+        setIsSyncingCapex(false);
+      }
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, [modularBOM.totalProjectInvestmentBRL, globalBdiPercent]);
+
+  // Criação de novo material customizado com alerta para compras e busca web
+  const handleAddNewCustomItem = async (newItem: {
+    descricao: string;
+    unidade: string;
+    tipo: string;
+    stageId: InstallationStageId;
+    quantidade: number;
+    precoManual?: number;
+  }) => {
+    try {
+      const res = await fetch('/api/orcamentos/novo-item-com-alerta', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          descricao: newItem.descricao,
+          unidade: newItem.unidade,
+          tipo: newItem.tipo,
+          precoManual: newItem.precoManual,
+          origem: 'MODULO_CARREGADORES_VE'
+        })
+      });
+
+      const data = await res.json();
+      const price = data.precoEstimado || newItem.precoManual || 0;
+      const customItem: BillOfMaterialItem = {
+        id: `custom-${Date.now()}`,
+        category: newItem.tipo as any,
+        description: newItem.descricao,
+        quantity: newItem.quantidade,
+        unit: newItem.unidade,
+        spec: `Item personalizado adicionado na ${newItem.stageId}`,
+        normReference: 'NBR 5410 / Custom',
+        manufacturer: data.alertaGerado ? 'Pendente Cotação (Estimativa Web)' : 'Fornecedor Homologado',
+        unitPriceBRL: price,
+        totalPriceBRL: price * newItem.quantidade
+      };
+      (customItem as any).stageId = newItem.stageId;
+      setCustomAddedItems(prev => {
+        const updated = [...prev, customItem];
+        try { localStorage.setItem('coenergygo_bom_custom_items', JSON.stringify(updated)); } catch (err) {}
+        if (onUpdateCustomAddedItems) onUpdateCustomAddedItems(updated);
+        return updated;
+      });
+    } catch (e) {
+      console.error('Erro ao cadastrar novo item:', e);
+    }
+  };
+
+  // Totais Finais
+  const finalMaterialsCostBRL = modularBOM.totalMaterialsNetBRL;
+  const finalLaborCostBRL = modularBOM.totalLaborNetBRL;
+  const finalTotalInvestmentBRL = modularBOM.totalProjectInvestmentBRL;
 
   // Alternador da exibição integrada do Diagrama Unifilar Nativo Vetorial
   const [showNativeUnifilarModal, setShowNativeUnifilarModal] = useState<boolean>(false);
 
-  // Exportador de Planilha Orçamentária BOM em CSV (Excel compatível)
+  // Exportador de Planilha Orçamentária Modular EAP em CSV (Excel compatível)
   const handleExportBOMCSV = () => {
-    const headers = ['Categoria', 'Descricao', 'Fabricante', 'Modelo/Ref', 'Qtd', 'Unidade', 'Preco_Unit_R$', 'Preco_Total_R$', 'Norma', 'Especificacao'];
-    const rows = enrichedBOMSummary.items.map(it => [
-      `"${it.category}"`,
-      `"${it.description.replace(/"/g, '""')}"`,
-      `"${it.manufacturer || ''}"`,
-      `"${(it.modelRef || '').replace(/"/g, '""')}"`,
-      it.quantity,
-      it.unit,
-      it.unitPriceBRL?.toFixed(2) || '0.00',
-      it.totalPriceBRL?.toFixed(2) || '0.00',
-      `"${it.normReference}"`,
-      `"${it.spec.replace(/"/g, '""')}"`
-    ]);
-    const csvContent = '\uFEFF' + [headers.join(';'), ...rows.map(r => r.join(';'))].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
+    const csvLines: string[] = [];
+    csvLines.push('CORDEIRO ENERGIA - MEMORIAL ANALÍTICO DE MATERIAIS & CAPEX');
+    csvLines.push(`Data: ${new Date().toLocaleDateString('pt-BR')} | BDI Global: ${globalBdiPercent}% | Mão de Obra: ${laborPercent}%`);
+    csvLines.push('');
+    csvLines.push('Etapa;Codigo;Descricao;Fabricante_Homologado;Quantidade;Unidade;Preco_Unit_R$;Subtotal_R$;Fonte_Preco;Norma_Referencia');
+
+    modularBOM.stages.forEach(st => {
+      st.items.forEach(it => {
+        csvLines.push([
+          `"${st.title}"`,
+          `"${it.codigo || 'NORM-NBR'}"`,
+          `"${it.description.replace(/"/g, '""')}"`,
+          `"${it.manufacturer || ''}"`,
+          it.quantity,
+          it.unit,
+          it.unitPriceBRL?.toFixed(2) || '0.00',
+          it.totalPriceBRL?.toFixed(2) || '0.00',
+          `"${it.pricingSource}"`,
+          `"${it.normReference}"`
+        ].join(';'));
+      });
+      csvLines.push(`"${st.title} - SUBTOTAL";;;;;;;"${st.totalStageBRL.toFixed(2)}";;`);
+    });
+
+    csvLines.push('');
+    csvLines.push(`"TOTAL MATERIAIS (LÍQUIDO)";;;;;;;"${modularBOM.totalMaterialsNetBRL.toFixed(2)}";;`);
+    csvLines.push(`"MÃO DE OBRA E MONTAGEM (${laborPercent}%)";;;;;;;"${modularBOM.totalLaborNetBRL.toFixed(2)}";;`);
+    csvLines.push(`"BDI GLOBAL (${globalBdiPercent}%)";;;;;;;"${modularBOM.globalBdiAmountBRL.toFixed(2)}";;`);
+    csvLines.push(`"INVESTIMENTO TOTAL DO PROJETO";;;;;;;"${modularBOM.totalProjectInvestmentBRL.toFixed(2)}";;`);
+
+    const csvContent = '\uFEFF' + csvLines.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'lista_materiais_orcamento_coenergygo.csv';
+    a.download = `Cordeiro_BOM_Eletroposto_${new Date().toISOString().slice(0, 10)}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -476,18 +923,26 @@ export function EVTopologyChainViewer({
         <div>
           <div className="flex items-center gap-3">
             <span className="px-3 py-1 bg-[#E45318]/20 border border-[#E45318]/40 text-[#E45318] text-xs font-bold uppercase tracking-wider rounded-full">
-              Topologia Interativa NBR 5410 & NBR 17019
+              {activeTab === 'bom'
+                ? 'Passo 4B: Lista de Materiais & Orçamentos (CAPEX)'
+                : 'Passo 4A: Topologia Interativa NBR 5410 & NBR 17019'}
             </span>
             <span className="text-xs text-slate-400 flex items-center gap-1">
               <span className="w-2 h-2 rounded-full bg-[#00B356] animate-pulse" />
-              Recálculo Reativo Bidirecional Ativo
+              {activeTab === 'bom'
+                ? 'Preços CAPEX & Homologação em Tempo Real'
+                : 'Recálculo Reativo Bidirecional Ativo'}
             </span>
           </div>
           <h2 className="text-xl font-black text-white mt-2 flex items-center gap-2">
-            Diagrama Interativo do Fluxo de Energia: Rede Concessionária → Veículo Elétrico
+            {activeTab === 'bom'
+              ? 'Lista de Materiais e Orçamentos da Obra (Modular por Etapas)'
+              : 'Diagrama Interativo do Fluxo de Energia: Rede Concessionária → Veículo Elétrico'}
           </h2>
           <p className="text-xs text-slate-400 mt-1 max-w-3xl leading-relaxed">
-            Clique sobre qualquer bloco ou trecho da cadeia para visualizar ou editar parâmetros, abrir gavetas de dimensionamento, adicionar circuitos terminais e simular em tempo real a integridade da esteira.
+            {activeTab === 'bom'
+              ? 'Navegue pelas abas para auditar cada trecho físico da instalação ou visualize a lista completa na aba Consolidada. Cabos calculados com condutores de fase, neutro e PE.'
+              : 'Clique sobre qualquer bloco ou trecho da cadeia para visualizar ou editar parâmetros, abrir gavetas de dimensionamento, adicionar circuitos terminais e simular em tempo real a integridade da esteira.'}
           </p>
         </div>
 
@@ -498,94 +953,97 @@ export function EVTopologyChainViewer({
             onClick={() => setActiveTab('vis')}
             className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
               activeTab === 'vis'
-                ? 'bg-[#E45318] text-white shadow-lg shadow-[#E45318]/30'
+                ? 'bg-[#E45318] text-white shadow-lg shadow-[#E45318]/30 font-black'
                 : 'bg-slate-800/80 text-slate-300 hover:bg-slate-700'
             }`}
           >
             <Activity className="w-3.5 h-3.5" />
-            Topologia da Cadeia
+            Passo 4A: Topologia
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('bom')}
             className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
               activeTab === 'bom'
-                ? 'bg-[#E45318] text-white shadow-lg shadow-[#E45318]/30'
+                ? 'bg-[#00B356] text-white shadow-lg shadow-[#00B356]/30 font-black'
                 : 'bg-slate-800/80 text-slate-300 hover:bg-slate-700'
             }`}
           >
             <FileSpreadsheet className="w-3.5 h-3.5" />
-            Lista de Materiais (BOM)
+            Passo 4B: Lista & Orçamentos (BOM)
           </button>
 
           {/* Botão de Acesso Direto à Suíte Completa de 5 Relatórios (Pilar 4) */}
           <button
             type="button"
             onClick={() => setShowReportsHubModal(true)}
-            className="px-3.5 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-[#00B356] to-emerald-600 hover:from-emerald-500 hover:to-[#00B356] text-white shadow-lg shadow-emerald-900/30 transition-all cursor-pointer flex items-center gap-2 border border-emerald-400/40"
-            title="Acessar os 5 Relatórios de Engenharia Oficiais (Executivo, Memorial Descritivo, Cálculo NBR 5410, Caderno de Obra e Comissionamento)"
+            className="px-3.5 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-slate-800 to-slate-900 hover:from-slate-700 hover:to-slate-800 text-white shadow-md transition-all cursor-pointer flex items-center gap-2 border border-slate-700"
+            title="Acessar os 5 Relatórios de Engenharia Oficiais"
           >
-            <FileText className="w-4 h-4 text-white" />
-            <span>Relatórios Técnicos (5 em 1)</span>
+            <FileText className="w-4 h-4 text-emerald-400" />
+            <span>Relatórios (5 em 1)</span>
           </button>
         </div>
 
-        {/* Controles Globais Rápidos */}
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="bg-slate-900/80 border border-slate-700/60 rounded-xl px-3 py-2 flex items-center gap-2 text-xs">
-            <span className="text-slate-400">Tensão Concessionária:</span>
-            <div className="inline-flex rounded-lg bg-slate-800 p-0.5 border border-slate-700">
-              <button
-                type="button"
-                onClick={() => setGridSupplyVoltage(220)}
-                className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-all ${
-                  gridSupplyVoltage === 220
-                    ? 'bg-[#E45318] text-white shadow'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                220V (F-F CEMIG)
-              </button>
-              <button
-                type="button"
-                onClick={() => setGridSupplyVoltage(380)}
-                className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-all ${
-                  gridSupplyVoltage === 380
-                    ? 'bg-[#E45318] text-white shadow'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                380V (F-F Direto)
-              </button>
+        {/* Controles Globais Rápidos (Apenas na Topologia) */}
+        {activeTab === 'vis' && (
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="bg-slate-900/80 border border-slate-700/60 rounded-xl px-3 py-2 flex items-center gap-2 text-xs">
+              <span className="text-slate-400">Tensão Concessionária:</span>
+              <div className="inline-flex rounded-lg bg-slate-800 p-0.5 border border-slate-700">
+                <button
+                  type="button"
+                  onClick={() => setGridSupplyVoltage(220)}
+                  className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-all ${
+                    gridSupplyVoltage === 220
+                      ? 'bg-[#E45318] text-white shadow'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  220V (F-F CEMIG)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setGridSupplyVoltage(380)}
+                  className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-all ${
+                    gridSupplyVoltage === 380
+                      ? 'bg-[#E45318] text-white shadow'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  380V (F-F Direto)
+                </button>
+              </div>
             </div>
-          </div>
 
-          <div className="bg-slate-900/80 border border-slate-700/60 rounded-xl px-3 py-2 text-xs flex items-center gap-2">
-            <span className="text-slate-400">Carga Base Cliente:</span>
-            <input
-              type="number"
-              min="0"
-              max="200"
-              step="0.5"
-              value={clientBaseLoadKW}
-              onChange={(e) => setClientBaseLoadKW(Number(e.target.value) || 0)}
-              className="w-16 bg-slate-800 border border-slate-700 rounded px-2 py-0.5 text-center text-white font-bold"
-            />
-            <span className="text-slate-400">kW</span>
-          </div>
+            <div className="bg-slate-900/80 border border-slate-700/60 rounded-xl px-3 py-2 text-xs flex items-center gap-2">
+              <span className="text-slate-400">Carga Base Cliente:</span>
+              <input
+                type="number"
+                min="0"
+                max="200"
+                step="0.5"
+                value={clientBaseLoadKW}
+                onChange={(e) => setClientBaseLoadKW(Number(e.target.value) || 0)}
+                className="w-16 bg-slate-800 border border-slate-700 rounded px-2 py-0.5 text-center text-white font-bold"
+              />
+              <span className="text-slate-400">kW</span>
+            </div>
 
-          <button
-            type="button"
-            onClick={() => setShowAddChargerModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#E45318] to-[#c24210] hover:from-[#f35c20] hover:to-[#E45318] text-white rounded-xl font-bold text-xs shadow-lg shadow-[#E45318]/20 transition-all hover:scale-105 cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            Adicionar Carregador
-          </button>
-        </div>
+            <button
+              type="button"
+              onClick={() => setShowAddChargerModal(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#E45318] to-[#c24210] hover:from-[#f35c20] hover:to-[#E45318] text-white rounded-xl font-bold text-xs shadow-lg shadow-[#E45318]/20 transition-all hover:scale-105 cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              Adicionar Carregador
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* ─── BANNER DINÂMICO DE ALERTA DE CAPACIDADE DO PADRÃO ────────────── */}
+      {/* ─── BANNER DINÂMICO DE ALERTA DE CAPACIDADE DO PADRÃO (Apenas na Topologia) ─── */}
+      {activeTab === 'vis' && (
       <div
         className={`mt-4 p-4 rounded-xl border flex items-start gap-4 transition-all ${
           standardAlert.isOverloaded
@@ -852,6 +1310,7 @@ export function EVTopologyChainViewer({
           )}
         </div>
       </div>
+      )}
 
       {/* ─── CONTEÚDO PRINCIPAL: ESTEIRA VISUAL DA CADEIA ─────────────────── */}
       {activeTab === 'vis' && (
@@ -1325,218 +1784,147 @@ export function EVTopologyChainViewer({
         </div>
       )}
 
-      {/* ─── TAB LISTA DE MATERIAIS CONSOLIDADA & ORÇAMENTO HIPER-RICO (BOM) ─── */}
+      {/* ─── TAB LISTA DE MATERIAIS MODULAR & ORÇAMENTO INTEGRADO AO CAPEX (BOM) ─── */}
       {activeTab === 'bom' && (
         <div className="mt-6 space-y-4">
-          {/* 1. KPIs Financeiros de Investimento da Infraestrutura */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-4 shadow-lg flex flex-col justify-between">
-              <div className="flex items-center justify-between text-slate-400 text-xs mb-1">
-                <span>Materiais & Insumos</span>
-                <Boxes className="w-4 h-4 text-[#E45318]" />
-              </div>
-              <div className="text-xl font-bold font-mono text-white">
-                {enrichedBOMSummary.totalMaterialsCostBRL.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-              </div>
-              <span className="text-[10px] text-slate-400 mt-1 font-mono">
-                {enrichedBOMSummary.items.length} itens homologados NBR 5410/PEC-11
+          {/* Seletor Exclusivo de Tipo de Terminal no Projeto (Terminal Olhal de Compressão vs Terminal Tubular) */}
+          <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <span className="text-[10px] font-black uppercase tracking-wider text-[#00B356] block">
+                Padronização de Terminais Elétricos no Projeto
               </span>
+              <h4 className="text-sm font-bold text-white mt-0.5">
+                Seleção do Tipo de Terminal para Todos os Trechos de Condutores
+              </h4>
+              <p className="text-[11px] text-slate-400">
+                Define se os cabos de Fase, Neutro e Terra utilizarão <strong>Terminal Olhal de Compressão</strong> ou <strong>Terminal Tubular</strong> em todas as etapas da lista de materiais.
+              </p>
             </div>
-
-            <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-4 shadow-lg flex flex-col justify-between">
-              <div className="flex items-center justify-between text-slate-400 text-xs mb-1">
-                <span>Mão de Obra e Instalação</span>
-                <Building2 className="w-4 h-4 text-emerald-400" />
-              </div>
-              <div className="text-xl font-bold font-mono text-emerald-400">
-                {enrichedBOMSummary.estimatedLaborCostBRL.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-              </div>
-              <div className="flex items-center justify-between text-[10px] text-slate-400 mt-1 font-mono">
-                <span>Taxa montagem civil/eletro:</span>
-                <span className="text-emerald-300 font-bold">{customLaborPercent}%</span>
-              </div>
-            </div>
-
-            <div className="bg-slate-900/90 border border-amber-500/30 rounded-xl p-4 shadow-lg flex flex-col justify-between bg-gradient-to-br from-slate-900 to-amber-950/20">
-              <div className="flex items-center justify-between text-amber-400 text-xs mb-1">
-                <span className="font-bold">Investimento Total Estimado</span>
-                <DollarSign className="w-4 h-4 text-amber-400" />
-              </div>
-              <div className="text-xl font-black font-mono text-amber-300">
-                {enrichedBOMSummary.totalProjectInvestmentBRL.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-              </div>
-              <span className="text-[10px] text-slate-400 mt-1">
-                Materiais + Montagem + Comissionamento ART
-              </span>
-            </div>
-
-            <div className="bg-slate-900/90 border border-rose-500/40 rounded-xl p-4 shadow-lg flex flex-col justify-between bg-gradient-to-br from-slate-900 to-rose-950/20">
-              <div className="flex items-center justify-between text-rose-300 text-xs mb-1">
-                <span className="font-bold">Segurança NBR 17019</span>
-                <ShieldAlert className="w-4 h-4 text-rose-400" />
-              </div>
-              <div className="text-sm font-bold text-white flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse" />
-                Desligamento Emergência
-              </div>
-              <span className="text-[10px] text-rose-300/80 mt-1">
-                Botão ≥ 5m + Bobina MX Shunt Trip CEMIG
-              </span>
+            <div className="flex items-center gap-2 bg-slate-950 p-1.5 rounded-xl border border-slate-800 shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  setLocalTerminalType('COMPRESSAO_OLHAL');
+                  if (onChangeTerminalType) onChangeTerminalType('COMPRESSAO_OLHAL');
+                }}
+                className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  effectiveTerminalType === 'COMPRESSAO_OLHAL'
+                    ? 'bg-[#00B356] text-white shadow'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Terminal Olhal de Compressão
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setLocalTerminalType('TUBULAR');
+                  if (onChangeTerminalType) onChangeTerminalType('TUBULAR');
+                }}
+                className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  effectiveTerminalType === 'TUBULAR'
+                    ? 'bg-[#E45318] text-white shadow'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Terminal Tubular
+              </button>
             </div>
           </div>
 
-          {/* 2. Banner de Segurança e Comando de Emergência NBR 17019 & CEMIG */}
-          <div className="p-3.5 bg-rose-950/20 border border-rose-500/40 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-            <div className="flex items-start gap-2.5">
-              <AlertTriangle className="w-5 h-5 text-rose-400 flex-shrink-0 mt-0.5" />
-              <div>
-                <span className="font-bold text-white text-xs block">
-                  Sistema Obrigatório de Desligamento de Emergência (NBR 17019, Norma CEMIG e Bombeiros)
-                </span>
-                <span className="text-[11px] text-slate-300">
-                  Botão cogumelo de travamento instalado a no mínimo 5 metros do totem de recarga, interligado eletricamente à bobina de disparo (Shunt Trip MX) no disjuntor geral para desenergização total imediata (&lt; 50ms).
-                </span>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <span className="px-3 py-1 bg-rose-500/20 border border-rose-500/50 text-rose-300 rounded-lg text-xs font-bold font-mono">
-                Desarme MX &lt; 50ms Integrado
-              </span>
-            </div>
-          </div>
-
-          {/* 3. Tabela Hiper-Rica com Opções de Customização de Orçamento */}
-          <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-4">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between pb-3 border-b border-slate-800 mb-4 gap-3">
-              <div>
-                <h3 className="font-bold text-base text-white flex items-center gap-2">
-                  <span>Orçamento Executivo & Lista de Materiais Homologados</span>
-                  <span className="text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-700/60 px-2 py-0.5 rounded font-mono font-bold">
-                    PEC-11 CEMIG
-                  </span>
-                </h3>
-                <p className="text-xs text-slate-400">
-                  Preços médios de mercado brasileiro • Fabricantes líderes: Soprano, WEG, Schneider, Cemar Legrand, Strahl, Prysmian e Clamper
-                </p>
-              </div>
-
-              {/* Controles de Configuração da BOM */}
-              <div className="flex items-center gap-2.5 flex-wrap">
-                <label className="flex items-center gap-1.5 bg-slate-800/80 hover:bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 cursor-pointer text-xs transition-colors">
-                  <input
-                    type="checkbox"
-                    checked={includeEntranceStandardInBOM}
-                    onChange={(e) => setIncludeEntranceStandardInBOM(e.target.checked)}
-                    className="rounded accent-[#E45318]"
-                  />
-                  <span className={includeEntranceStandardInBOM ? 'text-white font-semibold text-[11px]' : 'text-slate-400 text-[11px]'}>
-                    Padrão CEMIG
-                  </span>
-                </label>
-
-                <label className="flex items-center gap-1.5 bg-slate-800/80 hover:bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 cursor-pointer text-xs transition-colors">
-                  <input
-                    type="checkbox"
-                    checked={useMetalEnclosureCemar}
-                    onChange={(e) => setUseMetalEnclosureCemar(e.target.checked)}
-                    className="rounded accent-[#E45318]"
-                  />
-                  <span className={useMetalEnclosureCemar ? 'text-white font-semibold text-[11px]' : 'text-slate-400 text-[11px]'}>
-                    Quadro Cemar Metálico
-                  </span>
-                </label>
-
-                <label className="flex items-center gap-1.5 bg-slate-800/80 hover:bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 cursor-pointer text-xs transition-colors">
-                  <input
-                    type="checkbox"
-                    checked={includeEmergencyShutdown}
-                    onChange={(e) => setIncludeEmergencyShutdown(e.target.checked)}
-                    className="rounded accent-rose-500"
-                  />
-                  <span className={includeEmergencyShutdown ? 'text-rose-300 font-semibold text-[11px]' : 'text-slate-400 text-[11px]'}>
-                    Botão + Bobina MX
-                  </span>
-                </label>
-
-                <button
-                  type="button"
-                  onClick={handleExportBOMCSV}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-[#E45318] hover:bg-[#c24310] text-white rounded-lg text-xs font-bold transition-all cursor-pointer shadow-md"
-                  title="Exportar planilha de orçamento completa compatível com Excel e LibreOffice"
-                >
-                  <FileSpreadsheet className="w-3.5 h-3.5" />
-                  <span>Exportar Planilha (CSV)</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Tabela de Itens com Preços Unitários e Totais */}
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs text-left">
-                <thead className="bg-slate-800/90 text-slate-400 uppercase font-mono text-[10px]">
-                  <tr>
-                    <th className="p-2.5">Categoria</th>
-                    <th className="p-2.5">Descrição do Material</th>
-                    <th className="p-2.5">Fabricante Homologado</th>
-                    <th className="p-2.5 text-center">Qtd</th>
-                    <th className="p-2.5 text-center">Un</th>
-                    <th className="p-2.5 text-right">Unitário (R$)</th>
-                    <th className="p-2.5 text-right">Subtotal (R$)</th>
-                    <th className="p-2.5">Norma / Ref</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-800/80 font-sans">
-                  {enrichedBOMSummary.items.map((item) => {
-                    const isEmerg = item.category === 'segurança_emergencia';
-                    return (
-                      <tr
-                        key={item.id}
-                        className={`transition-colors ${
-                          isEmerg
-                            ? 'bg-rose-950/15 hover:bg-rose-950/30'
-                            : 'hover:bg-slate-800/30'
-                        }`}
-                      >
-                        <td className="p-2.5 uppercase font-mono text-[10px]">
-                          <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${
-                            isEmerg
-                              ? 'bg-rose-900/60 text-rose-300 border border-rose-700/60'
-                              : 'bg-slate-800 text-slate-300'
-                          }`}>
-                            {item.category.replace(/_/g, ' ')}
-                          </span>
-                        </td>
-                        <td className="p-2.5 font-semibold text-white">
-                          <div>{item.description}</div>
-                          {item.spec && (
-                            <div className="text-[10px] text-slate-400 font-normal mt-0.5">{item.spec}</div>
-                          )}
-                        </td>
-                        <td className="p-2.5 text-emerald-400 font-mono text-[11px]">
-                          {item.manufacturer || 'Nacional Homologado'}
-                        </td>
-                        <td className="p-2.5 text-center font-mono font-bold text-amber-400">
-                          {item.quantity}
-                        </td>
-                        <td className="p-2.5 text-center font-mono text-slate-400">
-                          {item.unit}
-                        </td>
-                        <td className="p-2.5 text-right font-mono text-slate-300">
-                          {item.unitPriceBRL ? item.unitPriceBRL.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '-'}
-                        </td>
-                        <td className="p-2.5 text-right font-mono font-bold text-white">
-                          {item.totalPriceBRL ? item.totalPriceBRL.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '-'}
-                        </td>
-                        <td className="p-2.5 font-mono text-[10px] text-slate-400">
-                          {item.normReference}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <EVModularBOMTable
+            modularBOM={modularBOM}
+            onUpdateQuantity={(itemId, qty) => {
+              setUserBOMOverrides(prev => {
+                const updated = {
+                  ...prev,
+                  [itemId]: {
+                    ...prev[itemId],
+                    quantity: qty
+                  }
+                };
+                try { localStorage.setItem('coenergygo_bom_user_overrides', JSON.stringify(updated)); } catch (e) {}
+                if (onUpdateBOMOverrides) onUpdateBOMOverrides(updated);
+                return updated;
+              });
+            }}
+            onUpdateUnitPrice={(itemId, price) => {
+              setUserBOMOverrides(prev => {
+                const updated = {
+                  ...prev,
+                  [itemId]: {
+                    ...prev[itemId],
+                    unitPriceBRL: price
+                  }
+                };
+                try { localStorage.setItem('coenergygo_bom_user_overrides', JSON.stringify(updated)); } catch (e) {}
+                if (onUpdateBOMOverrides) onUpdateBOMOverrides(updated);
+                return updated;
+              });
+            }}
+            onDeleteItem={(itemId) => {
+              setDeletedItemIds(prev => {
+                const updated = [...prev, itemId];
+                try { localStorage.setItem('coenergygo_bom_deleted_items', JSON.stringify(updated)); } catch (e) {}
+                if (onUpdateDeletedItemIds) onUpdateDeletedItemIds(updated);
+                return updated;
+              });
+            }}
+            onRestoreOriginal={() => {
+              setUserBOMOverrides({});
+              setDeletedItemIds([]);
+              setCustomAddedItems([]);
+              try {
+                localStorage.removeItem('coenergygo_bom_user_overrides');
+                localStorage.removeItem('coenergygo_bom_deleted_items');
+                localStorage.removeItem('coenergygo_bom_custom_items');
+              } catch (e) {}
+              if (onUpdateBOMOverrides) onUpdateBOMOverrides({});
+              if (onUpdateDeletedItemIds) onUpdateDeletedItemIds([]);
+              if (onUpdateCustomAddedItems) onUpdateCustomAddedItems([]);
+            }}
+            hasModifications={Object.keys(userBOMOverrides).length > 0 || deletedItemIds.length > 0 || customAddedItems.length > 0}
+            globalBdiPercent={globalBdiPercent}
+            onUpdateGlobalBdiPercent={(bdi) => {
+              setGlobalBdiPercent(bdi);
+              if (onUpdateGlobalBdiPercent) onUpdateGlobalBdiPercent(bdi);
+            }}
+            laborPercent={laborPercent}
+            onUpdateLaborPercent={(pct) => {
+              setLaborPercent(pct);
+              if (onUpdateLaborPercent) onUpdateLaborPercent(pct);
+            }}
+            laborMode={laborMode}
+            onUpdateLaborMode={(mode) => {
+              setLaborMode(mode);
+              if (onUpdateLaborMode) onUpdateLaborMode(mode);
+            }}
+            onUpdateStageLaborMode={(stageId, mode) => {
+              setStageLaborOverrides(prev => ({
+                ...prev,
+                [stageId]: {
+                  ...prev[stageId],
+                  mode
+                }
+              }));
+            }}
+            onUpdateStageLaborAmount={(stageId, amount) => {
+              setStageLaborOverrides(prev => ({
+                ...prev,
+                [stageId]: {
+                  ...prev[stageId],
+                  fixedAmountBRL: amount
+                }
+              }));
+            }}
+            onAddNewCustomItem={handleAddNewCustomItem}
+            availableCatalogItems={capexItemsList}
+            isSyncingCapex={isSyncingCapex}
+            syncedOrcamentoId={syncedOrcamentoId}
+            onExportCSV={handleExportBOMCSV}
+            onRefreshCapexPrices={loadCapexCatalog}
+            onNavigateToFinancialModeling={onNavigateToFinancialModeling}
+          />
         </div>
       )}
 
@@ -1586,31 +1974,49 @@ export function EVTopologyChainViewer({
                         }}
                         className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white font-mono"
                       >
-                        <optgroup label="Monofásico / Bifásico (ND-5.1)">
-                          <option value="A1">A1 — Monofásico 63A (8 kW)</option>
-                          <option value="A_LEGADO_40A">A (Legado Antigo) — Monofásico 40A (8.8 kW)</option>
-                          <option value="B1">B1 — Bifásico 63A (16 kW)</option>
-                          <option value="B2">B2 — Bifásico 63A (16 kW)</option>
+                        <optgroup label="Monofásico / Bifásico (ND-5.1 Tabela 1)">
+                          {['A1', 'A_LEGADO_40A', 'B1', 'B2'].map((key) => {
+                            const cat = CEMIG_CATEGORIES[key];
+                            if (!cat) return null;
+                            return (
+                              <option key={key} value={key}>
+                                {cat.categoryId} — {cat.categoryName.replace(/^Tipo\s+/, '')}
+                              </option>
+                            );
+                          })}
                         </optgroup>
                         <optgroup label="Trifásico Convencional BT (ND-5.1 Tabela 2)">
-                          <option value="C1">C1 — Trifásico 40A (15 kW)</option>
-                          <option value="C2">C2 — Trifásico 50A (20 kW)</option>
-                          <option value="C3">C3 — Trifásico 63A (25 kW)</option>
-                          <option value="C4">C4 — Trifásico 80A (30 kW)</option>
-                          <option value="C5">C5 — Trifásico 125A (50 kW)</option>
-                          <option value="C6">C6 — Trifásico 200A (75 kW)</option>
+                          {['C1', 'C2', 'C3', 'C4', 'C5', 'C6'].map((key) => {
+                            const cat = CEMIG_CATEGORIES[key];
+                            if (!cat) return null;
+                            return (
+                              <option key={key} value={key}>
+                                {cat.categoryId} — Trifásico {cat.breakerCurrentA}A ({cat.maxLimitKW} kW)
+                              </option>
+                            );
+                          })}
                         </optgroup>
-                        <optgroup label="Alta Demanda BT com Medição Indireta TC (ND-5.1 Tabela 4)">
-                          <option value="F1">F1 — Alta Demanda 76 kVA / Disjuntor 200A (TC 200/5)</option>
-                          <option value="F2">F2 — Alta Demanda 95 kVA / Disjuntor 250A (TC 200/5)</option>
-                          <option value="F3">F3 — Alta Demanda 114 kVA / Disjuntor 300A (TC 200/5)</option>
-                          <option value="F4">F4 — Alta Demanda 152 kVA / Disjuntor 400A (TC 400/5)</option>
-                          <option value="F5">F5 — Alta Demanda 171 kVA / Disjuntor 450A (TC 400/5)</option>
-                          <option value="F6">F6 — Alta Demanda 188 kVA / Disjuntor 500A (TC 400/5)</option>
-                          <option value="F7_600">F7 (600A) — Alta Demanda 217 kW / Disjuntor 600A (TC 600/5)</option>
-                          <option value="F7_630">F7 (630A) — Alta Demanda 228 kVA / Disjuntor 630A (TC 600/5)</option>
-                          <option value="F8">F8 — Alta Demanda 266 kVA / Disjuntor 700A (TC 800/5)</option>
-                          <option value="F9">F9 — Alta Demanda 304 kVA / Disjuntor 800A (TC 800/5)</option>
+                        <optgroup label="Alta Demanda BT com Medição Indireta TC (CEMIG ND-5.1 Tabela 4)">
+                          {['F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F7_600', 'F7_630', 'F8', 'F9'].map((key) => {
+                            const cat = CEMIG_CATEGORIES[key];
+                            if (!cat) return null;
+                            return (
+                              <option key={key} value={key}>
+                                {cat.categoryId} — Alta Demanda até {cat.maxLimitKW} kVA / Disjuntor {cat.breakerCurrentA}A (TC {cat.tcRelacao})
+                              </option>
+                            );
+                          })}
+                        </optgroup>
+                        <optgroup label="Média Tensão / Subestação Particular (CEMIG ND-5.3)">
+                          {['A4', 'A3a'].map((key) => {
+                            const cat = CEMIG_CATEGORIES[key];
+                            if (!cat) return null;
+                            return (
+                              <option key={key} value={key}>
+                                {cat.categoryId} — {cat.categoryName.replace(/^Grupo\s+/, '')}
+                              </option>
+                            );
+                          })}
                         </optgroup>
                       </select>
                     </div>
@@ -1630,8 +2036,10 @@ export function EVTopologyChainViewer({
                           <span className="text-white font-bold">{standardAlert.clientBaseLoadKW} kW</span>
                         </div>
                         <div className="flex justify-between text-slate-300">
-                          <span>• Estações de Recarga ({chargers.length} VEs):</span>
-                          <span className="text-amber-400 font-bold">{chargers.reduce((s, c) => s + c.powerKW, 0)} kW</span>
+                          <span>• Estações de Recarga ({chargers.filter(c => (c.voltageV >= 380 ? selectedLoads380V[c.id] !== false : selectedLoads220V['ch_' + c.id] !== false)).length} VEs):</span>
+                          <span className="text-amber-400 font-bold">
+                            {chargers.filter(c => (c.voltageV >= 380 ? selectedLoads380V[c.id] !== false : selectedLoads220V['ch_' + c.id] !== false)).reduce((s, c) => s + c.powerKW, 0)} kW
+                          </span>
                         </div>
                         <div className="flex justify-between text-slate-300">
                           <span>• Cargas Auxiliares do Hub (Luz/CFTV/Tomada):</span>
@@ -1642,7 +2050,17 @@ export function EVTopologyChainViewer({
                         {transformer.needed && (
                           <div className="flex justify-between text-slate-300">
                             <span>• Perdas Estimadas do Trafo:</span>
-                            <span className="text-slate-400 font-bold">~{transformer.lossesKW} kW</span>
+                            <span className="text-slate-400 font-bold">
+                              {selectedLoads220V.trafoLosses !== false ? `~${transformer.lossesKW} kW` : '0.00 kW (desmarcado)'}
+                            </span>
+                          </div>
+                        )}
+                        {panel380V.calculationBreakdown && (panel380V.calculationBreakdown.totalFeedersLossesKW > 0 || panel380V.calculationBreakdown.totalInternalLossesKW > 0) && (
+                          <div className="flex justify-between text-slate-300">
+                            <span>• Perdas Cabos & Retificador (380V):</span>
+                            <span className="text-slate-400 font-bold">
+                              ~{(panel380V.calculationBreakdown.totalFeedersLossesKW + panel380V.calculationBreakdown.totalInternalLossesKW).toFixed(2)} kW
+                            </span>
                           </div>
                         )}
                         <div className="flex justify-between text-white font-bold border-t border-slate-800 pt-1.5 mt-1">
@@ -2158,11 +2576,11 @@ export function EVTopologyChainViewer({
                         panel220VCircuitsList.push({
                           id: 'circ-trafo-feeder',
                           name: `Proteção Transformador (${transformer.nominalKVA}kVA)`,
-                          breakerAmps: panel220V.transformerProtectionBreakerA || 300,
+                          breakerAmps: panel220VDetails.trafoBreakerA || panel220V.transformerProtectionBreakerA || 250,
                           curve: 'D',
                           phases: 3,
                           voltageV: 220,
-                          powerKW: transformer.activePowerKW || 45,
+                          powerKW: panel220VDetails.trafoPrimKW || transformer.activePowerKW || 80,
                           cableGaugeMM2: sections.section2_panel220ToTrafo?.cableGaugePhaseMM2 || 50,
                           isTrafoProtection: true
                         });
@@ -2252,7 +2670,7 @@ export function EVTopologyChainViewer({
                           entranceCableConduitDesc={`${sections.section1_standardToPanel220.cableDescription || `Cabo ${sections.section1_standardToPanel220.conductorsPerPhase}x ${sections.section1_standardToPanel220.cableGaugePhaseMM2}mm²`} • ${sections.section1_standardToPanel220.conduitInches.includes('Aéreo') ? sections.section1_standardToPanel220.conduitInches : `Eletroduto ${sections.section1_standardToPanel220.conduitInches}"`}`}
                           panelMainBreakerAmps={dynamicBreaker220VA}
                           panelVoltageV={panel220V.voltageV}
-                          busbarRatingA={panel220V.busbarRatingA}
+                          busbarRatingA={Math.max(panel220V.busbarRatingA || 0, dynamicBreaker220VA || 40)}
                           hasTransformer={transformer.needed}
                           circuits={panel220VCircuitsList}
                         />
@@ -2267,18 +2685,26 @@ export function EVTopologyChainViewer({
                       </div>
                       
                       <div className="space-y-1.5 text-[11px]">
-                        <div className="p-2 rounded bg-slate-950 border border-slate-800">
+                        <div className="p-2 rounded bg-slate-950 border border-slate-800 space-y-1">
                           <strong className="text-white block font-sans">1. Disjuntor Geral do Painel 220V (Cargas Selecionadas):</strong>
                           <span className="text-amber-300 block">
                             {dynamicFormula220V}
                           </span>
+                          <div className="text-[10px] text-slate-400 pt-1 flex flex-wrap gap-2 border-t border-slate-800/60">
+                            <span>Carga Imóvel: <b>{panel220VDetails.selClientKW.toFixed(2)} kW</b></span>
+                            <span>• Carregadores VE: <b>{panel220VDetails.selChargersKW.toFixed(2)} kW</b></span>
+                            {transformer.needed && <span>• Perdas Trafo: <b>+{panel220VDetails.selTrafoLossesKW.toFixed(2)} kW</b></span>}
+                            <span>• Perdas Cabos: <b>+{panel220VDetails.selCableLossesKW.toFixed(2)} kW</b></span>
+                            {panel220VDetails.selAuxKW > 0 && <span>• Auxiliares: <b>+{panel220VDetails.selAuxKW.toFixed(2)} kW</b></span>}
+                            <span>➔ <b>Total Selecionado: {panel220VSelectedKW.toFixed(2)} kW ({panel220VSelectedCurrentA} A)</b></span>
+                          </div>
                         </div>
 
-                        {panel220V.calculationBreakdown?.formulaTrafoBreaker && (
-                          <div className="p-2 rounded bg-slate-950 border border-slate-800">
+                        {dynamicFormulaTrafoBreaker && (
+                          <div className="p-2 rounded bg-slate-950 border border-slate-800 space-y-1">
                             <strong className="text-white block font-sans">2. Disjuntor de Proteção do Transformador Dyn1:</strong>
                             <span className="text-amber-300 block">
-                              {panel220V.calculationBreakdown.formulaTrafoBreaker}
+                              {dynamicFormulaTrafoBreaker}
                             </span>
                           </div>
                         )}
@@ -2817,11 +3243,11 @@ export function EVTopologyChainViewer({
                           panelType="380V"
                           utilityName="Secundário Trafo Dyn1"
                           entranceCategory="Subestação Abrigada"
-                          entranceBreakerAmps={panel220V.transformerProtectionBreakerA || 300}
+                          entranceBreakerAmps={panel220VDetails.trafoBreakerA || panel220V.transformerProtectionBreakerA || 250}
                           entranceCableConduitDesc={sections.section3_trafoToPanel380 ? `${sections.section3_trafoToPanel380.cableDescription || `Cabo ${sections.section3_trafoToPanel380.conductorsPerPhase}x ${sections.section3_trafoToPanel380.cableGaugePhaseMM2}mm²`} • ${sections.section3_trafoToPanel380.conduitInches.includes('Aéreo') ? sections.section3_trafoToPanel380.conduitInches : `Eletroduto ${sections.section3_trafoToPanel380.conduitInches}"`}` : 'Cabo 3x 35mm² + 35mm² N + 16mm² PE'}
                           panelMainBreakerAmps={dynamicBreaker380VA}
                           panelVoltageV={380}
-                          busbarRatingA={panel380V.busbarRatingA || dynamicBreaker380VA || 200}
+                          busbarRatingA={Math.max(panel380V.busbarRatingA || 0, dynamicBreaker380VA || 40)}
                           hasTransformer={false} // No 380V o trafo fica a montante, NÃO há disjuntor de proteção de trafo no interior do QDC-VE
                           circuits={panel380VCircuitsList}
                         />
@@ -2999,9 +3425,11 @@ export function EVTopologyChainViewer({
                             {dynamicFormula380V}
                           </span>
                           <div className="text-[10px] text-slate-400 pt-1 flex flex-wrap gap-2 border-t border-slate-800/60">
-                            <span>Potência Nominal Carregadores: <b>{panel380V.calculationBreakdown?.totalChargersNominalKW ?? totalChargersKW} kW</b></span>
-                            <span>• Perdas Internas: <b>+{panel380V.calculationBreakdown?.totalInternalLossesKW ?? 0} kW</b></span>
-                            <span>• Perdas Cabos Ramais: <b>+{panel380V.calculationBreakdown?.totalFeedersLossesKW ?? 0} kW</b></span>
+                            <span>Potência Nominal Carregadores: <b>{panel380VDetails.selChargers380KW.toFixed(2)} kW</b></span>
+                            <span>• Perdas Internas: <b>+{panel380VDetails.selInternalLosses380KW.toFixed(2)} kW</b></span>
+                            <span>• Perdas Cabos Ramais: <b>+{panel380VDetails.selFeederLosses380KW.toFixed(2)} kW</b></span>
+                            {panel380VDetails.selCustom380KW > 0 && <span>• Circuitos Extras: <b>+{panel380VDetails.selCustom380KW.toFixed(2)} kW</b></span>}
+                            <span>➔ <b>Total Selecionado: {panel380VSelectedKW.toFixed(2)} kW ({panel380VSelectedCurrentA} A)</b></span>
                           </div>
                         </div>
 
@@ -3579,7 +4007,9 @@ export function EVTopologyChainViewer({
                     customTransformerKVA,
                     customTransformerEfficiencyPercent,
                     customTransformerLossesKW,
-                    chargers
+                    chargers,
+                    selectedLoads220V,
+                    selectedLoads380V
                   });
                 }
                 if (onConcludeTopology) {
@@ -3748,7 +4178,7 @@ export function EVTopologyChainViewer({
           hasTransformer: transformer.needed,
           transformerKVA: transformer.nominalKVA,
           transformerLossesKW: transformer.lossesKW,
-          totalInvestmentBRL: enrichedBOMSummary.totalProjectInvestmentBRL,
+          totalInvestmentBRL: finalTotalInvestmentBRL,
           capexSavingsBRL: 18500,
           evBaysCount: chargers.reduce((acc, c) => acc + (c.powerKW >= 50 ? 2 : 1), 0),
           chargingPointsCount: chargers.reduce((acc, c) => acc + (c.powerKW >= 50 ? 2 : 1), 0),

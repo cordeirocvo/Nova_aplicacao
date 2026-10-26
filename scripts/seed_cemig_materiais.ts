@@ -349,6 +349,27 @@ export const CEMIG_MATERIAIS_ATUALIZADOS = [
   { codigo: "BUCHA-ARRUELA-PVC-50", descricao: "Bucha e Arruela de PVC Roscável Ø 50 mm (1.1/2\") p/ Fixação nas Caixas", categoria: "ELETRODUTO", unidade: "cj", precoUnitario: 24.00 },
   { codigo: "BUCHA-ARRUELA-PVC-60", descricao: "Bucha e Arruela de PVC Roscável Ø 60 mm (2\") p/ Fixação nas Caixas", categoria: "ELETRODUTO", unidade: "cj", precoUnitario: 32.00 },
   { codigo: "BUCHA-ARRUELA-PVC-75", descricao: "Bucha e Arruela de PVC Roscável Ø 75 mm (2.1/2\") p/ Fixação nas Caixas", categoria: "ELETRODUTO", unidade: "cj", precoUnitario: 44.00 },
+  { codigo: "BUCHA-ARRUELA-PVC-80", descricao: "Conjunto Bucha e Arruela de PVC Roscável Ø 80 mm (3\") para Terminação de Eletroduto", categoria: "ELETRODUTO", unidade: "cj", precoUnitario: 32.00 },
+  { codigo: "BUCHA-ARRUELA-PVC-100", descricao: "Conjunto Bucha e Arruela de PVC Roscável Ø 100 mm (4\") para Terminação de Eletroduto", categoria: "ELETRODUTO", unidade: "cj", precoUnitario: 45.00 },
+
+  // Eletrodutos e Curvas 90º Aço Galvanizado a Fogo (Tabela 4 CEMIG ND-5.1)
+  { codigo: "ELETRODUTO-ACO-GALV-FOGO-80", descricao: "Eletroduto de Aço Carbono Galvanizado a Fogo NBR 5598 Ø 80 mm (3\") - Barra 3m", categoria: "ELETRODUTO", unidade: "br", precoUnitario: 220.00 },
+  { codigo: "ELETRODUTO-ACO-GALV-FOGO-100", descricao: "Eletroduto de Aço Carbono Galvanizado a Fogo NBR 5598 Ø 100 mm (4\") - Barra 3m", categoria: "ELETRODUTO", unidade: "br", precoUnitario: 295.00 },
+  { codigo: "CURVA-90-ACO-GALV-FOGO-80", descricao: "Curva 90º de Aço Galvanizado a Fogo Roscável Ø 80 mm (3\")", categoria: "ELETRODUTO", unidade: "un", precoUnitario: 95.00 },
+  { codigo: "CURVA-90-ACO-GALV-FOGO-100", descricao: "Curva 90º de Aço Galvanizado a Fogo Roscável Ø 100 mm (4\")", categoria: "ELETRODUTO", unidade: "un", precoUnitario: 145.00 },
+
+  // Niples PVC Roscáveis
+  { codigo: "NIPLE-PVC-ROSCAVEL-80", descricao: "Niple Roscável de PVC Rígido Ø 80 mm (3\") para Acoplamento de Caixas", categoria: "ELETRODUTO", unidade: "un", precoUnitario: 24.00 },
+  { codigo: "NIPLE-PVC-ROSCAVEL-100", descricao: "Niple Roscável de PVC Rígido Ø 100 mm (4\") para Acoplamento de Caixas", categoria: "ELETRODUTO", unidade: "un", precoUnitario: 36.00 },
+
+  // Insumos de Vedação e Fixação (Categoria F CEMIG ND-5.1)
+  { codigo: "MAT-MASSA-CALAFETAR-1KG", descricao: "Massa de Calafetar para Vedação contra Umidade (Embalagem 1 kg) - Norma CEMIG ND-5.1", categoria: "ACESSORIO", unidade: "kg", precoUnitario: 28.00 },
+  { codigo: "FITA-FUSIMEC-ALTA-ISOLACAO", descricao: "Fita de Autofusão Fusimec para Alta Isolação Dielétrica", categoria: "ACESSORIO", unidade: "m", precoUnitario: 16.50 },
+  { codigo: "PRESILHA-FITA-FUSIMEC", descricao: "Presilha Metálica para Fixação e Amarração de Fita Fusimec", categoria: "ACESSORIO", unidade: "un", precoUnitario: 2.50 },
+  { codigo: "CX-SUBTERRANEA-ZA", descricao: "Caixa Subterrânea de Passagem Tipo ZA em Alvenaria/Concreto (30 x 30 x 40 cm - Norma CEMIG ND-5.1)", categoria: "ACESSORIO", unidade: "un", precoUnitario: 280.00 },
+  { codigo: "TAMPA-FOFO-ZA", descricao: "Tampa e Aro de Ferro Fundido Nodular Articulada Tipo ZA (Padrão CEMIG)", categoria: "ACESSORIO", unidade: "un", precoUnitario: 210.00 },
+  { codigo: "CX-SUBTERRANEA-ZB", descricao: "Caixa Subterrânea de Passagem Tipo ZB em Alvenaria/Concreto (50 x 50 x 60 cm - Norma CEMIG ND-5.1)", categoria: "ACESSORIO", unidade: "un", precoUnitario: 420.00 },
+  { codigo: "TAMPA-FOFO-ZB", descricao: "Tampa e Aro de Ferro Fundido Nodular Articulada Tipo ZB (Padrão CEMIG)", categoria: "ACESSORIO", unidade: "un", precoUnitario: 320.00 },
 
   // Cabeçotes Pingadouro Alumínio
   { codigo: "CABECOTE-32", descricao: "Cabeçote Pingadouro Alumínio Ø 32 mm (1\")", categoria: "ELETRODUTO", unidade: "un", precoUnitario: 28.00 },
@@ -407,17 +428,29 @@ export const CEMIG_MATERIAIS_ATUALIZADOS = [
     observacao: "Item opcional (não padrão na conexão direta CEMIG)."
   },
 
-  // ─── TERMINAIS DE COMPRESSÃO OLHAL / TUBULAR EM COBRE ESTANHADO (PADRÃO CEMIG) ───
-  { codigo: "TERM-COMPRESSAO-16", descricao: "Terminal de Compressão Tubular/Olhal em Cobre Estanhado 16 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 2.80 },
-  { codigo: "TERM-COMPRESSAO-25", descricao: "Terminal de Compressão Tubular/Olhal em Cobre Estanhado 25 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 3.50 },
-  { codigo: "TERM-COMPRESSAO-35", descricao: "Terminal de Compressão Tubular/Olhal em Cobre Estanhado 35 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 4.20 },
-  { codigo: "TERM-COMPRESSAO-50", descricao: "Terminal de Compressão Tubular/Olhal em Cobre Estanhado 50 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 8.50 },
-  { codigo: "TERM-COMPRESSAO-70", descricao: "Terminal de Compressão Tubular/Olhal em Cobre Estanhado 70 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 12.00 },
-  { codigo: "TERM-COMPRESSAO-95", descricao: "Terminal de Compressão Tubular/Olhal em Cobre Estanhado 95 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 15.00 },
-  { codigo: "TERM-COMPRESSAO-120", descricao: "Terminal de Compressão Tubular/Olhal em Cobre Estanhado 120 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 18.50 },
-  { codigo: "TERM-COMPRESSAO-150", descricao: "Terminal de Compressão Tubular/Olhal em Cobre Estanhado 150 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 22.00 },
-  { codigo: "TERM-COMPRESSAO-185", descricao: "Terminal de Compressão Tubular/Olhal em Cobre Estanhado 185 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 28.00 },
-  { codigo: "TERM-COMPRESSAO-240", descricao: "Terminal de Compressão Tubular/Olhal em Cobre Estanhado 240 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 36.00 },
+  // ─── TERMINAIS OLHAL DE COMPRESSÃO EM COBRE ESTANHADO (PADRÃO CEMIG) ───
+  { codigo: "TERM-COMPRESSAO-16", descricao: "Terminal Olhal de Compressão em Cobre Estanhado 16 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 2.80 },
+  { codigo: "TERM-COMPRESSAO-25", descricao: "Terminal Olhal de Compressão em Cobre Estanhado 25 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 3.50 },
+  { codigo: "TERM-COMPRESSAO-35", descricao: "Terminal Olhal de Compressão em Cobre Estanhado 35 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 4.20 },
+  { codigo: "TERM-COMPRESSAO-50", descricao: "Terminal Olhal de Compressão em Cobre Estanhado 50 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 8.50 },
+  { codigo: "TERM-COMPRESSAO-70", descricao: "Terminal Olhal de Compressão em Cobre Estanhado 70 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 12.00 },
+  { codigo: "TERM-COMPRESSAO-95", descricao: "Terminal Olhal de Compressão em Cobre Estanhado 95 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 15.00 },
+  { codigo: "TERM-COMPRESSAO-120", descricao: "Terminal Olhal de Compressão em Cobre Estanhado 120 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 18.50 },
+  { codigo: "TERM-COMPRESSAO-150", descricao: "Terminal Olhal de Compressão em Cobre Estanhado 150 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 22.00 },
+  { codigo: "TERM-COMPRESSAO-185", descricao: "Terminal Olhal de Compressão em Cobre Estanhado 185 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 28.00 },
+  { codigo: "TERM-COMPRESSAO-240", descricao: "Terminal Olhal de Compressão em Cobre Estanhado 240 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 36.00 },
+
+  // ─── TERMINAIS TUBULARES EM COBRE ESTANHADO (PADRÃO CEMIG / PAINÉIS) ───
+  { codigo: "TERM-TUBULAR-16", descricao: "Terminal Tubular em Cobre Estanhado 16 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 2.50 },
+  { codigo: "TERM-TUBULAR-25", descricao: "Terminal Tubular em Cobre Estanhado 25 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 3.20 },
+  { codigo: "TERM-TUBULAR-35", descricao: "Terminal Tubular em Cobre Estanhado 35 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 3.80 },
+  { codigo: "TERM-TUBULAR-50", descricao: "Terminal Tubular em Cobre Estanhado 50 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 7.50 },
+  { codigo: "TERM-TUBULAR-70", descricao: "Terminal Tubular em Cobre Estanhado 70 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 10.50 },
+  { codigo: "TERM-TUBULAR-95", descricao: "Terminal Tubular em Cobre Estanhado 95 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 13.50 },
+  { codigo: "TERM-TUBULAR-120", descricao: "Terminal Tubular em Cobre Estanhado 120 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 16.50 },
+  { codigo: "TERM-TUBULAR-150", descricao: "Terminal Tubular em Cobre Estanhado 150 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 20.00 },
+  { codigo: "TERM-TUBULAR-185", descricao: "Terminal Tubular em Cobre Estanhado 185 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 25.00 },
+  { codigo: "TERM-TUBULAR-240", descricao: "Terminal Tubular em Cobre Estanhado 240 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 32.00 },
 
   // ─── TERMINAIS PINO MACIÇO EM COBRE ESTANHADO (CONEXÃO DIRETA DISJUNTOR BORNES TÚNEL) ───
   { codigo: "TERM-PINO-MACICO-16", descricao: "Terminal Pino Maciço em Cobre Estanhado 16 mm²", categoria: "ACESSORIO", unidade: "un", precoUnitario: 4.50 },
@@ -521,6 +554,9 @@ export const CEMIG_MATERIAIS_ATUALIZADOS = [
   { codigo: "SRV-ENG-ART", descricao: "Elaboração de Projeto Elétrico de Entrada e Emissão de ART (CREA-MG)", categoria: "MAO_DE_OBRA", unidade: "sv", precoUnitario: 350.00 },
   { codigo: "SRV-VISTORIA-CEMIG", descricao: "Acompanhamento Técnico de Vistoria e Ligação Nova na CEMIG", categoria: "MAO_DE_OBRA", unidade: "sv", precoUnitario: 450.00 },
   { codigo: "SRV-BASE-CONCRETO", descricao: "Material Civil para Base Concretada do Poste (Cimento, Areia, Brita)", categoria: "ACESSORIO", unidade: "cj", precoUnitario: 220.00 },
+  { codigo: "MAT-BASE-CONCRETO", descricao: "Material Civil para Base Concretada do Poste (Cimento, Areia, Brita)", categoria: "ACESSORIO", unidade: "cj", precoUnitario: 220.00 },
+  { codigo: "KIT-PADRAO-CM09-CM04", descricao: "Conjunto Padrão Caixa CM-09 + Caixa CM-04 com Barramento sem disjuntor", categoria: "CAIXA", unidade: "cj", precoUnitario: 1250.00, observacao: "Kit pronto de fábrica homologado CEMIG ND-5.1 para faixas F1 e F2" },
+  { codigo: "KIT-PADRAO-CM18-CM04", descricao: "Conjunto Padrão Caixa CM-18 + Caixa CM-04 com Barramento sem disjuntor", categoria: "CAIXA", unidade: "cj", precoUnitario: 1480.00, observacao: "Kit pronto de fábrica homologado CEMIG ND-5.1 para faixas F1 a F9" },
 
   // ─── TABELA 4 CEMIG (75,1 A 304 kVA) - ALTA DEMANDA / POSTOS VE ───
   // Disjuntores Caixa Moldada Tripolares Homologados CEMIG (PEC-11)

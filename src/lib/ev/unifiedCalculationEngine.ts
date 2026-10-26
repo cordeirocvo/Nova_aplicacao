@@ -153,9 +153,11 @@ export function calculateUnifiedEVSizing(input: UnifiedCalculationInput): Unifie
   const effectiveDemandKW = calculatedDemandKW;
   const effectiveDemandKVA = effectiveDemandKW / avgPowerFactor;
 
-  // 3. Corrente nominal de projeto Ib (Trifásico 380V ou 220V)
+  // 3. Corrente nominal de projeto Ib (Trifásico 220V/380V conforme concessionária)
   const isTrifasico = chargers.some(c => c.phases === 3) || totalInstalledPowerKW > 10;
-  const nominalVoltage = isTrifasico ? (hasTransformer ? transformerSecondaryVoltage : 380) : 220;
+  const nominalVoltage = isTrifasico 
+    ? (hasTransformer ? transformerSecondaryVoltage : (utility === 'CEMIG' ? 220 : 380)) 
+    : 220;
 
   let nominalCurrentA = 0;
   if (isTrifasico) {
@@ -168,8 +170,11 @@ export function calculateUnifiedEVSizing(input: UnifiedCalculationInput): Unifie
   const correctionFactor = 0.85 * 0.94; // Agrupamento de 2 circuitos + Temp 35°C
   const correctedCurrentA = nominalCurrentA / correctionFactor;
 
-  // 4. Seleção de Disjuntor Geral
-  const recommendedMainBreakerA = STANDARD_BREAKERS.find(b => b >= nominalCurrentA * 1.15) || 800;
+  // 4. Seleção de Disjuntor Geral NBR 5410 (Ib <= In <= Iz)
+  // Para corrente contínua em torno de 218A a 225A, adota 250A Caixa Moldada Curva D (inrush suportado magneticamente)
+  const recommendedMainBreakerA = (nominalCurrentA > 200 && nominalCurrentA <= 250)
+    ? 250
+    : (STANDARD_BREAKERS.find(b => b >= nominalCurrentA) || 800);
 
   // 5. Dimensionamento do Condutor (Cobre, XLPE 90°C)
   const availableGauges = [2.5, 4, 6, 10, 16, 25, 35, 50, 70, 95, 120, 150, 185, 240];
@@ -223,26 +228,28 @@ export function calculateUnifiedEVSizing(input: UnifiedCalculationInput): Unifie
   // Neutro
   const neutralCableGaugeMM2 = recommendedCableGaugeMM2;
 
-  // 7. Concessionária & Categoria (CEMIG ND-5.1 / ND-5.3)
+  // 7. Concessionária & Categoria (CEMIG ND-5.1 Tabela 2 / Tabela 4 / ND-5.3)
   const utilityRec = findRecommendedCategory(utility, effectiveDemandKVA);
-  const utilityCategory = utilityRec?.id ? `Categoria ${utilityRec.id}` : (effectiveDemandKVA <= 76 ? "C3 / C4" : "Grupo F (Especial)");
-  const utilityStandardName = effectiveDemandKVA > 76 ? `${utility} ND-5.3 (Média Tensão / Subestação)` : `${utility} ND-5.1 (Baixa Tensão)`;
+  const utilityCategory = utilityRec?.id ? `Categoria ${utilityRec.id}` : (effectiveDemandKVA <= 75 ? "C3 / C4" : effectiveDemandKVA <= 304 ? "Grupo F (Alta Demanda BT Tabela 4)" : "Grupo A (Média Tensão)");
+  const utilityStandardName = effectiveDemandKVA > 304 ? `${utility} ND-5.3 (Média Tensão / Subestação)` : `${utility} ND-5.1 (Baixa Tensão)`;
   const requiresUtilityApproval = effectiveDemandKVA > 38 || hasDC;
 
-  // 8. Transformador Dedicado
-  const needsDedicatedTransformer = hasTransformer || effectiveDemandKVA > 76 || (totalInstalledPowerKW >= 40 && nominalVoltage === 380 && transformerPrimaryVoltage === 220);
+  // 8. Transformador Dedicado (necessário se > 304 kVA ou se exigido por tensão secundária 380V sem rede 380V)
+  const needsDedicatedTransformer = hasTransformer || effectiveDemandKVA > 304 || (totalInstalledPowerKW >= 40 && nominalVoltage === 380 && transformerPrimaryVoltage === 220);
   const recommendedTransformerKVA = needsDedicatedTransformer
     ? (STANDARD_TRAFOS_KVA.find(t => t >= effectiveDemandKVA * 1.1) || 500)
     : 0;
 
   // 9. Análise de DLM & Necessidade de Intervenção
-  const isExistingBreakerAdequate = existingBreakerA >= recommendedMainBreakerA;
+  // Respeita o limite real do padrão contratado/escolhido (ex: F1 = 86 kVA / 225A na Tabela 4 da CEMIG ND-5.1)
+  const effectiveContractedLimitKW = Math.max(86, input.existingContractedDemandKW || dlmLimitKW || 86);
+  const isExistingBreakerAdequate = existingBreakerA >= recommendedMainBreakerA || (dlmLimitKW >= totalInstalledPowerKW + existingLoadKW);
   const isDLMRecommended = !isExistingBreakerAdequate && !hasTransformer;
-  const isDLMMandatory = totalInstalledPowerKW + existingLoadKW > 76 && !hasTransformer && !dlmEnabled;
+  const isDLMMandatory = (totalInstalledPowerKW + existingLoadKW > effectiveContractedLimitKW) && !hasTransformer && !dlmEnabled;
 
   // Estimativa de economia do DLM (evita adequação de padrão MT ou troca de trafo)
   const dlmEstimatedSavingsBRL = isDLMRecommended
-    ? (effectiveDemandKVA > 76 ? 85000 : 28000)
+    ? (effectiveDemandKVA > 304 ? 85000 : 28000)
     : 0;
 
   // 10. Semáforo Cordeiro (3 Cores)

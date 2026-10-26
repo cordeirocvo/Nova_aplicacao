@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 export async function GET() {
   try {
@@ -21,6 +23,11 @@ export async function GET() {
 
 export async function PUT(req: Request) {
   try {
+     const session: any = await getServerSession(authOptions as any);
+     if (!session || session.user.role !== "ADMIN") {
+       return NextResponse.json({ error: "Apenas administradores podem alterar configurações do sistema" }, { status: 403 });
+     }
+
      const body = await req.json();
      
      const updated = await prisma.systemSettings.update({

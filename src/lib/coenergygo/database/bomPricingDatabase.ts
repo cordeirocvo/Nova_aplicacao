@@ -111,8 +111,170 @@ export const MARKET_PRICING_CATALOG = {
     150.0: 245.0,
     185.0: 310.0,
     240.0: 410.0
-  } as Record<number, number>
+  } as Record<number, number>,
+
+  // Padrões de Entrada Homologados CEMIG / Concessionárias
+  entrance_standards: {
+    single_phase_A: {
+      name: 'Kit Padrão Monofásico Homologado (Caixa Policarbonato + Disjuntor 63A + Haste + Aterramento)',
+      price: 1450.00,
+      manufacturer: 'Strahl / CEMIG PEC-11'
+    },
+    two_phase_B: {
+      name: 'Kit Padrão Bifásico Homologado (Caixa Policarbonato + Disjuntor 63A + Haste + Aterramento)',
+      price: 2100.00,
+      manufacturer: 'Strahl / CEMIG PEC-11'
+    },
+    three_phase_C1_C2: {
+      name: 'Kit Padrão Trifásico BT C1/C2 (Caixa Policarbonato + Disjuntor 40-50A + Haste + Aterramento)',
+      price: 2850.00,
+      manufacturer: 'Strahl / CEMIG PEC-11'
+    },
+    three_phase_C3_C4: {
+      name: 'Kit Padrão Trifásico BT C3/C4 (Caixa Policarbonato + Disjuntor 63-80A + Haste + Aterramento)',
+      price: 3850.00,
+      manufacturer: 'Strahl / CEMIG PEC-11'
+    },
+    three_phase_C5_C6: {
+      name: 'Kit Padrão Trifásico BT C5/C6 (Caixa Policarbonato + Disjuntor 125-200A Caixa Moldada + Aterramento)',
+      price: 6800.00,
+      manufacturer: 'Strahl / CEMIG PEC-11'
+    },
+    high_demand_group_F: {
+      name: 'Kit Padrão Alta Demanda BT Grupo F (Caixa Medição Indireta TC + Disjuntor 250A-800A)',
+      price: 12500.00,
+      manufacturer: 'Strahl / CEMIG PEC-11'
+    },
+    substation_MT: {
+      name: 'Subestação Particular de Média Tensão 75-300 kVA (Poste, Cabine/Trafo, Cubículo e Aterramento)',
+      price: 45000.00,
+      manufacturer: 'WEG / Romagnole'
+    },
+    upgrade_reforma_padrao: {
+      name: 'Kit Adequação / Aumento de Padrão (Substituição de Disjuntor Geral + Ramal de Cabos de Entrada)',
+      price: 2450.00,
+      manufacturer: 'Soprano / WEG PEC-11'
+    },
+    kit_cm09_cm04_busbar: {
+      codigo: 'KIT-PADRAO-CM09-CM04',
+      name: 'Conjunto Padrão Caixa CM-09 + Caixa CM-04 com Barramento sem disjuntor',
+      description: 'Conjunto montado de fábrica com Caixa CM-09 + Caixa CM-04 com barramento de cobre dimensionado homologado CEMIG ND-5.1 sem disjuntor',
+      price: 1250.00,
+      manufacturer: 'Strahl / Cemar (PEC-11)'
+    },
+    kit_cm18_cm04_busbar: {
+      codigo: 'KIT-PADRAO-CM18-CM04',
+      name: 'Conjunto Padrão Caixa CM-18 + Caixa CM-04 com Barramento sem disjuntor',
+      description: 'Conjunto montado de fábrica com Caixa CM-18 reforçada + Caixa CM-04 com barramento de cobre dimensionado homologado CEMIG ND-5.1 sem disjuntor',
+      price: 1480.00,
+      manufacturer: 'Strahl / Cemar (PEC-11)'
+    },
+    material_civil_base_concreto: {
+      codigo: 'MAT-BASE-CONCRETO',
+      name: 'Material Civil para Base Concretada do Poste (Cimento, Areia, Brita)',
+      description: 'Material para engastamento e base concretada de postes conforme Desenho 57 da CEMIG ND-5.1',
+      price: 220.00,
+      manufacturer: 'Distribuidor Local Materiais de Construção'
+    }
+  }
 };
+
+/**
+ * Gera os itens de material do Padrão de Entrada conforme as regras de negócio:
+ * 1. Padrão já existe e atende à carga: NÃO entra no custo (R$ 0,00).
+ * 2. Padrão já existe mas precisa ser alterado (aumento de carga): ENTRA no custo como Adequação de Padrão.
+ * 3. Ligação Nova (sem padrão prévio): ENTRA no custo como Padrão Completo Novo Homologado.
+ */
+export function generateStandardEntranceBOM(params: {
+  isNewConnection: boolean;
+  isExistingStandardAdequate: boolean;
+  standardCategory: string;
+  currentCategory?: string;
+  utility?: string;
+}): BillOfMaterialItem[] {
+  const { isNewConnection, isExistingStandardAdequate, standardCategory, currentCategory, utility = 'CEMIG' } = params;
+
+  // CASO 1: Padrão já existe e atende plenamente à carga total -> NÃO ENTRA NO CUSTO
+  if (!isNewConnection && isExistingStandardAdequate) {
+    return [];
+  }
+
+  const items: BillOfMaterialItem[] = [];
+
+  // CASO 2: Padrão já existe mas requer aumento de carga / alteração -> CUSTO DE ADEQUAÇÃO
+  if (!isNewConnection && !isExistingStandardAdequate) {
+    items.push({
+      id: 'bom-adequacao-padrao',
+      category: 'padrao_entrada',
+      description: `Adequação e Aumento de Carga do Padrão (${currentCategory || 'Atual'} ➔ ${standardCategory})`,
+      quantity: 1,
+      unit: 'kit',
+      spec: `Substituição do disjuntor geral de entrada, reforço de fiação e readequação da caixa de medição para homologação na ${utility}`,
+      normReference: `${utility} ND-5.1 / ABNT NBR 5410`,
+      manufacturer: 'Soprano / WEG (Homologado PEC-11)',
+      modelRef: 'Kit Reforma e Upgrade de Padrão BT',
+      unitPriceBRL: 2450.00,
+      totalPriceBRL: 2450.00
+    });
+    return items;
+  }
+
+  // CASO 3: Ligação Nova (sem padrão existente no local) -> CUSTO INTEGRAL DO NOVO PADRÃO
+  if (isNewConnection) {
+    const cat = (standardCategory || 'C3').toUpperCase();
+    let price = 3850.00;
+    let desc = `Kit Padrão de Entrada Novo Homologado ${utility} — Categoria ${standardCategory || 'C3'}`;
+    let spec = `Caixa de medição em policarbonato com visor, disjuntor geral, cabos de descida, barramento e kit de aterramento`;
+    let mfg = 'Strahl / Tigre (Homologado PEC-11)';
+
+    if (cat.startsWith('A')) {
+      price = 1450.00;
+      desc = `Padrão de Entrada Monofásico ${standardCategory} Homologado ${utility}`;
+      spec = 'Caixa monofásica em policarbonato, disjuntor bipolar 63A, condutores 10mm² e haste 5/8"';
+    } else if (cat.startsWith('B')) {
+      price = 2100.00;
+      desc = `Padrão de Entrada Bifásico ${standardCategory} Homologado ${utility}`;
+      spec = 'Caixa bifásica em policarbonato, disjuntor bipolar 63A, condutores 16mm² e haste de aterramento';
+    } else if (cat === 'C1' || cat === 'C2') {
+      price = 2850.00;
+      desc = `Padrão de Entrada Trifásico BT ${standardCategory} Homologado ${utility} (40-50A)`;
+      spec = 'Caixa CM-3 policarbonato, disjuntor tripolar, condutores 10-16mm² e aterramento completo';
+    } else if (cat === 'C3' || cat === 'C4') {
+      price = 3850.00;
+      desc = `Padrão de Entrada Trifásico BT ${standardCategory} Homologado ${utility} (63-80A)`;
+      spec = 'Caixa CM-3 policarbonato, disjuntor tripolar caixa moldada, cabos 25-35mm² e aterramento';
+    } else if (cat === 'C5' || cat === 'C6') {
+      price = 6800.00;
+      desc = `Padrão de Entrada Trifásico BT ${standardCategory} Homologado ${utility} (125-200A)`;
+      spec = 'Caixa CM-4 policarbonato, disjuntor 200A caixa moldada homologado PEC-11, cabos 70-95mm² e aterramento';
+    } else if (cat.startsWith('F')) {
+      price = 12500.00;
+      desc = `Padrão de Entrada Alta Demanda BT ${standardCategory} (Medição Indireta por TCs)`;
+      spec = 'Painel de medição indireta com TCs 200/5 a 800/5, disjuntor caixa moldada e barramento de cobre';
+    } else if (cat === 'A4' || cat === 'A3A' || cat.includes('MT') || cat.includes('SUBESTACAO')) {
+      price = 45000.00;
+      desc = `Subestação Particular de Média Tensão 13.8kV / 380-220V Nova`;
+      spec = 'Posteamento particular, cabine/cubículo de proteção, transformador a seco Dyn1 e ART de projeto';
+      mfg = 'WEG / Romagnole';
+    }
+
+    items.push({
+      id: 'bom-padrao-novo',
+      category: 'padrao_entrada',
+      description: desc,
+      quantity: 1,
+      unit: 'cj',
+      spec: spec,
+      normReference: `${utility} ND-5.1 / ND-5.3 / NBR 5410`,
+      manufacturer: mfg,
+      modelRef: `Padrão Homologado ${standardCategory || 'C3'}`,
+      unitPriceBRL: price,
+      totalPriceBRL: price
+    });
+  }
+
+  return items;
+}
 
 /**
  * Função de enriquecimento da BOM com precificação de mercado, fabricantes e itens normativos de emergência

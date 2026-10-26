@@ -56,42 +56,70 @@ export async function POST(req: NextRequest) {
         'gemini-1.5-flash'
       ];
 
-      const prompt = `Você é um engenheiro eletricista especialista em análise de contas de energia elétrica do Brasil (CEMIG, CPFL, ENEL SP, ENEL RJ, ENERGISA, EQUATORIAL, COPEL, CELESC, EDP, LIGHT, etc.).
-Analise esta fatura/conta de energia (pode ser PDF ou FOTO) com máxima atenção aos detalhes técnicos e cadastrais.
+      const prompt = `Você é um engenheiro eletricista sênior especialista em análise de contas de energia elétrica do Brasil (CEMIG, CPFL, ENEL SP/RJ/CE, ENERGISA, EQUATORIAL, COPEL, CELESC, EDP, LIGHT, NEOENERGIA/COELBA, etc.).
+Analise esta fatura/conta de energia (pode ser PDF vetorial, PDF escaneado ou FOTO de celular de qualquer ângulo/qualidade) com máxima atenção aos detalhes técnicos e cadastrais.
 
-DIRETRIZES DE EXTRAÇÃO:
-1. Extraia o nome oficial da distribuidora (ex: CEMIG, CPFL, ENEL, etc.).
-2. Extraia o Nome Completo ou Razão Social do titular da conta.
-3. Extraia o Endereço completo da instalação.
-4. Extraia o número da instalação / unidade consumidora:
-   - Na CEMIG chama-se "N.º DA UNIDADE CONSUMIDORA" ou "UNIDADE CONSUMIDORA" (ex: '811.109.018-18'). Mantenha a formatação original.
-5. Extraia o Número do Medidor físico de energia impresso.
-6. Identifique se a instalação é TRIFÁSICO, BIFÁSICO ou MONOFÁSICO.
-7. Identifique a classe/subclasse (ex: Comercial, Residencial, Industrial) e a modalidade tarifária (ex: Convencional B3).
-8. Se houver informações de Geração Distribuída (GD Solar):
-   - Extraia o "Saldo Atual de Geração / Saldo de Energia" em kWh.
+DIRETRIZES DE ENGENHARIA E EXTRAÇÃO:
+1. DISTRIBUIDORA / CONCESSIONÁRIA:
+   - Extraia o nome oficial da distribuidora (ex: "CEMIG", "CPFL", "ENEL", "ENERGISA", "EQUATORIAL", "COPEL", "CELESC", "EDP", "LIGHT", "NEOENERGIA").
+
+2. DADOS CADASTRAIS DO CLIENTE:
+   - Extraia a Razão Social ou Nome Completo do Titular impresso na conta.
+   - Extraia o CNPJ ou CPF do titular (se presente).
+   - Extraia o Endereço completo da Unidade Consumidora (Rua, Número, Bairro, CEP, Cidade, UF).
+   - Extraia o Número da Instalação / Unidade Consumidora (UC) / Código do Cliente / PN com a formatação original (ex: '9.345.211.018-61', '3000592987', '811.109.018-18').
+   - Extraia o Número do Medidor físico de energia impresso (procure em todas as páginas, inclusive na página de demonstrativo ou medição, ex: 'MW-2308A968-02', 'AMM222198352').
+
+3. GRUPO TARIFÁRIO, TENSÃO E PADRÃO DE ENTRADA:
+   - Identifique se a conta pertence ao GRUPO A (Média/Alta Tensão: A4, A3a, A2, AS, etc. - geralmente com Demanda Contratada, Tarifa Verde ou Azul, Subestação/Transformador próprio) ou GRUPO B (Baixa Tensão: B1 Residencial, B2 Rural, B3 Comercial/Outros, B4 Iluminação).
+   - Se for GRUPO A:
+     * "grupoTarifario": "A"
+     * "padraoConexao": "MEDIA_TENSAO"
+     * "categoriaPadrao": extraia o subgrupo (ex: "A4", "A3a")
+     * "disjuntorAmperes": null (MUITO IMPORTANTE: em Grupo A não existe disjuntor de baixa tensão residencial, informe null).
+   - Se for GRUPO B (Baixa Tensão):
+     * "grupoTarifario": "B"
+     * "padraoConexao": identifique se é "TRIFASICO", "BIFASICO" ou "MONOFASICO".
+     * "disjuntorAmperes": extraia a corrente do disjuntor em amperes APENAS se estiver expressamente escrito na conta. Se não constar, retorne null (NÃO invente).
+     * "categoriaPadrao": categoria de atendimento (ex: 'A1', 'B1', 'C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'F1'-'F9').
+
+4. MODALIDADE TARIFÁRIA E DEMANDAS:
+   - Extraia a classe e subclasse (ex: "Comercial", "Residencial", "Industrial", "Rural").
+   - Extraia a modalidade tarifária (ex: "TUSD Livre A4 Verde", "Horária Verde", "Horária Azul", "Convencional", "Branca").
+   - Demanda Contratada em kW: se houver, extraia a demanda em kW (ex: 160 kW).
+   - Demanda Medida em kW: se houver medição de demanda máxima/pico ou ultrapassagem, extraia em kW.
+
+5. GERAÇÃO DISTRIBUÍDA (GD SOLAR / AUTOCONSUMO):
+   - Extraia o "Saldo Atual de Geração / Créditos Acumulados" em kWh.
    - Extraia a "Energia Injetada / Compensada no ciclo faturado" em kWh.
-9. Analise a tabela de HISTÓRICO DE CONSUMO:
-   - Extraia a lista dos meses e consumos em kWh.
+   - Se houver descontos de compensação (ex: "Desconto Comp. Fio HFP", "Desconto Comp. Encargo HP"), registre a existência de GD.
+
+6. HISTÓRICO DE CONSUMO (ÚLTIMOS 12 OU 13 MESES):
+   - Extraia cada mês do histórico (ex: "AGO/26", "JUL/26", "NOV/25").
+   - Para Grupo A: some a energia ativa faturada (Ponta + Fora Ponta em kWh) para obter o consumo total do mês em kWh. NÃO confunda a coluna de Demanda (kW) com Energia (kWh).
+   - Para Grupo B: extraia o consumo medido em kWh de cada mês.
    - Calcule a média mensal de consumo em kWh/mês.
    - Identifique o consumo máximo do histórico em kWh e o respectivo mês.
-   - Calcule a Demanda Estimada da Carga Existente do Imóvel em kW usando a fórmula: Demanda (kW) = Consumo Médio (kWh) / (720 horas * 0.30 Fator de Carga).
-10. REGRA ESTRITA SOBRE DISJUNTOR E DADOS NÃO LIDOS:
-   - SE O DISJUNTOR NÃO ESTIVER EXPLICITAMENTE ESCRITO NA CONTA/FOTO, RETORNE disjuntorAmperes COMO null. NÃO INVENTE UM DISJUNTOR.
-   - Para qualquer outro dado que não for possível ler com clareza na foto, DEIXE EM BRANCO (retorne null ou string vazia "").
+   - Calcule a Demanda Estimada do Imóvel em kW pela fórmula: Demanda (kW) = Consumo Médio (kWh) / (720 horas * 0.30 Fator de Carga).
 
-Responda APENAS com o JSON válido, sem texto adicional nem blocos de markdown.
+7. VALORES FINANCEIROS E VENCIMENTO:
+   - Extraia o valor total da fatura a pagar em R$ (número).
+   - Extraia a data de vencimento e o mês de referência (ex: "AGO/2026").
+
+Responda ESTRITAMENTE com o JSON válido, sem texto adicional nem blocos de markdown.
 
 Formato do JSON esperado:
 {
-  "concessionaria": "CEMIG",
+  "concessionaria": string,
   "nomeCliente": string,
+  "cnpjCpf": string ou null,
   "endereco": string,
   "numeroInstalacao": string,
   "numeroMedidor": string,
   "disjuntorAmperes": number ou null,
-  "padraoConexao": "TRIFASICO" ou "BIFASICO" ou "MONOFASICO",
+  "padraoConexao": "TRIFASICO" ou "BIFASICO" ou "MONOFASICO" ou "MEDIA_TENSAO",
   "categoriaPadrao": string ou null,
+  "grupoTarifario": "A" ou "B",
   "classeConsumo": string,
   "modalidadeTarifaria": string,
   "demandaContratadaKW": number ou null,
@@ -103,11 +131,11 @@ Formato do JSON esperado:
   "saldoGeracaoKWh": number ou null,
   "energiaCompensadaKWh": number ou null,
   "historicoConsumo": [
-    { "mes": "AGO/26", "kwh": 600 }
+    { "mes": "AGO/26", "kwh": 79625 }
   ],
   "valorFatura": number,
-  "mesReferencia": string,
-  "grupoTarifario": string
+  "vencimento": string,
+  "mesReferencia": string
 }`;
 
       let parsedAiData: any = null;
@@ -145,6 +173,34 @@ Formato do JSON esperado:
       }
 
       if (parsedAiData) {
+        // Classificação e saneamento Grupo A vs Grupo B
+        const isGrupoA = parsedAiData.grupoTarifario === 'A' || 
+                         parsedAiData.padraoConexao === 'MEDIA_TENSAO' ||
+                         (parsedAiData.demandaContratadaKW && parsedAiData.demandaContratadaKW > 75) ||
+                         /A[1-4]|A3a|AS/i.test(parsedAiData.categoriaPadrao || '') ||
+                         /Verde|Azul|TUSD/i.test(parsedAiData.modalidadeTarifaria || '');
+
+        if (isGrupoA) {
+          parsedAiData.grupoTarifario = 'A';
+          parsedAiData.padraoConexao = 'MEDIA_TENSAO';
+          parsedAiData.categoriaPadrao = parsedAiData.categoriaPadrao || 'A4';
+          parsedAiData.disjuntorAmperes = null;
+        }
+
+        // Saneamento de categoria de padrão para códigos oficiais (A1, B1, C1-C6, F1-F9, A4, A3a)
+        if (parsedAiData.categoriaPadrao) {
+          const catMatch = String(parsedAiData.categoriaPadrao).match(/\b(A4|A3a|AS|A1|B1|B2|C[1-6]|F[1-9])\b/i);
+          if (catMatch) {
+            parsedAiData.categoriaPadrao = catMatch[1].toUpperCase();
+          } else if (/Monof[áa]sico/i.test(String(parsedAiData.categoriaPadrao)) || parsedAiData.padraoConexao === 'MONOFASICO') {
+            parsedAiData.categoriaPadrao = 'A1';
+          } else if (/Bif[áa]sico/i.test(String(parsedAiData.categoriaPadrao)) || parsedAiData.padraoConexao === 'BIFASICO') {
+            parsedAiData.categoriaPadrao = 'B1';
+          } else if (/Trif[áa]sico/i.test(String(parsedAiData.categoriaPadrao)) || parsedAiData.padraoConexao === 'TRIFASICO') {
+            parsedAiData.categoriaPadrao = 'C1';
+          }
+        }
+
         // Se o Gemini não tiver capturado algum campo específico mas o regex tiver, mesclar com precisão:
         if (regexData) {
           if (!parsedAiData.numeroInstalacao && regexData.numeroInstalacao) {
@@ -159,7 +215,10 @@ Formato do JSON esperado:
           if (!parsedAiData.endereco && regexData.endereco) {
             parsedAiData.endereco = regexData.endereco;
           }
-          if (!parsedAiData.disjuntorAmperes && regexData.disjuntorAmperes) {
+          if (!parsedAiData.cnpjCpf && regexData.cnpjCpfTitular) {
+            parsedAiData.cnpjCpf = regexData.cnpjCpfTitular;
+          }
+          if (!isGrupoA && parsedAiData.disjuntorAmperes === undefined && regexData.disjuntorAmperes) {
             parsedAiData.disjuntorAmperes = regexData.disjuntorAmperes;
           }
           if (!parsedAiData.categoriaPadrao && regexData.categoriaPadrao) {
@@ -179,6 +238,9 @@ Formato do JSON esperado:
           }
           if ((!parsedAiData.historicoConsumo || parsedAiData.historicoConsumo.length === 0) && regexData.consumoMeses?.length) {
             parsedAiData.historicoConsumo = regexData.consumoMeses.map((m: any) => ({ mes: m.mes, kwh: m.kwh }));
+          }
+          if (!parsedAiData.demandaContratadaKW && regexData.demandaContratadaKW) {
+            parsedAiData.demandaContratadaKW = regexData.demandaContratadaKW;
           }
         }
 
@@ -202,11 +264,12 @@ Formato do JSON esperado:
       }
     }
 
-    // 3. Fallback Offline: Retorno do Regex CEMIG nativo
+    // 3. Fallback Offline: Retorno do Regex CEMIG/Nacional aprimorado
     if (regexData) {
       const consumoMedio = regexData.consumoMedioMensalKWh || 
         (regexData.consumoMeses?.length ? (regexData.consumoMeses.reduce((s: number, m: any) => s + (m.kwh || 0), 0) / regexData.consumoMeses.length) : 0);
       const demandaEstimada = consumoMedio > 0 ? Number((consumoMedio / (720 * 0.30)).toFixed(1)) : 0;
+      const isGrupoA = regexData.grupoTarifario === 'A' || regexData.padraoConexao === 'MEDIA_TENSAO';
 
       return NextResponse.json({
         success: true,
@@ -214,13 +277,17 @@ Formato do JSON esperado:
         extracted: {
           concessionaria: regexData.concessionaria || 'CEMIG',
           nomeCliente: regexData.nomeCliente || 'Cliente CEMIG',
+          cnpjCpf: regexData.cnpjCpfTitular || null,
           endereco: regexData.endereco || '',
           numeroInstalacao: regexData.numeroInstalacao || '',
           numeroMedidor: regexData.numeroMedidor || 'Consulte padrão físico',
-          disjuntorAmperes: regexData.disjuntorAmperes || (regexData.padraoConexao === 'TRIFASICO' ? 100 : 63),
-          padraoConexao: regexData.padraoConexao || 'TRIFASICO',
-          categoriaPadrao: regexData.padraoConexao === 'TRIFASICO' ? 'C3' : 'B1',
-          demandaContratadaKW: regexData.demandaContratadaKW || 0,
+          disjuntorAmperes: isGrupoA ? null : (regexData.disjuntorAmperes || null),
+          padraoConexao: isGrupoA ? 'MEDIA_TENSAO' : (regexData.padraoConexao || 'TRIFASICO'),
+          categoriaPadrao: regexData.categoriaPadrao || (isGrupoA ? 'A4' : 'C1'),
+          grupoTarifario: isGrupoA ? 'A' : 'B',
+          classeConsumo: regexData.classeConsumo || 'Comercial',
+          modalidadeTarifaria: regexData.modalidadeTarifaria || (isGrupoA ? 'HORARIA_VERDE' : 'CONVENCIONAL'),
+          demandaContratadaKW: regexData.demandaContratadaKW || (isGrupoA ? 160 : 0),
           demandaMedidaPicoKW: regexData.demandaMedidaHPKW || regexData.demandaMedidaHFPKW || 0,
           consumoMedioKWh: Math.round(consumoMedio),
           consumoMaximoKWh: regexData.consumoMeses?.length ? Math.max(...regexData.consumoMeses.map((m: any) => m.kwh || 0)) : 0,
@@ -229,33 +296,41 @@ Formato do JSON esperado:
           energiaCompensadaKWh: regexData.energiaCompensadaKWh || null,
           historicoConsumo: regexData.consumoMeses?.map((m: any) => ({ mes: m.mes, kwh: m.kwh })) || [],
           valorFatura: regexData.valorUltimaFatura || 0,
-          mesReferencia: regexData.mesReferencia || '',
-          grupoTarifario: regexData.grupoTarifario || 'B'
+          vencimento: regexData.vencimento || '',
+          mesReferencia: regexData.mesReferencia || ''
         },
         fileUrl,
         fileName: file.name
       });
     }
 
-    // Fallback preliminar
+    // Fallback preliminar seguro
     return NextResponse.json({
       success: true,
       source: 'fallback',
       extracted: {
         concessionaria: 'CEMIG',
         nomeCliente: 'Cliente Informado na Fatura',
+        cnpjCpf: null,
         endereco: 'Endereço da Unidade Consumidora',
-        numeroInstalacao: '3000000000',
+        numeroInstalacao: '',
         numeroMedidor: 'Consulte no visor do medidor',
-        disjuntorAmperes: 100,
+        disjuntorAmperes: null,
         padraoConexao: 'TRIFASICO',
         categoriaPadrao: 'C3',
+        grupoTarifario: 'B',
+        classeConsumo: 'Comercial',
+        modalidadeTarifaria: 'Convencional',
         demandaContratadaKW: 38,
         demandaMedidaPicoKW: 25,
         consumoMedioKWh: 850,
-        valorFatura: 750,
-        mesReferencia: 'Atual',
-        grupoTarifario: 'B'
+        consumoMaximoKWh: 1200,
+        demandaEstimadaHistoricoKW: 3.9,
+        saldoGeracaoKWh: null,
+        energiaCompensadaKWh: null,
+        historicoConsumo: [],
+        valorFatura: 0,
+        mesReferencia: 'Atual'
       },
       fileUrl,
       fileName: file.name

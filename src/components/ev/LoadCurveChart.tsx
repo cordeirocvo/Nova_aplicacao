@@ -297,7 +297,11 @@ export default function LoadCurveChart({
               </strong>
 
               <span className="text-slate-400">Folga no Padrão:</span>
-              <strong className="text-right text-emerald-400">{hoveredPoint.headroomKW} kW</strong>
+              <strong className={`text-right font-bold ${gridLimitKW >= hoveredPoint.totalUncontrolledKW ? 'text-emerald-400' : 'text-rose-400'}`}>
+                {gridLimitKW >= hoveredPoint.totalUncontrolledKW 
+                  ? `${Math.max(0, Number((gridLimitKW - hoveredPoint.totalUncontrolledKW).toFixed(1)))} kW` 
+                  : '0 kW (Sobrecarga)'}
+              </strong>
 
               <div className="col-span-2 border-t border-slate-700/80 my-1"></div>
 

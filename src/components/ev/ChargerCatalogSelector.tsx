@@ -13,6 +13,10 @@ import {
   searchChargers, 
   filterChargersByType 
 } from "@/lib/ev/chargersDatabase";
+import {
+  COMMERCIAL_ANCHOR_SPECS,
+  evaluateDwellTimeAndEnergyMatch
+} from "@/lib/ev/locationScoringEngine";
 
 interface ChargerCatalogSelectorProps {
   chargers: ConfiguredCharger[];
@@ -281,6 +285,95 @@ export default function ChargerCatalogSelector({
             <div className="text-[10px] font-bold text-slate-500 uppercase">Pontos / Conectores</div>
             <div className="text-lg font-black text-[#0A192F]">{totalPoints} un.</div>
           </div>
+        </div>
+      </div>
+
+      {/* ─── GUIA DE ORIENTAÇÃO VISÍVEL: CARREGADOR IDEAL POR ÂNCORA COMERCIAL (ABRASCE / ABRASEL) & IMPACTO NO CAPEX ─── */}
+      <div className="bg-[#0A192F] text-white p-5 rounded-3xl border border-slate-800 space-y-4 shadow-lg">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[10px] font-black uppercase bg-purple-500/20 text-purple-300 border border-purple-500/40 px-2.5 py-0.5 rounded-full">
+                Guia de Orientação de Potência (ABRASCE / Abrasel)
+              </span>
+              <span className="text-[11px] font-mono text-emerald-400 font-bold">
+                Seu Parque Atual: {totalInstalledKW.toFixed(1)} kW ({totalPoints} {totalPoints === 1 ? "conector" : "conectores"})
+              </span>
+            </div>
+            <h3 className="text-sm font-bold text-white mt-1">
+              Qual Carregador Escolher para Cada Tipo de Estabelecimento? (Impacto em CAPEX, Rede CEMIG e Giro de Vaga)
+            </h3>
+            <p className="text-[11px] text-slate-400">
+              A escolha é 100% livre, mas <strong className="text-white">subdimensionar</strong> reduz a energia vendida na janela da parada, enquanto <strong className="text-white">superdimensionar (&gt; 75 kW)</strong> exige Subestação de Média Tensão (salto de CAPEX) ou gera bloqueio ocioso da vaga.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 text-[10px] font-mono shrink-0">
+            <span className="bg-emerald-500/15 text-[#00B356] border border-emerald-500/30 px-2.5 py-1 rounded-xl font-bold">
+              ✓ BT CEMIG C6 200A: até 75 kW
+            </span>
+            <span className="bg-amber-500/15 text-amber-300 border border-amber-500/30 px-2.5 py-1 rounded-xl font-bold">
+              ⚡ Acima de 75 kW: Exige Subestação MT
+            </span>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950/80">
+          <table className="w-full text-left text-xs font-sans">
+            <thead>
+              <tr className="border-b border-slate-800 bg-slate-900/90 text-[10px] font-mono uppercase text-slate-400">
+                <th className="py-2.5 px-3">Estabelecimento / Âncora Comercial</th>
+                <th className="py-2.5 px-3">Tempo de Parada (Dwell Time)</th>
+                <th className="py-2.5 px-3">Carregador Ideal Recomendado</th>
+                <th className="py-2.5 px-3">Impacto no CAPEX &amp; Padrão CEMIG</th>
+                <th className="py-2.5 px-3 text-right">Com Seu Carregador ({totalInstalledKW.toFixed(1)} kW)</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-800/70 text-[11px]">
+              {Object.values(COMMERCIAL_ANCHOR_SPECS).map((spec) => {
+                const evalRow = evaluateDwellTimeAndEnergyMatch(spec.key, Math.max(7.4, totalInstalledKW), spec.defaultDwellMinutes);
+                const capexGridImpact =
+                  spec.idealMinKW >= 120
+                    ? "Exige Subestação MT 13,8kV (+R$ 95k a R$ 180k de obra)"
+                    : spec.idealMaxKW >= 60
+                    ? "Cabe em BT CEMIG C6 200A (até 75 kW s/ Subestação MT)"
+                    : spec.idealMaxKW >= 30
+                    ? "Cabe em BT C5/C6 (150A–200A) + Trafo 380V a seco"
+                    : "Baixo CAPEX: BT Convencional C2/C3 (63A–100A em 220V)";
+
+                return (
+                  <tr key={spec.key} className="hover:bg-slate-900/60 transition-colors">
+                    <td className="py-2 px-3 font-bold text-white">
+                      {spec.shortLabel}
+                      <span className="block text-[9px] font-normal text-slate-400">{spec.benchmarkSource}</span>
+                    </td>
+                    <td className="py-2 px-3 font-mono text-purple-300 font-bold">
+                      {spec.typicalDwellRangeLabel}
+                      <span className="block text-[9px] font-normal text-slate-400">Meta: {spec.targetSessionKWh} kWh/parada</span>
+                    </td>
+                    <td className="py-2 px-3 font-mono font-bold text-emerald-400">
+                      {spec.recommendedTechLabel}
+                    </td>
+                    <td className="py-2 px-3 text-[10px] text-slate-300">
+                      {capexGridImpact}
+                    </td>
+                    <td className="py-2 px-3 text-right font-mono">
+                      <span className={`inline-block px-2 py-0.5 rounded-md text-[10px] font-bold border ${
+                        evalRow.statusVerdict === 'match_perfeito'
+                          ? 'bg-emerald-500/15 text-[#00B356] border-emerald-500/40'
+                          : evalRow.statusVerdict === 'bom_atende'
+                          ? 'bg-blue-500/15 text-blue-300 border-blue-500/40'
+                          : evalRow.statusVerdict === 'bloqueio_ocioso'
+                          ? 'bg-amber-500/15 text-amber-300 border-amber-500/40'
+                          : 'bg-rose-500/15 text-rose-300 border-rose-500/40'
+                      }`}>
+                        {evalRow.deliveredKWh} kWh (+{evalRow.addedRangeKM} km) • Nota {evalRow.dwellScore}/100
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       </div>
 

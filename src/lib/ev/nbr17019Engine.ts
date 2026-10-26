@@ -85,7 +85,7 @@ const AMPACITY_PVC: Record<string, Record<number, number>> = {
 };
 
 const GAUGES = [2.5, 4, 6, 10, 16, 25, 35, 50, 70, 95, 120, 150, 185, 240];
-const STANDARD_BREAKERS = [16, 20, 25, 32, 40, 50, 63, 80, 100, 125, 160, 200, 250];
+const STANDARD_BREAKERS = [10, 16, 20, 25, 32, 40, 50, 63, 70, 80, 100, 125, 150, 160, 175, 200, 225, 250, 300, 350, 400, 500, 630];
 
 // Fatores de correção de temperatura (NBR 5410 Tabela 40 para PVC 70°C)
 function getTempFactor(temp: number): number {
@@ -149,13 +149,11 @@ export function calculateNBR17019Compliance(input: NBR17019Input): NBR17019Compl
   // Corrente fictícia de dimensionamento para Tabela 36
   const designCurrentForAmpacity = nominalCurrent / totalCorrection;
 
-  // 3. Selecionar Disjuntor Padronizado (In >= Ib)
-  let recommendedBreaker = STANDARD_BREAKERS[0];
-  for (const b of STANDARD_BREAKERS) {
-    if (b >= nominalCurrent * 1.15) { // Margem de segurança de 15% para cargas contínuas
-      recommendedBreaker = b;
-      break;
-    }
+  // 3. Selecionar Disjuntor Padronizado NBR 5410 (In >= Ib)
+  let recommendedBreaker = STANDARD_BREAKERS.find(b => b >= nominalCurrent) || STANDARD_BREAKERS[STANDARD_BREAKERS.length - 1];
+  // Para faixa de corrente contínua entre 200A e 250A, adota 250A para folga térmica segura (NBR 5410 / NBR 17019)
+  if (nominalCurrent > 200 && nominalCurrent <= 250) {
+    recommendedBreaker = 250;
   }
 
   // 4. Selecionar Bitola por Capacidade de Corrente (Iz >= In >= Ib)

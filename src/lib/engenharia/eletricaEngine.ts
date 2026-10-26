@@ -47,7 +47,7 @@ export const TABELA_COBRE_XLPE: TabelaCondutor[] = TABELA_COBRE_PVC.map(c => ({
 }));
 
 export const DISJUNTORES_COMERCIAIS = [
-  6, 10, 16, 20, 25, 32, 40, 50, 63, 80, 100, 125, 160, 200, 250, 320, 400, 500, 630, 800, 1000, 1250, 1600, 2000, 2500, 3200
+  6, 10, 16, 20, 25, 32, 40, 50, 63, 70, 80, 100, 125, 150, 160, 175, 200, 225, 250, 300, 350, 400, 500, 630, 800, 1000, 1250, 1600, 2000, 2500, 3200
 ];
 
 export interface ParametrosCircuito {
@@ -176,21 +176,20 @@ export function dimensionarCircuitoBT(params: ParametrosCircuito): ResultadoElet
     quedaPorcento = (quedaVolts / VBase) * 100;
   }
 
-  // Dimensionamento do Disjuntor Ib <= In <= Iz
-  let In = DISJUNTORES_COMERCIAIS[0];
-  const Iz_real = caboTabela.ampacidade[params.metodoInstalacao] * fcTotal;
-  
-  for (const d of DISJUNTORES_COMERCIAIS) {
-    if (d >= Ib && d <= Iz_real) {
-      In = d;
-      break;
-    }
-  }
+  // Dimensionamento do Disjuntor e Coordenação NBR 5410 (Ib <= In <= Iz)
+  let In = DISJUNTORES_COMERCIAIS.find(d => d >= Ib) || Ib;
+  let Iz_real = caboTabela.ampacidade[params.metodoInstalacao] * fcTotal;
 
-  if (In < Ib) {
-    // Caso especial onde Ib ~ Iz real, disjuntor pula
-    const filtered = DISJUNTORES_COMERCIAIS.filter(d => d >= Ib);
-    In = filtered.length > 0 ? filtered[0] : Ib; 
+  // Se In > Iz_real, a NBR 5410 item 5.3.4.1 exige elevar a bitola do condutor até que Iz_real >= In
+  if (In > Iz_real) {
+    for (const c of tabelaBase) {
+      const izTest = c.ampacidade[params.metodoInstalacao] * fcTotal;
+      if (izTest >= In) {
+        caboTabela = c;
+        Iz_real = izTest;
+        break;
+      }
+    }
   }
 
   const distKm = params.comprimentoMetros / 1000;

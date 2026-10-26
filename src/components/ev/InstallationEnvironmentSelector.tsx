@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { 
   Building2, Home, Zap, ShieldAlert, AlertTriangle, 
   CheckCircle2, Flame, Wind, Key, ShieldCheck, 
@@ -39,6 +39,12 @@ export default function InstallationEnvironmentSelector({
   onApplyPreset,
   utility = "CEMIG"
 }: InstallationEnvironmentSelectorProps) {
+
+  const [showNewModelForm, setShowNewModelForm] = useState(false);
+  const [newModelLabel, setNewModelLabel] = useState("");
+  const [newModelSharePercent, setNewModelSharePercent] = useState(12);
+  const [newModelFixedBRL, setNewModelFixedBRL] = useState(0);
+  const [newModelBasis, setNewModelBasis] = useState<'gross' | 'net_margin'>('gross');
 
   const isCondo = applicationMode === "condominio_frota";
   const isHub = applicationMode === "eletroposto_hub";
@@ -448,25 +454,75 @@ export default function InstallationEnvironmentSelector({
             </label>
           </div>
 
-          {/* ─── PAINEL DE MODELAGEM FINANCEIRA E BUSINESS PLAN (BLEV / COENERGYGO) ─── */}
+          {/* ─── PAINEL DE MODELAGEM FINANCEIRA E BUSINESS PLAN (BLEV / COENERGYGO — FOTO 01 CONECTADO) ─── */}
           <div className="p-5 rounded-2xl bg-[#0A192F] text-white space-y-4 border border-slate-800 shadow-md">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
               <div className="flex items-center gap-2.5">
                 <span className="p-1.5 rounded-lg bg-[#E45318]/20 text-[#E45318] font-bold text-xs">
                   R$
                 </span>
                 <div>
                   <h4 className="text-sm font-bold text-white flex items-center gap-2">
-                    Modelagem Financeira & Viabilidade de Negócios (Padrão BLEV)
+                    Modelagem Financeira &amp; Viabilidade de Negócios (Padrão BLEV • Conectado ao Payback)
                   </h4>
                   <p className="text-[11px] text-slate-400">
-                    Parâmetros para cálculo automático de Faturamento, Margem Líquida, Payback, TIR e VPL.
+                    Mantém os valores iniciais adotados pelo sistema e alimenta em tempo real o Lucro Líquido e o Payback no Passo 1B.
                   </p>
                 </div>
               </div>
-              <span className="text-[10px] uppercase font-black tracking-wider bg-emerald-500/20 text-[#00B356] border border-emerald-500/30 px-2.5 py-1 rounded-full">
-                Hub Comercial Ativo
+              <span className="text-[10px] uppercase font-black tracking-wider bg-emerald-500/20 text-[#00B356] border border-emerald-500/30 px-2.5 py-1 rounded-full self-start sm:self-auto">
+                Sincronizado c/ Passo 1B
               </span>
+            </div>
+
+            {/* Alternador Rápido: Fonte de Energia Ativa no Cálculo (Concessionária vs Solar vs Mix Híbrido) */}
+            <div className="bg-slate-900/90 p-3 rounded-xl border border-slate-800 space-y-2">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <span className="text-[11px] font-bold text-slate-300">
+                  Fonte de Energia Ativa para Cálculo do Custo do kWh:
+                </span>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {[
+                    { id: 'concessionaria', label: '⚡ 100% Concessionária (CEMIG)' },
+                    { id: 'solar', label: '☀️ 100% Energia Solar Fotovoltaica' },
+                    { id: 'hibrido', label: '🔄 Mix Híbrido (Solar + Concessionária)' }
+                  ].map((mode) => {
+                    const activeMode = commercialHub.energySourceMode || 'concessionaria';
+                    const isSelected = activeMode === mode.id;
+                    return (
+                      <button
+                        key={mode.id}
+                        type="button"
+                        onClick={() => onCommercialHubChange({ energySourceMode: mode.id as any })}
+                        className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer border ${
+                          isSelected
+                            ? 'bg-[#00B356] text-white border-emerald-400 shadow'
+                            : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white'
+                        }`}
+                      >
+                        {mode.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {commercialHub.energySourceMode === 'hibrido' && (
+                <div className="flex items-center justify-between gap-3 pt-2 border-t border-slate-800 text-xs">
+                  <span className="text-[11px] text-emerald-300 font-semibold">
+                    Participação Solar no Mix: <strong>{commercialHub.solarSharePercent ?? 50}% Solar</strong> + <strong>{100 - (commercialHub.solarSharePercent ?? 50)}% Concessionária</strong>
+                  </span>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="5"
+                    value={commercialHub.solarSharePercent ?? 50}
+                    onChange={(e) => onCommercialHubChange({ solarSharePercent: Number(e.target.value) })}
+                    className="w-44 accent-[#00B356] cursor-pointer"
+                  />
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -479,19 +535,19 @@ export default function InstallationEnvironmentSelector({
                   <span className="absolute left-3 top-2 text-xs text-slate-400 font-bold">R$</span>
                   <input
                     type="number"
-                    step="0.10"
-                    min="1.0"
-                    max="5.0"
-                    value={commercialHub.sellingPricePerKWh ?? 2.00}
+                    step="0.05"
+                    min="0.50"
+                    max="10.0"
+                    value={commercialHub.sellingPricePerKWh ?? 2.10}
                     onChange={(e) => onCommercialHubChange({ sellingPricePerKWh: Number(e.target.value) })}
                     className="w-full pl-8 pr-3 py-1.5 text-xs font-bold bg-slate-800 border border-slate-700 rounded-lg text-emerald-400 focus:outline-none focus:border-emerald-500"
                   />
                 </div>
-                <p className="text-[10px] text-slate-400 mt-1">Média BH: R$ 1,80 a R$ 2,40/kWh.</p>
+                <p className="text-[10px] text-slate-400 mt-1">Padrão inicial do sistema: R$ 2,10/kWh.</p>
               </div>
 
               {/* Custo de Energia Concessionária */}
-              <div className="bg-slate-900/80 p-3 rounded-xl border border-slate-800">
+              <div className={`bg-slate-900/80 p-3 rounded-xl border ${(commercialHub.energySourceMode || 'concessionaria') !== 'solar' ? 'border-amber-500/50 ring-1 ring-amber-500/20' : 'border-slate-800 opacity-75'}`}>
                 <label className="block text-[11px] font-bold text-slate-300 mb-1">
                   Custo Concessionária (R$/kWh):
                 </label>
@@ -500,18 +556,18 @@ export default function InstallationEnvironmentSelector({
                   <input
                     type="number"
                     step="0.05"
-                    min="0.5"
-                    max="3.0"
-                    value={commercialHub.gridEnergyCostPerKWh ?? 1.00}
+                    min="0.10"
+                    max="5.0"
+                    value={commercialHub.gridEnergyCostPerKWh ?? 0.85}
                     onChange={(e) => onCommercialHubChange({ gridEnergyCostPerKWh: Number(e.target.value) })}
                     className="w-full pl-8 pr-3 py-1.5 text-xs font-bold bg-slate-800 border border-slate-700 rounded-lg text-amber-400 focus:outline-none focus:border-emerald-500"
                   />
                 </div>
-                <p className="text-[10px] text-slate-400 mt-1">TUSD + TE + Impostos (CEMIG).</p>
+                <p className="text-[10px] text-slate-400 mt-1">Padrão inicial do sistema: R$ 0,85/kWh.</p>
               </div>
 
               {/* Custo de Energia Usina Solar (UFV) */}
-              <div className="bg-slate-900/80 p-3 rounded-xl border border-slate-800">
+              <div className={`bg-slate-900/80 p-3 rounded-xl border ${(commercialHub.energySourceMode || 'concessionaria') !== 'concessionaria' ? 'border-emerald-500/50 ring-1 ring-emerald-500/20' : 'border-slate-800 opacity-75'}`}>
                 <label className="block text-[11px] font-bold text-slate-300 mb-1">
                   Custo Solar Fotovoltaico (R$/kWh):
                 </label>
@@ -520,34 +576,156 @@ export default function InstallationEnvironmentSelector({
                   <input
                     type="number"
                     step="0.05"
-                    min="0.2"
-                    max="1.5"
-                    value={commercialHub.solarEnergyCostPerKWh ?? 0.50}
+                    min="0.05"
+                    max="3.0"
+                    value={commercialHub.solarEnergyCostPerKWh ?? 0.39}
                     onChange={(e) => onCommercialHubChange({ solarEnergyCostPerKWh: Number(e.target.value) })}
                     className="w-full pl-8 pr-3 py-1.5 text-xs font-bold bg-slate-800 border border-slate-700 rounded-lg text-[#00B356] focus:outline-none focus:border-emerald-500"
                   />
                 </div>
-                <p className="text-[10px] text-slate-400 mt-1">Geração própria GD / Mercado Livre.</p>
+                <p className="text-[10px] text-slate-400 mt-1">Geração própria GD / Mercado Livre (R$ 0,39).</p>
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {/* Estrutura Jurídica das Vagas */}
-              <div className="bg-slate-900/80 p-3 rounded-xl border border-slate-800">
-                <label className="block text-[11px] font-bold text-slate-300 mb-1">
-                  Modelo do Ponto (CNAE 5229-0/99):
-                </label>
+              {/* Estrutura Jurídica das Vagas & Participação na Receita */}
+              <div className="bg-slate-900/80 p-3 rounded-xl border border-slate-800 space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="block text-[11px] font-bold text-slate-300">
+                    Modelo do Ponto / Participação:
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowNewModelForm(!showNewModelForm)}
+                    className="text-[10px] font-bold text-[#00B356] hover:underline cursor-pointer"
+                  >
+                    {showNewModelForm ? 'Fechar' : '+ Cadastrar Outra'}
+                  </button>
+                </div>
                 <select
                   value={commercialHub.realEstateModel ?? 'comodato'}
-                  onChange={(e) => onCommercialHubChange({ realEstateModel: e.target.value as any })}
+                  onChange={(e) => onCommercialHubChange({ realEstateModel: e.target.value })}
                   className="w-full text-xs font-bold bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white focus:outline-none focus:border-emerald-500 cursor-pointer"
                 >
-                  <option value="comodato">Comodato Gratuito (Ponto Próprio)</option>
-                  <option value="aluguel_fixo">Aluguel Fixo Mensal</option>
-                  <option value="revenue_share">Participação na Receita (%)</option>
-                  <option value="misto">Modelo Misto (Fixo + %)</option>
+                  <option value="comodato">Comodato Gratuito (Ponto Próprio — 0%)</option>
+                  <option value="revenue_share_bruto">Participação na Receita Bruta — Revenue Share (%)</option>
+                  <option value="revenue_share_liquido">Participação na Margem Pós-Energia (%)</option>
+                  <option value="aluguel_fixo">Aluguel Fixo Mensal de Vaga (R$/mês)</option>
+                  <option value="misto">Modelo Misto (Aluguel Fixo R$ + % Receita)</option>
+                  <option value="reembolso_energia_split">Parceiro Cede Energia + Split de Lucro (%)</option>
+                  {(commercialHub.customRealEstateModels || []).map((cm) => (
+                    <option key={cm.id} value={cm.id}>
+                      ★ {cm.label} ({cm.fixedRentBRL > 0 ? `R$ ${cm.fixedRentBRL} + ` : ''}{cm.revenueSharePercent}%)
+                    </option>
+                  ))}
                 </select>
-                <p className="text-[10px] text-slate-400 mt-1">Cessão de vagas com âncora comercial.</p>
+
+                {/* Campos dinâmicos conforme a modalidade escolhida */}
+                {(commercialHub.realEstateModel === 'revenue_share' ||
+                  commercialHub.realEstateModel === 'revenue_share_bruto' ||
+                  commercialHub.realEstateModel === 'revenue_share_liquido' ||
+                  commercialHub.realEstateModel === 'misto' ||
+                  commercialHub.realEstateModel === 'reembolso_energia_split') && (
+                  <div className="flex items-center justify-between gap-2 pt-1">
+                    <span className="text-[10px] text-amber-300 font-semibold">% Repasse ao Ponto:</span>
+                    <div className="relative w-24">
+                      <input
+                        type="number"
+                        min="0"
+                        max="90"
+                        step="1"
+                        value={commercialHub.realEstateRevenueSharePercent ?? 10}
+                        onChange={(e) => onCommercialHubChange({ realEstateRevenueSharePercent: Number(e.target.value) })}
+                        className="w-full pr-6 pl-2 py-1 text-xs font-bold bg-slate-950 border border-amber-500/40 rounded text-amber-300"
+                      />
+                      <span className="absolute right-2 top-1 text-[10px] text-slate-400">%</span>
+                    </div>
+                  </div>
+                )}
+
+                {(commercialHub.realEstateModel === 'aluguel_fixo' || commercialHub.realEstateModel === 'misto') && (
+                  <div className="flex items-center justify-between gap-2 pt-1">
+                    <span className="text-[10px] text-cyan-300 font-semibold">Aluguel Fixo (R$/mês):</span>
+                    <input
+                      type="number"
+                      min="0"
+                      max="50000"
+                      step="50"
+                      value={commercialHub.realEstateFixedRentBRL ?? 500}
+                      onChange={(e) => onCommercialHubChange({ realEstateFixedRentBRL: Number(e.target.value) })}
+                      className="w-24 px-2 py-1 text-xs font-bold bg-slate-950 border border-cyan-500/40 rounded text-cyan-300"
+                    />
+                  </div>
+                )}
+
+                {showNewModelForm && (
+                  <div className="p-2.5 rounded-xl bg-slate-950 border border-emerald-500/40 space-y-2 text-[10px]">
+                    <span className="font-bold text-emerald-400 block uppercase">Cadastrar Nova Modalidade de Parceria:</span>
+                    <input
+                      type="text"
+                      placeholder="Nome (ex: Condomínio 8% + R$ 200)"
+                      value={newModelLabel}
+                      onChange={(e) => setNewModelLabel(e.target.value)}
+                      className="w-full px-2 py-1 rounded bg-slate-900 border border-slate-700 text-white font-semibold"
+                    />
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <div>
+                        <span className="text-slate-400 block">% Receita:</span>
+                        <input
+                          type="number"
+                          value={newModelSharePercent}
+                          onChange={(e) => setNewModelSharePercent(Number(e.target.value))}
+                          className="w-full px-2 py-1 rounded bg-slate-900 border border-slate-700 text-white"
+                        />
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block">Fixo (R$/mês):</span>
+                        <input
+                          type="number"
+                          value={newModelFixedBRL}
+                          onChange={(e) => setNewModelFixedBRL(Number(e.target.value))}
+                          className="w-full px-2 py-1 rounded bg-slate-900 border border-slate-700 text-white"
+                        />
+                      </div>
+                    </div>
+                    <select
+                      value={newModelBasis}
+                      onChange={(e) => setNewModelBasis(e.target.value as any)}
+                      className="w-full px-2 py-1 rounded bg-slate-900 border border-slate-700 text-slate-200"
+                    >
+                      <option value="gross">Incide sobre a Receita Bruta</option>
+                      <option value="net_margin">Incide sobre a Margem Pós-Energia</option>
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!newModelLabel.trim()) return;
+                        const id = 'custom_' + Date.now();
+                        const nextList = [
+                          ...(commercialHub.customRealEstateModels || []),
+                          {
+                            id,
+                            label: newModelLabel.trim(),
+                            fixedRentBRL: newModelFixedBRL,
+                            revenueSharePercent: newModelSharePercent,
+                            basis: newModelBasis
+                          }
+                        ];
+                        onCommercialHubChange({
+                          customRealEstateModels: nextList,
+                          realEstateModel: id,
+                          realEstateFixedRentBRL: newModelFixedBRL,
+                          realEstateRevenueSharePercent: newModelSharePercent
+                        });
+                        setNewModelLabel("");
+                        setShowNewModelForm(false);
+                      }}
+                      className="w-full bg-[#00B356] hover:bg-emerald-600 text-white font-bold py-1.5 rounded-lg cursor-pointer"
+                    >
+                      Salvar e Aplicar Modalidade
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* OPEX Fixo por Ponto */}
@@ -559,12 +737,12 @@ export default function InstallationEnvironmentSelector({
                   <span className="absolute left-3 top-2 text-xs text-slate-400 font-bold">R$</span>
                   <input
                     type="number"
-                    value={commercialHub.fixedOpexPerPointBRL ?? 474}
+                    value={commercialHub.fixedOpexPerPointBRL ?? 350}
                     onChange={(e) => onCommercialHubChange({ fixedOpexPerPointBRL: Number(e.target.value) })}
                     className="w-full pl-8 pr-3 py-1.5 text-xs font-bold bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-emerald-500"
                   />
                 </div>
-                <p className="text-[10px] text-slate-400 mt-1">Seguro + Link 4G + Manutenção.</p>
+                <p className="text-[10px] text-slate-400 mt-1">Padrão inicial: R$ 350,00 (4G M2M + Seguro + Prev.).</p>
               </div>
 
               {/* OPEX Variável (Gateway + Impostos) */}
@@ -575,13 +753,13 @@ export default function InstallationEnvironmentSelector({
                 <div className="relative">
                   <input
                     type="number"
-                    value={commercialHub.variableOpexPercent ?? 14}
+                    value={commercialHub.variableOpexPercent ?? 12}
                     onChange={(e) => onCommercialHubChange({ variableOpexPercent: Number(e.target.value) })}
                     className="w-full pr-8 pl-3 py-1.5 text-xs font-bold bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-emerald-500"
                   />
                   <span className="absolute right-3 top-2 text-xs text-slate-400 font-bold">%</span>
                 </div>
-                <p className="text-[10px] text-slate-400 mt-1">8% Gateway White-Label + 6% Tributos.</p>
+                <p className="text-[10px] text-slate-400 mt-1">Padrão inicial: 12% (Software OCPP + Tributos).</p>
               </div>
             </div>
           </div>

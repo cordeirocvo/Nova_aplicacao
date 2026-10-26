@@ -10,13 +10,13 @@
 export type TipoPadrao = "BIFASICO" | "TRIFASICO";
 export type CategoriaDemandaPadrao = "INDIVIDUAL_TABELA_2" | "ALTA_DEMANDA_TABELA_4";
 export type CaixaDisjuntorTabela4 = "CM-9" | "CM-18";
-export type TipoCaixaSubterraneaTabela4 = "ZC" | "ZD";
+export type TipoCaixaSubterraneaTabela4 = "ZA" | "ZB" | "ZC" | "ZD";
 export type LadoRede = "MESMO_LADO" | "LADO_OPOSTO"; // A Favor ou Contra
 export type TipoSaida = "AEREA" | "SUBTERRANEA"; // Saída Aérea ou Subterrânea
 export type LocalizacaoPadrao = "URBANO" | "RURAL"; // Localização da Unidade Consumidora
 export type TipoEstrutura = "POSTE_CONCRETO" | "POSTE_ACO" | "PONTALETE" | "MURO";
 export type FinalidadePadrao = "CARREGADOR_VE" | "PADRAO_GERAL" | "AUMENTO_CARGA";
-export type TipoTerminalDisjuntor = "COMPRESSAO_OLHAL" | "PINO_MACICO";
+export type TipoTerminalDisjuntor = "COMPRESSAO_OLHAL" | "TUBULAR" | "PINO_MACICO";
 
 export interface DisjuntorSopranoInfo {
   frame: "Frame 63" | "Frame 100" | "Frame 250" | "Frame 400" | "Frame 630" | "Frame 800";
@@ -51,8 +51,10 @@ export interface ParametrosPadraoCemig {
   tipoPadrao: TipoPadrao;
   categoriaDemanda?: CategoriaDemandaPadrao; // Tabela 2 (Individual até 75 kVA) ou Tabela 4 (Alta Demanda 75,1 a 304 kVA)
   tipoCaixaDisjuntorTabela4?: CaixaDisjuntorTabela4; // Para F1 e F2: CM-9 ou CM-18
-  tipoCaixaSubterranea?: TipoCaixaSubterraneaTabela4; // Caixa de Passagem: ZC (Padrão/Calçada) ou ZD (Pista/Derivação)
-  tipoTerminalDisjuntor?: TipoTerminalDisjuntor; // Terminal de Compressão Olhal ou Pino Maciço
+  tipoCaixaSubterranea?: TipoCaixaSubterraneaTabela4; // Caixa de Passagem: ZA, ZB, ZC ou ZD
+  qtdeCaixasSubterraneas?: number; // Quantidade de caixas de passagem Z (padrão: 2 unidades)
+  tipoTerminalDisjuntor?: TipoTerminalDisjuntor; // Terminal Olhal de Compressão, Terminal Tubular ou Pino Maciço
+  preferirKitProntoCaixas?: boolean; // Conjunto Caixa CM-09/18 + CM-04 com Barramento sem disjuntor
   disjuntorAmperes: number;
   ladoRede: LadoRede;
   tipoSaida?: TipoSaida; // default "AEREA"
@@ -98,6 +100,13 @@ export interface ResultadoDimensionamentoPadrao {
   eletrodutoPVCmm: number;
   eletrodutoPvcPol: string;
   eletrodutoAcoMm: number;
+  numDescidas?: number;
+  eletrodutoGalvDN?: number;
+  eletrodutoGalvPol?: string;
+  eletrodutosQtdeBarras?: number;
+  curvasGalvQtde?: number;
+  niplesPvcQtde?: number;
+  buchasArruelasPvcQtde?: number;
   tcRelacao?: string;
   tcQuantidade?: number;
   posteHomologado: string;
@@ -441,6 +450,9 @@ export interface FaixaTabela4 {
   eletrodutoCuPvcPol: string;
   eletrodutoCuAco: number;
   eletrodutoCuVias: number;
+  numDescidas: number;
+  eletrodutoGalvDN: number;
+  eletrodutoGalvPol: string;
   posteMesmoLadoAco?: string;
   posteMesmoLadoConc?: string;
   posteLadoOpostoAco?: string;
@@ -469,6 +481,9 @@ export const FAIXAS_TRIFASICO_TABELA_4: FaixaTabela4[] = [
     eletrodutoCuPvcPol: "3\"",
     eletrodutoCuAco: 80,
     eletrodutoCuVias: 1,
+    numDescidas: 1,
+    eletrodutoGalvDN: 80,
+    eletrodutoGalvPol: "3\"",
     posteMesmoLadoAco: "PA3",
     posteMesmoLadoConc: "PC3",
     posteLadoOpostoAco: "PA6",
@@ -495,6 +510,9 @@ export const FAIXAS_TRIFASICO_TABELA_4: FaixaTabela4[] = [
     eletrodutoCuPvcPol: "4\"",
     eletrodutoCuAco: 100,
     eletrodutoCuVias: 1,
+    numDescidas: 1,
+    eletrodutoGalvDN: 100,
+    eletrodutoGalvPol: "4\"",
     posteMesmoLadoAco: "PA3",
     posteMesmoLadoConc: "PC3",
     posteLadoOpostoAco: "PA6",
@@ -522,6 +540,9 @@ export const FAIXAS_TRIFASICO_TABELA_4: FaixaTabela4[] = [
     eletrodutoCuPvcPol: "4\"",
     eletrodutoCuAco: 100,
     eletrodutoCuVias: 1,
+    numDescidas: 1,
+    eletrodutoGalvDN: 100,
+    eletrodutoGalvPol: "4\"",
     caixaMedicao: "CM-4",
     caixasDisjuntorPermitidas: ["CM-18"],
     subterraneoObrigatorio: true
@@ -544,6 +565,9 @@ export const FAIXAS_TRIFASICO_TABELA_4: FaixaTabela4[] = [
     eletrodutoCuPvcPol: "2.1/2\"",
     eletrodutoCuAco: 65,
     eletrodutoCuVias: 2,
+    numDescidas: 2,
+    eletrodutoGalvDN: 100,
+    eletrodutoGalvPol: "4\"",
     caixaMedicao: "CM-4",
     caixasDisjuntorPermitidas: ["CM-18"],
     subterraneoObrigatorio: true
@@ -566,6 +590,9 @@ export const FAIXAS_TRIFASICO_TABELA_4: FaixaTabela4[] = [
     eletrodutoCuPvcPol: "3\"",
     eletrodutoCuAco: 80,
     eletrodutoCuVias: 2,
+    numDescidas: 2,
+    eletrodutoGalvDN: 100,
+    eletrodutoGalvPol: "4\"",
     caixaMedicao: "CM-4",
     caixasDisjuntorPermitidas: ["CM-18"],
     subterraneoObrigatorio: true
@@ -588,6 +615,9 @@ export const FAIXAS_TRIFASICO_TABELA_4: FaixaTabela4[] = [
     eletrodutoCuPvcPol: "4\"",
     eletrodutoCuAco: 100,
     eletrodutoCuVias: 2,
+    numDescidas: 2,
+    eletrodutoGalvDN: 100,
+    eletrodutoGalvPol: "4\"",
     caixaMedicao: "CM-4",
     caixasDisjuntorPermitidas: ["CM-18"],
     subterraneoObrigatorio: true
@@ -611,6 +641,9 @@ export const FAIXAS_TRIFASICO_TABELA_4: FaixaTabela4[] = [
     eletrodutoCuPvcPol: "4\"",
     eletrodutoCuAco: 100,
     eletrodutoCuVias: 2,
+    numDescidas: 2,
+    eletrodutoGalvDN: 100,
+    eletrodutoGalvPol: "4\"",
     caixaMedicao: "CM-4",
     caixasDisjuntorPermitidas: ["CM-18"],
     subterraneoObrigatorio: true
@@ -633,6 +666,9 @@ export const FAIXAS_TRIFASICO_TABELA_4: FaixaTabela4[] = [
     eletrodutoCuPvcPol: "3\"",
     eletrodutoCuAco: 80,
     eletrodutoCuVias: 3,
+    numDescidas: 3,
+    eletrodutoGalvDN: 100,
+    eletrodutoGalvPol: "4\"",
     caixaMedicao: "CM-4",
     caixasDisjuntorPermitidas: ["CM-18"],
     subterraneoObrigatorio: true
@@ -655,6 +691,9 @@ export const FAIXAS_TRIFASICO_TABELA_4: FaixaTabela4[] = [
     eletrodutoCuPvcPol: "4\"",
     eletrodutoCuAco: 100,
     eletrodutoCuVias: 3,
+    numDescidas: 3,
+    eletrodutoGalvDN: 100,
+    eletrodutoGalvPol: "4\"",
     caixaMedicao: "CM-4",
     caixasDisjuntorPermitidas: ["CM-18"],
     subterraneoObrigatorio: true
@@ -695,42 +734,65 @@ export function dimensionarPadraoTabela4(
 
   const itensSugeridos: ItemMaterialSugerido[] = [];
 
-  // 1. Caixas Metálicas (CM-4 obrigatória para TCs + CM-9/CM-18 para proteção)
-  // Caixa CM-4 para Medição Indireta (3 TCs + Medidor)
-  itensSugeridos.push({
-    codigo: "CX-CM4",
-    descricao: "Caixa Metálica de Medição Tipo CM-4 em Chapa de Aço (TCs e Medição Indireta CEMIG)",
-    categoria: "CAIXA",
-    unidade: "un",
-    quantidade: 1,
-    precoUnitarioEstimado: getPreco("CX-CM4", 580),
-    precoTotal: getPreco("CX-CM4", 580),
-    obrigatorioNorma: true,
-    nota: "Abriga os 3 Transformadores de Corrente (TCs) e o medidor eletrônico de 3 elementos (ND 5.1 Desenho 36 e 46)."
-  });
-
-  // Caixa para Disjuntor Geral (CM-9 ou CM-18 para F1/F2; CM-18 obrigatória para F3 a F9)
+  // 1. Caixas Metálicas ou Kit Pré-Montado com Barramento
   const permiteCM9 = match.faixa === "F1" || match.faixa === "F2";
   const usaCM9 = permiteCM9 && params.tipoCaixaDisjuntorTabela4 === "CM-9";
-  const cxDisjCodigo = usaCM9 ? "CX-CM9" : "CX-CM18";
-  const cxDisjDesc = usaCM9
-    ? "Caixa Metálica de Proteção para Disjuntor Geral Tipo CM-9 em Chapa de Aço c/ lacre"
-    : "Caixa Metálica de Proteção para Disjuntor Tipo CM-18 em Chapa de Aço";
-  const cxDisjPreco = getPreco(cxDisjCodigo, usaCM9 ? 180 : 210);
 
-  itensSugeridos.push({
-    codigo: cxDisjCodigo,
-    descricao: cxDisjDesc,
-    categoria: "CAIXA",
-    unidade: "un",
-    quantidade: 1,
-    precoUnitarioEstimado: cxDisjPreco,
-    precoTotal: cxDisjPreco,
-    obrigatorioNorma: true,
-    nota: usaCM9
-      ? "Caixa de proteção CM-9 permitida para faixas F1 e F2 (Nota 6 da Tabela 4)."
-      : "Caixa de proteção reforçada CM-18 com barramentos para disjuntores caixa moldada (Nota 6)."
-  });
+  if (params.preferirKitProntoCaixas) {
+    const kitCodigo = usaCM9 ? "KIT-PADRAO-CM09-CM04" : "KIT-PADRAO-CM18-CM04";
+    const kitDesc = usaCM9
+      ? "Conjunto Padrão Caixa CM-09 + Caixa CM-04 com Barramento sem disjuntor"
+      : "Conjunto Padrão Caixa CM-18 + Caixa CM-04 com Barramento sem disjuntor";
+    const kitPreco = getPreco(kitCodigo, usaCM9 ? 1250 : 1480);
+
+    itensSugeridos.push({
+      codigo: kitCodigo,
+      descricao: kitDesc,
+      categoria: "CAIXA",
+      unidade: "cj",
+      quantidade: 1,
+      precoUnitarioEstimado: kitPreco,
+      precoTotal: kitPreco,
+      obrigatorioNorma: true,
+      nota: usaCM9
+        ? "Conjunto montado de fábrica com Caixa CM-09 + Caixa CM-04 com barramento de cobre dimensionado homologado CEMIG ND-5.1 sem disjuntor."
+        : "Conjunto montado de fábrica com Caixa CM-18 reforçada + Caixa CM-04 com barramento de cobre dimensionado homologado CEMIG ND-5.1 sem disjuntor."
+    });
+  } else {
+    // Caixa CM-4 para Medição Indireta (3 TCs + Medidor)
+    itensSugeridos.push({
+      codigo: "CX-CM4",
+      descricao: "Caixa Metálica de Medição Tipo CM-4 em Chapa de Aço (TCs e Medição Indireta CEMIG)",
+      categoria: "CAIXA",
+      unidade: "un",
+      quantidade: 1,
+      precoUnitarioEstimado: getPreco("CX-CM4", 580),
+      precoTotal: getPreco("CX-CM4", 580),
+      obrigatorioNorma: true,
+      nota: "Abriga os 3 Transformadores de Corrente (TCs) e o medidor eletrônico de 3 elementos (ND 5.1 Desenho 36 e 46)."
+    });
+
+    // Caixa para Disjuntor Geral (CM-9 ou CM-18 para F1/F2; CM-18 obrigatória para F3 a F9)
+    const cxDisjCodigo = usaCM9 ? "CX-CM9" : "CX-CM18";
+    const cxDisjDesc = usaCM9
+      ? "Caixa Metálica de Proteção para Disjuntor Geral Tipo CM-9 em Chapa de Aço c/ lacre"
+      : "Caixa Metálica de Proteção para Disjuntor Tipo CM-18 em Chapa de Aço";
+    const cxDisjPreco = getPreco(cxDisjCodigo, usaCM9 ? 180 : 210);
+
+    itensSugeridos.push({
+      codigo: cxDisjCodigo,
+      descricao: cxDisjDesc,
+      categoria: "CAIXA",
+      unidade: "un",
+      quantidade: 1,
+      precoUnitarioEstimado: cxDisjPreco,
+      precoTotal: cxDisjPreco,
+      obrigatorioNorma: true,
+      nota: usaCM9
+        ? "Caixa de proteção CM-9 permitida para faixas F1 e F2 (Nota 6 da Tabela 4)."
+        : "Caixa de proteção reforçada CM-18 com barramentos para disjuntores caixa moldada (Nota 6)."
+    });
+  }
 
   // Interligação de Proteção entre Caixas (Desenho 46 e Nota 3)
   itensSugeridos.push({
@@ -782,30 +844,33 @@ export function dimensionarPadraoTabela4(
   });
 
   // Barra Chata para Fases: se CM-18, selecionada diretamente da Tabela Copperbarras
-  if (usaCM9) {
-    itensSugeridos.push({
-      codigo: "BARRAMENTO-FASE-ISOLADO-ALTA",
-      descricao: "Barramento de Cobre Eletrolítico para Fases c/ Isoladores Epóxi (Desenho 46)",
-      categoria: "ACESSORIO",
-      unidade: "m",
-      quantidade: 3,
-      precoUnitarioEstimado: getPreco("BARRAMENTO-FASE-ISOLADO-ALTA", 195),
-      precoTotal: 3 * getPreco("BARRAMENTO-FASE-ISOLADO-ALTA", 195),
-      obrigatorioNorma: true,
-      nota: "3 metros de barramento de cobre eletrolítico para fases R, S e T na caixa CM-9."
-    });
-  } else {
-    itensSugeridos.push({
-      codigo: barramentoCM18Info.codigoMaterial,
-      descricao: barramentoCM18Info.descricaoMaterial,
-      categoria: "ACESSORIO",
-      unidade: "m",
-      quantidade: 3,
-      precoUnitarioEstimado: getPreco(barramentoCM18Info.codigoMaterial, barramentoCM18Info.precoEstimadoPorMetro),
-      precoTotal: 3 * getPreco(barramentoCM18Info.codigoMaterial, barramentoCM18Info.precoEstimadoPorMetro),
-      obrigatorioNorma: true,
-      nota: `3 metros de barra chata ${barramentoCM18Info.larguraPol} x ${barramentoCM18Info.espessuraPol} (${barramentoCM18Info.larguraMm} x ${barramentoCM18Info.espessuraMm} mm) da Copperbarras para fases R, S e T (Capacidade: ${barramentoCM18Info.capacidadeAmperes}A > ${disj}A nominal). Compatível com a largura máx. de ${sopranoInfo.larguraMaximaBarramentoMm} mm do disjuntor ${sopranoInfo.frame}.`
-    });
+  // 4. Barramento de Cobre (apenas se não selecionado kit pré-montado com barramento incluso)
+  if (!params.preferirKitProntoCaixas) {
+    if (usaCM9) {
+      itensSugeridos.push({
+        codigo: "BARRAMENTO-FASE-ISOLADO-ALTA",
+        descricao: "Barramento de Cobre Eletrolítico para Fases c/ Isoladores Epóxi (Desenho 46)",
+        categoria: "ACESSORIO",
+        unidade: "m",
+        quantidade: 3,
+        precoUnitarioEstimado: getPreco("BARRAMENTO-FASE-ISOLADO-ALTA", 195),
+        precoTotal: 3 * getPreco("BARRAMENTO-FASE-ISOLADO-ALTA", 195),
+        obrigatorioNorma: true,
+        nota: "3 metros de barramento de cobre eletrolítico para fases R, S e T na caixa CM-9."
+      });
+    } else {
+      itensSugeridos.push({
+        codigo: barramentoCM18Info.codigoMaterial,
+        descricao: barramentoCM18Info.descricaoMaterial,
+        categoria: "ACESSORIO",
+        unidade: "m",
+        quantidade: 3,
+        precoUnitarioEstimado: getPreco(barramentoCM18Info.codigoMaterial, barramentoCM18Info.precoEstimadoPorMetro),
+        precoTotal: 3 * getPreco(barramentoCM18Info.codigoMaterial, barramentoCM18Info.precoEstimadoPorMetro),
+        obrigatorioNorma: true,
+        nota: `3 metros de barra chata ${barramentoCM18Info.larguraPol} x ${barramentoCM18Info.espessuraPol} (${barramentoCM18Info.larguraMm} x ${barramentoCM18Info.espessuraMm} mm) da Copperbarras para fases R, S e T (Capacidade: ${barramentoCM18Info.capacidadeAmperes}A > ${disj}A nominal). Compatível com a largura máx. de ${sopranoInfo.larguraMaximaBarramentoMm} mm do disjuntor ${sopranoInfo.frame}.`
+      });
+    }
   }
 
   // 5. Condutores de Entrada em Cobre 0,6/1kV Subterrâneos (Nunca 750V)
@@ -910,67 +975,69 @@ export function dimensionarPadraoTabela4(
       obrigatorioNorma: true,
       nota: `3 unidades de terminal bandeira (1 por polo do disjuntor ${sopranoInfo.frame}) com ${caboVias} parafusos para conexão dos ${caboVias} cabos em paralelo por fase.`
     });
+  }
 
-    // E o terminal usado para os cabos é estritamente o terminal de compressão tipo olhal
+  if (tipoTerminalDisj === "PINO_MACICO" && !isMultiplosCabos) {
+    const termPinoCodigo = `TERM-PINO-MACICO-${caboGauge}`;
+    const termPinoPreco = getPreco(termPinoCodigo, caboGauge <= 50 ? 9.8 : caboGauge <= 70 ? 14.5 : caboGauge <= 95 ? 18.0 : caboGauge <= 120 ? 24.0 : caboGauge <= 150 ? 28.0 : caboGauge <= 185 ? 35.0 : 42.0);
+    itensSugeridos.push({
+      codigo: termPinoCodigo,
+      descricao: `Terminal Pino Maciço em Cobre Estanhado ${caboGauge} mm²`,
+      categoria: "ACESSORIO",
+      unidade: "un",
+      quantidade: qtdeTerminaisCabos,
+      precoUnitarioEstimado: termPinoPreco,
+      precoTotal: qtdeTerminaisCabos * termPinoPreco,
+      obrigatorioNorma: true,
+      nota: `${qtdeTerminaisCabos} terminais tipo pino maciço para entrada direta nos bornes túnel do disjuntor e conexões dos barramentos.`
+    });
+  } else if (tipoTerminalDisj === "TUBULAR") {
+    const termTubularCodigo = `TERM-TUBULAR-${caboGauge}`;
+    const termTubularPreco = getPreco(termTubularCodigo, getPreco(`TERM-COMPRESSAO-${caboGauge}`, caboGauge <= 50 ? 7.5 : caboGauge <= 70 ? 10.5 : caboGauge <= 95 ? 13.5 : caboGauge <= 120 ? 16.5 : caboGauge <= 150 ? 20.0 : caboGauge <= 185 ? 25.0 : 32.0));
+    itensSugeridos.push({
+      codigo: termTubularCodigo,
+      descricao: `Terminal Tubular em Cobre Estanhado ${caboGauge} mm²`,
+      categoria: "ACESSORIO",
+      unidade: "un",
+      quantidade: qtdeTerminaisCabos,
+      precoUnitarioEstimado: termTubularPreco,
+      precoTotal: qtdeTerminaisCabos * termTubularPreco,
+      obrigatorioNorma: true,
+      nota: `${qtdeTerminaisCabos} terminais tubulares em cobre estanhado para conexão nos bornes do disjuntor e barramentos.`
+    });
+  } else {
     const termOlhalCodigo = `TERM-COMPRESSAO-${caboGauge}`;
-    const termOlhalPreco = getPreco(termOlhalCodigo, caboGauge === 120 ? 18.5 : caboGauge === 150 ? 22 : caboGauge === 185 ? 28 : 36);
+    const termOlhalPreco = getPreco(termOlhalCodigo, caboGauge <= 50 ? 8.5 : caboGauge <= 70 ? 12.0 : caboGauge <= 95 ? 15.0 : caboGauge <= 120 ? 18.5 : caboGauge <= 150 ? 22 : caboGauge <= 185 ? 28 : 36);
     itensSugeridos.push({
       codigo: termOlhalCodigo,
-      descricao: `Terminal de Compressão Tubular/Olhal em Cobre Estanhado ${caboGauge} mm²`,
+      descricao: `Terminal Olhal de Compressão em Cobre Estanhado ${caboGauge} mm²`,
       categoria: "ACESSORIO",
       unidade: "un",
       quantidade: qtdeTerminaisCabos,
       precoUnitarioEstimado: termOlhalPreco,
       precoTotal: qtdeTerminaisCabos * termOlhalPreco,
       obrigatorioNorma: true,
-      nota: `${qtdeTerminaisCabos} terminais de compressão tipo olhal para fixação aparafusada nos terminais bandeira do disjuntor e barramentos da CM-18.`
+      nota: `${qtdeTerminaisCabos} terminais olhal de compressão em cobre estanhado para fixação aparafusada no disjuntor e barramentos.`
     });
-  } else {
-    // Quando chega apenas 1 cabo no disjuntor (caboVias === 1):
-    // Entra direto no disjuntor com terminal de compressão olhal ou pino maciço (depende da conexão do disjuntor)
-    if (tipoTerminalDisj === "PINO_MACICO") {
-      const termPinoCodigo = `TERM-PINO-MACICO-${caboGauge}`;
-      const termPinoPreco = getPreco(termPinoCodigo, caboGauge <= 50 ? 9.8 : caboGauge <= 70 ? 14.5 : caboGauge <= 95 ? 18.0 : caboGauge <= 120 ? 24.0 : caboGauge <= 150 ? 28.0 : caboGauge <= 185 ? 35.0 : 42.0);
-      itensSugeridos.push({
-        codigo: termPinoCodigo,
-        descricao: `Terminal Pino Maciço em Cobre Estanhado ${caboGauge} mm²`,
-        categoria: "ACESSORIO",
-        unidade: "un",
-        quantidade: qtdeTerminaisCabos,
-        precoUnitarioEstimado: termPinoPreco,
-        precoTotal: qtdeTerminaisCabos * termPinoPreco,
-        obrigatorioNorma: true,
-        nota: `${qtdeTerminaisCabos} terminais tipo pino maciço para entrada direta nos bornes túnel do disjuntor e conexões dos barramentos.`
-      });
-    } else {
-      const termOlhalCodigo = `TERM-COMPRESSAO-${caboGauge}`;
-      const termOlhalPreco = getPreco(termOlhalCodigo, caboGauge <= 50 ? 8.5 : caboGauge <= 70 ? 12.0 : caboGauge <= 95 ? 15.0 : caboGauge <= 120 ? 18.5 : caboGauge <= 150 ? 22 : caboGauge <= 185 ? 28 : 36);
-      itensSugeridos.push({
-        codigo: termOlhalCodigo,
-        descricao: `Terminal de Compressão Tubular/Olhal em Cobre Estanhado ${caboGauge} mm²`,
-        categoria: "ACESSORIO",
-        unidade: "un",
-        quantidade: qtdeTerminaisCabos,
-        precoUnitarioEstimado: termOlhalPreco,
-        precoTotal: qtdeTerminaisCabos * termOlhalPreco,
-        obrigatorioNorma: true,
-        nota: `${qtdeTerminaisCabos} terminais de compressão tipo olhal para entrada direta nos bornes aparafusados do disjuntor e barramentos.`
-      });
-    }
   }
 
   // Terminais Especiais de Aterramento (Solicitados pelo Usuário)
-  // 1. 02 terminais de compressão 10 mm² com isolação para o cabo de aterramento da caixa CM-04
+  // 1. 02 terminais 10 mm² com isolação para o cabo de aterramento da caixa CM-04
+  const usaTubular10 = tipoTerminalDisj === "TUBULAR";
+  const term10Cod = usaTubular10 ? "TERM-TUBULAR-10-ISOLADO" : "TERM-COMPRESSAO-10-ISOLADO";
+  const term10Preco = getPreco(term10Cod, getPreco("TERM-COMPRESSAO-10-ISOLADO", 4.5));
   itensSugeridos.push({
-    codigo: "TERM-COMPRESSAO-10-ISOLADO",
-    descricao: "Terminal de Compressão Tubular c/ Isolação para Cabo 10 mm² (Aterramento Caixa CM-4)",
+    codigo: term10Cod,
+    descricao: usaTubular10
+      ? "Terminal Tubular c/ Isolação para Cabo 10 mm² (Aterramento Caixa CM-4)"
+      : "Terminal Olhal de Compressão para Cabo 10 mm² (Aterramento Caixa CM-4)",
     categoria: "ACESSORIO",
     unidade: "un",
     quantidade: 2,
-    precoUnitarioEstimado: getPreco("TERM-COMPRESSAO-10-ISOLADO", 4.5),
-    precoTotal: 2 * getPreco("TERM-COMPRESSAO-10-ISOLADO", 4.5),
+    precoUnitarioEstimado: term10Preco,
+    precoTotal: 2 * term10Preco,
     obrigatorioNorma: true,
-    nota: "2 terminais com isolação para conexão do condutor de proteção de 10 mm² na carcaça da CM-4."
+    nota: "2 terminais para conexão do condutor de proteção de 10 mm² na carcaça da CM-4."
   });
 
   // 2. 02 terminais de aterramento caixa padrão cemig
@@ -986,23 +1053,135 @@ export function dimensionarPadraoTabela4(
     nota: "2 conectores homologados CEMIG para fixação mecânica e aterramento das carcaças metálicas."
   });
 
-  // 3. 02 terminais compressão cabo 16mm² para o cabo de aterramento que vem das hastes
+  // 3. 02 terminais cabo 16mm² para o cabo de aterramento que vem das hastes
+  const term16Cod = tipoTerminalDisj === "TUBULAR" ? "TERM-TUBULAR-16" : "TERM-COMPRESSAO-16";
+  const term16Preco = getPreco(term16Cod, getPreco("TERM-COMPRESSAO-16", 8.0));
   itensSugeridos.push({
-    codigo: "TERM-COMPRESSAO-16",
-    descricao: "Terminal de Compressão para Cabo 16 mm² (Conexão Malha de Aterramento)",
+    codigo: term16Cod,
+    descricao: tipoTerminalDisj === "TUBULAR"
+      ? "Terminal Tubular em Cobre Estanhado 16 mm² (Conexão Malha de Aterramento)"
+      : "Terminal Olhal de Compressão em Cobre Estanhado 16 mm² (Conexão Malha de Aterramento)",
     categoria: "ACESSORIO",
     unidade: "un",
     quantidade: 2,
-    precoUnitarioEstimado: getPreco("TERM-COMPRESSAO-16", 8.0),
-    precoTotal: 2 * getPreco("TERM-COMPRESSAO-16", 8.0),
+    precoUnitarioEstimado: term16Preco,
+    precoTotal: 2 * term16Preco,
     obrigatorioNorma: true,
     nota: "2 terminais para terminação do condutor de cobre nu 16 mm² proveniente das hastes de aterramento."
   });
 
-  // 6. Duto Corrugado PEAD 3" (5m na entrada + 5m na saída por eletroduto)
-  // Substitui eletrodutos rígidos e curvas conforme instrução do usuário
+  // 6. Eletrodutos Galvanizados a Fogo, Curvas 90º e Acessórios Normativos (Tabela 4 CEMIG ND-5.1)
+  const numDescidas = match.numDescidas;
+  const galvDN = match.eletrodutoGalvDN;
+  const galvPol = match.eletrodutoGalvPol;
+  const qtdeBarrasEletroduto = 2 * numDescidas; // 02 eletrodutos galvanizados a fogo de 3m por descida
+  const qtdeCurvas90 = numDescidas; // 1 curva 90º galvanizada a fogo por descida
+  const qtdeCaixasSubt = typeof params.qtdeCaixasSubterraneas === "number" ? Math.max(0, params.qtdeCaixasSubterraneas) : 2;
+
+  // 6.1 Eletrodutos de Aço Carbono Galvanizado a Fogo (NBR 5598 / NBR 5597)
+  const eletroAcoCodigo = `ELETRODUTO-ACO-GALV-FOGO-${galvDN}`;
+  const eletroAcoPreco = getPreco(eletroAcoCodigo, galvDN === 80 ? 220 : 295);
+  itensSugeridos.push({
+    codigo: eletroAcoCodigo,
+    descricao: `Eletroduto de Aço Carbono Galvanizado a Fogo NBR 5598 Ø ${galvDN} mm (${galvPol}) - Barra 3m`,
+    categoria: "ELETRODUTO",
+    unidade: "br",
+    quantidade: qtdeBarrasEletroduto,
+    precoUnitarioEstimado: eletroAcoPreco,
+    precoTotal: qtdeBarrasEletroduto * eletroAcoPreco,
+    obrigatorioNorma: true,
+    nota: `${qtdeBarrasEletroduto} barras de 3m de eletroduto galvanizado a fogo (2 barras por descida, totalizando ${numDescidas} descida(s) de Ø ${galvDN} mm / ${galvPol}) conforme Tabela 4 CEMIG ND-5.1.`
+  });
+
+  // 6.2 Curva 90º de Aço Galvanizado a Fogo
+  const curvaAcoCodigo = `CURVA-90-ACO-GALV-FOGO-${galvDN}`;
+  const curvaAcoPreco = getPreco(curvaAcoCodigo, galvDN === 80 ? 95 : 145);
+  itensSugeridos.push({
+    codigo: curvaAcoCodigo,
+    descricao: `Curva 90º de Aço Galvanizado a Fogo Roscável Ø ${galvDN} mm (${galvPol})`,
+    categoria: "ELETRODUTO",
+    unidade: "un",
+    quantidade: qtdeCurvas90,
+    precoUnitarioEstimado: curvaAcoPreco,
+    precoTotal: qtdeCurvas90 * curvaAcoPreco,
+    obrigatorioNorma: true,
+    nota: `${qtdeCurvas90} curva(s) 90º de aço galvanizado a fogo (1 por descida de Ø ${galvDN} mm / ${galvPol}) para transição na base do poste/mureta (Tabela 4 CEMIG ND-5.1).`
+  });
+
+  // 6.3 Massa de Calafetar (1 kg em todos os padrões Categoria F)
+  itensSugeridos.push({
+    codigo: "MAT-MASSA-CALAFETAR-1KG",
+    descricao: "Massa de Calafetar para Vedação contra Umidade (Embalagem 1 kg) - Norma CEMIG ND-5.1",
+    categoria: "ACESSORIO",
+    unidade: "kg",
+    quantidade: 1,
+    precoUnitarioEstimado: getPreco("MAT-MASSA-CALAFETAR-1KG", 28.0),
+    precoTotal: getPreco("MAT-MASSA-CALAFETAR-1KG", 28.0),
+    obrigatorioNorma: true,
+    nota: "1 kg de massa de calafetar para vedação estanque contra entrada de umidade nas caixas de medição e proteção (Item 7.5.2 ND-5.1)."
+  });
+
+  // 6.4 Fita Fusimec (4 metros em todos os padrões Categoria F)
+  itensSugeridos.push({
+    codigo: "FITA-FUSIMEC-ALTA-ISOLACAO",
+    descricao: "Fita de Autofusão Fusimec para Alta Isolação Dielétrica",
+    categoria: "ACESSORIO",
+    unidade: "m",
+    quantidade: 4,
+    precoUnitarioEstimado: getPreco("FITA-FUSIMEC-ALTA-ISOLACAO", 16.5),
+    precoTotal: 4 * getPreco("FITA-FUSIMEC-ALTA-ISOLACAO", 16.5),
+    obrigatorioNorma: true,
+    nota: "4 metros de fita Fusimec de autofusão para isolação dielétrica e estanqueidade de conexões subterrâneas e barramentos."
+  });
+
+  // 6.5 Presilhas Metálicas para Fita Fusimec (5 unidades em todos os padrões Categoria F)
+  itensSugeridos.push({
+    codigo: "PRESILHA-FITA-FUSIMEC",
+    descricao: "Presilha Metálica para Fixação e Amarração de Fita Fusimec",
+    categoria: "ACESSORIO",
+    unidade: "un",
+    quantidade: 5,
+    precoUnitarioEstimado: getPreco("PRESILHA-FITA-FUSIMEC", 2.5),
+    precoTotal: 5 * getPreco("PRESILHA-FITA-FUSIMEC", 2.5),
+    obrigatorioNorma: true,
+    nota: "5 presilhas metálicas para travamento e fixação mecânica da fita Fusimec nas terminações."
+  });
+
+  // 6.6 Niples PVC Roscáveis do diâmetro do eletroduto proporcional às descidas e caixas Z (2 por caixa Z por descida + 2 na CM-9/18 por descida)
+  const qtdeNiplesTotal = (qtdeCaixasSubt + 1) * 2 * numDescidas;
+  const nipleCodigo = `NIPLE-PVC-ROSCAVEL-${galvDN}`;
+  const niplePreco = getPreco(nipleCodigo, galvDN === 80 ? 24.0 : 36.0);
+  itensSugeridos.push({
+    codigo: nipleCodigo,
+    descricao: `Niple Roscável de PVC Rígido Ø ${galvDN} mm (${galvPol}) para Acoplamento de Caixas`,
+    categoria: "ELETRODUTO",
+    unidade: "un",
+    quantidade: qtdeNiplesTotal,
+    precoUnitarioEstimado: niplePreco,
+    precoTotal: qtdeNiplesTotal * niplePreco,
+    obrigatorioNorma: true,
+    nota: `${qtdeNiplesTotal} niples PVC Ø ${galvDN} mm (${qtdeCaixasSubt * 2 * numDescidas} un para ${qtdeCaixasSubt} caixa(s) de passagem Z + ${2 * numDescidas} un para caixa ${usaCM9 ? "CM-9" : "CM-18"}). Proporcional a ${numDescidas} descida(s).`
+  });
+
+  // 6.7 Buchas e Arruelas PVC do diâmetro do eletroduto proporcional às descidas e caixas Z (2 por caixa Z por descida + 2 na CM-9/18 por descida)
+  const qtdeBuchasTotal = (qtdeCaixasSubt + 1) * 2 * numDescidas;
+  const buchaCodigo = `BUCHA-ARRUELA-PVC-${galvDN}`;
+  const buchaPreco = getPreco(buchaCodigo, galvDN === 80 ? 32.0 : 45.0);
+  itensSugeridos.push({
+    codigo: buchaCodigo,
+    descricao: `Conjunto Bucha e Arruela de PVC Roscável Ø ${galvDN} mm (${galvPol}) para Terminação de Eletroduto`,
+    categoria: "ELETRODUTO",
+    unidade: "cj",
+    quantidade: qtdeBuchasTotal,
+    precoUnitarioEstimado: buchaPreco,
+    precoTotal: qtdeBuchasTotal * buchaPreco,
+    obrigatorioNorma: true,
+    nota: `${qtdeBuchasTotal} conjuntos bucha e arruela PVC Ø ${galvDN} mm (${qtdeCaixasSubt * 2 * numDescidas} cj para ${qtdeCaixasSubt} caixa(s) de passagem Z + ${2 * numDescidas} cj para caixa ${usaCM9 ? "CM-9" : "CM-18"}). Proporcional a ${numDescidas} descida(s).`
+  });
+
+  // 6.8 Duto Corrugado PEAD Flexível para trecho enterrado (5m entrada + 5m saída por circuito)
   const eletroVias = match.eletrodutoCuVias;
-  const metrosDutoTotal = eletroVias * 10; // 5m para cada entrada e 5m para cada saída por eletroduto
+  const metrosDutoTotal = eletroVias * 10;
   const dutoCodigo = "DUTO-CORRUGADO-PEAD-3POL";
   const dutoPreco = getPreco(dutoCodigo, 38.0);
   itensSugeridos.push({
@@ -1014,22 +1193,7 @@ export function dimensionarPadraoTabela4(
     precoUnitarioEstimado: dutoPreco,
     precoTotal: metrosDutoTotal * dutoPreco,
     obrigatorioNorma: true,
-    nota: `${eletroVias} linha(s) de duto corrugado PEAD 3": 5 metros para cada entrada e 5 metros para cada saída subterrânea.`
-  });
-
-  // Buchas e Arruelas de vedação para entrada nas caixas
-  const qtdeBuchas = eletroVias * 2;
-  const buchaCodigo = "BUCHA-ARRUELA-PVC-85";
-  const buchaPreco = getPreco(buchaCodigo, 56);
-  itensSugeridos.push({
-    codigo: buchaCodigo,
-    descricao: 'Bucha e Arruela de PVC Roscável Ø 85 mm (3") p/ Fixação nas Caixas',
-    categoria: "ELETRODUTO",
-    unidade: "cj",
-    quantidade: qtdeBuchas,
-    precoUnitarioEstimado: buchaPreco,
-    precoTotal: qtdeBuchas * buchaPreco,
-    obrigatorioNorma: true
+    nota: `${eletroVias} linha(s) de duto corrugado PEAD 3": 5 metros para cada entrada e 5 metros para cada saída subterrânea na vala técnica.`
   });
 
   // 7. Aterramento Normativo Tabela 4 (3 hastes cantoneiras galvanizadas a fogo + cabo nu 16 mm²)
@@ -1082,7 +1246,7 @@ export function dimensionarPadraoTabela4(
     nota: "Condutor de aterramento da malha com seção mínima de 16 mm² conforme Tabela 4."
   });
 
-  // 8. Infraestrutura Subterrânea - Caixa Tipo ZC vs Tipo ZD (ND-2.3 / ND-5.1)
+  // 8. Infraestrutura Subterrânea - Caixas Tipo ZC vs Tipo ZD (Sempre 2 por padrão conforme solicitação; projetista pode alterar)
   const usaZD = params.tipoCaixaSubterranea === "ZD";
   const cxSubtCodigo = usaZD ? "CX-SUBTERRANEA-ZD" : "CX-SUBTERRANEA-ZC";
   const cxSubtDesc = usaZD
@@ -1090,51 +1254,55 @@ export function dimensionarPadraoTabela4(
     : "Caixa Subterrânea de Passagem Tipo ZC em Alvenaria/Concreto (77 x 67 x 90 cm - Norma CEMIG ND-2.3 / ND-5.1)";
   const cxSubtPreco = getPreco(cxSubtCodigo, usaZD ? 1250 : 750);
 
-  itensSugeridos.push({
-    codigo: cxSubtCodigo,
-    descricao: cxSubtDesc,
-    categoria: "ACESSORIO",
-    unidade: "un",
-    quantidade: 1,
-    precoUnitarioEstimado: cxSubtPreco,
-    precoTotal: cxSubtPreco,
-    obrigatorioNorma: true,
-    nota: usaZD
-      ? "Caixa tipo ZD com maiores dimensões para pista de rolamento, conexões de derivação com barramentos BTX ou múltiplos circuitos."
-      : "Caixa subterrânea padrão tipo ZC para passeio/calçada em ramais de entrada subterrâneos."
-  });
+  if (qtdeCaixasSubt > 0) {
+    itensSugeridos.push({
+      codigo: cxSubtCodigo,
+      descricao: cxSubtDesc,
+      categoria: "ACESSORIO",
+      unidade: "un",
+      quantidade: qtdeCaixasSubt,
+      precoUnitarioEstimado: cxSubtPreco,
+      precoTotal: qtdeCaixasSubt * cxSubtPreco,
+      obrigatorioNorma: true,
+      nota: usaZD
+        ? `${qtdeCaixasSubt} caixa(s) tipo ZD com maiores dimensões para pista de rolamento, conexões de derivação ou múltiplos circuitos.`
+        : `${qtdeCaixasSubt} caixa(s) subterrânea(s) padrão tipo ZC para passeio/calçada em ramais de entrada subterrâneos.`
+    });
 
-  // Tampa de Ferro Fundido da Caixa Subterrânea (Item Separado na Lista)
-  const tampaSubtCodigo = usaZD ? "TAMPA-FOFO-ZD" : "TAMPA-FOFO-ZC";
-  const tampaSubtDesc = usaZD
-    ? "Tampa e Aro de Ferro Fundido Nodular Reforçada Articulada Tipo ZD (Classe 125/250 kN - Padrão CEMIG)"
-    : "Tampa e Aro de Ferro Fundido Nodular Articulada Tipo ZC (Padrão CEMIG)";
-  const tampaSubtPreco = getPreco(tampaSubtCodigo, usaZD ? 850 : 480);
+    // Tampa de Ferro Fundido da Caixa Subterrânea (Acompanha a quantidade de caixas Z)
+    const tampaSubtCodigo = usaZD ? "TAMPA-FOFO-ZD" : "TAMPA-FOFO-ZC";
+    const tampaSubtDesc = usaZD
+      ? "Tampa e Aro de Ferro Fundido Nodular Reforçada Articulada Tipo ZD (Classe 125/250 kN - Padrão CEMIG)"
+      : "Tampa e Aro de Ferro Fundido Nodular Articulada Tipo ZC (Padrão CEMIG)";
+    const tampaSubtPreco = getPreco(tampaSubtCodigo, usaZD ? 850 : 480);
 
-  itensSugeridos.push({
-    codigo: tampaSubtCodigo,
-    descricao: tampaSubtDesc,
-    categoria: "ACESSORIO",
-    unidade: "un",
-    quantidade: 1,
-    precoUnitarioEstimado: tampaSubtPreco,
-    precoTotal: tampaSubtPreco,
-    obrigatorioNorma: true,
-    nota: "Tampa e aro em ferro fundido nodular com inscrição CEMIG conforme padrão normativo."
-  });
+    itensSugeridos.push({
+      codigo: tampaSubtCodigo,
+      descricao: tampaSubtDesc,
+      categoria: "ACESSORIO",
+      unidade: "un",
+      quantidade: qtdeCaixasSubt,
+      precoUnitarioEstimado: tampaSubtPreco,
+      precoTotal: qtdeCaixasSubt * tampaSubtPreco,
+      obrigatorioNorma: true,
+      nota: `${qtdeCaixasSubt} tampa(s) e aro em ferro fundido nodular acompanhando a quantidade de caixas ${usaZD ? "ZD" : "ZC"}.`
+    });
 
-  // Brita nº 1: 3 sacos sempre para camada drenante
-  itensSugeridos.push({
-    codigo: "BRITA-1-DRAIN",
-    descricao: "Brita nº 1 para Drenagem de Caixa de Passagem/Inspeção (Saco 20kg)",
-    categoria: "ACESSORIO",
-    unidade: "un",
-    quantidade: 3,
-    precoUnitarioEstimado: getPreco("BRITA-1-DRAIN", 18),
-    precoTotal: 3 * getPreco("BRITA-1-DRAIN", 18),
-    obrigatorioNorma: true,
-    nota: "3 sacos de brita nº 1 para drenagem de fundo da caixa subterrânea conforme Desenho 36."
-  });
+    // Brita nº 1: 3 sacos para cada caixa Z (6 sacos para 2 caixas)
+    const qtdeBritaSacos = 3 * qtdeCaixasSubt;
+    const britaPreco = getPreco("BRITA-1-DRAIN", 18);
+    itensSugeridos.push({
+      codigo: "BRITA-1-DRAIN",
+      descricao: "Brita nº 1 para Drenagem de Caixa de Passagem/Inspeção (Saco 20kg)",
+      categoria: "ACESSORIO",
+      unidade: "un",
+      quantidade: qtdeBritaSacos,
+      precoUnitarioEstimado: britaPreco,
+      precoTotal: qtdeBritaSacos * britaPreco,
+      obrigatorioNorma: true,
+      nota: `${qtdeBritaSacos} sacos de brita nº 1 (3 sacos por caixa de passagem ${usaZD ? "ZD" : "ZC"}) para drenagem de fundo conforme Desenho 36.`
+    });
+  }
 
   // 9. Suporte / Poste se Aéreo (F1/F2)
   let posteCodigo = "ESTRUTURA-MURO";
@@ -1216,13 +1384,13 @@ export function dimensionarPadraoTabela4(
     });
 
     itensSugeridos.push({
-      codigo: "SRV-BASE-CONCRETO",
+      codigo: "MAT-BASE-CONCRETO",
       descricao: "Material Civil para Base Concretada do Poste (Cimento, Areia, Brita)",
       categoria: "ACESSORIO",
       unidade: "cj",
       quantidade: 1,
-      precoUnitarioEstimado: getPreco("SRV-BASE-CONCRETO", 220),
-      precoTotal: getPreco("SRV-BASE-CONCRETO", 220),
+      precoUnitarioEstimado: getPreco("MAT-BASE-CONCRETO", getPreco("SRV-BASE-CONCRETO", 220)),
+      precoTotal: getPreco("MAT-BASE-CONCRETO", getPreco("SRV-BASE-CONCRETO", 220)),
       obrigatorioNorma: true,
       nota: "Obrigatório engastamento em base concretada conforme Nota 7 da Tabela 4."
     });
@@ -1264,8 +1432,8 @@ export function dimensionarPadraoTabela4(
       categoria: "MAO_DE_OBRA",
       unidade: "sv",
       quantidade: 1,
-      precoUnitarioEstimado: getPreco("SRV-VISTORIA-CEMIG", 600),
-      precoTotal: getPreco("SRV-VISTORIA-CEMIG", 600),
+      precoUnitarioEstimado: getPreco("SRV-VISTORIA-CEMIG", 450),
+      precoTotal: getPreco("SRV-VISTORIA-CEMIG", 450),
       obrigatorioNorma: false
     });
   }
@@ -1287,6 +1455,8 @@ export function dimensionarPadraoTabela4(
     isSubtObrigatorio
       ? `Ramal de Entrada Obrigatoriamente Subterrâneo conforme Nota 4 da Tabela 4 (demanda superior a 95 kVA).`
       : `Ramal de Entrada com atendimento ${isAerea ? "Aéreo multiplexado Al/XLPE Q-120" : "Subterrâneo em duto flexível PEAD"}.`,
+    `Eletrodutos de Descida: ${qtdeBarrasEletroduto} barras de 3m de aço galvanizado a fogo Ø ${galvDN} mm (${galvPol}) e ${qtdeCurvas90} curva(s) 90º galvanizada(s) (${numDescidas} descida(s) conforme Tabela 4 CEMIG ND-5.1).`,
+    `Acessórios e Vedação: 1 kg de massa de calafetar, 4m de fita Fusimec, 5 presilhas, ${qtdeNiplesTotal} niples PVC Ø ${galvDN} mm e ${qtdeBuchasTotal} buchas/arruelas PVC Ø ${galvDN} mm (distribuídos entre caixa subterrânea Z e caixa ${usaCM9 ? "CM-9" : "CM-18"}).`,
     `Infraestrutura Subterrânea: ${eletroVias} linha(s) de Duto Corrugado PEAD 3" (5m entrada + 5m saída) e Caixa de Passagem Tipo ${usaZD ? "ZD (100x75x120cm)" : "ZC (77x67x90cm)"} com tampa de ferro fundido.`,
     `Malha de Aterramento: 3 hastes cantoneiras de aço galvanizado a fogo (2,40m), 3 caixas de inspeção com tampa de ferro fundido e cabo de cobre nu 16 mm².`
   ];
@@ -1326,6 +1496,13 @@ export function dimensionarPadraoTabela4(
     eletrodutoPVCmm: 85,
     eletrodutoPvcPol: "3\"",
     eletrodutoAcoMm: match.eletrodutoCuAco,
+    numDescidas,
+    eletrodutoGalvDN: galvDN,
+    eletrodutoGalvPol: galvPol,
+    eletrodutosQtdeBarras: qtdeBarrasEletroduto,
+    curvasGalvQtde: qtdeCurvas90,
+    niplesPvcQtde: qtdeNiplesTotal,
+    buchasArruelasPvcQtde: qtdeBuchasTotal,
     tcRelacao: `${match.tcRelacao} A (FT=2,0) - Fornecido pela CEMIG`,
     tcQuantidade: 3,
     posteHomologado,
@@ -1718,17 +1895,92 @@ export function dimensionarPadraoCemig(
     nota: isAerea ? "2 curvas S p/ saída aérea." : "1 curva S p/ saída subterrânea."
   });
 
+  const qtdeCaixasSubtTab12 = !isAerea
+    ? (typeof params.qtdeCaixasSubterraneas === "number" ? Math.max(0, params.qtdeCaixasSubterraneas) : 2)
+    : 0;
+  const qtdeBuchasArruelasTab12 = isAerea ? 2 : (qtdeCaixasSubtTab12 + 1) * 2;
+
   itensSugeridos.push({
     codigo: buchaArruelaCodigo,
-    descricao: `Bucha e Arruela de PVC Roscável Ø ${eletroMm} mm (${eletroPol}) p/ Fixação nas Caixas`,
+    descricao: `Conjunto Bucha e Arruela de PVC Roscável Ø ${eletroMm} mm (${eletroPol}) p/ Fixação nas Caixas`,
     categoria: "ELETRODUTO",
     unidade: "cj",
-    quantidade: 2,
+    quantidade: qtdeBuchasArruelasTab12,
     precoUnitarioEstimado: buchaArruelaPreco,
-    precoTotal: 2 * buchaArruelaPreco,
+    precoTotal: qtdeBuchasArruelasTab12 * buchaArruelaPreco,
     obrigatorioNorma: true,
-    nota: "Conexão e vedação do eletroduto na caixa de medição."
+    nota: isAerea
+      ? "Conexão e vedação do eletroduto na caixa de medição."
+      : `${qtdeBuchasArruelasTab12} conjuntos bucha e arruela PVC Ø ${eletroMm} mm (${qtdeCaixasSubtTab12 * 2} cj p/ ${qtdeCaixasSubtTab12} caixa(s) de passagem Z + 2 cj p/ caixa de medição).`
   });
+
+  if (!isAerea) {
+    const nipleTab12Codigo = `NIPLE-PVC-ROSCAVEL-${eletroMm}`;
+    const nipleTab12Preco = getPreco(nipleTab12Codigo, eletroMm <= 40 ? 12 : eletroMm <= 50 ? 15 : 22);
+    const qtdeNiplesTab12 = (qtdeCaixasSubtTab12 + 1) * 2;
+    itensSugeridos.push({
+      codigo: nipleTab12Codigo,
+      descricao: `Niple Roscável de PVC Rígido Ø ${eletroMm} mm (${eletroPol}) para Acoplamento de Caixas`,
+      categoria: "ELETRODUTO",
+      unidade: "un",
+      quantidade: qtdeNiplesTab12,
+      precoUnitarioEstimado: nipleTab12Preco,
+      precoTotal: qtdeNiplesTab12 * nipleTab12Preco,
+      obrigatorioNorma: true,
+      nota: `${qtdeNiplesTab12} niples PVC Ø ${eletroMm} mm (${qtdeCaixasSubtTab12 * 2} un p/ ${qtdeCaixasSubtTab12} caixa(s) de passagem Z + 2 un p/ caixa de medição).`
+    });
+
+    if (qtdeCaixasSubtTab12 > 0) {
+      const tipoCxTab12 = params.tipoCaixaSubterranea === "ZA" || params.tipoCaixaSubterranea === "ZB"
+        ? params.tipoCaixaSubterranea
+        : (disj >= 100 ? "ZB" : "ZA");
+      const cxTab12Codigo = `CX-SUBTERRANEA-${tipoCxTab12}`;
+      const cxTab12Desc = tipoCxTab12 === "ZB"
+        ? "Caixa Subterrânea de Passagem Tipo ZB em Alvenaria/Concreto (50 x 50 x 60 cm - Norma CEMIG ND-5.1)"
+        : "Caixa Subterrânea de Passagem Tipo ZA em Alvenaria/Concreto (30 x 30 x 40 cm - Norma CEMIG ND-5.1)";
+      const cxTab12Preco = getPreco(cxTab12Codigo, tipoCxTab12 === "ZB" ? 420 : 280);
+      itensSugeridos.push({
+        codigo: cxTab12Codigo,
+        descricao: cxTab12Desc,
+        categoria: "ACESSORIO",
+        unidade: "un",
+        quantidade: qtdeCaixasSubtTab12,
+        precoUnitarioEstimado: cxTab12Preco,
+        precoTotal: qtdeCaixasSubtTab12 * cxTab12Preco,
+        obrigatorioNorma: true,
+        nota: `${qtdeCaixasSubtTab12} caixa(s) subterrânea(s) de passagem Tipo ${tipoCxTab12} para saída subterrânea do padrão.`
+      });
+
+      const tampaTab12Codigo = `TAMPA-FOFO-${tipoCxTab12}`;
+      const tampaTab12Desc = `Tampa e Aro de Ferro Fundido Nodular Articulada Tipo ${tipoCxTab12} (Padrão CEMIG)`;
+      const tampaTab12Preco = getPreco(tampaTab12Codigo, tipoCxTab12 === "ZB" ? 320 : 210);
+      itensSugeridos.push({
+        codigo: tampaTab12Codigo,
+        descricao: tampaTab12Desc,
+        categoria: "ACESSORIO",
+        unidade: "un",
+        quantidade: qtdeCaixasSubtTab12,
+        precoUnitarioEstimado: tampaTab12Preco,
+        precoTotal: qtdeCaixasSubtTab12 * tampaTab12Preco,
+        obrigatorioNorma: true,
+        nota: `${qtdeCaixasSubtTab12} tampa(s) e aro em ferro fundido nodular acompanhando a quantidade de caixas ${tipoCxTab12}.`
+      });
+
+      const qtdeBritaTab12 = 3 * qtdeCaixasSubtTab12;
+      const britaTab12Preco = getPreco("BRITA-1-DRAIN", 18);
+      itensSugeridos.push({
+        codigo: "BRITA-1-DRAIN",
+        descricao: "Brita nº 1 para Drenagem de Caixa de Passagem/Inspeção (Saco 20kg)",
+        categoria: "ACESSORIO",
+        unidade: "un",
+        quantidade: qtdeBritaTab12,
+        precoUnitarioEstimado: britaTab12Preco,
+        precoTotal: qtdeBritaTab12 * britaTab12Preco,
+        obrigatorioNorma: true,
+        nota: `${qtdeBritaTab12} sacos de brita nº 1 (3 sacos por caixa de passagem ${tipoCxTab12}) para camada drenante.`
+      });
+    }
+  }
 
   // 6. Aterramento Normativo (Haste Galvanizada + Eletroduto 3/4" + Curva S 3/4" + Bucha/Arruela 3/4")
   itensSugeridos.push({
@@ -1811,9 +2063,13 @@ export function dimensionarPadraoCemig(
     termCodigo = `TERM-PINO-MACICO-${caboGauge}`;
     termDescricao = `Terminal Pino Maciço em Cobre Estanhado ${caboGauge} mm²`;
     termPrecoUnit = getPreco(termCodigo, caboGauge <= 16 ? 4.5 : caboGauge <= 25 ? 5.8 : caboGauge <= 35 ? 7.2 : caboGauge <= 50 ? 9.8 : caboGauge <= 70 ? 14.5 : 18.0);
+  } else if (tipoTerminalSel === "TUBULAR") {
+    termCodigo = `TERM-TUBULAR-${caboGauge}`;
+    termDescricao = `Terminal Tubular em Cobre Estanhado ${caboGauge} mm²`;
+    termPrecoUnit = getPreco(termCodigo, getPreco(`TERM-COMPRESSAO-${caboGauge}`, caboGauge <= 16 ? 2.5 : caboGauge <= 25 ? 3.2 : caboGauge <= 35 ? 3.8 : caboGauge <= 50 ? 7.5 : caboGauge <= 70 ? 10.5 : 13.5));
   } else {
     termCodigo = `TERM-COMPRESSAO-${caboGauge}`;
-    termDescricao = `Terminal de Compressão Tubular/Olhal em Cobre Estanhado ${caboGauge} mm²`;
+    termDescricao = `Terminal Olhal de Compressão em Cobre Estanhado ${caboGauge} mm²`;
     termPrecoUnit = getPreco(termCodigo, caboGauge <= 16 ? 2.8 : caboGauge <= 25 ? 3.5 : caboGauge <= 35 ? 4.2 : caboGauge <= 50 ? 8.5 : caboGauge <= 70 ? 12.0 : 15.0);
   }
 
@@ -1826,7 +2082,7 @@ export function dimensionarPadraoCemig(
     precoUnitarioEstimado: termPrecoUnit,
     precoTotal: termQtde * termPrecoUnit,
     obrigatorioNorma: true,
-    nota: `${termQtde} terminais de ${tipoTerminalSel === "PINO_MACICO" ? "pino maciço" : "compressão tipo olhal"} para conexão direta no disjuntor e medidor.`
+    nota: `${termQtde} terminais ${tipoTerminalSel === "PINO_MACICO" ? "de pino maciço" : tipoTerminalSel === "TUBULAR" ? "tubulares" : "olhal de compressão"} para conexão direta no disjuntor e medidor.`
   });
 
   // 8. Conectores Bimetálicos (2 un: 1 para neutro, 1 para terra)
@@ -1941,13 +2197,13 @@ export function dimensionarPadraoCemig(
   // Base Concretada para Poste
   if (params.tipoEstrutura === "POSTE_CONCRETO" || params.tipoEstrutura === "POSTE_ACO") {
     itensSugeridos.push({
-      codigo: "SRV-BASE-CONCRETO",
+      codigo: "MAT-BASE-CONCRETO",
       descricao: "Material Civil para Base Concretada do Poste (Cimento, Areia, Brita)",
       categoria: "ACESSORIO",
       unidade: "cj",
       quantidade: 1,
-      precoUnitarioEstimado: getPreco("SRV-BASE-CONCRETO", 220),
-      precoTotal: getPreco("SRV-BASE-CONCRETO", 220),
+      precoUnitarioEstimado: getPreco("MAT-BASE-CONCRETO", getPreco("SRV-BASE-CONCRETO", 220)),
+      precoTotal: getPreco("MAT-BASE-CONCRETO", getPreco("SRV-BASE-CONCRETO", 220)),
       obrigatorioNorma: true,
       nota: "Obrigatório engastamento em base concretada conforme Desenho 57."
     });

@@ -125,6 +125,9 @@ export interface ClientProjectData {
   meterNumber: string; // Número do Medidor da Concessionária
   standardBreakerA?: number; // Disjuntor do Padrão Atual (A) - opcional caso não conste na fatura
   standardCategory: string; // Categoria do Padrão Atual (ex: C1..C6, F1..F9, B1)
+  hasExistingStandard?: boolean; // Se o padrão de entrada já existe no local (padrão: true)
+  isNewConnection?: boolean; // Se é uma ligação nova / sem padrão existente no local (padrão: false)
+  targetNewCategory?: string; // Categoria do novo padrão a ser instalado caso seja ligação nova ou alteração (ex: 'C1'..'C6', 'F1'..'F9', 'A4')
   contractedDemandKW?: number;
   utilityBillFileName?: string;
   utilityBillFileUrl?: string;
@@ -145,6 +148,17 @@ export interface ClientProjectData {
   fieldBoxType?: 'policarbonato_atual' | 'chapa_antiga_cm1' | 'desconhecido'; // Tipo de caixa existente
   hasCustomerModifiedBreaker?: boolean; // Suspeita/Confirmação de alteração do disjuntor sem troca da fiação
   fieldInspectionConfirmed?: boolean; // Termo de validação técnica do projetista
+
+  // ─── Especificações Físicas do Padrão CEMIG ND-5.1 (Passo 2A) ───────────────
+  standardSideOfStreet?: 'MESMO_LADO' | 'LADO_OPOSTO'; // Lado da via em relação à rede (A favor vs Contra/Travessia)
+  standardExitType?: 'SUBTERRANEA' | 'AEREA'; // Tipo de saída do padrão até a edificação/painel
+  standardStructureType?: 'POSTE_CONCRETO' | 'POSTE_ACO' | 'MURO'; // Tipo de estrutura física do padrão
+  standardLocation?: 'URBANO' | 'RURAL'; // Localização geográfica (Urbano vs Rural)
+  standardBoxChoiceTabela4?: 'CM-9' | 'CM-18'; // Caixa de proteção do disjuntor para F1/F2
+  preferKitProntoCaixas?: boolean; // Preferir kit pré-montado de fábrica (CM-09/18 + CM-04 com barramento sem disjuntor)
+  standardTerminalType?: 'COMPRESSAO_OLHAL' | 'TUBULAR'; // Tipo de terminal do projeto: Terminal Olhal de Compressão vs Terminal Tubular
+  selectedLoads220V?: Record<string, boolean>; // Cargas habilitadas/desabilitadas no Quadro 220V
+  selectedLoads380V?: Record<string, boolean>; // Cargas habilitadas/desabilitadas no Quadro 380V
 
   // ─── Parâmetros de Topologia em Cadeia NBR 5410 & NBR 17019 ──────────────────
   section1DistanceM?: number;
@@ -174,6 +188,70 @@ export interface ClientProjectData {
   // ─── Extração de Curva Real SmartMeter ────────────────────────────────────
   smartMeterExtractionMode?: RealCurveExtractionMode;
   smartMeterWorstDayDate?: string;
+
+  // ─── Inteligência Locacional AHP & Projeções Salvas no Projeto (Passo 1B) ──
+  applicationMode?: string;
+  ahpNiche?: string;
+  ahpVdm?: number;
+  ahpFleetDensityPercent?: number;
+  ahpFleetCount?: number;
+  ahpCommercialAnchor?: string;
+  ahpGridCategory?: string;
+  ahpIsVerticalHousing?: boolean;
+  ahpTariffBRL?: number;
+  ahpEnergyCostBRL?: number;
+  ahpCapexBRL?: number;
+  ahpSessionMinutes?: number;
+  ahpTotalScore?: number;
+  ahpRating?: string;
+  ahpCityKey?: string;
+  ahpCityTotalVehicles?: number;
+  ahpCityEvVehicles?: number;
+  ahpCorridorFactor?: number;
+  ahpFleetSourceMode?: 'censo_municipal' | 'manual_override';
+  ahpVdmSourceMode?: 'osm_hcm' | 'dnit_corridor' | 'field_count' | 'manual_override';
+  ahpRoadHierarchy?: string;
+  ahpRoadLanes?: number;
+  ahpRoadOneway?: boolean;
+  ahpCorridorPresetKey?: string;
+  ahpFieldCountVehicles?: number;
+  ahpFieldCountMinutes?: number;
+  ahpFieldKFactor?: number;
+  ahpFieldDirectionMode?: 'ambos_sem_canteiro' | 'um_sentido_mao_dupla' | 'ambos_com_canteiro' | 'sentido_porta';
+  ahpSolarEnergyCostBRL?: number;
+  ahpEnergySourceMode?: 'concessionaria' | 'solar' | 'hibrido';
+  ahpSolarSharePercent?: number;
+  ahpRealEstateModel?: string;
+  ahpRevenueSharePercent?: number;
+  ahpFixedRentBRL?: number;
+  ahpVariableOpexPercent?: number;
+  ahpFixedOpexBRL?: number;
+  ahpCustomRealEstateModels?: Array<{
+    id: string;
+    label: string;
+    fixedRentBRL: number;
+    revenueSharePercent: number;
+    basis: 'gross' | 'net_margin';
+  }>;
+  ahpCustomCompetitors?: CompetitorStationFeature[];
+}
+
+export interface CompetitorStationFeature {
+  id: string;
+  nome: string;
+  latitude: number;
+  longitude: number;
+  distancia_km: number;
+  distancia_rota_km?: number;
+  potencia_kw: number;
+  tipo_recarga: 'DC_RAPIDO' | 'AC_LENTO';
+  operador: string;
+  endereco: string;
+  origem: 'MANUAL_PLUGSHARE' | 'GOOGLE_PLACES' | 'OPENSTREETMAP';
+  status: 'Disponível' | 'Ocupado' | 'Manutenção';
+  conectores?: string[];
+  isCalibrated?: boolean;
+  metodo_posicionamento?: 'endereco_osm' | 'coordenadas_gps' | 'link_google_maps' | 'arraste_mapa';
 }
 
 export type RealCurveExtractionMode = 'worst_case_envelope' | 'worst_day_peak' | 'average_real';
@@ -208,7 +286,16 @@ export interface CommercialHubOperationalData {
   solarEnergyCostPerKWh?: number; // Custo de energia usina solar própria GD / Mercado Livre (ex: R$ 0,50)
   variableOpexPercent?: number; // Gateway de pagamento + impostos (ex: 14% = 8% app + 6% tributos)
   fixedOpexPerPointBRL?: number; // Seguro + link 4G + manutenção preventiva mensal por ponto (ex: R$ 474)
-  realEstateModel?: 'comodato' | 'aluguel_fixo' | 'revenue_share' | 'misto'; // Estrutura jurídica de cessão de vagas (CNAE 5229-0/99)
+  energySourceMode?: 'concessionaria' | 'solar' | 'hibrido'; // Alternar entre Concessionária, Solar ou Mix Híbrido
+  solarSharePercent?: number; // % de energia suprida por Solar GD no modo híbrido (0 a 100%)
+  realEstateModel?: string; // Estrutura jurídica de cessão de vagas (CNAE 5229-0/99 ou modalidade customizada)
+  customRealEstateModels?: Array<{
+    id: string;
+    label: string;
+    fixedRentBRL: number;
+    revenueSharePercent: number;
+    basis: 'gross' | 'net_margin';
+  }>;
   realEstateFixedRentBRL?: number; // Aluguel mensal fixo caso adotado (ex: R$ 1.500)
   realEstateRevenueSharePercent?: number; // Participação percentual na receita bruta caso adotado (ex: 5% a 10%)
   estimatedSetupCapexBRL?: number; // CAPEX total de implantação com carregadores, obras civis e sinalização (ex: R$ 195.000)
@@ -592,7 +679,7 @@ export interface BillOfMaterialItem {
   category: 'condutores' | 'protecao' | 'quadro' | 'infraestrutura' | 'seguranca' | 'auxiliares' | 'medicao' | 'transformador' | 'segurança_emergencia' | string;
   description: string;
   quantity: number;
-  unit: 'm' | 'pç' | 'cj' | 'kit';
+  unit: 'm' | 'pç' | 'cj' | 'kit' | 'serv' | 'conj' | string;
   spec: string;
   normReference: string;
   manufacturer?: string;

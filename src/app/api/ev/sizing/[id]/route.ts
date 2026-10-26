@@ -91,7 +91,7 @@ export async function PUT(
         calculatedConduit: result.conduitSize,
         voltageDrop: result.voltageDrop,
         groundingAnalysis: result.groundingAnalysis,
-        groundingType: data.groundingType,
+        groundingType: data.groundingType || existingProject.groundingType || "TN-S",
         hasTransformer,
         transformerPrimaryVoltage: data.transformerPrimaryVoltage !== undefined ? Number(data.transformerPrimaryVoltage) : null,
         transformerSecondaryVoltage: data.transformerSecondaryVoltage !== undefined ? Number(data.transformerSecondaryVoltage) : null,

@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
-  Building2, User, Phone, Mail, MapPin, Zap, 
+  Building2, User, Phone, Mail, MapPin, Zap, Power,
   Upload, FileText, CheckCircle2, AlertCircle, 
   Loader2, Sparkles, Shield, Eye, Trash2, HelpCircle,
   Sun, BarChart3, TrendingUp, ArrowRight,
@@ -26,6 +26,13 @@ export default function ClientProjectForm({
   const [isUploading, setIsUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
   const [extractedPreview, setExtractedPreview] = useState<any | null>(null);
+
+  useEffect(() => {
+    if (!data.utilityBillFileName) {
+      setExtractedPreview(null);
+      setUploadStatus(null);
+    }
+  }, [data.utilityBillFileName]);
 
   // Helper para limpar automaticamente dados de exemplo quando o usuário clica/foca no campo
   const clearIfExample = (fieldName: keyof ClientProjectData, exampleValues: string[]) => {
@@ -62,8 +69,41 @@ export default function ClientProjectForm({
         setExtractedPreview(ext);
         setUploadStatus("Dados extraídos com sucesso!");
 
+        // Detecção de Grupo A (Média Tensão / Cabine Primária / Subestação)
+        const isGrupoA = ext.grupoTarifario === 'A' || 
+                         ext.padraoConexao === 'MEDIA_TENSAO' || 
+                         (ext.demandaContratadaKW && ext.demandaContratadaKW > 75) ||
+                         /A[1-4]|A3a|AS/i.test(ext.categoriaPadrao || '') ||
+                         /Verde|Azul|TUSD/i.test(ext.modalidadeTarifaria || '');
+
+        let cleanCategory = ext.categoriaPadrao;
+        if (cleanCategory) {
+          const m = String(cleanCategory).match(/\b(A4|A3a|AS|A1|B1|B2|C[1-6]|F[1-9])\b/i);
+          if (m) cleanCategory = m[1].toUpperCase();
+          else if (/Monof[áa]sico/i.test(String(cleanCategory))) cleanCategory = 'A1';
+          else if (/Bif[áa]sico/i.test(String(cleanCategory))) cleanCategory = 'B1';
+          else if (/Trif[áa]sico/i.test(String(cleanCategory))) cleanCategory = 'C1';
+        }
+
+        const finalCategory = isGrupoA 
+          ? (cleanCategory || 'A4')
+          : (cleanCategory || (ext.padraoConexao === 'TRIFASICO' ? 'C1' : ext.padraoConexao === 'BIFASICO' ? 'B1' : 'A1'));
+
+        const finalBreaker = isGrupoA
+          ? undefined
+          : ((ext.disjuntorAmperes !== null && ext.disjuntorAmperes !== undefined && ext.disjuntorAmperes > 0)
+            ? ext.disjuntorAmperes
+            : undefined);
+
+        const finalDemandKW = ext.demandaContratadaKW || ext.demandaMedidaPicoKW || data.contractedDemandKW;
+
+        const detectedUtility = (ext.concessionaria && ext.concessionaria.toUpperCase().includes('CEMIG')) ? 'CEMIG'
+          : (ext.concessionaria && ext.concessionaria.toUpperCase().includes('CPFL')) ? 'CPFL'
+          : (ext.concessionaria && ext.concessionaria.toUpperCase().includes('ENERGISA')) ? 'ENERGISA'
+          : (ext.concessionaria && ext.concessionaria.toUpperCase().includes('ENEL')) ? 'ENEL_SP'
+          : data.utility;
+
         // Auto-preencher os campos identificados
-        // Se o disjuntor não foi informado na conta, deixar em branco (undefined) para que o usuário informe
         onChange({
           clientName: ext.nomeCliente && ext.nomeCliente !== 'Cliente CEMIG' && ext.nomeCliente !== 'Cliente Informado na Fatura' 
             ? ext.nomeCliente 
@@ -71,19 +111,13 @@ export default function ClientProjectForm({
           address: ext.endereco || data.address,
           installationNumber: ext.numeroInstalacao || data.installationNumber,
           meterNumber: ext.numeroMedidor || data.meterNumber,
-          standardBreakerA: (ext.disjuntorAmperes !== null && ext.disjuntorAmperes !== undefined && ext.disjuntorAmperes > 0)
-            ? ext.disjuntorAmperes
-            : undefined,
-          standardCategory: ext.categoriaPadrao || (ext.padraoConexao === 'TRIFASICO' ? 'C1' : ext.padraoConexao === 'BIFASICO' ? 'B1' : 'A1'),
-          contractedDemandKW: ext.demandaContratadaKW || ext.demandaMedidaPicoKW || data.contractedDemandKW,
+          standardBreakerA: finalBreaker,
+          standardCategory: finalCategory,
+          contractedDemandKW: finalDemandKW,
           utilityBillFileName: file.name,
           utilityBillFileUrl: result.fileUrl || undefined,
           utilityBillFileType: file.type.includes('image') || file.name.match(/\.(jpe?g|png|webp)$/i) ? 'image' : 'pdf',
-          utility: (ext.concessionaria && ext.concessionaria.toUpperCase().includes('CEMIG')) ? 'CEMIG'
-            : (ext.concessionaria && ext.concessionaria.toUpperCase().includes('CPFL')) ? 'CPFL'
-            : (ext.concessionaria && ext.concessionaria.toUpperCase().includes('ENERGISA')) ? 'ENERGISA'
-            : (ext.concessionaria && ext.concessionaria.toUpperCase().includes('ENEL')) ? 'ENEL_SP'
-            : data.utility,
+          utility: detectedUtility,
           // Novos Dados de Histórico e GD Solar
           consumoMedioKWh: ext.consumoMedioKWh || data.consumoMedioKWh,
           consumoMaximoKWh: ext.consumoMaximoKWh || data.consumoMaximoKWh,
@@ -224,19 +258,76 @@ export default function ClientProjectForm({
         </div>
 
         {uploadStatus && (
-          <div className="mt-3 pt-3 border-t border-orange-200/60 flex items-center justify-between text-xs text-slate-600">
-            <span className="flex items-center gap-1.5 text-emerald-800 font-semibold">
-              <CheckCircle2 className="w-3.5 h-3.5 text-[#00B356]" />
-              {uploadStatus}
-            </span>
-            {extractedPreview && (
-              <span className="text-[11px] text-slate-500">
-                Distribuidora: <strong className="text-slate-800">{extractedPreview.concessionaria || 'Identificada'}</strong> | Disjuntor: {extractedPreview.disjuntorAmperes ? (
-                  <strong className="text-[#00B356]">{extractedPreview.disjuntorAmperes}A</strong>
-                ) : (
-                  <strong className="text-amber-600 font-bold bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">Não informado (confirmar no local)</strong>
-                )}
+          <div className="mt-4 p-4 rounded-2xl bg-white/95 border border-orange-200/90 shadow-sm space-y-3 animate-in fade-in duration-200">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
+              <span className="flex items-center gap-2 text-emerald-800 font-bold text-xs">
+                <CheckCircle2 className="w-4 h-4 text-[#00B356]" />
+                {uploadStatus}
               </span>
+              {extractedPreview && (
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-orange-100 text-[#E45318] border border-orange-200">
+                    {extractedPreview.concessionaria || 'Concessionária Identificada'}
+                  </span>
+                  {extractedPreview.grupoTarifario === 'A' || extractedPreview.padraoConexao === 'MEDIA_TENSAO' ? (
+                    <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-900 border border-purple-200 font-bold">
+                      Média Tensão (Grupo {extractedPreview.categoriaPadrao || 'A4'})
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-200 font-bold">
+                      Baixa Tensão ({extractedPreview.padraoConexao || 'BT'})
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {extractedPreview && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 text-xs">
+                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200/80">
+                  <span className="text-[10px] font-bold uppercase text-slate-400 block">Titular Identificado</span>
+                  <strong className="text-slate-800 font-bold text-xs truncate block mt-0.5" title={extractedPreview.nomeCliente}>
+                    {extractedPreview.nomeCliente || 'Titular identificado'}
+                  </strong>
+                  {extractedPreview.cnpjCpf && (
+                    <span className="text-[10px] text-slate-500 font-mono block">{extractedPreview.cnpjCpf}</span>
+                  )}
+                </div>
+
+                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200/80">
+                  <span className="text-[10px] font-bold uppercase text-slate-400 block">Unidade Consumidora (UC)</span>
+                  <strong className="text-slate-800 font-bold font-mono text-xs block mt-0.5">
+                    {extractedPreview.numeroInstalacao || 'Não informada'}
+                  </strong>
+                  <span className="text-[10px] text-slate-500 block truncate">
+                    Medidor: <strong className="text-slate-700">{extractedPreview.numeroMedidor || 'No local'}</strong>
+                  </span>
+                </div>
+
+                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200/80">
+                  <span className="text-[10px] font-bold uppercase text-slate-400 block">
+                    {extractedPreview.grupoTarifario === 'A' ? 'Demanda Contratada' : 'Disjuntor de Entrada'}
+                  </span>
+                  <strong className="text-[#00B356] font-bold text-xs block mt-0.5">
+                    {extractedPreview.grupoTarifario === 'A' 
+                      ? `${extractedPreview.demandaContratadaKW || 160} kW (Subestação)`
+                      : (extractedPreview.disjuntorAmperes ? `${extractedPreview.disjuntorAmperes}A` : 'A confirmar na vistoria')}
+                  </strong>
+                  <span className="text-[10px] text-slate-500 truncate block">
+                    {extractedPreview.modalidadeTarifaria || 'Tarifa homologada'}
+                  </span>
+                </div>
+
+                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200/80">
+                  <span className="text-[10px] font-bold uppercase text-slate-400 block">Consumo Médio Histórico</span>
+                  <strong className="text-[#E45318] font-bold text-xs block mt-0.5">
+                    {extractedPreview.consumoMedioKWh ? `${extractedPreview.consumoMedioKWh.toLocaleString('pt-BR')} kWh/mês` : '—'}
+                  </strong>
+                  <span className="text-[10px] text-slate-500 block">
+                    {extractedPreview.historicoConsumo?.length ? `${extractedPreview.historicoConsumo.length} ciclos lidos` : 'Ciclo atual'}
+                  </span>
+                </div>
+              </div>
             )}
           </div>
         )}
@@ -504,6 +595,81 @@ export default function ClientProjectForm({
             <span className="text-[10px] text-slate-400 uppercase font-semibold">ND-5.1 / Padrão de Entrada</span>
           </div>
 
+          {/* SELETOR DE STATUS DO PADRÃO: EXISTENTE vs LIGAÇÃO NOVA */}
+          <div className="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-slate-700 font-bold text-xs flex items-center gap-1.5">
+                <Power className="w-4 h-4 text-[#E45318]" />
+                Condição de Entrada da Energia no Local:
+              </span>
+              <span className={`text-[10px] font-mono uppercase font-black px-2.5 py-0.5 rounded-full ${
+                data.isNewConnection ? 'bg-orange-100 text-[#E45318] border border-orange-200' : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+              }`}>
+                {data.isNewConnection ? '⚡ LIGAÇÃO NOVA (SEM PADRÃO)' : '✓ PADRÃO EXISTENTE NO LOCAL'}
+              </span>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <button
+                type="button"
+                onClick={() => onChange({ isNewConnection: false, hasExistingStandard: true })}
+                className={`p-3 rounded-xl border text-left transition-all flex items-start gap-2.5 cursor-pointer ${
+                  !data.isNewConnection
+                    ? 'bg-emerald-500/10 border-[#00B356] text-emerald-950 shadow-sm ring-1 ring-[#00B356]'
+                    : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5 ${
+                  !data.isNewConnection ? 'border-[#00B356] bg-[#00B356]' : 'border-slate-400'
+                }`}>
+                  {!data.isNewConnection && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                </div>
+                <div>
+                  <strong className="text-xs block text-slate-800">Padrão Já Existe no Imóvel</strong>
+                  <span className="text-[10px] text-slate-500 block leading-tight mt-0.5">
+                    O local já tem relógio/medidor. Não entra no orçamento se a capacidade atender.
+                  </span>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => onChange({ isNewConnection: true, hasExistingStandard: false })}
+                className={`p-3 rounded-xl border text-left transition-all flex items-start gap-2.5 cursor-pointer ${
+                  data.isNewConnection
+                    ? 'bg-orange-500/10 border-[#E45318] text-orange-950 shadow-sm ring-1 ring-[#E45318]'
+                    : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5 ${
+                  data.isNewConnection ? 'border-[#E45318] bg-[#E45318]' : 'border-slate-400'
+                }`}>
+                  {data.isNewConnection && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                </div>
+                <div>
+                  <strong className="text-xs block text-[#E45318]">Ligação Nova / Sem Padrão</strong>
+                  <span className="text-[10px] text-slate-500 block leading-tight mt-0.5">
+                    Não há padrão no ponto. O kit completo de materiais e instalação será incluso no orçamento.
+                  </span>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          {data.isNewConnection && (
+            <div className="p-3.5 bg-orange-50/90 border border-orange-200 rounded-xl text-xs text-orange-900 space-y-1.5 animate-in fade-in duration-200">
+              <div className="flex items-center gap-2 font-bold text-[#E45318]">
+                <AlertCircle className="w-4 h-4" />
+                <span>Cliente sem padrão de entrada — Orçamento com Padrão Novo</span>
+              </div>
+              <p className="text-[11px] text-orange-800 leading-relaxed">
+                Escolha abaixo a categoria do padrão homologado que será instalado (ex: C1..C6 ou Subestação MT). O kit completo de materiais homologados pela concessionária e a montagem civil/elétrica entrarão automaticamente na planilha orçamentária (BOM).
+              </p>
+            </div>
+          )}
+
+
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
             <div>
               <label className="text-slate-600 font-semibold block mb-1">Concessionária:</label>
@@ -530,7 +696,7 @@ export default function ClientProjectForm({
                 onFocus={() => clearIfExample('installationNumber', ['3000000000', '9.019.799.018-64', '811.109.018-18'])}
                 onChange={(e) => onChange({ installationNumber: e.target.value })}
                 className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 font-mono focus:outline-none focus:border-[#00B356]"
-                placeholder={data.utility === 'CEMIG' ? 'Ex: 811.109.018-18' : 'Ex: 3001234567'}
+                placeholder={data.isNewConnection ? 'A definir na Ligação Nova' : (data.utility === 'CEMIG' ? 'Ex: 811.109.018-18' : 'Ex: 3001234567')}
               />
             </div>
 
@@ -542,39 +708,53 @@ export default function ClientProjectForm({
                 onFocus={() => clearIfExample('meterNumber', ['MED-889922', 'Consulte no visor do medidor', 'Consulte padrão físico'])}
                 onChange={(e) => onChange({ meterNumber: e.target.value })}
                 className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 font-mono focus:outline-none focus:border-[#00B356]"
-                placeholder="Ex: MED-889922 ou GPA190007823"
+                placeholder={data.isNewConnection ? "A instalar na Ligação Nova" : "Ex: MED-889922 ou GPA190007823"}
               />
             </div>
 
             <div>
-              <label className="text-slate-600 font-semibold block mb-1">Disjuntor Atual do Padrão:</label>
+              <label className="text-slate-600 font-semibold block mb-1">
+                {(data.standardCategory === 'A4' || data.standardCategory === 'A3a') ? 'Proteção Geral MT (Subestação):' : 'Disjuntor Atual do Padrão:'}
+              </label>
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-1.5">
                   <input
                     type="number"
-                    value={data.standardBreakerA !== undefined && data.standardBreakerA !== null ? data.standardBreakerA : ''}
+                    disabled={data.standardCategory === 'A4' || data.standardCategory === 'A3a'}
+                    value={(data.standardCategory === 'A4' || data.standardCategory === 'A3a') ? '' : (data.standardBreakerA !== undefined && data.standardBreakerA !== null ? data.standardBreakerA : '')}
                     onFocus={(e) => {
                       if (data.standardBreakerA === 63 || data.standardBreakerA === 0) {
                         e.target.select();
                       }
                     }}
                     onChange={(e) => onChange({ standardBreakerA: e.target.value === '' ? undefined : Number(e.target.value) })}
-                    className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-black text-slate-800 focus:outline-none focus:border-[#00B356]"
-                    placeholder="Não consta na fatura"
+                    className={`w-full border rounded-xl px-3 py-2 text-xs font-black text-slate-800 focus:outline-none ${
+                      (data.standardCategory === 'A4' || data.standardCategory === 'A3a')
+                        ? 'bg-purple-50/60 border-purple-200 text-purple-900 cursor-not-allowed'
+                        : 'bg-white border-slate-300 focus:border-[#00B356]'
+                    }`}
+                    placeholder={(data.standardCategory === 'A4' || data.standardCategory === 'A3a') ? 'Subestação MT (Sem disjuntor BT)' : 'Não consta na fatura'}
                   />
-                  <span className="text-xs font-bold text-slate-500">Amperes</span>
+                  <span className="text-xs font-bold text-slate-500">
+                    {(data.standardCategory === 'A4' || data.standardCategory === 'A3a') ? 'MT' : 'Amperes'}
+                  </span>
                 </div>
-                {(!data.standardBreakerA || data.standardBreakerA === 0) && (
+                {(data.standardCategory === 'A4' || data.standardCategory === 'A3a') ? (
+                  <span className="text-[10px] text-purple-700 font-semibold flex items-center gap-1">
+                    <Shield className="w-3 h-3 text-purple-600 shrink-0" />
+                    Proteção em Média Tensão (Cubículo / Relé 50/51)
+                  </span>
+                ) : (!data.standardBreakerA || data.standardBreakerA === 0) ? (
                   <span className="text-[10px] text-amber-700 font-semibold flex items-center gap-1">
                     <AlertTriangle className="w-3 h-3 text-amber-500 shrink-0" />
                     Não consta na conta — confirmar na vistoria
                   </span>
-                )}
+                ) : null}
               </div>
             </div>
 
             <div>
-              <label className="text-slate-600 font-semibold block mb-1">Categoria Atual do Padrão:</label>
+              <label className="text-slate-600 font-semibold block mb-1">{data.isNewConnection ? "⚡ Padrão Homologado a Instalar (Ligação Nova):" : "Categoria Atual do Padrão:"}</label>
               <select
                 value={
                   data.standardCategory === 'F7'
@@ -584,8 +764,21 @@ export default function ClientProjectForm({
                 onChange={(e) => {
                   const rawCat = e.target.value;
                   let newCat = rawCat;
-                  let defaultBreaker = 63;
+                  let defaultBreaker: number | undefined = 63;
                   let contractedKW = data.contractedDemandKW;
+
+                  if (rawCat === 'A4' || rawCat === 'A3a') {
+                    onChange({
+                      standardCategory: rawCat,
+                      targetNewCategory: rawCat,
+                      standardBreakerA: undefined,
+                      fieldBreakerConfirmedA: undefined,
+                      fieldCableGaugeMM2: 185,
+                      fieldPhasesConfirmed: '3F',
+                      contractedDemandKW: contractedKW || (rawCat === 'A4' ? 160 : 300)
+                    });
+                    return;
+                  }
 
                   if (rawCat === 'F7_600') {
                     newCat = 'F7_600';
@@ -613,6 +806,7 @@ export default function ClientProjectForm({
                   const confirmedPhases = (newCat.startsWith('C') || newCat.startsWith('F')) ? '3F' : (newCat.startsWith('B') ? '2F' : '1F');
                   onChange({ 
                     standardCategory: newCat,
+                    targetNewCategory: newCat,
                     standardBreakerA: defaultBreaker,
                     fieldBreakerConfirmedA: defaultBreaker,
                     fieldCableGaugeMM2: suggestedGauge,
@@ -622,7 +816,16 @@ export default function ClientProjectForm({
                 }}
                 className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#00B356]"
               >
-                {Array.from(new Set(availableCategories.filter(c => c !== 'F7'))).map(cat => {
+                {/* Categorias de Média Tensão (Grupo A) */}
+                <option value="A4">
+                  A4 (Média Tensão 13.8 kV — Subestação Particular / Cabine Primária)
+                </option>
+                <option value="A3a">
+                  A3a (Média Tensão 34.5 kV — Subestação Particular)
+                </option>
+
+                {/* Categorias de Baixa Tensão (Grupo B) */}
+                {Array.from(new Set(availableCategories.filter(c => c !== 'F7' && c !== 'A4' && c !== 'A3a'))).map(cat => {
                   if (cat === 'F7_600') {
                     return (
                       <option key="F7_600" value="F7_600">
@@ -661,19 +864,28 @@ export default function ClientProjectForm({
                   value={data.contractedDemandKW || 0}
                   onChange={(e) => onChange({ contractedDemandKW: Number(e.target.value) })}
                   className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#00B356]"
-                  placeholder="Ex: 38"
+                  placeholder="Ex: 160"
                 />
                 <span className="text-xs font-bold text-slate-500">kW</span>
               </div>
             </div>
           </div>
 
-          <div className="bg-emerald-50/80 border border-emerald-200 p-3 rounded-xl flex items-center gap-2 text-xs text-emerald-900">
-            <Shield className="w-4 h-4 text-[#00B356] shrink-0" />
-            <p className="text-[11px] leading-relaxed">
-              O disjuntor de <strong>{data.standardBreakerA}A ({data.standardCategory})</strong> será o parâmetro de referência no Passo 1B para o teste de desarme térmico.
-            </p>
-          </div>
+          {(data.standardCategory === 'A4' || data.standardCategory === 'A3a') ? (
+            <div className="bg-purple-50/90 border border-purple-200 p-3 rounded-xl flex items-center gap-2.5 text-xs text-purple-950">
+              <Shield className="w-4 h-4 text-purple-600 shrink-0" />
+              <p className="text-[11px] leading-relaxed">
+                Instalação atendida em <strong>Média Tensão / Subestação Particular ({data.standardCategory})</strong> com Demanda Contratada de <strong>{data.contractedDemandKW || 160} kW</strong>. A alimentação dos carregadores é dimensionada diretamente no transformador/QGBT próprio sem risco de desarme de disjuntor de baixa tensão da concessionária.
+              </p>
+            </div>
+          ) : (
+            <div className="bg-emerald-50/80 border border-emerald-200 p-3 rounded-xl flex items-center gap-2 text-xs text-emerald-900">
+              <Shield className="w-4 h-4 text-[#00B356] shrink-0" />
+              <p className="text-[11px] leading-relaxed">
+                O disjuntor de <strong>{data.standardBreakerA || 63}A ({data.standardCategory || 'C1'})</strong> será o parâmetro de referência no Passo 1B para o teste de desarme térmico.
+              </p>
+            </div>
+          )}
         </div>
       </div>
 

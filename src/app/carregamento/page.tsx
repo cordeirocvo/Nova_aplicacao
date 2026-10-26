@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { 
   Zap, Plus, FileText, Calendar, User, ChevronRight, Loader, 
@@ -8,7 +8,7 @@ import {
   BatteryCharging, Gauge, ArrowRight, BookOpen, Layers, Flame, Activity,
   Cable, FileSpreadsheet, Upload, AlertCircle, Printer, Check, Copy, Award,
   Building2, Trash2, Sliders, RefreshCw, Cpu, CheckSquare, Sparkles, Calculator,
-  Settings, Globe, ExternalLink, Save, Download, Compass
+  Settings, Globe, ExternalLink, Save, Download, Compass, DollarSign, Box
 } from "lucide-react";
 import { 
   BRAZIL_ELECTRIC_VEHICLES, 
@@ -60,6 +60,8 @@ import InstallationEnvironmentSelector from "@/components/ev/InstallationEnviron
 import ChargerCatalogSelector from "@/components/ev/ChargerCatalogSelector";
 import EVStickySummary from "@/components/ev/EVStickySummary";
 import EVLocationScoringCockpit from "@/components/ev/EVLocationScoringCockpit";
+import { EVFinancialModelingBLEV } from "@/components/ev/EVFinancialModelingBLEV";
+import { ModularBOMOutput } from "@/lib/coenergygo/engines/modularBomEngine";
 import { calculateUnifiedEVSizing } from "@/lib/ev/unifiedCalculationEngine";
 import { 
   ClientProjectData, 
@@ -68,31 +70,87 @@ import {
   CommercialHubOperationalData 
 } from "@/lib/coenergygo";
 
+const BLANK_CLIENT_PROJECT_DATA: ClientProjectData = {
+  projectName: "",
+  technicalResponsible: "Eng. Responsável Técnico",
+  creaCft: "CREA-MG / CFT",
+  clientName: "",
+  clientPhone: "",
+  clientEmail: "",
+  address: "",
+  utility: 'CEMIG',
+  hasExistingStandard: true,
+  isNewConnection: false,
+  targetNewCategory: "C3",
+  installationNumber: "",
+  meterNumber: "",
+  standardBreakerA: undefined,
+  standardCategory: "C1",
+  contractedDemandKW: 0,
+  utilityBillFileName: undefined,
+  utilityBillFileUrl: undefined,
+  utilityBillFileType: undefined,
+  consumoMedioKWh: undefined,
+  consumoMaximoKWh: undefined,
+  demandaEstimadaHistoricoKW: undefined,
+  saldoGeracaoKWh: undefined,
+  energiaCompensadaKWh: undefined,
+  historicoConsumo: undefined,
+  fieldPhasesConfirmed: undefined,
+  fieldBreakerConfirmedA: undefined,
+  fieldCableGaugeMM2: undefined,
+  customTransformerKVA: undefined,
+  customTransformerEfficiencyPercent: undefined,
+  customTransformerLossesKW: undefined,
+  section1DistanceM: undefined,
+  section1MarginPercent: undefined,
+  section1ConductorMaterial: undefined,
+  section1InstallationMethod: undefined,
+  section2DistanceM: undefined,
+  section2MarginPercent: undefined,
+  section2ConductorMaterial: undefined,
+  section2InstallationMethod: undefined,
+  section3DistanceM: undefined,
+  section3MarginPercent: undefined,
+  section3ConductorMaterial: undefined,
+  section3InstallationMethod: undefined,
+  standardTerminalType: 'COMPRESSAO_OLHAL',
+  selectedLoads220V: undefined,
+  selectedLoads380V: undefined,
+  evBaysCount: undefined
+};
+
 export default function CoenergyGODashboard() {
-  const [activeTab, setActiveTab] = useState<'projetos' | 'viabilidade' | 'veiculos' | 'concessionarias' | 'nbr17019' | 'curva_dlm' | 'infraestrutura' | 'resultado'>('projetos');
+  const [activeTab, setActiveTab] = useState<'projetos' | 'viabilidade' | 'veiculos' | 'concessionarias' | 'nbr17019' | 'curva_dlm' | 'infraestrutura' | 'resultado' | 'modelagem_financeira'>('projetos');
+  const [projectModularBOM, setProjectModularBOM] = useState<ModularBOMOutput | null>(null);
+
+  // Sincronização protegida com verificação de igualdade para prevenir loop de render
+  const handleModularBOMChange = useCallback((bom: ModularBOMOutput) => {
+    setProjectModularBOM(prev => {
+      if (
+        prev &&
+        prev.totalProjectInvestmentBRL === bom.totalProjectInvestmentBRL &&
+        prev.totalItemsCount === bom.totalItemsCount &&
+        prev.stages?.length === bom.stages?.length &&
+        prev.syncedOrcamentoProjetoId === bom.syncedOrcamentoProjetoId
+      ) {
+        return prev;
+      }
+      return bom;
+    });
+  }, []);
+
   const [projects, setProjects] = useState<any[]>([]);
   const [loadingProjects, setLoadingProjects] = useState(true);
 
   // Metadados do Projeto Selecionado
-  const [projectName, setProjectName] = useState<string>("Novo Dimensionamento");
-  const [clientName, setClientName] = useState<string>("Cliente Particular");
+  const [projectName, setProjectName] = useState<string>("");
+  const [clientName, setClientName] = useState<string>("");
 
   // Dados Estruturados do Cliente e Padrão Concessionária (Passo 01)
-  const [clientProjectData, setClientProjectData] = useState<ClientProjectData>({
-    projectName: "Novo Dimensionamento",
-    technicalResponsible: "Eng. Responsável Técnico",
-    creaCft: "CREA-MG / CFT",
-    clientName: "Cliente Particular",
-    clientPhone: "",
-    clientEmail: "",
-    address: "",
-    utility: 'CEMIG',
-    installationNumber: "",
-    meterNumber: "",
-    standardBreakerA: 63,
-    standardCategory: "C3",
-    contractedDemandKW: 0
-  });
+  const [clientProjectData, setClientProjectData] = useState<ClientProjectData>(BLANK_CLIENT_PROJECT_DATA);
+  const [projectLatitude, setProjectLatitude] = useState<number>(-19.471676);
+  const [projectLongitude, setProjectLongitude] = useState<number>(-44.258735);
 
   // Localização física da garagem e Segurança contra Incêndio (IT-41 CBPMESP / IT-30 CBMMG)
   const [condoLocation, setCondoLocation] = useState<CondoEnvironmentLocation>('terreo_coberto');
@@ -149,8 +207,16 @@ export default function CoenergyGODashboard() {
   const [selectedUtility, setSelectedUtility] = useState<UtilityId>('CEMIG');
   const [currentStandardCategoryId, setCurrentStandardCategoryId] = useState<string>('C3');
   const [loadSourceMode, setLoadSourceMode] = useState<'fatura' | 'smartmeter' | 'spot'>('smartmeter');
-  const [manualExistingLoadKW, setManualExistingLoadKW] = useState<number>(15);
+  const [manualExistingLoadKW, setManualExistingLoadKW] = useState<number>(0);
   const [useSmartMeterExistingLoad, setUseSmartMeterExistingLoad] = useState<boolean>(true);
+
+  // Estados para persistência de personalizações da Lista de Materiais Modular (BOM)
+  const [bomUserOverrides, setBomUserOverrides] = useState<Record<string, { quantity?: number; unitPriceBRL?: number }>>({});
+  const [bomDeletedItemIds, setBomDeletedItemIds] = useState<string[]>([]);
+  const [bomCustomAddedItems, setBomCustomAddedItems] = useState<any[]>([]);
+  const [bomLaborMode, setBomLaborMode] = useState<'TABELADO' | 'PERCENTUAL'>('TABELADO');
+  const [bomLaborPercent, setBomLaborPercent] = useState<number>(25);
+  const [bomGlobalBdiPercent, setBomGlobalBdiPercent] = useState<number>(20);
 
   // Parâmetros de Medição Spot de Campo (Calculadora)
   const [spotVoltage, setSpotVoltage] = useState<number>(220);
@@ -208,7 +274,7 @@ export default function CoenergyGODashboard() {
   const [dlmChargeDurationHours, setDlmChargeDurationHours] = useState<number>(2);
   const [dlmSolarPeakKW, setDlmSolarPeakKW] = useState<number>(25);
   const [dlmEnableDLM, setDlmEnableDLM] = useState<boolean>(true);
-  const [dlmEnableSolarSurplus, setDlmEnableSolarSurplus] = useState<boolean>(true);
+  const [dlmEnableSolarSurplus, setDlmEnableSolarSurplus] = useState<boolean>(false);
   const [isDlmLimitationAccepted, setIsDlmLimitationAccepted] = useState<boolean>(false);
   const [dlmLimitedChargerPowerKW, setDlmLimitedChargerPowerKW] = useState<number | null>(null);
   const [customHomologatedCategoryId, setCustomHomologatedCategoryId] = useState<string | null>(null);
@@ -279,20 +345,55 @@ export default function CoenergyGODashboard() {
           dedupedDb.push(enrichedProject);
         });
 
-        // 2. Mesclar projetos locais com projetos do banco evitando qualquer duplicação
-        const finalProjects: any[] = [...dedupedDb];
-        localSaved.forEach(localP => {
+        // 2. Mesclar projetos locais com projetos do banco priorizando o snapshot oficial do banco (sem contaminação cruzada)
+        const sanitizeProjectRecord = (proj: any) => {
+          if (!proj) return proj;
+          const pName = (proj.projectName || proj.clientProjectData?.projectName || "").toLowerCase();
+          const pAddr = (proj.clientAddress || proj.clientProjectData?.address || "").toLowerCase();
+          const isSeteLagoas = pName.includes("sete lagoas") || pAddr.includes("olavo bilac") || pAddr.includes("sete lagoas");
+          const cpd = proj.clientProjectData ? { ...proj.clientProjectData } : {};
+
+          // Se não é o projeto de Sete Lagoas mas herdou acidentalmente dados da fatura de Sete Lagoas (811.109.018-18), limpar
+          if (!isSeteLagoas && (cpd.installationNumber === "811.109.018-18" || (proj.clientDocument || "").includes("811.109.018-18"))) {
+            cpd.installationNumber = "";
+            cpd.meterNumber = "";
+            cpd.utilityBillFileName = undefined;
+            cpd.utilityBillFileUrl = undefined;
+            cpd.utilityBillFileType = undefined;
+            cpd.historicoConsumo = undefined;
+            cpd.consumoMedioKWh = undefined;
+            cpd.consumoMaximoKWh = undefined;
+            cpd.demandaEstimadaHistoricoKW = undefined;
+            cpd.saldoGeracaoKWh = undefined;
+            cpd.energiaCompensadaKWh = undefined;
+            proj.clientDocument = "";
+          }
+
+          // Se é Ligação Nova (Sem Padrão Existente), sincronizar targetNewCategory
+          if (cpd.isNewConnection) {
+            if (proj.existingLoadKW === undefined || proj.existingLoadKW === null) {
+              proj.existingLoadKW = 0;
+            }
+            cpd.hasExistingStandard = false;
+            if (cpd.standardCategory && cpd.standardCategory !== 'C1') {
+              cpd.targetNewCategory = cpd.standardCategory;
+            } else if (cpd.targetNewCategory) {
+              cpd.standardCategory = cpd.targetNewCategory;
+            }
+          }
+
+          proj.clientProjectData = cpd;
+          return proj;
+        };
+
+        const finalProjects: any[] = dedupedDb.map(sanitizeProjectRecord);
+        localSaved.forEach(rawLocalP => {
+          const localP = sanitizeProjectRecord(rawLocalP);
           const normLocalName = (localP.projectName || "").trim().toLowerCase();
           const existingById = finalProjects.find(fp => fp.id === localP.id);
           const existingByName = normLocalName ? finalProjects.find(fp => (fp.projectName || "").trim().toLowerCase() === normLocalName) : null;
 
-          if (existingById) {
-            // Mescla detalhes avançados locais mantendo a referência oficial
-            Object.assign(existingById, { ...localP, id: existingById.id });
-          } else if (existingByName) {
-            // Mescla no projeto existente pelo nome, garantindo o ID do banco
-            Object.assign(existingByName, { ...localP, id: existingByName.id });
-          } else {
+          if (!existingById && !existingByName) {
             // Projeto offline exclusivo
             finalProjects.push(localP);
           }
@@ -314,8 +415,103 @@ export default function CoenergyGODashboard() {
             if (parsedDraft && parsedDraft.clientProjectData) {
               setClientProjectData(prev => ({ ...prev, ...parsedDraft.clientProjectData }));
             }
+            const draftLoads220 = parsedDraft?.selectedLoads220V || parsedDraft?.clientProjectData?.selectedLoads220V;
+            const draftLoads380 = parsedDraft?.selectedLoads380V || parsedDraft?.clientProjectData?.selectedLoads380V;
+            if (draftLoads220 || draftLoads380) {
+              try {
+                const { useEVTopologyStore } = require('@/lib/coenergygo/store/useEVTopologyStore');
+                if (draftLoads220) useEVTopologyStore.getState().setSelectedLoads220V(draftLoads220);
+                if (draftLoads380) useEVTopologyStore.getState().setSelectedLoads380V(draftLoads380);
+              } catch (e) {}
+            }
             if (Array.isArray(parsedDraft?.configuredChargers) && parsedDraft.configuredChargers.length > 0) {
               setConfiguredChargers(parsedDraft.configuredChargers);
+            }
+            if (parsedDraft.enableSolarSurplus !== undefined) {
+              setDlmEnableSolarSurplus(Boolean(parsedDraft.enableSolarSurplus));
+            } else if (parsedDraft.dlmEnableSolarSurplus !== undefined) {
+              setDlmEnableSolarSurplus(Boolean(parsedDraft.dlmEnableSolarSurplus));
+            }
+            if (typeof parsedDraft.solarPeakKW === 'number' && parsedDraft.solarPeakKW > 0) {
+              setDlmSolarPeakKW(parsedDraft.solarPeakKW);
+            } else if (typeof parsedDraft.dlmSolarPeakKW === 'number' && parsedDraft.dlmSolarPeakKW > 0) {
+              setDlmSolarPeakKW(parsedDraft.dlmSolarPeakKW);
+            }
+            if (parsedDraft.demandControlEnabled !== undefined) {
+              setDlmEnableDLM(Boolean(parsedDraft.demandControlEnabled));
+            }
+            if (parsedDraft.isDlmLimitationAccepted !== undefined) {
+              setIsDlmLimitationAccepted(Boolean(parsedDraft.isDlmLimitationAccepted));
+            }
+            if (parsedDraft.dlmLimitedChargerPowerKW !== undefined) {
+              setDlmLimitedChargerPowerKW(parsedDraft.dlmLimitedChargerPowerKW);
+            }
+            if (parsedDraft.customHomologatedCategoryId) {
+              setCustomHomologatedCategoryId(parsedDraft.customHomologatedCategoryId);
+            }
+
+            // Restauração das edições da BOM Modular
+            const draftOverrides = parsedDraft?.userBOMOverrides || parsedDraft?.clientProjectData?.userBOMOverrides;
+            if (draftOverrides && typeof draftOverrides === 'object') {
+              setBomUserOverrides(draftOverrides);
+            } else {
+              try {
+                const s = localStorage.getItem('coenergygo_bom_user_overrides');
+                if (s) setBomUserOverrides(JSON.parse(s));
+              } catch (e) {}
+            }
+
+            const draftDeleted = parsedDraft?.deletedItemIds || parsedDraft?.clientProjectData?.deletedItemIds;
+            if (Array.isArray(draftDeleted)) {
+              setBomDeletedItemIds(draftDeleted);
+            } else {
+              try {
+                const s = localStorage.getItem('coenergygo_bom_deleted_items');
+                if (s) setBomDeletedItemIds(JSON.parse(s));
+              } catch (e) {}
+            }
+
+            const draftCustom = parsedDraft?.customAddedItems || parsedDraft?.clientProjectData?.customAddedItems;
+            if (Array.isArray(draftCustom)) {
+              setBomCustomAddedItems(draftCustom);
+            } else {
+              try {
+                const s = localStorage.getItem('coenergygo_bom_custom_items');
+                if (s) setBomCustomAddedItems(JSON.parse(s));
+              } catch (e) {}
+            }
+
+            const draftLaborMode = parsedDraft?.laborMode || parsedDraft?.clientProjectData?.laborMode;
+            if (draftLaborMode) setBomLaborMode(draftLaborMode);
+
+            const draftLaborPct = parsedDraft?.laborPercent ?? parsedDraft?.clientProjectData?.laborPercent;
+            if (typeof draftLaborPct === 'number') setBomLaborPercent(draftLaborPct);
+
+            const draftBdi = parsedDraft?.globalBdiPercent ?? parsedDraft?.clientProjectData?.globalBdiPercent;
+            if (typeof draftBdi === 'number') setBomGlobalBdiPercent(draftBdi);
+
+            // Restauração das premissas financeiras BLEV (Passo 5 / Foto 2)
+            const draftFinancial = parsedDraft?.financialAssumptions || parsedDraft?.clientProjectData;
+            if (draftFinancial && typeof draftFinancial === 'object') {
+              try {
+                localStorage.setItem('coenergygo_financial_assumptions', JSON.stringify({
+                  ahpTariffBRL: draftFinancial.ahpTariffBRL,
+                  ahpEnergyCostBRL: draftFinancial.ahpEnergyCostBRL,
+                  ahpSolarEnergyCostBRL: draftFinancial.ahpSolarEnergyCostBRL,
+                  ahpFixedOpexBRL: draftFinancial.ahpFixedOpexBRL,
+                  ahpVariableOpexPercent: draftFinancial.ahpVariableOpexPercent,
+                  ahpSessionMinutes: draftFinancial.ahpSessionMinutes,
+                  ahpCapexBRL: draftFinancial.ahpCapexBRL,
+                  ahpVdm: draftFinancial.ahpVdm,
+                  ahpFleetDensityPercent: draftFinancial.ahpFleetDensityPercent,
+                  ahpEnergySourceMode: draftFinancial.ahpEnergySourceMode,
+                  ahpSolarSharePercent: draftFinancial.ahpSolarSharePercent,
+                  ahpRealEstateModel: draftFinancial.ahpRealEstateModel,
+                  ahpRevenueSharePercent: draftFinancial.ahpRevenueSharePercent,
+                  ahpFixedRentBRL: draftFinancial.ahpFixedRentBRL,
+                  ahpUseAutoCapex: draftFinancial.ahpUseAutoCapex
+                }));
+              } catch (e) {}
             }
           }
         } catch (e) {}
@@ -344,8 +540,103 @@ export default function CoenergyGODashboard() {
             if (parsedDraft && parsedDraft.clientProjectData) {
               setClientProjectData(prev => ({ ...prev, ...parsedDraft.clientProjectData }));
             }
+            const draftLoads220 = parsedDraft?.selectedLoads220V || parsedDraft?.clientProjectData?.selectedLoads220V;
+            const draftLoads380 = parsedDraft?.selectedLoads380V || parsedDraft?.clientProjectData?.selectedLoads380V;
+            if (draftLoads220 || draftLoads380) {
+              try {
+                const { useEVTopologyStore } = require('@/lib/coenergygo/store/useEVTopologyStore');
+                if (draftLoads220) useEVTopologyStore.getState().setSelectedLoads220V(draftLoads220);
+                if (draftLoads380) useEVTopologyStore.getState().setSelectedLoads380V(draftLoads380);
+              } catch (e) {}
+            }
             if (Array.isArray(parsedDraft?.configuredChargers) && parsedDraft.configuredChargers.length > 0) {
               setConfiguredChargers(parsedDraft.configuredChargers);
+            }
+            if (parsedDraft.enableSolarSurplus !== undefined) {
+              setDlmEnableSolarSurplus(Boolean(parsedDraft.enableSolarSurplus));
+            } else if (parsedDraft.dlmEnableSolarSurplus !== undefined) {
+              setDlmEnableSolarSurplus(Boolean(parsedDraft.dlmEnableSolarSurplus));
+            }
+            if (typeof parsedDraft.solarPeakKW === 'number' && parsedDraft.solarPeakKW > 0) {
+              setDlmSolarPeakKW(parsedDraft.solarPeakKW);
+            } else if (typeof parsedDraft.dlmSolarPeakKW === 'number' && parsedDraft.dlmSolarPeakKW > 0) {
+              setDlmSolarPeakKW(parsedDraft.dlmSolarPeakKW);
+            }
+            if (parsedDraft.demandControlEnabled !== undefined) {
+              setDlmEnableDLM(Boolean(parsedDraft.demandControlEnabled));
+            }
+            if (parsedDraft.isDlmLimitationAccepted !== undefined) {
+              setIsDlmLimitationAccepted(Boolean(parsedDraft.isDlmLimitationAccepted));
+            }
+            if (parsedDraft.dlmLimitedChargerPowerKW !== undefined) {
+              setDlmLimitedChargerPowerKW(parsedDraft.dlmLimitedChargerPowerKW);
+            }
+            if (parsedDraft.customHomologatedCategoryId) {
+              setCustomHomologatedCategoryId(parsedDraft.customHomologatedCategoryId);
+            }
+
+            // Restauração das edições da BOM Modular
+            const draftOverrides = parsedDraft?.userBOMOverrides || parsedDraft?.clientProjectData?.userBOMOverrides;
+            if (draftOverrides && typeof draftOverrides === 'object') {
+              setBomUserOverrides(draftOverrides);
+            } else {
+              try {
+                const s = localStorage.getItem('coenergygo_bom_user_overrides');
+                if (s) setBomUserOverrides(JSON.parse(s));
+              } catch (e) {}
+            }
+
+            const draftDeleted = parsedDraft?.deletedItemIds || parsedDraft?.clientProjectData?.deletedItemIds;
+            if (Array.isArray(draftDeleted)) {
+              setBomDeletedItemIds(draftDeleted);
+            } else {
+              try {
+                const s = localStorage.getItem('coenergygo_bom_deleted_items');
+                if (s) setBomDeletedItemIds(JSON.parse(s));
+              } catch (e) {}
+            }
+
+            const draftCustom = parsedDraft?.customAddedItems || parsedDraft?.clientProjectData?.customAddedItems;
+            if (Array.isArray(draftCustom)) {
+              setBomCustomAddedItems(draftCustom);
+            } else {
+              try {
+                const s = localStorage.getItem('coenergygo_bom_custom_items');
+                if (s) setBomCustomAddedItems(JSON.parse(s));
+              } catch (e) {}
+            }
+
+            const draftLaborMode = parsedDraft?.laborMode || parsedDraft?.clientProjectData?.laborMode;
+            if (draftLaborMode) setBomLaborMode(draftLaborMode);
+
+            const draftLaborPct = parsedDraft?.laborPercent ?? parsedDraft?.clientProjectData?.laborPercent;
+            if (typeof draftLaborPct === 'number') setBomLaborPercent(draftLaborPct);
+
+            const draftBdi = parsedDraft?.globalBdiPercent ?? parsedDraft?.clientProjectData?.globalBdiPercent;
+            if (typeof draftBdi === 'number') setBomGlobalBdiPercent(draftBdi);
+
+            // Restauração das premissas financeiras BLEV (Passo 5 / Foto 2)
+            const draftFinancial = parsedDraft?.financialAssumptions || parsedDraft?.clientProjectData;
+            if (draftFinancial && typeof draftFinancial === 'object') {
+              try {
+                localStorage.setItem('coenergygo_financial_assumptions', JSON.stringify({
+                  ahpTariffBRL: draftFinancial.ahpTariffBRL,
+                  ahpEnergyCostBRL: draftFinancial.ahpEnergyCostBRL,
+                  ahpSolarEnergyCostBRL: draftFinancial.ahpSolarEnergyCostBRL,
+                  ahpFixedOpexBRL: draftFinancial.ahpFixedOpexBRL,
+                  ahpVariableOpexPercent: draftFinancial.ahpVariableOpexPercent,
+                  ahpSessionMinutes: draftFinancial.ahpSessionMinutes,
+                  ahpCapexBRL: draftFinancial.ahpCapexBRL,
+                  ahpVdm: draftFinancial.ahpVdm,
+                  ahpFleetDensityPercent: draftFinancial.ahpFleetDensityPercent,
+                  ahpEnergySourceMode: draftFinancial.ahpEnergySourceMode,
+                  ahpSolarSharePercent: draftFinancial.ahpSolarSharePercent,
+                  ahpRealEstateModel: draftFinancial.ahpRealEstateModel,
+                  ahpRevenueSharePercent: draftFinancial.ahpRevenueSharePercent,
+                  ahpFixedRentBRL: draftFinancial.ahpFixedRentBRL,
+                  ahpUseAutoCapex: draftFinancial.ahpUseAutoCapex
+                }));
+              } catch (e) {}
             }
           }
         } catch (e) {}
@@ -453,9 +744,9 @@ export default function CoenergyGODashboard() {
     hasPhotoluminescentSignaling: auditHasSignaling
   });
 
-  // Sincronizar demanda base do Passo 2 sempre que a medição do Passo 1B for alterada
+  // Sincronizar demanda base do Passo 2 sempre que a medição ou carga manual do Passo 1B for alterada
   useEffect(() => {
-    if (effectiveExistingLoadKW > 0) {
+    if (effectiveExistingLoadKW >= 0) {
       setDlmPeakDemandKW(effectiveExistingLoadKW);
     }
   }, [effectiveExistingLoadKW]);
@@ -482,20 +773,32 @@ export default function CoenergyGODashboard() {
     }
   }, [applicationMode, highestChargerPowerKW, activeLoadedProjectId, dlmProfileType]);
 
-  // Categoria Homologada Efetiva (Automática ou Personalizada pelo Usuário)
+  // Categoria Homologada Efetiva (Automática, Ligação Nova ou Personalizada pelo Usuário)
   const effectiveHomologatedCategory = (customHomologatedCategoryId && availableCategories[customHomologatedCategoryId])
     ? availableCategories[customHomologatedCategoryId]
+    : (clientProjectData.isNewConnection && clientProjectData.standardCategory && availableCategories[clientProjectData.standardCategory])
+    ? availableCategories[clientProjectData.standardCategory]
     : utilityAnalysis.category;
 
   // ─── CAPACIDADE REAL DO PADRÃO BASEADA NA VISTORIA DE CAMPO ────────────────
   const fieldBreakerAmps = clientProjectData.fieldBreakerConfirmedA || (utilityAnalysis.currentCategory?.breakerCurrentA || 63);
   const fieldPhases = clientProjectData.fieldPhasesConfirmed || (utilityAnalysis.currentCategory?.phases === 3 ? '3F' : utilityAnalysis.currentCategory?.phases === 2 ? '2F' : '1F');
   
-  // Limite em kW do padrão existente baseado na vistoria de campo ou categoria teórica
-  // Normativamente na CEMIG ND-5.1 Tabela 2, Padrão C6 com disjuntor de 200A corresponde a 75 kW (limite regulatório contratual)
-  const fieldCalculatedLimitKW = clientProjectData.fieldBreakerConfirmedA
+  // Limite em kW do padrão existente ou escolhido na Ligação Nova:
+  // Se for Ligação Nova ou se o disjuntor confirmado corresponder ao disjuntor nominal da categoria CEMIG (ex: F1 = 225A -> 86 kW, C6 = 200A -> 75 kW),
+  // utiliza o limite homologado oficial da Tabela da Concessionária (evitando discrepância 81.4 kW vs 86 kW).
+  const isBreakerMatchingCurrentCategory = Boolean(
+    utilityAnalysis.currentCategory &&
+    clientProjectData.fieldBreakerConfirmedA === utilityAnalysis.currentCategory.breakerCurrentA
+  );
+
+  const fieldCalculatedLimitKW = (clientProjectData.isNewConnection || isBreakerMatchingCurrentCategory)
+    ? (utilityAnalysis.currentCategory?.maxLimitKW || effectiveHomologatedCategory.maxLimitKW || 75)
+    : clientProjectData.fieldBreakerConfirmedA
     ? (clientProjectData.fieldBreakerConfirmedA === 200 && fieldPhases === '3F'
         ? 75.0
+        : clientProjectData.fieldBreakerConfirmedA === 225 && fieldPhases === '3F'
+        ? 86.0
         : Number(
             (fieldPhases === '3F'
               ? (Math.sqrt(3) * (selectedUtility === 'CEMIG' ? 220 : 380) * fieldBreakerAmps * 0.95) / 1000
@@ -506,9 +809,13 @@ export default function CoenergyGODashboard() {
           ))
     : (utilityAnalysis.currentCategory?.maxLimitKW || 75);
 
-  // Limites e Cenários de Simulação para o Passo 2
+  // Limites e Cenários de Simulação para o Passo 2 (Curva 24h & DLM)
   const currentStandardLimitKW = fieldCalculatedLimitKW;
-  const currentStandardDisplayName = clientProjectData.fieldBreakerConfirmedA
+  const currentStandardDisplayName = clientProjectData.isNewConnection
+    ? `${effectiveHomologatedCategory.categoryName || currentStandardCategoryId} (Ligação Nova: ${currentStandardLimitKW} kW)`
+    : isBreakerMatchingCurrentCategory
+    ? `${utilityAnalysis.currentCategory?.categoryName || currentStandardCategoryId} (${currentStandardLimitKW} kW)`
+    : clientProjectData.fieldBreakerConfirmedA
     ? `${clientProjectData.fieldPhasesConfirmed || '1F'} ${fieldBreakerAmps}A (Vistoria de Campo: ${fieldCalculatedLimitKW} kW)`
     : `${utilityAnalysis.currentCategory?.categoryName || currentStandardCategoryId} (${currentStandardLimitKW} kW)`;
 
@@ -569,8 +876,13 @@ export default function CoenergyGODashboard() {
         tipoPadrao: "TRIFASICO",
         categoriaDemanda: isF ? "ALTA_DEMANDA_TABELA_4" : "INDIVIDUAL_TABELA_2",
         disjuntorAmperes: effectiveHomologatedCategory.breakerCurrentA || 200,
-        ladoRede: "MESMO_LADO",
-        tipoEstrutura: "POSTE_CONCRETO",
+        ladoRede: clientProjectData.standardSideOfStreet || "MESMO_LADO",
+        tipoSaida: clientProjectData.standardExitType || "SUBTERRANEA",
+        tipoEstrutura: clientProjectData.standardStructureType || "POSTE_CONCRETO",
+        localizacao: clientProjectData.standardLocation || "URBANO",
+        tipoCaixaDisjuntorTabela4: clientProjectData.standardBoxChoiceTabela4 || "CM-18",
+        tipoTerminalDisjuntor: clientProjectData.standardTerminalType || "COMPRESSAO_OLHAL",
+        preferirKitProntoCaixas: clientProjectData.preferKitProntoCaixas ?? false,
         finalidade: "CARREGADOR_VE",
         potenciaCarregadorKW: highestChargerPowerKW,
         incluirMaoDeObra: true,
@@ -712,10 +1024,16 @@ export default function CoenergyGODashboard() {
 
   const handleClientProjectChange = (updated: Partial<ClientProjectData>) => {
     setClientProjectData(prev => ({ ...prev, ...updated }));
-    if (updated.clientName) setClientName(updated.clientName);
-    if (updated.projectName) setProjectName(updated.projectName);
+    if (updated.clientName !== undefined) setClientName(updated.clientName);
+    if (updated.projectName !== undefined) setProjectName(updated.projectName);
     if (updated.utility) setSelectedUtility(updated.utility);
-    if (updated.standardCategory) setCurrentStandardCategoryId(updated.standardCategory);
+    if (updated.standardCategory) {
+      setCurrentStandardCategoryId(updated.standardCategory);
+      setCustomHomologatedCategoryId(updated.standardCategory);
+    }
+    if (updated.isNewConnection === true) {
+      setManualExistingLoadKW(0);
+    }
     if (updated.demandaEstimadaHistoricoKW && updated.demandaEstimadaHistoricoKW > 0) {
       setManualExistingLoadKW(updated.demandaEstimadaHistoricoKW);
       setLoadSourceMode('fatura');
@@ -725,6 +1043,34 @@ export default function CoenergyGODashboard() {
       setLoadSourceMode('fatura');
     }
   };
+
+  // ─── GEOCODIFICAÇÃO AUTOMÁTICA COM DEBOUNCE (SINGLE SOURCE OF TRUTH) ─────
+  useEffect(() => {
+    const rawAddress = clientProjectData.address?.trim();
+    if (!rawAddress || rawAddress.length < 4 || rawAddress === "Endereço a definir") return;
+
+    // Se o endereço é o padrão de Sete Lagoas, aplica diretamente as coordenadas de alta precisão
+    if (rawAddress.toLowerCase().includes('olavo bilac')) {
+      setProjectLatitude(-19.471676);
+      setProjectLongitude(-44.258735);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      fetch(`/api/ev/geocode?address=${encodeURIComponent(rawAddress)}`)
+        .then(res => res.json())
+        .then(geo => {
+          if (geo.success && typeof geo.lat === 'number' && typeof geo.lon === 'number') {
+            setProjectLatitude(geo.lat);
+            setProjectLongitude(geo.lon);
+          }
+        })
+        .catch(err => console.warn("Aviso ao geocodificar endereço do projeto:", err));
+    }, 600);
+
+    return () => clearTimeout(timer);
+  }, [clientProjectData.address]);
+
 
   const handleFireSafetyChange = (updated: Partial<FireSafetyChecklist>) => {
     setFireSafety(prev => {
@@ -738,9 +1084,14 @@ export default function CoenergyGODashboard() {
 
   const handleStartNewProject = () => {
     setActiveLoadedProjectId(null);
-    setProjectName("Novo Dimensionamento");
-    setClientName("Cliente Particular");
+    setProjectName("");
+    setClientName("");
     setApplicationMode('individual');
+
+    // 1. Limpa TODOS os dados do cliente e da fatura anterior para começar 100% em branco
+    setClientProjectData({ ...BLANK_CLIENT_PROJECT_DATA });
+
+    // 2. Carregador inicial padrão limpo (1x Wallbox 7.4 kW em branco para o cliente configurar)
     setConfiguredChargers([
       {
         id: 'ch-1',
@@ -755,16 +1106,85 @@ export default function CoenergyGODashboard() {
         targetVehicleName: `${BRAZIL_ELECTRIC_VEHICLES[0].brand} ${BRAZIL_ELECTRIC_VEHICLES[0].model}`
       }
     ]);
+
+    // 3. Resetar concessionária, padrão e coordenadas para valores iniciais neutros
+    setSelectedUtility('CEMIG');
+    setCurrentStandardCategoryId('C1');
+    setCustomHomologatedCategoryId(null);
+    setProjectLatitude(-19.471676);
+    setProjectLongitude(-44.258735);
+
+    // 4. Resetar medições de carga e planilhas
+    setLoadSourceMode('fatura');
+    setManualExistingLoadKW(0);
+    setUseSmartMeterExistingLoad(false);
+    setSmartMeterSummary(null);
+    setAttachedSheetsList([]);
+    setDailyPeaksState([]);
+    setCustomCurvePoints(null);
+    setCustomCurveBackup(null);
+
+    // 5. Resetar parâmetros de infraestrutura e DLM
+    setCircuitDistanceMeters(15);
+    setInstallationMethod('B1');
+    setAmbientTemp(30);
+    setIsOutdoor(false);
+    setDlmProfileType('condominio_residencial');
+    setDlmPeakDemandKW(10);
+    setDlmSimulationScenario('current');
+    setDlmChargeStartHour(8);
+    setDlmChargeDurationHours(2);
+    setDlmSolarPeakKW(0);
+    setDlmEnableSolarSurplus(false);
+    setDlmEnableDLM(true);
+    setIsDlmLimitationAccepted(false);
+    setDlmLimitedChargerPowerKW(null);
+    setCommercialHub({
+      forecastDailyCharges: 25,
+      averageSessionMinutes: 35,
+      peakConcentrationHours: [11, 12, 13, 17, 18, 19],
+      hasCanopy: true,
+      hasAutonomousPayment: true
+    });
+
+    // 6. Limpar rascunhos anteriores do localStorage para evitar ressuscitar projetos passados
+    try {
+      localStorage.removeItem('coenergygo_active_draft');
+      localStorage.removeItem('coenergygo_custom_circuits_220v');
+      localStorage.removeItem('coenergygo_custom_circuits_380v');
+      localStorage.removeItem('coenergygo_bom_user_overrides');
+      localStorage.removeItem('coenergygo_bom_deleted_items');
+      localStorage.removeItem('coenergygo_bom_custom_items');
+      localStorage.removeItem('coenergygo_financial_assumptions');
+    } catch (e) {}
+    setBomUserOverrides({});
+    setBomDeletedItemIds([]);
+    setBomCustomAddedItems([]);
+
+    // 7. Resetar o Store da Topologia Eletrotécnica
+    try {
+      const { useEVTopologyStore } = require('@/lib/coenergygo/store/useEVTopologyStore');
+      useEVTopologyStore.getState().resetToBlank();
+    } catch (err) {}
+
+    // 8. Navegar para o Passo 1A limpo
     setActiveTab('veiculos');
+    setSaveSuccessMessage("Novo projeto em branco iniciado com sucesso.");
+    setTimeout(() => setSaveSuccessMessage(null), 4000);
   };
 
   const handleLoadProjectIntoCoenergyGO = (p: any) => {
+    const cleanName = p.projectName || p.clientProjectData?.projectName || 'Dimensionamento Carregado';
+    const cleanClient = p.clientName || p.clientProjectData?.clientName || 'Cliente Particular';
+    const cleanUtility = (p.utility || p.clientProjectData?.utility || 'CEMIG') as UtilityId;
+    const cleanAddress = p.clientProjectData?.address || p.clientAddress || '';
+
     setActiveLoadedProjectId(p.id || null);
-    setProjectName(p.projectName || 'Dimensionamento Carregado');
-    setClientName(p.clientName || 'Cliente Particular');
-    if (p.utility) setSelectedUtility(p.utility as UtilityId);
-    
-    // Restaurar Modo de Aplicação exato selecionado no projeto
+    setProjectName(cleanName);
+    setClientName(cleanClient);
+    setSelectedUtility(cleanUtility);
+
+    // 1. Restaurar Modo de Aplicação exato selecionado no projeto
     if (p.applicationMode) {
       setApplicationMode(p.applicationMode);
     } else if (p.clientProjectData?.applicationMode) {
@@ -774,124 +1194,188 @@ export default function CoenergyGODashboard() {
     } else {
       setApplicationMode('individual');
     }
-    if (p.loadSourceMode) {
+
+    // 2. Construir clientProjectData 100% isolado a partir de BLANK_CLIENT_PROJECT_DATA (NUNCA mesclar sobre prev!)
+    const rawClientData = p.clientProjectData || {};
+    const isSeteLagoas = cleanName.toLowerCase().includes('sete lagoas') || cleanAddress.toLowerCase().includes('olavo bilac') || cleanAddress.toLowerCase().includes('sete lagoas');
+    const isNewConn = Boolean(rawClientData.isNewConnection);
+    const resolvedStdCat = rawClientData.standardCategory || p.existingEntranceCategory || p.entranceCategory || 'C3';
+    const resolvedTargetNewCat = isNewConn
+      ? (rawClientData.standardCategory && rawClientData.standardCategory !== 'C1' ? rawClientData.standardCategory : (rawClientData.targetNewCategory || resolvedStdCat))
+      : (rawClientData.targetNewCategory || resolvedStdCat);
+
+    const mergedClientData: ClientProjectData = {
+      ...BLANK_CLIENT_PROJECT_DATA,
+      ...rawClientData,
+      projectName: cleanName,
+      clientName: cleanClient,
+      address: cleanAddress,
+      utility: cleanUtility,
+      isNewConnection: isNewConn,
+      hasExistingStandard: !isNewConn,
+      standardCategory: resolvedStdCat,
+      targetNewCategory: resolvedTargetNewCat,
+      section1DistanceM: p.section1DistanceM ?? rawClientData.section1DistanceM,
+      section1MarginPercent: p.marginPercent ?? p.section1MarginPercent ?? rawClientData.section1MarginPercent,
+      section1ConductorMaterial: p.section1ConductorMaterial ?? rawClientData.section1ConductorMaterial,
+      section1InstallationMethod: p.section1InstallationMethod ?? rawClientData.section1InstallationMethod,
+      section2DistanceM: p.section2DistanceM ?? rawClientData.section2DistanceM,
+      section2MarginPercent: p.section2MarginPercent ?? rawClientData.section2MarginPercent,
+      section2ConductorMaterial: p.section2ConductorMaterial ?? rawClientData.section2ConductorMaterial,
+      section2InstallationMethod: p.section2InstallationMethod ?? rawClientData.section2InstallationMethod,
+      section3DistanceM: p.section3DistanceM ?? rawClientData.section3DistanceM,
+      section3MarginPercent: p.section3MarginPercent ?? rawClientData.section3MarginPercent,
+      section3ConductorMaterial: p.section3ConductorMaterial ?? rawClientData.section3ConductorMaterial,
+      section3InstallationMethod: p.section3InstallationMethod ?? rawClientData.section3InstallationMethod,
+      customTransformerKVA: p.customTransformerKVA ?? rawClientData.customTransformerKVA,
+      customTransformerEfficiencyPercent: p.customTransformerEfficiencyPercent ?? rawClientData.customTransformerEfficiencyPercent,
+      customTransformerLossesKW: p.customTransformerLossesKW ?? rawClientData.customTransformerLossesKW,
+      standardTerminalType: p.standardTerminalType ?? rawClientData.standardTerminalType ?? 'COMPRESSAO_OLHAL',
+      selectedLoads220V: p.selectedLoads220V ?? rawClientData.selectedLoads220V,
+      selectedLoads380V: p.selectedLoads380V ?? rawClientData.selectedLoads380V
+    };
+
+    // Blindagem extra: se não for Sete Lagoas ou se for Ligação Nova, limpar qualquer resquício de fatura de outro projeto
+    if ((!isSeteLagoas && mergedClientData.installationNumber === "811.109.018-18") || isNewConn) {
+      mergedClientData.installationNumber = "";
+      mergedClientData.meterNumber = "";
+      mergedClientData.utilityBillFileName = undefined;
+      mergedClientData.utilityBillFileUrl = undefined;
+      mergedClientData.utilityBillFileType = undefined;
+      mergedClientData.historicoConsumo = undefined;
+      mergedClientData.consumoMedioKWh = undefined;
+      mergedClientData.consumoMaximoKWh = undefined;
+      mergedClientData.demandaEstimadaHistoricoKW = undefined;
+      mergedClientData.saldoGeracaoKWh = undefined;
+      mergedClientData.energiaCompensadaKWh = undefined;
+    }
+
+    setClientProjectData(mergedClientData);
+
+    // 3. Sincronizar Coordenadas Geodésicas imediatamente para o projeto carregado
+    const contextLower = `${cleanAddress} ${cleanName}`.toLowerCase();
+    if (contextLower.includes('olavo bilac') || contextLower.includes('sete lagoas')) {
+      setProjectLatitude(-19.471676);
+      setProjectLongitude(-44.258735);
+    } else if (contextLower.includes('uberlândia') || contextLower.includes('uberlandia')) {
+      setProjectLatitude(typeof p.latitude === 'number' ? p.latitude : -18.9077034);
+      setProjectLongitude(typeof p.longitude === 'number' ? p.longitude : -48.3258897);
+    } else if (contextLower.includes('montes claros') || contextLower.includes('dangelis') || contextLower.includes('br 251')) {
+      setProjectLatitude(typeof p.latitude === 'number' ? p.latitude : -16.657055);
+      setProjectLongitude(typeof p.longitude === 'number' ? p.longitude : -43.740725);
+    } else if (contextLower.includes('curvelo')) {
+      setProjectLatitude(typeof p.latitude === 'number' ? p.latitude : -18.763554);
+      setProjectLongitude(typeof p.longitude === 'number' ? p.longitude : -44.422256);
+    } else if (typeof p.latitude === 'number' && typeof p.longitude === 'number') {
+      setProjectLatitude(p.latitude);
+      setProjectLongitude(p.longitude);
+    }
+
+    // 4. Sincronizar Categorias de Entrada e Carga Existente (sem herdar estado anterior)
+    setCurrentStandardCategoryId(resolvedStdCat);
+    if (p.entranceCategory && availableCategories[p.entranceCategory]) {
+      setCustomHomologatedCategoryId(p.entranceCategory);
+    } else if (isNewConn && availableCategories[resolvedStdCat]) {
+      setCustomHomologatedCategoryId(resolvedStdCat);
+    } else {
+      setCustomHomologatedCategoryId(null);
+    }
+
+    const resolvedExistingLoadKW = Number(p.existingLoadKW ?? mergedClientData.demandaEstimadaHistoricoKW ?? 0) || 0;
+    setManualExistingLoadKW(resolvedExistingLoadKW);
+
+    if (isNewConn) {
+      setLoadSourceMode('fatura');
+    } else if (p.loadSourceMode) {
       setLoadSourceMode(p.loadSourceMode);
     } else if (p.attachedSheetsList?.length > 0 || p.smartMeterSummary) {
       setLoadSourceMode('smartmeter');
-    } else if (p.existingLoadKW) {
+    } else {
       setLoadSourceMode('fatura');
-      setManualExistingLoadKW(Number(p.existingLoadKW));
-    }
-    if (p.existingLoadKW) {
-      setManualExistingLoadKW(Number(p.existingLoadKW));
-    }
-    if (p.existingEntranceCategory && availableCategories[p.existingEntranceCategory]) {
-      setCurrentStandardCategoryId(p.existingEntranceCategory);
-    }
-    if (p.entranceCategory && availableCategories[p.entranceCategory]) {
-      setCustomHomologatedCategoryId(p.entranceCategory);
-    }
-    if (p.distance) {
-      setCircuitDistanceMeters(Number(p.distance));
-    }
-    if (p.installationMethod) {
-      setInstallationMethod(p.installationMethod as any);
-    }
-    if (p.demandControlEnabled !== undefined) {
-      setDlmEnableDLM(Boolean(p.demandControlEnabled));
-    }
-    if (p.demandControlLimit) {
-      setDlmPeakDemandKW(Number(p.demandControlLimit));
-    }
-    if (p.dlmProfileType) {
-      setDlmProfileType(p.dlmProfileType);
-    }
-    if (p.dlmChargeStartHour !== undefined) {
-      setDlmChargeStartHour(Number(p.dlmChargeStartHour));
-    }
-    if (p.dlmChargeDurationHours !== undefined) {
-      setDlmChargeDurationHours(Number(p.dlmChargeDurationHours));
-    }
-    if (p.dlmSimulationScenario) {
-      setDlmSimulationScenario(p.dlmSimulationScenario);
-    }
-    if (p.isOutdoor !== undefined) {
-      setIsOutdoor(Boolean(p.isOutdoor));
-    }
-    if (p.customHourlyFactors && Array.isArray(p.customHourlyFactors)) {
-      setCustomHourlyFactors(p.customHourlyFactors);
-    }
-    if (p.customProfileName) {
-      setCustomProfileName(p.customProfileName);
-    }
-    if (p.commercialHub) {
-      setCommercialHub(prev => ({ ...prev, ...p.commercialHub }));
     }
 
-    // Se possui clientProjectData estruturado ou campos de topologia na raiz
-    const mergedClientData = {
-      ...(p.clientProjectData || {}),
-      section1DistanceM: p.section1DistanceM ?? p.clientProjectData?.section1DistanceM,
-      section1MarginPercent: p.marginPercent ?? p.section1MarginPercent ?? p.clientProjectData?.section1MarginPercent,
-      section1ConductorMaterial: p.section1ConductorMaterial ?? p.clientProjectData?.section1ConductorMaterial,
-      section1InstallationMethod: p.section1InstallationMethod ?? p.clientProjectData?.section1InstallationMethod,
-      section2DistanceM: p.section2DistanceM ?? p.clientProjectData?.section2DistanceM,
-      section2MarginPercent: p.section2MarginPercent ?? p.clientProjectData?.section2MarginPercent,
-      section2ConductorMaterial: p.section2ConductorMaterial ?? p.clientProjectData?.section2ConductorMaterial,
-      section2InstallationMethod: p.section2InstallationMethod ?? p.clientProjectData?.section2InstallationMethod,
-      section3DistanceM: p.section3DistanceM ?? p.clientProjectData?.section3DistanceM,
-      section3MarginPercent: p.section3MarginPercent ?? p.clientProjectData?.section3MarginPercent,
-      section3ConductorMaterial: p.section3ConductorMaterial ?? p.clientProjectData?.section3ConductorMaterial,
-      section3InstallationMethod: p.section3InstallationMethod ?? p.clientProjectData?.section3InstallationMethod,
-      customTransformerKVA: p.customTransformerKVA ?? p.clientProjectData?.customTransformerKVA,
-      customTransformerEfficiencyPercent: p.customTransformerEfficiencyPercent ?? p.clientProjectData?.customTransformerEfficiencyPercent,
-      customTransformerLossesKW: p.customTransformerLossesKW ?? p.clientProjectData?.customTransformerLossesKW
-    };
-    setClientProjectData(prev => ({ ...prev, ...mergedClientData }));
+    // 5. Restaurar ou resetar parâmetros físicos e DLM
+    setCircuitDistanceMeters(Number(p.distance) || 15);
+    setInstallationMethod((p.installationMethod as any) || 'B1');
+    setDlmEnableDLM(p.demandControlEnabled !== undefined ? Boolean(p.demandControlEnabled) : true);
+    setDlmPeakDemandKW(resolvedExistingLoadKW);
+    setDlmProfileType(p.dlmProfileType || (p.applicationMode === 'eletroposto_hub' ? 'edificio_comercial' : 'condominio_residencial'));
+    setDlmChargeStartHour(p.dlmChargeStartHour !== undefined ? Number(p.dlmChargeStartHour) : 8);
+    setDlmChargeDurationHours(p.dlmChargeDurationHours !== undefined ? Number(p.dlmChargeDurationHours) : 2);
+    setDlmSimulationScenario(p.dlmSimulationScenario || 'current');
+    setDlmEnableSolarSurplus(
+      p.enableSolarSurplus !== undefined ? Boolean(p.enableSolarSurplus) :
+      p.dlmEnableSolarSurplus !== undefined ? Boolean(p.dlmEnableSolarSurplus) :
+      false
+    );
+    setDlmSolarPeakKW(
+      typeof p.solarPeakKW === 'number' && p.solarPeakKW > 0 ? p.solarPeakKW :
+      typeof p.dlmSolarPeakKW === 'number' && p.dlmSolarPeakKW > 0 ? p.dlmSolarPeakKW :
+      25
+    );
+    setIsDlmLimitationAccepted(p.isDlmLimitationAccepted !== undefined ? Boolean(p.isDlmLimitationAccepted) : false);
+    setDlmLimitedChargerPowerKW(p.dlmLimitedChargerPowerKW !== undefined ? p.dlmLimitedChargerPowerKW : null);
+    setIsOutdoor(Boolean(p.isOutdoor));
+    setCustomHourlyFactors(Array.isArray(p.customHourlyFactors) ? p.customHourlyFactors : Array(24).fill(1.0));
+    setCustomProfileName(p.customProfileName || "Perfil do Projetista");
+    setCommercialHub({
+      forecastDailyCharges: 25,
+      averageSessionMinutes: 35,
+      peakConcentrationHours: [11, 12, 13, 17, 18, 19],
+      hasCanopy: true,
+      hasAutonomousPayment: true,
+      ...(p.commercialHub || {})
+    });
 
-    // Restaurar Planilhas de Medição e Histórico de Carga
-    if (Array.isArray(p.attachedSheetsList) && p.attachedSheetsList.length > 0) {
+    // 6. Restaurar Planilhas de Medição e Histórico de Carga (com limpeza explícita se o projeto não tiver!)
+    if (!isNewConn && Array.isArray(p.attachedSheetsList) && p.attachedSheetsList.length > 0) {
       setAttachedSheetsList(p.attachedSheetsList);
-      if (p.smartMeterSummary) {
-        setSmartMeterSummary(p.smartMeterSummary);
-      }
-      if (Array.isArray(p.dailyPeaksState)) {
-        setDailyPeaksState(p.dailyPeaksState);
-      }
+      setSmartMeterSummary(p.smartMeterSummary || null);
+      setDailyPeaksState(Array.isArray(p.dailyPeaksState) ? p.dailyPeaksState : []);
       if (p.smartMeterSummary) {
         const realPoints = buildWorstCaseEnvelope24h(p.smartMeterSummary);
         setCustomCurvePoints(realPoints);
         setCustomCurveBackup(realPoints);
+      } else {
+        setCustomCurvePoints(null);
+        setCustomCurveBackup(null);
       }
-    } else if (p.smartMeterSummary) {
+    } else if (!isNewConn && p.smartMeterSummary) {
+      setAttachedSheetsList([]);
       setSmartMeterSummary(p.smartMeterSummary);
+      setDailyPeaksState(Array.isArray(p.dailyPeaksState) ? p.dailyPeaksState : []);
       const realPoints = buildWorstCaseEnvelope24h(p.smartMeterSummary);
       setCustomCurvePoints(realPoints);
       setCustomCurveBackup(realPoints);
+    } else {
+      setAttachedSheetsList([]);
+      setSmartMeterSummary(null);
+      setDailyPeaksState([]);
+      setCustomCurvePoints(null);
+      setCustomCurveBackup(null);
     }
-    if (p.realCurveExtractionMode) {
-      setRealCurveExtractionMode(p.realCurveExtractionMode);
-    }
+    setRealCurveExtractionMode(p.realCurveExtractionMode || 'worst_case_envelope');
 
-    // Restaurar Circuitos Customizados dos Painéis 220V e 380V
-    if (Array.isArray(p.customCircuits220V)) {
-      try {
+    // 7. Restaurar ou Limpar Circuitos Customizados dos Painéis 220V e 380V
+    try {
+      if (Array.isArray(p.customCircuits220V) && p.customCircuits220V.length > 0) {
         localStorage.setItem('coenergygo_custom_circuits_220v', JSON.stringify(p.customCircuits220V));
-      } catch (e) {}
-    }
-    if (Array.isArray(p.customCircuits380V)) {
-      try {
+      } else {
+        localStorage.removeItem('coenergygo_custom_circuits_220v');
+      }
+      if (Array.isArray(p.customCircuits380V) && p.customCircuits380V.length > 0) {
         localStorage.setItem('coenergygo_custom_circuits_380v', JSON.stringify(p.customCircuits380V));
-      } catch (e) {}
-    }
+      } else {
+        localStorage.removeItem('coenergygo_custom_circuits_380v');
+      }
+    } catch (e) {}
 
-    // Se possui lista completa de carregadores restaurada do snapshot
+    // 8. Restaurar lista de carregadores do projeto
     let restoredChargersList: ConfiguredCharger[] = [];
     if (Array.isArray(p.configuredChargers) && p.configuredChargers.length > 0) {
       restoredChargersList = p.configuredChargers;
       setConfiguredChargers(p.configuredChargers);
     } else if (p.charger) {
-      // Injetar carregador padrão do relacionamento 1:1 caso não tenha o snapshot
       const kw = Number(p.charger.power) || 7.4;
       const phases = (Number(p.charger.phases) || (kw >= 11 ? 3 : 1)) as (1 | 3);
       const isDC = p.charger.type === 'DC' || kw >= 30;
@@ -910,13 +1394,14 @@ export default function CoenergyGODashboard() {
       setConfiguredChargers(restoredChargersList);
     }
 
-    // Sincronizar store da topologia imediatamente com todos os parâmetros restaurados
+    // 9. Resetar e sincronizar store da topologia com isolamento total
     try {
       const { useEVTopologyStore } = require('@/lib/coenergygo/store/useEVTopologyStore');
+      useEVTopologyStore.getState().resetToBlank();
       useEVTopologyStore.getState().syncFromProjectData({
-        clientBaseLoadKW: Number(p.existingLoadKW) || 5.0,
-        currentStandardCategory: p.existingEntranceCategory || p.entranceCategory || 'C3',
-        currentStandardBreakerA: Number(p.existingEntranceBreaker) || 63,
+        clientBaseLoadKW: resolvedExistingLoadKW,
+        currentStandardCategory: resolvedStdCat,
+        currentStandardBreakerA: Number(mergedClientData.fieldBreakerConfirmedA || mergedClientData.standardBreakerA || p.existingEntranceBreaker) || 63,
         gridSupplyVoltage: p.commercialHub?.gridSupplyVoltage ?? 220,
         section1DistanceM: mergedClientData.section1DistanceM,
         section1MarginPercent: mergedClientData.section1MarginPercent,
@@ -933,8 +1418,10 @@ export default function CoenergyGODashboard() {
         customTransformerKVA: mergedClientData.customTransformerKVA,
         customTransformerEfficiencyPercent: mergedClientData.customTransformerEfficiencyPercent,
         customTransformerLossesKW: mergedClientData.customTransformerLossesKW,
-        customCircuits220V: Array.isArray(p.customCircuits220V) ? p.customCircuits220V : undefined,
-        customCircuits380V: Array.isArray(p.customCircuits380V) ? p.customCircuits380V : undefined,
+        selectedLoads220V: mergedClientData.selectedLoads220V,
+        selectedLoads380V: mergedClientData.selectedLoads380V,
+        customCircuits220V: Array.isArray(p.customCircuits220V) ? p.customCircuits220V : [],
+        customCircuits380V: Array.isArray(p.customCircuits380V) ? p.customCircuits380V : [],
         chargers: restoredChargersList.map((ch: any) => ({
           id: ch.id,
           name: ch.name,
@@ -957,8 +1444,90 @@ export default function CoenergyGODashboard() {
     } catch (err) {
       console.warn("Aviso ao sincronizar useEVTopologyStore no carregamento do projeto:", err);
     }
+
+    // 9B. Restaurar e sincronizar overrides e edições manuais da Lista de Materiais Modular (BOM)
+    const restoredOverrides = p.userBOMOverrides || p.clientProjectData?.userBOMOverrides || {};
+    const restoredDeleted = p.deletedItemIds || p.clientProjectData?.deletedItemIds || [];
+    const restoredCustomItems = p.customAddedItems || p.clientProjectData?.customAddedItems || [];
+    const restoredLaborMode = p.laborMode || p.clientProjectData?.laborMode || 'TABELADO';
+    const restoredLaborPercent = typeof p.laborPercent === 'number' ? p.laborPercent : (p.clientProjectData?.laborPercent ?? 25);
+    const restoredBdiPercent = typeof p.globalBdiPercent === 'number' ? p.globalBdiPercent : (p.clientProjectData?.globalBdiPercent ?? 20);
+
+    setBomUserOverrides(restoredOverrides);
+    setBomDeletedItemIds(restoredDeleted);
+    setBomCustomAddedItems(restoredCustomItems);
+    setBomLaborMode(restoredLaborMode);
+    setBomLaborPercent(restoredLaborPercent);
+    setBomGlobalBdiPercent(restoredBdiPercent);
+
+    try {
+      localStorage.setItem('coenergygo_bom_user_overrides', JSON.stringify(restoredOverrides));
+      localStorage.setItem('coenergygo_bom_deleted_items', JSON.stringify(restoredDeleted));
+      localStorage.setItem('coenergygo_bom_custom_items', JSON.stringify(restoredCustomItems));
+    } catch (e) {}
+
+    // 9C. Restaurar premissas financeiras da Modelagem BLEV (Passo 5 / Foto 2)
+    const rawFin = p.financialAssumptions || p.clientProjectData || {};
+    if (rawFin.ahpTariffBRL !== undefined || rawFin.ahpEnergyCostBRL !== undefined) {
+      try {
+        localStorage.setItem('coenergygo_financial_assumptions', JSON.stringify({
+          ahpTariffBRL: rawFin.ahpTariffBRL,
+          ahpEnergyCostBRL: rawFin.ahpEnergyCostBRL,
+          ahpSolarEnergyCostBRL: rawFin.ahpSolarEnergyCostBRL,
+          ahpFixedOpexBRL: rawFin.ahpFixedOpexBRL,
+          ahpVariableOpexPercent: rawFin.ahpVariableOpexPercent,
+          ahpSessionMinutes: rawFin.ahpSessionMinutes,
+          ahpCapexBRL: rawFin.ahpCapexBRL,
+          ahpVdm: rawFin.ahpVdm,
+          ahpFleetDensityPercent: rawFin.ahpFleetDensityPercent,
+          ahpEnergySourceMode: rawFin.ahpEnergySourceMode,
+          ahpSolarSharePercent: rawFin.ahpSolarSharePercent,
+          ahpRealEstateModel: rawFin.ahpRealEstateModel,
+          ahpRevenueSharePercent: rawFin.ahpRevenueSharePercent,
+          ahpFixedRentBRL: rawFin.ahpFixedRentBRL,
+          ahpUseAutoCapex: rawFin.ahpUseAutoCapex
+        }));
+      } catch (e) {}
+    }
+
+    // 10. Atualizar rascunho ativo imediatamente com o projeto carregado
+    try {
+      localStorage.setItem('coenergygo_active_draft', JSON.stringify({
+        ...p,
+        userBOMOverrides: restoredOverrides,
+        deletedItemIds: restoredDeleted,
+        customAddedItems: restoredCustomItems,
+        laborMode: restoredLaborMode,
+        laborPercent: restoredLaborPercent,
+        globalBdiPercent: restoredBdiPercent,
+        clientProjectData: {
+          ...mergedClientData,
+          userBOMOverrides: restoredOverrides,
+          deletedItemIds: restoredDeleted,
+          customAddedItems: restoredCustomItems,
+          laborMode: restoredLaborMode,
+          laborPercent: restoredLaborPercent,
+          globalBdiPercent: restoredBdiPercent
+        },
+        configuredChargers: restoredChargersList
+      }));
+    } catch (e) {}
+
     setActiveTab('veiculos');
   };
+
+  // ─── CARREGAMENTO DIRETO VIA QUERY PARAM (?loadId=...) ─────────────────────────────
+  useEffect(() => {
+    if (projects.length === 0 || typeof window === 'undefined') return;
+    const urlParams = new URLSearchParams(window.location.search);
+    const loadId = urlParams.get('loadId');
+    if (loadId && !activeLoadedProjectId) {
+      const targetProj = projects.find(p => p.id === loadId);
+      if (targetProj) {
+        handleLoadProjectIntoCoenergyGO(targetProj);
+      }
+    }
+  }, [projects, activeLoadedProjectId]);
 
   const handleDeleteProject = async (id: string, projectName: string) => {
     if (!window.confirm(`Deseja realmente remover o projeto "${projectName}" do sistema?`)) {
@@ -1277,6 +1846,8 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
       clientPhone: clientProjectData.clientPhone || "",
       clientEmail: clientProjectData.clientEmail || "",
       clientAddress: clientProjectData.address || "",
+      latitude: projectLatitude,
+      longitude: projectLongitude,
       utility: selectedUtility,
       entranceCategory: effectiveHomologatedCategory.categoryId,
       existingEntranceCategory: currentStandardCategoryId,
@@ -1293,6 +1864,13 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
       isOutdoor: isOutdoor,
       demandControlEnabled: dlmEnableDLM,
       demandControlLimit: effectiveDlmGridLimitKW,
+      enableSolarSurplus: dlmEnableSolarSurplus,
+      dlmEnableSolarSurplus: dlmEnableSolarSurplus,
+      solarPeakKW: dlmSolarPeakKW,
+      dlmSolarPeakKW: dlmSolarPeakKW,
+      isDlmLimitationAccepted: isDlmLimitationAccepted,
+      dlmLimitedChargerPowerKW: dlmLimitedChargerPowerKW,
+      customHomologatedCategoryId: customHomologatedCategoryId,
       dlmProfileType: dlmProfileType,
       dlmChargeStartHour: dlmChargeStartHour,
       dlmChargeDurationHours: dlmChargeDurationHours,
@@ -1340,12 +1918,73 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
       customTransformerKVA: clientProjectData.customTransformerKVA,
       customTransformerEfficiencyPercent: clientProjectData.customTransformerEfficiencyPercent,
       customTransformerLossesKW: clientProjectData.customTransformerLossesKW,
+      standardTerminalType: clientProjectData.standardTerminalType || 'COMPRESSAO_OLHAL',
+      selectedLoads220V: (() => {
+        try {
+          const { useEVTopologyStore } = require('@/lib/coenergygo/store/useEVTopologyStore');
+          return useEVTopologyStore.getState().selectedLoads220V || clientProjectData.selectedLoads220V;
+        } catch (e) {
+          return clientProjectData.selectedLoads220V;
+        }
+      })(),
+      selectedLoads380V: (() => {
+        try {
+          const { useEVTopologyStore } = require('@/lib/coenergygo/store/useEVTopologyStore');
+          return useEVTopologyStore.getState().selectedLoads380V || clientProjectData.selectedLoads380V;
+        } catch (e) {
+          return clientProjectData.selectedLoads380V;
+        }
+      })(),
+      userBOMOverrides: bomUserOverrides,
+      deletedItemIds: bomDeletedItemIds,
+      customAddedItems: bomCustomAddedItems,
+      laborMode: bomLaborMode,
+      laborPercent: bomLaborPercent,
+      globalBdiPercent: bomGlobalBdiPercent,
+      financialAssumptions: (() => {
+        try {
+          const s = localStorage.getItem('coenergygo_financial_assumptions');
+          return s ? JSON.parse(s) : null;
+        } catch (e) {
+          return null;
+        }
+      })(),
       clientProjectData: {
         ...clientProjectData,
+        ...(() => {
+          try {
+            const s = localStorage.getItem('coenergygo_financial_assumptions');
+            return s ? JSON.parse(s) : {};
+          } catch (e) {
+            return {};
+          }
+        })(),
         projectName: resolvedProjectName,
         clientName: resolvedClientName,
         standardCategory: clientProjectData.standardCategory || currentStandardCategoryId,
-        applicationMode: applicationMode
+        applicationMode: applicationMode,
+        userBOMOverrides: bomUserOverrides,
+        deletedItemIds: bomDeletedItemIds,
+        customAddedItems: bomCustomAddedItems,
+        laborMode: bomLaborMode,
+        laborPercent: bomLaborPercent,
+        globalBdiPercent: bomGlobalBdiPercent,
+        selectedLoads220V: (() => {
+          try {
+            const { useEVTopologyStore } = require('@/lib/coenergygo/store/useEVTopologyStore');
+            return useEVTopologyStore.getState().selectedLoads220V || clientProjectData.selectedLoads220V;
+          } catch (e) {
+            return clientProjectData.selectedLoads220V;
+          }
+        })(),
+        selectedLoads380V: (() => {
+          try {
+            const { useEVTopologyStore } = require('@/lib/coenergygo/store/useEVTopologyStore');
+            return useEVTopologyStore.getState().selectedLoads380V || clientProjectData.selectedLoads380V;
+          } catch (e) {
+            return clientProjectData.selectedLoads380V;
+          }
+        })()
       },
       charger: {
         brand: primaryCharger.brand || "WEG",
@@ -1359,8 +1998,12 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
     };
   };
 
-  // Auto-Save silencioso automático disparado ao mudar de passo (salva APENAS como rascunho de sessão, NÃO cria projeto fantasma na lista de projetos salvos)
+  // Auto-Save silencioso automático disparado ao mudar de passo (salva APENAS se houver dados preenchidos)
   const handleAutoSaveSnapshot = () => {
+    // Evita criar rascunho de tela em branco sem nenhum dado
+    if (!clientProjectData.projectName && !clientProjectData.clientName && !clientProjectData.address && !clientProjectData.utilityBillFileName) {
+      return;
+    }
     try {
       const snapshot = buildCurrentProjectSnapshot('proj-auto-saved-current');
       localStorage.setItem('coenergygo_active_draft', JSON.stringify(snapshot));
@@ -1370,7 +2013,7 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
   };
 
   // Navegação protegida entre abas com auto-save automático
-  const handleTabChange = (nextTab: 'projetos' | 'viabilidade' | 'veiculos' | 'concessionarias' | 'nbr17019' | 'curva_dlm' | 'infraestrutura' | 'resultado') => {
+  const handleTabChange = (nextTab: 'projetos' | 'viabilidade' | 'veiculos' | 'concessionarias' | 'nbr17019' | 'curva_dlm' | 'infraestrutura' | 'resultado' | 'modelagem_financeira') => {
     handleAutoSaveSnapshot();
     setActiveTab(nextTab);
   };
@@ -1380,65 +2023,213 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
     commercialAnchor: any;
     vdm: number;
     fleetDensity: number;
+    fleetCount?: number;
     gridCategory: any;
+    isVerticalHousing?: boolean;
+    tariffBRL?: number;
+    energyCostBRL?: number;
+    capexBRL?: number;
+    sessionMinutes?: number;
+    dailySessionsRealistic?: number;
+    totalScore?: number;
+    rating?: string;
     recommendation: string;
+    niche?: any;
+    cityKey?: string;
+    cityTotalVehicles?: number;
+    cityEvVehicles?: number;
+    corridorFactor?: number;
+    fleetSourceMode?: 'censo_municipal' | 'manual_override';
+    vdmSourceMode?: 'osm_hcm' | 'dnit_corridor' | 'field_count' | 'manual_override';
+    roadHierarchy?: string;
+    roadLanes?: number;
+    roadOneway?: boolean;
+    corridorPresetKey?: string;
+    fieldCountVehicles?: number;
+    fieldCountMinutes?: number;
+    fieldKFactor?: number;
+    fieldDirectionMode?: 'ambos_sem_canteiro' | 'um_sentido_mao_dupla' | 'ambos_com_canteiro' | 'sentido_porta';
   }) => {
-    if (data.powerKW >= 120) {
-      setConfiguredChargers([
-        {
-          id: "chg_dc_120kw",
-          name: "BENY BDC-120KW Estação Ultrarrápida",
-          brand: "BENY",
-          model: "BDC-120KW",
-          powerKW: 120,
-          phases: 3,
-          voltage: 380,
-          type: "DC",
-          quantity: 1,
-          connector: "CCS2 + CHAdeMO",
-          currentInA: 182,
-          hasBuiltinRDCDD: true
-        }
-      ]);
-    } else if (data.powerKW >= 60) {
-      setConfiguredChargers([
-        {
-          id: "chg_dc_60kw",
-          name: "BENY BDC-60KW Rápido",
-          brand: "BENY",
-          model: "BDC-60KW",
-          powerKW: 60,
-          phases: 3,
-          voltage: 380,
-          type: "DC",
-          quantity: 1,
-          connector: "CCS2",
-          currentInA: 91,
-          hasBuiltinRDCDD: true
-        }
-      ]);
-    } else {
-      setConfiguredChargers([
-        {
-          id: "chg_ac_22kw",
-          name: "BENY BCP-A2N-L 22kW",
-          brand: "BENY",
-          model: "BCP-A2N-L",
-          powerKW: 22,
-          phases: 3,
-          voltage: 380,
-          type: "AC",
-          quantity: Math.max(1, Math.round(data.powerKW / 22)),
-          connector: "Tipo 2",
-          currentInA: 32,
-          hasBuiltinRDCDD: true
-        }
-      ]);
+    // 1. Sincronizar Modo da Aplicação conforme o Nicho AHP
+    const nextAppMode: ApplicationMode =
+      data.niche === 'residential'
+        ? 'individual'
+        : data.niche === 'fleet_depot'
+        ? 'condominio_frota'
+        : 'eletroposto_hub';
+    setApplicationMode(nextAppMode);
+
+    // 2. Sincronizar Dados Operacionais de Demanda (Passo 2 - Curva 24h & DLM)
+    const nextCommercialHub = {
+      ...commercialHub,
+      forecastDailyCharges: Math.max(1, Math.round(data.dailySessionsRealistic || 10)),
+      averageSessionMinutes: data.sessionMinutes || 35
+    };
+    setCommercialHub(nextCommercialHub);
+
+    // 3. Persistir todos os parâmetros AHP dentro de clientProjectData (VDM, % Frota, Âncora, Tarifas, Score)
+    const isNewConnFromAhp =
+      data.gridCategory === 'ligacao_nova_bt' || data.gridCategory === 'ligacao_nova_mt'
+        ? true
+        : clientProjectData.isNewConnection;
+
+    const updatedClientData: ClientProjectData = {
+      ...clientProjectData,
+      applicationMode: nextAppMode,
+      isNewConnection: isNewConnFromAhp,
+      hasExistingStandard: !isNewConnFromAhp,
+      ahpNiche: data.niche,
+      ahpVdm: data.vdm,
+      ahpFleetDensityPercent: data.fleetDensity,
+      ahpFleetCount: data.fleetCount,
+      ahpCommercialAnchor: data.commercialAnchor,
+      ahpGridCategory: data.gridCategory,
+      ahpIsVerticalHousing: data.isVerticalHousing,
+      ahpTariffBRL: data.tariffBRL,
+      ahpEnergyCostBRL: data.energyCostBRL,
+      ahpCapexBRL: data.capexBRL,
+      ahpSessionMinutes: data.sessionMinutes,
+      ahpTotalScore: data.totalScore,
+      ahpRating: data.rating,
+      ahpCityKey: data.cityKey,
+      ahpCityTotalVehicles: data.cityTotalVehicles,
+      ahpCityEvVehicles: data.cityEvVehicles,
+      ahpCorridorFactor: data.corridorFactor,
+      ahpFleetSourceMode: data.fleetSourceMode,
+      ahpVdmSourceMode: data.vdmSourceMode,
+      ahpRoadHierarchy: data.roadHierarchy,
+      ahpRoadLanes: data.roadLanes,
+      ahpRoadOneway: data.roadOneway,
+      ahpCorridorPresetKey: data.corridorPresetKey,
+      ahpFieldCountVehicles: data.fieldCountVehicles,
+      ahpFieldCountMinutes: data.fieldCountMinutes,
+      ahpFieldKFactor: data.fieldKFactor,
+      ahpFieldDirectionMode: data.fieldDirectionMode
+    };
+    setClientProjectData(updatedClientData);
+
+    // 4. Atualizar Carregadores APENAS se o usuário alterou a potência no Cockpit AHP (preserva 80 kW se não mudou!)
+    let nextChargers = configuredChargers;
+    if (Math.abs(totalChargersInstalledKW - data.powerKW) >= 1) {
+      if (data.powerKW >= 120) {
+        nextChargers = [
+          {
+            id: "chg_dc_120kw",
+            name: "BENY BDC-120KW Estação Ultrarrápida",
+            brand: "BENY",
+            model: "BDC-120KW",
+            powerKW: data.powerKW,
+            phases: 3,
+            voltage: 380,
+            type: "DC",
+            quantity: 1,
+            connector: "CCS2 + CHAdeMO",
+            currentInA: Math.round((data.powerKW * 1000) / (Math.sqrt(3) * 380 * 0.96)),
+            hasBuiltinRDCDD: true
+          }
+        ];
+      } else if (data.powerKW >= 60) {
+        nextChargers = [
+          {
+            id: `chg_dc_${data.powerKW}kw`,
+            name: `BENY BDC-${data.powerKW}KW Rápido`,
+            brand: "BENY",
+            model: `BDC-${data.powerKW}KW`,
+            powerKW: data.powerKW,
+            phases: 3,
+            voltage: 380,
+            type: "DC",
+            quantity: 1,
+            connector: "CCS2",
+            currentInA: Math.round((data.powerKW * 1000) / (Math.sqrt(3) * 380 * 0.96)),
+            hasBuiltinRDCDD: true
+          }
+        ];
+      } else {
+        nextChargers = [
+          {
+            id: "chg_ac_22kw",
+            name: "BENY BCP-A2N-L 22kW",
+            brand: "BENY",
+            model: "BCP-A2N-L",
+            powerKW: 22,
+            phases: 3,
+            voltage: 380,
+            type: "AC",
+            quantity: Math.max(1, Math.round(data.powerKW / 22)),
+            connector: "Tipo 2",
+            currentInA: 32,
+            hasBuiltinRDCDD: true
+          }
+        ];
+      }
+      setConfiguredChargers(nextChargers);
     }
 
-    setSaveSuccessMessage(`Viabilidade AHP incorporada com sucesso! Alocados ${data.powerKW} kW conforme âncora "${data.commercialAnchor}".`);
-    handleAutoSaveSnapshot();
-    setActiveTab('veiculos');
+    // 5. Salvar imediatamente no Estado dos Projetos, LocalStorage e Banco de Dados
+    try {
+      const baseSnap = buildCurrentProjectSnapshot(activeLoadedProjectId || undefined);
+      const enrichedSnap = {
+        ...baseSnap,
+        applicationMode: nextAppMode,
+        totalPowerKW: data.powerKW,
+        configuredChargers: nextChargers,
+        commercialHub: nextCommercialHub,
+        clientProjectData: updatedClientData
+      };
+
+      localStorage.setItem('coenergygo_active_draft', JSON.stringify(enrichedSnap));
+
+      const normName = (enrichedSnap.projectName || "").trim().toLowerCase();
+      setProjects(prev =>
+        prev.map(p =>
+          p.id === enrichedSnap.id || ((p.projectName || "").trim().toLowerCase() === normName)
+            ? { ...p, ...enrichedSnap, clientProjectData: updatedClientData }
+            : p
+        )
+      );
+
+      const stored = localStorage.getItem('coenergygo_saved_projects');
+      if (stored) {
+        const list = JSON.parse(stored);
+        if (Array.isArray(list)) {
+          const updatedList = list.map((x: any) =>
+            x.id === enrichedSnap.id || ((x.projectName || "").trim().toLowerCase() === normName)
+              ? { ...x, ...enrichedSnap, clientProjectData: updatedClientData }
+              : x
+          );
+          localStorage.setItem('coenergygo_saved_projects', JSON.stringify(updatedList));
+        }
+      }
+
+      if (activeLoadedProjectId && !activeLoadedProjectId.startsWith('proj-')) {
+        fetch(`/api/ev/sizing/${activeLoadedProjectId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            projectName: enrichedSnap.projectName,
+            clientName: enrichedSnap.clientName,
+            clientAddress: enrichedSnap.clientAddress,
+            utility: selectedUtility,
+            entranceCategory: effectiveHomologatedCategory.categoryId,
+            existingEntranceCategory: currentStandardCategoryId,
+            existingLoadKW: effectiveExistingLoadKW,
+            chargerPowerKW: data.powerKW,
+            analysisNotes: JSON.stringify({
+              isCoenergyGOSnapshot: true,
+              ...enrichedSnap
+            })
+          })
+        }).catch(() => {});
+      }
+    } catch (e) {
+      console.warn("Aviso ao persistir dados AHP:", e);
+    }
+
+    setSaveSuccessMessage(
+      `Parâmetros AHP salvos no projeto "${clientProjectData.projectName || 'Ativo'}": VDM ${data.vdm.toLocaleString('pt-BR')} veíc/dia, Frota VE ${data.fleetDensity}%, Âncora "${data.commercialAnchor}" e ${Math.round(data.dailySessionsRealistic || 10)} recargas/dia sincronizados!`
+    );
+    setTimeout(() => setSaveSuccessMessage(null), 6000);
   };
 
   // ─── MOTOR DE CÁLCULO UNIFICADO (SINGLE SOURCE OF TRUTH) ───────────────────
@@ -1461,7 +2252,8 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
       simultaneityFactor: utilityAnalysis.simultaneityFactorApplied || 0.85,
       utility: (selectedUtility as any) || 'CEMIG',
       distanceMeters: circuitDistanceMeters || 25,
-      existingBreakerA: fieldBreakerAmps || 63,
+      existingBreakerA: effectiveBreakerAmpsForSizing || fieldBreakerAmps || 63,
+      existingContractedDemandKW: effectiveBreakerCapacityKW || effectiveDlmGridLimitKW || 86,
       dlmEnabled: dlmEnableDLM,
       dlmLimitKW: effectiveDlmGridLimitKW || 0,
       hasTransformer: Boolean(clientProjectData.customTransformerKVA && clientProjectData.customTransformerKVA > 0),
@@ -1714,9 +2506,10 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
               <button
                 onClick={handleStartNewProject}
                 className="bg-gradient-to-r from-[#E45318] to-[#ff6b2b] text-white px-5 py-3 rounded-2xl flex items-center gap-2 shadow-lg hover:shadow-orange-500/20 hover:scale-[1.02] transition-all font-bold text-sm cursor-pointer"
+                title="Iniciar Novo Projeto em Branco (Limpar todos os dados)"
               >
                 <Plus className="w-5 h-5" />
-                Novo Dimensionamento
+                Novo Projeto
               </button>
             </div>
           </div>
@@ -1736,6 +2529,19 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
             </button>
 
             <button
+              onClick={() => handleTabChange('veiculos')}
+              className={`px-3.5 py-2 rounded-xl font-bold text-xs transition-all flex items-center gap-2 ${
+                activeTab === 'veiculos'
+                  ? 'bg-[#00B356] text-white shadow-sm ring-1 ring-emerald-400 font-black'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/70'
+              }`}
+            >
+              <FileText className="w-4 h-4 text-emerald-300" />
+              <span>Passo 1A: Cliente, Fatura & Carregadores</span>
+              <span className="bg-slate-900/60 text-[9px] px-1.5 py-0.5 rounded-full font-bold">{totalChargersCount} pts</span>
+            </button>
+
+            <button
               onClick={() => handleTabChange('viabilidade')}
               className={`px-3.5 py-2 rounded-xl font-bold text-xs transition-all flex items-center gap-2 ${
                 activeTab === 'viabilidade'
@@ -1744,21 +2550,8 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
               }`}
             >
               <Compass className="w-4 h-4 text-orange-300" />
-              <span>Passo 1A: Viabilidade AHP & Concorrentes</span>
+              <span>Passo 1B: Viabilidade Locacional AHP</span>
               <span className="bg-slate-900/60 text-[9px] px-1.5 py-0.5 rounded-full font-bold">AHP</span>
-            </button>
-
-            <button
-              onClick={() => handleTabChange('veiculos')}
-              className={`px-3.5 py-2 rounded-xl font-bold text-xs transition-all flex items-center gap-2 ${
-                activeTab === 'veiculos'
-                  ? 'bg-[#00B356] text-white shadow-sm ring-1 ring-emerald-400 font-black'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/70'
-              }`}
-            >
-              <Car className="w-4 h-4" />
-              <span>Passo 1B: Veículos & Eletroposto</span>
-              <span className="bg-slate-900/60 text-[9px] px-1.5 py-0.5 rounded-full font-bold">{totalChargersCount} pts</span>
             </button>
 
             <button
@@ -1824,8 +2617,20 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
                   : 'text-slate-400 hover:text-white hover:bg-slate-800/70'
               }`}
             >
-              <Award className="w-4 h-4 text-amber-300" />
-              <span>Passo 4B: Diagramas, BOM & Dossiê</span>
+              <FileSpreadsheet className="w-4 h-4 text-emerald-300" />
+              <span>Passo 4B: Lista de Materiais & Orçamentos (CAPEX)</span>
+            </button>
+
+            <button
+              onClick={() => handleTabChange('modelagem_financeira')}
+              className={`px-3.5 py-2 rounded-xl font-bold text-xs transition-all flex items-center gap-2 ${
+                activeTab === 'modelagem_financeira'
+                  ? 'bg-gradient-to-r from-emerald-600 via-teal-600 to-[#00B356] text-white shadow-md font-black shadow-emerald-900/30 ring-2 ring-emerald-400'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/70'
+              }`}
+            >
+              <DollarSign className="w-4 h-4 text-emerald-300" />
+              <span>Passo 5: Modelagem Financeira & 3 Cenários (BLEV)</span>
             </button>
 
             <button
@@ -1839,18 +2644,6 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
           </div>
         </div>
       </div>
-
-      {/* ─── BARRA DE RESUMO EXECUTIVO EM TEMPO REAL (STICKY SUMMARY) ─── */}
-      <EVStickySummary
-        calculation={unifiedCalculation}
-        projectName={clientProjectData.projectName || projectName}
-        clientName={clientProjectData.clientName || clientName}
-        activeStep={activeTab}
-        onStepClick={handleTabChange}
-        onSaveProject={handleSaveCurrentProject}
-        onGenerateReport={() => setShowEngineeringReportsHubModal(true)}
-        isSaving={savingProject}
-      />
 
       {/* BANNER DE NOTIFICAÇÃO DE SUCESSO DE SALVAMENTO */}
       {saveSuccessMessage && (
@@ -2014,16 +2807,95 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
         </div>
       )}
 
-      {/* ─── TAB: PASSO 1A: VIABILIDADE LOCACIONAL AHP & CONCORRENTES GEOESPACIAIS ─── */}
+      {/* ─── TAB: PASSO 1B: VIABILIDADE LOCACIONAL AHP & CONCORRENTES GEOESPACIAIS ─── */}
       {activeTab === 'viabilidade' && (
         <div className="space-y-6 animate-in fade-in duration-200">
           <EVLocationScoringCockpit
+            projectId={activeLoadedProjectId}
+            projectName={clientProjectData.projectName || projectName || "Novo Projeto de Recarga"}
+            initialAddress={clientProjectData.address || "Endereço a definir"}
+            initialNiche={(clientProjectData.ahpNiche as any) || (applicationMode === 'individual' ? 'residential' : applicationMode === 'condominio_frota' ? 'fleet_depot' : 'urban_hub')}
+            initialLatitude={projectLatitude}
+            initialLongitude={projectLongitude}
+            utility={selectedUtility}
+            installationNumber={clientProjectData.installationNumber}
+            standardCategory={clientProjectData.isNewConnection ? (clientProjectData.standardCategory || clientProjectData.targetNewCategory || effectiveHomologatedCategory.categoryId) : currentStandardCategoryId}
+            standardBreakerA={effectiveBreakerAmpsForSizing}
+            projectAvailablePowerKW={effectiveBreakerCapacityKW}
+            projectExistingLoadKW={effectiveExistingLoadKW}
+            projectHeadroomKW={Math.max(0, Number((effectiveBreakerCapacityKW - effectiveExistingLoadKW).toFixed(1)))}
+            projectChargerPowerKW={totalChargersInstalledKW}
+            projectChargerDescription={configuredChargers.map(c => `${c.quantity}x ${c.name} (${c.powerKW} kW)`).join(' + ')}
+            projectTotalCapexBRL={Math.round(totalEstimatedBOMCost + (totalChargersInstalledKW * 950))}
+            isNewConnection={clientProjectData.isNewConnection || false}
+            targetNewCategory={clientProjectData.standardCategory || clientProjectData.targetNewCategory || "C3"}
+            isExistingStandardAdequate={utilityAnalysis.isExistingStandardAdequate}
+            savedNiche={clientProjectData.ahpNiche as any}
+            savedVdm={clientProjectData.ahpVdm}
+            savedFleetDensity={clientProjectData.ahpFleetDensityPercent}
+            savedFleetCount={clientProjectData.ahpFleetCount}
+            savedAnchor={clientProjectData.ahpCommercialAnchor as any}
+            savedGridCategory={clientProjectData.ahpGridCategory as any}
+            savedIsVerticalHousing={clientProjectData.ahpIsVerticalHousing}
+            savedTariffBRL={clientProjectData.ahpTariffBRL}
+            savedEnergyCostBRL={clientProjectData.ahpEnergyCostBRL}
+            savedCapexBRL={clientProjectData.ahpCapexBRL}
+            savedSessionMinutes={clientProjectData.ahpSessionMinutes}
+            savedCityKey={clientProjectData.ahpCityKey}
+            savedCityTotalVehicles={clientProjectData.ahpCityTotalVehicles}
+            savedCityEvVehicles={clientProjectData.ahpCityEvVehicles}
+            savedCorridorFactor={clientProjectData.ahpCorridorFactor}
+            savedFleetSourceMode={clientProjectData.ahpFleetSourceMode}
+            savedVdmSourceMode={clientProjectData.ahpVdmSourceMode}
+            savedRoadHierarchy={clientProjectData.ahpRoadHierarchy as any}
+            savedRoadLanes={clientProjectData.ahpRoadLanes}
+            savedRoadOneway={clientProjectData.ahpRoadOneway}
+            savedCorridorPresetKey={clientProjectData.ahpCorridorPresetKey}
+            savedFieldCountVehicles={clientProjectData.ahpFieldCountVehicles}
+            savedFieldCountMinutes={clientProjectData.ahpFieldCountMinutes}
+            savedFieldKFactor={clientProjectData.ahpFieldKFactor}
+            savedFieldDirectionMode={clientProjectData.ahpFieldDirectionMode}
+            savedSolarEnergyCostBRL={clientProjectData.ahpSolarEnergyCostBRL ?? commercialHub.solarEnergyCostPerKWh ?? 0.39}
+            savedEnergySourceMode={clientProjectData.ahpEnergySourceMode ?? commercialHub.energySourceMode ?? 'concessionaria'}
+            savedSolarSharePercent={clientProjectData.ahpSolarSharePercent ?? commercialHub.solarSharePercent ?? 50}
+            savedRealEstateModel={clientProjectData.ahpRealEstateModel ?? commercialHub.realEstateModel ?? 'comodato'}
+            savedRevenueSharePercent={clientProjectData.ahpRevenueSharePercent ?? commercialHub.realEstateRevenueSharePercent ?? 10}
+            savedFixedRentBRL={clientProjectData.ahpFixedRentBRL ?? commercialHub.realEstateFixedRentBRL ?? 500}
+            savedVariableOpexPercent={clientProjectData.ahpVariableOpexPercent ?? commercialHub.variableOpexPercent ?? 12}
+            savedFixedOpexBRL={clientProjectData.ahpFixedOpexBRL ?? commercialHub.fixedOpexPerPointBRL ?? 350}
+            savedCustomRealEstateModels={clientProjectData.ahpCustomRealEstateModels ?? commercialHub.customRealEstateModels ?? []}
+            savedCustomCompetitors={clientProjectData.ahpCustomCompetitors || []}
+            onAhpStateChange={(upd) => {
+              setClientProjectData(prev => ({ ...prev, ...upd }));
+              setCommercialHub(prev => ({
+                ...prev,
+                ...(upd.ahpTariffBRL !== undefined ? { sellingPricePerKWh: upd.ahpTariffBRL } : {}),
+                ...(upd.ahpEnergyCostBRL !== undefined ? { gridEnergyCostPerKWh: upd.ahpEnergyCostBRL } : {}),
+                ...(upd.ahpSolarEnergyCostBRL !== undefined ? { solarEnergyCostPerKWh: upd.ahpSolarEnergyCostBRL } : {}),
+                ...(upd.ahpEnergySourceMode !== undefined ? { energySourceMode: upd.ahpEnergySourceMode } : {}),
+                ...(upd.ahpSolarSharePercent !== undefined ? { solarSharePercent: upd.ahpSolarSharePercent } : {}),
+                ...(upd.ahpRealEstateModel !== undefined ? { realEstateModel: upd.ahpRealEstateModel } : {}),
+                ...(upd.ahpRevenueSharePercent !== undefined ? { realEstateRevenueSharePercent: upd.ahpRevenueSharePercent } : {}),
+                ...(upd.ahpFixedRentBRL !== undefined ? { realEstateFixedRentBRL: upd.ahpFixedRentBRL } : {}),
+                ...(upd.ahpVariableOpexPercent !== undefined ? { variableOpexPercent: upd.ahpVariableOpexPercent } : {}),
+                ...(upd.ahpFixedOpexBRL !== undefined ? { fixedOpexPerPointBRL: upd.ahpFixedOpexBRL } : {}),
+                ...(upd.ahpCustomRealEstateModels !== undefined ? { customRealEstateModels: upd.ahpCustomRealEstateModels } : {})
+              }));
+            }}
             onApplyToProject={handleApplyAHPToProject}
+            onCoordinatesChange={(coords) => {
+              setProjectLatitude(coords.lat);
+              setProjectLongitude(coords.lon);
+              if (coords.address) {
+                setClientProjectData(prev => ({ ...prev, address: coords.address }));
+              }
+            }}
           />
+
         </div>
       )}
 
-      {/* ─── TAB 2: PASSO 1B: CLIENTE, AMBIENTE & CARREGADORES HOMOLOGADOS ─── */}
+      {/* ─── TAB: PASSO 1A: CLIENTE, AMBIENTE & CARREGADORES HOMOLOGADOS ─── */}
       {activeTab === 'veiculos' && (
         <div className="space-y-6 animate-in fade-in duration-200">
           {/* 1. Identificação do Cliente, Responsável Técnico e Anexo Inteligente de Fatura */}
@@ -2046,7 +2918,23 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
             fireSafety={fireSafety}
             onFireSafetyChange={handleFireSafetyChange}
             commercialHub={commercialHub}
-            onCommercialHubChange={(upd) => setCommercialHub(prev => ({ ...prev, ...upd }))}
+            onCommercialHubChange={(upd) => {
+              setCommercialHub(prev => ({ ...prev, ...upd }));
+              setClientProjectData(prev => ({
+                ...prev,
+                ...(upd.sellingPricePerKWh !== undefined ? { ahpTariffBRL: upd.sellingPricePerKWh } : {}),
+                ...(upd.gridEnergyCostPerKWh !== undefined ? { ahpEnergyCostBRL: upd.gridEnergyCostPerKWh } : {}),
+                ...(upd.solarEnergyCostPerKWh !== undefined ? { ahpSolarEnergyCostBRL: upd.solarEnergyCostPerKWh } : {}),
+                ...(upd.energySourceMode !== undefined ? { ahpEnergySourceMode: upd.energySourceMode } : {}),
+                ...(upd.solarSharePercent !== undefined ? { ahpSolarSharePercent: upd.solarSharePercent } : {}),
+                ...(upd.realEstateModel !== undefined ? { ahpRealEstateModel: upd.realEstateModel } : {}),
+                ...(upd.realEstateRevenueSharePercent !== undefined ? { ahpRevenueSharePercent: upd.realEstateRevenueSharePercent } : {}),
+                ...(upd.realEstateFixedRentBRL !== undefined ? { ahpFixedRentBRL: upd.realEstateFixedRentBRL } : {}),
+                ...(upd.variableOpexPercent !== undefined ? { ahpVariableOpexPercent: upd.variableOpexPercent } : {}),
+                ...(upd.fixedOpexPerPointBRL !== undefined ? { ahpFixedOpexBRL: upd.fixedOpexPerPointBRL } : {}),
+                ...(upd.customRealEstateModels !== undefined ? { ahpCustomRealEstateModels: upd.customRealEstateModels } : {})
+              }));
+            }}
             utility={selectedUtility}
             onApplyPreset={(presetType) => {
               if (presetType === 'condo') {
@@ -2730,7 +3618,15 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
                       <input
                         type="number"
                         value={manualExistingLoadKW}
-                        onChange={(e) => setManualExistingLoadKW(Number(e.target.value))}
+                        onChange={(e) => {
+                          const val = Number(e.target.value);
+                          setManualExistingLoadKW(val);
+                          setClientProjectData(prev => ({
+                            ...prev,
+                            demandaEstimadaHistoricoKW: val,
+                            existingLoadKW: val
+                          }));
+                        }}
                         className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 font-bold text-slate-800 shadow-sm focus:border-[#E45318] focus:outline-none"
                         placeholder="Ex: 5"
                       />
@@ -2768,7 +3664,7 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
                 <CheckCircle2 className="w-4 h-4 text-[#00B356] flex-shrink-0" />
                 <span>
                   <strong>Integração com a Curva de Carga:</strong> A carga existente adotada (<strong>{effectiveExistingLoadKW} kW</strong>) alimenta tanto a verificação do padrão da concessionária abaixo quanto a simulação horária no <strong>Passo 2 (Curva de Carga & DLM)</strong>.
-                  {smartMeterSummary ? ` (Medição ativa: ${smartMeterSummary.fileName} • Pico 6,44 kW)` : ' (Você também pode carregar memória de massa diretamente aqui ou no Passo 2)'}
+                  {smartMeterSummary ? ` (Medição ativa: ${smartMeterSummary.fileName} • Pico ${smartMeterSummary.maxPowerKW.toFixed(2)} kW)` : ' (Você também pode carregar memória de massa diretamente aqui ou no Passo 2)'}
                 </span>
               </div>
               <button
@@ -2783,10 +3679,14 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
             {/* CARD COMPARATIVO REAL: PADRÃO ATUAL VS FUTURO REQUERIDO */}
             {/* CARD COMPARATIVO REAL: PADRÃO ATUAL VS FUTURO REQUERIDO */}
             {(() => {
-              const nominalSumKW = Number((totalChargersInstalledKW + effectiveExistingLoadKW).toFixed(1));
-              const isOverBT = nominalSumKW > 75;
-              const isAdequateWithDLMOnly = utilityAnalysis.isExistingStandardAdequate && isOverBT;
-              const isFullyAdequate = utilityAnalysis.isExistingStandardAdequate && !isOverBT;
+              const currentStandardMaxKW = utilityAnalysis.currentCategory?.maxLimitKW || 75;
+              const nominalSumKW = Number((totalChargersInstalledKW + effectiveExistingLoadKW + totalAuxiliaryPowerKW).toFixed(1));
+              const diversifiedSumKW = Number((utilityAnalysis.totalInstallationLoadKW + totalAuxiliaryPowerKW).toFixed(1));
+              const surplusKW = Number((currentStandardMaxKW - diversifiedSumKW).toFixed(1));
+              // Só exige DLM para permanecer no padrão atual se a carga nominal bruta superar o limite do padrão escolhido (ex: > 86 kW no F1 ou > 75 kW no C6), mas a carga diversificada couber
+              const isExceedingChosenStandardWithoutDLM = nominalSumKW > currentStandardMaxKW;
+              const isAdequateWithDLMOnly = utilityAnalysis.isExistingStandardAdequate && isExceedingChosenStandardWithoutDLM && surplusKW < 0;
+              const isFullyAdequate = utilityAnalysis.isExistingStandardAdequate && surplusKW >= 0 && !isExceedingChosenStandardWithoutDLM;
 
               return (
                 <div className={`p-6 rounded-3xl border transition-all ${
@@ -2801,11 +3701,14 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
                       <div className="flex flex-wrap items-center gap-2">
                         {isFullyAdequate ? (
                           <span className="bg-[#00B356] text-white text-[10px] font-black uppercase px-3 py-1 rounded-full flex items-center gap-1.5 shadow">
-                            <CheckCircle2 className="w-3.5 h-3.5" /> Padrão Atual Atende com Folga!
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            {clientProjectData.isNewConnection
+                              ? `Ligação Nova (${currentStandardCategoryId} — ${currentStandardMaxKW} kW) Dimensionada com Folga!`
+                              : 'Padrão Atual Atende 100% com Folga (Sem Necessidade de DLM)!'}
                           </span>
                         ) : isAdequateWithDLMOnly ? (
                           <span className="bg-[#E45318] text-white text-[10px] font-black uppercase px-3 py-1 rounded-full flex items-center gap-1.5 shadow">
-                            <AlertTriangle className="w-3.5 h-3.5" /> Atendimento em BT Condicionado a DLM Homologado
+                            <AlertTriangle className="w-3.5 h-3.5" /> Atendimento Condicionado a DLM Homologado
                           </span>
                         ) : (
                           <span className="bg-red-600 text-white text-[10px] font-black uppercase px-3 py-1 rounded-full flex items-center gap-1.5 shadow">
@@ -2815,26 +3718,30 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
                         <span className="text-xs font-semibold text-slate-600">
                           Norma: <strong>{utilityAnalysis.applicableStandards[0]}</strong>
                         </span>
-                        {isOverBT && (
-                          <span className="bg-slate-800 text-amber-300 text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full">
-                            Carga Instalada ({nominalSumKW} kW) &gt; Teto BT (75 kW)
+                        {isFullyAdequate && (
+                          <span className="bg-emerald-800 text-emerald-100 text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full">
+                            Dispensa DLM ({diversifiedSumKW} kW &le; {currentStandardMaxKW} kW)
                           </span>
                         )}
                       </div>
 
                       <h3 className="text-xl font-black">
                         {isFullyAdequate
-                          ? `Nenhuma Obra de Concessionária Necessária (Folga: +${utilityAnalysis.headroomInCurrentStandardKW.toFixed(1)} kW livres)`
+                          ? clientProjectData.isNewConnection
+                            ? `Padrão Escolhido p/ Ligação Nova (${currentStandardCategoryId} — ${currentStandardMaxKW} kW / ${utilityAnalysis.currentCategory?.breakerCurrentA || 225}A) Atende 100% da Carga (Folga: +${surplusKW.toFixed(1)} kW livres)`
+                            : `Nenhuma Obra de Concessionária Necessária (Folga: +${surplusKW.toFixed(1)} kW livres)`
                           : isAdequateWithDLMOnly
-                          ? `Carga Bruta (${nominalSumKW} kW) Ultrapassa o Teto de BT (75 kW). Exige DLM Homologado.`
-                          : `Demanda Requerida (${utilityAnalysis.totalInstallationLoadKW.toFixed(1)} kW) Excede o Limite do Padrão Atual (${utilityAnalysis.currentCategory?.maxLimitKW || 0} kW)`}
+                          ? `Carga Bruta (${nominalSumKW} kW) Ultrapassa o Teto do Padrão (${currentStandardMaxKW} kW). Exige DLM Homologado.`
+                          : `Demanda Requerida (${diversifiedSumKW} kW) Excede o Limite do Padrão Atual (${currentStandardMaxKW} kW)`}
                       </h3>
 
                       <p className="text-xs text-slate-700 leading-relaxed max-w-3xl">
                         {isFullyAdequate
-                          ? `A demanda total calculada (${utilityAnalysis.totalInstallationLoadKW.toFixed(1)} kW / ${utilityAnalysis.calculatedDemandKVA.toFixed(1)} kVA) está plenamente contida na capacidade do padrão atual ${utilityAnalysis.currentCategory?.categoryId || currentStandardCategoryId} (${utilityAnalysis.currentCategory?.maxLimitKW || 0} kW). Não há necessidade de troca de disjuntor ou ramal de entrada.`
+                          ? clientProjectData.isNewConnection
+                            ? `Como se trata de uma Ligação Nova dimensionada no padrão ${utilityAnalysis.currentCategory?.categoryId || currentStandardCategoryId} (${currentStandardMaxKW} kW / Disjuntor ${utilityAnalysis.currentCategory?.breakerCurrentA || 225}A — CEMIG ND-5.1 Tabela 4), a capacidade do padrão contratado supera a demanda simultânea total (${diversifiedSumKW} kW = ${totalChargersInstalledKW} kW VE ${effectiveExistingLoadKW > 0 ? `+ ${effectiveExistingLoadKW.toFixed(1)} kW base ` : ''}+ ${totalAuxiliaryPowerKW.toFixed(1)} kW auxiliares), restando +${surplusKW.toFixed(1)} kW de sobra líquida. Portanto, o carregador opera a 100% da sua potência nominal sem precisar de limitação por DLM.`
+                            : `A demanda total calculada (${diversifiedSumKW} kW / ${utilityAnalysis.calculatedDemandKVA.toFixed(1)} kVA) está plenamente contida na capacidade do padrão ${utilityAnalysis.currentCategory?.categoryId || currentStandardCategoryId} (${currentStandardMaxKW} kW). Não há necessidade de DLM, troca de disjuntor ou reforma de entrada.`
                           : isAdequateWithDLMOnly
-                          ? `A potência nominal instalada (${totalChargersInstalledKW} kW de carregadores + ${effectiveExistingLoadKW} kW do imóvel = ${nominalSumKW} kW) excede o limite máximo de fornecimento em Baixa Tensão da CEMIG (75 kW / Disjuntor 200A Tipo C6 - ND-5.1 § 4.1). Pela regra da concessionária, para permanecer no padrão C6 sem migrar para Média Tensão (ND-5.3), é OBRIGATÓRIO apresentar projeto de Gestão Dinâmica de Carga (DLM) com bloqueio físico de sobrecorrente em ${utilityAnalysis.currentCategory?.maxLimitKW || 75} kW. Sem aprovação formal de DLM na CEMIG, a ligação em Baixa Tensão será reprovada.`
+                          ? `A potência nominal instalada (${nominalSumKW} kW) excede o limite do padrão ${currentStandardCategoryId} (${currentStandardMaxKW} kW). Para manter este padrão sem migrar para categoria superior, é necessário ativar a Gestão Dinâmica de Carga (DLM) limitada a ${currentStandardMaxKW} kW.`
                           : `A instalação da estação de recarga exigirá adequação de padrão junto à ${selectedUtility} para a categoria ${utilityAnalysis.category.categoryId} (${utilityAnalysis.category.maxLimitKW} ${utilityAnalysis.category.categoryId.startsWith('F') ? 'kVA' : 'kW'} com disjuntor de ${utilityAnalysis.category.breakerCurrentA}A) ou migração para Subestação Particular de Média Tensão (ND-5.3).`}
                       </p>
                     </div>
@@ -2910,6 +3817,231 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
                 </div>
               );
             })()}
+
+            {/* ─── CARD DE COLETA DE INFORMAÇÕES FÍSICAS DO PADRÃO (PASSO 2A - CEMIG ND-5.1) ─── */}
+            <div className="bg-gradient-to-r from-slate-900 via-[#0A192F] to-slate-900 text-white p-6 rounded-3xl border border-slate-700/80 shadow-lg space-y-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-800 pb-3 gap-2">
+                <div>
+                  <span className="text-[10px] font-black uppercase text-[#E45318] tracking-widest block mb-0.5">
+                    Passo 2A • Parâmetros Construtivos do Padrão CEMIG ND-5.1
+                  </span>
+                  <h3 className="text-lg font-black text-white flex items-center gap-2">
+                    <Sliders className="w-5 h-5 text-[#00B356]" />
+                    Coleta de Dados Físicos do Padrão de Entrada
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Defina o lado da via, saída, tipo de poste e kits de caixas para cálculo exato de materiais, metragens de cabos e esforço mecânico do poste.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold px-3 py-1 rounded-full bg-emerald-500/20 text-[#00B356] border border-[#00B356]/40 flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Alimentando Lista de Materiais & Orçamento (Passo 4B)
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+                {/* 1. Lado da Via em Relação à Rede */}
+                <div className="bg-slate-800/80 p-3.5 rounded-2xl border border-slate-700 space-y-2">
+                  <label className="text-[10px] font-black uppercase text-slate-300 tracking-wider block">
+                    1. Lado da Via em Relação à Rede
+                  </label>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setClientProjectData(prev => ({ ...prev, standardSideOfStreet: 'MESMO_LADO' }))}
+                      className={`p-2 rounded-xl font-bold text-center transition-all ${
+                        (clientProjectData.standardSideOfStreet || 'MESMO_LADO') === 'MESMO_LADO'
+                          ? 'bg-[#00B356] text-white shadow'
+                          : 'bg-slate-900 text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      Mesmo Lado
+                      <span className="block text-[9px] font-normal opacity-85 mt-0.5">A favor da rede</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setClientProjectData(prev => ({ ...prev, standardSideOfStreet: 'LADO_OPOSTO' }))}
+                      className={`p-2 rounded-xl font-bold text-center transition-all ${
+                        clientProjectData.standardSideOfStreet === 'LADO_OPOSTO'
+                          ? 'bg-[#E45318] text-white shadow'
+                          : 'bg-slate-900 text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      Lado Oposto
+                      <span className="block text-[9px] font-normal opacity-85 mt-0.5">Contra (Travessia)</span>
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-slate-400 leading-tight">
+                    {clientProjectData.standardSideOfStreet === 'LADO_OPOSTO'
+                      ? '⚠️ Lado oposto exige travessia aérea da rua (+18m cabos e poste de maior esforço daN).'
+                      : '✅ Mesmo lado da rede dispensa travessia aérea sobre a via pública.'}
+                  </p>
+                </div>
+
+                {/* 2. Tipo de Saída do Padrão */}
+                <div className="bg-slate-800/80 p-3.5 rounded-2xl border border-slate-700 space-y-2">
+                  <label className="text-[10px] font-black uppercase text-slate-300 tracking-wider block">
+                    2. Tipo de Saída do Padrão
+                  </label>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setClientProjectData(prev => ({ ...prev, standardExitType: 'SUBTERRANEA' }))}
+                      className={`p-2 rounded-xl font-bold text-center transition-all ${
+                        (clientProjectData.standardExitType || 'SUBTERRANEA') === 'SUBTERRANEA'
+                          ? 'bg-[#00B356] text-white shadow'
+                          : 'bg-slate-900 text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      Subterrânea
+                      <span className="block text-[9px] font-normal opacity-85 mt-0.5">Duto PEAD enterrado</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setClientProjectData(prev => ({ ...prev, standardExitType: 'AEREA' }))}
+                      className={`p-2 rounded-xl font-bold text-center transition-all ${
+                        clientProjectData.standardExitType === 'AEREA'
+                          ? 'bg-[#00B356] text-white shadow'
+                          : 'bg-slate-900 text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      Aérea
+                      <span className="block text-[9px] font-normal opacity-85 mt-0.5">Ramal aéreo</span>
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-slate-400 leading-tight">
+                    {(clientProjectData.standardExitType || 'SUBTERRANEA') === 'SUBTERRANEA'
+                      ? 'Recomendado para hubs VE com dutos corrugados e fita de advertência.'
+                      : 'Saída aérea por cabeçote no topo do poste (apenas para cargas até F2).'}
+                  </p>
+                </div>
+
+                {/* 3. Tipo de Estrutura Física */}
+                <div className="bg-slate-800/80 p-3.5 rounded-2xl border border-slate-700 space-y-2">
+                  <label className="text-[10px] font-black uppercase text-slate-300 tracking-wider block">
+                    3. Suporte / Estrutura Física
+                  </label>
+                  <select
+                    value={clientProjectData.standardStructureType || 'POSTE_CONCRETO'}
+                    onChange={(e) => setClientProjectData(prev => ({ ...prev, standardStructureType: e.target.value as any }))}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 font-bold text-white text-xs outline-none focus:border-[#00B356]"
+                  >
+                    <option value="POSTE_CONCRETO">Poste Concreto Duplo T (PC1..PC4)</option>
+                    <option value="POSTE_ACO">Poste de Aço Galvanizado (PT1..PT4)</option>
+                    <option value="MURO">Instalação em Muro / Fachada Predial</option>
+                  </select>
+                  <p className="text-[10px] text-slate-400 leading-tight">
+                    {clientProjectData.standardStructureType === 'MURO'
+                      ? 'Caixas fixadas em alvenaria com eletrodutos embutidos.'
+                      : 'Poste homologado com base concretada e cabeçote conforme ND-5.1.'}
+                  </p>
+                </div>
+
+                {/* 4. Localização & Aterramento */}
+                <div className="bg-slate-800/80 p-3.5 rounded-2xl border border-slate-700 space-y-2">
+                  <label className="text-[10px] font-black uppercase text-slate-300 tracking-wider block">
+                    4. Localização Geográfica
+                  </label>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setClientProjectData(prev => ({ ...prev, standardLocation: 'URBANO' }))}
+                      className={`p-2 rounded-xl font-bold text-center transition-all ${
+                        (clientProjectData.standardLocation || 'URBANO') === 'URBANO'
+                          ? 'bg-[#00B356] text-white shadow'
+                          : 'bg-slate-900 text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      Urbano
+                      <span className="block text-[9px] font-normal opacity-85 mt-0.5">Calçada / Lote</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setClientProjectData(prev => ({ ...prev, standardLocation: 'RURAL' }))}
+                      className={`p-2 rounded-xl font-bold text-center transition-all ${
+                        clientProjectData.standardLocation === 'RURAL'
+                          ? 'bg-[#00B356] text-white shadow'
+                          : 'bg-slate-900 text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      Rural
+                      <span className="block text-[9px] font-normal opacity-85 mt-0.5">Nota 9 ND-5.1</span>
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-slate-400 leading-tight">
+                    {clientProjectData.standardLocation === 'RURAL'
+                      ? 'Em área rural, a CEMIG exige travessia aérea e aterramento estendido.'
+                      : 'Em área urbana, segue o alinhamento predial da via pública.'}
+                  </p>
+                </div>
+              </div>
+
+              {/* 5. Seleção de Tipo de Terminal do Projeto (Terminal Olhal de Compressão vs Terminal Tubular) */}
+              <div className="p-4 bg-slate-800/60 rounded-2xl border border-slate-700/80 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <strong className="text-xs font-bold text-white block">
+                    5. Tipo de Terminal dos Condutores (Padrão CEMIG & Painéis)
+                  </strong>
+                  <p className="text-[11px] text-slate-300">
+                    Escolha exclusivamente entre <strong>Terminal Olhal de Compressão</strong> ou <strong>Terminal Tubular</strong> para a lista de materiais do projeto.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 bg-slate-900 p-1.5 rounded-xl border border-slate-700 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setClientProjectData(prev => ({ ...prev, standardTerminalType: 'COMPRESSAO_OLHAL' }))}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      (clientProjectData.standardTerminalType || 'COMPRESSAO_OLHAL') === 'COMPRESSAO_OLHAL'
+                        ? 'bg-[#00B356] text-white shadow'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    Terminal Olhal de Compressão
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setClientProjectData(prev => ({ ...prev, standardTerminalType: 'TUBULAR' }))}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      clientProjectData.standardTerminalType === 'TUBULAR'
+                        ? 'bg-[#E45318] text-white shadow'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    Terminal Tubular
+                  </button>
+                </div>
+              </div>
+
+              {/* Opções de Fornecimento de Caixas para Alta Demanda (F1..F9) */}
+              {effectiveHomologatedCategory.categoryId.startsWith('F') && (
+                <div className="p-4 bg-slate-800/60 rounded-2xl border border-slate-700/80 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Box className="w-4 h-4 text-emerald-400" />
+                      <strong className="text-xs font-bold text-white">
+                        Conjunto Pré-Montado de Caixas com Barramento (Fornecedores Homologados)
+                      </strong>
+                    </div>
+                    <p className="text-[11px] text-slate-300">
+                      Distribuidores autorizados fornecem o conjunto montado <strong>Caixa CM-09 + CM-04</strong> ou <strong>Caixa CM-18 + CM-04 com Barramento de cobre sem disjuntor</strong>.
+                    </p>
+                  </div>
+
+                  <label className="flex items-center gap-2.5 bg-slate-900 px-3.5 py-2.5 rounded-xl border border-slate-700 cursor-pointer hover:border-[#00B356] transition-colors shrink-0">
+                    <input
+                      type="checkbox"
+                      checked={clientProjectData.preferKitProntoCaixas ?? false}
+                      onChange={(e) => setClientProjectData(prev => ({ ...prev, preferKitProntoCaixas: e.target.checked }))}
+                      className="rounded text-[#00B356] focus:ring-0 w-4 h-4"
+                    />
+                    <span className="text-xs font-bold text-white">
+                      Adotar Conjunto Pré-Montado no Orçamento
+                    </span>
+                  </label>
+                </div>
+              )}
+            </div>
 
             {/* Parecer Técnico e Ações Mandatórias da Concessionária */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pt-2">
@@ -3335,6 +4467,7 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
               description: configuredChargers.map(c => `${c.quantity}x ${c.name}`).join(' + '),
               isDC: configuredChargers.some(c => c.type === 'DC' || c.powerKW >= 30)
             }}
+            isNewConnection={Boolean(clientProjectData.isNewConnection)}
             currentStandardLimitKW={currentStandardLimitKW}
             currentStandardName={currentStandardDisplayName}
             homologatedStandardLimitKW={homologatedStandardLimitKW}
@@ -3350,7 +4483,12 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
             enableDLM={dlmEnableDLM}
             setEnableDLM={setDlmEnableDLM}
             enableSolarSurplus={dlmEnableSolarSurplus}
-            setEnableSolarSurplus={setDlmEnableSolarSurplus}
+            setEnableSolarSurplus={(val) => {
+              setDlmEnableSolarSurplus(val);
+              if (val && dlmSolarPeakKW <= 0) {
+                setDlmSolarPeakKW(25);
+              }
+            }}
             isCustomCurveActive={Boolean(customCurvePoints)}
             smartMeterFileName={smartMeterSummary?.fileName}
             onToggleCustomCurve={() => {
@@ -3427,15 +4565,51 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
         </div>
       )}
 
-      {/* ─── TAB 6: PASSO 3: INFRAESTRUTURA ELETROTÉCNICA & SMARTMETER ─── */}
-      {activeTab === 'infraestrutura' && (
+      {/* ─── TAB 6 & 7: PASSO 4A & 4B: INFRAESTRUTURA ELETROTÉCNICA, TOPOLOGIA & LISTA DE MATERIAIS (CAPEX) ─── */}
+      {(activeTab === 'infraestrutura' || activeTab === 'resultado') && (
         <div className="space-y-6 animate-in fade-in duration-200">
-          {/* Topologia Reativa em Cadeia com Blocos Clicáveis NBR 5410 & NBR 17019 */}
+          {/* BANNER FLUTUANTE DE SUCESSO DE SALVAMENTO */}
+          {saveSuccessMessage && (
+            <div className="bg-emerald-500/10 border-2 border-[#00B356] p-4 rounded-2xl flex items-center justify-between gap-4 text-xs animate-in fade-in duration-300">
+              <div className="flex items-center gap-3 text-emerald-950">
+                <div className="w-9 h-9 rounded-xl bg-[#00B356] text-white flex items-center justify-center shrink-0">
+                  <CheckCircle2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <strong className="block text-sm text-[#00B356] font-black">
+                    {saveSuccessMessage}
+                  </strong>
+                  <span className="text-slate-400">
+                    O dimensionamento com todos os dados foi gravado no banco de dados e adicionado ao seu histórico.
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setActiveTab('projetos');
+                  setSaveSuccessMessage(null);
+                }}
+                className="bg-[#0A192F] hover:bg-slate-800 text-white font-bold px-4 py-2 rounded-xl text-xs whitespace-nowrap transition-all shadow-sm cursor-pointer"
+              >
+                Ver no Dashboard de Projetos →
+              </button>
+            </div>
+          )}
+
+          {/* Topologia Reativa em Cadeia com Blocos Clicáveis NBR 5410 & NBR 17019 / Lista de Materiais Modular */}
           <EVTopologyChainViewer
+            isNewConnection={clientProjectData.isNewConnection || false}
+            isExistingStandardAdequate={utilityAnalysis.isExistingStandardAdequate}
+            targetNewCategory={clientProjectData.targetNewCategory || clientProjectData.standardCategory || "C3"}
             externalClientBaseLoadKW={effectiveExistingLoadKW}
             externalStandardCategory={effectiveHomologatedCategory.categoryId || currentStandardCategoryId}
             externalStandardBreakerA={effectiveHomologatedCategory.breakerCurrentA || fieldBreakerAmps}
             externalGridSupplyVoltage={commercialHub.gridSupplyVoltage ?? (selectedUtility === 'CEMIG' ? 220 : 380)}
+            forcedTab={activeTab === 'resultado' ? 'bom' : 'vis'}
+            onNavigateToBOM={() => handleTabChange('resultado')}
+            onNavigateToVis={() => handleTabChange('infraestrutura')}
+            onNavigateToFinancialModeling={() => handleTabChange('modelagem_financeira')}
+            onModularBOMChange={handleModularBOMChange}
             externalChargers={configuredChargers.map(c => ({
               id: c.id,
               name: c.name,
@@ -3518,6 +4692,17 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
               }));
             }}
             cemigStandardBOM={cemigPadraoResult?.itensSugeridos}
+            externalTerminalType={clientProjectData.standardTerminalType || 'COMPRESSAO_OLHAL'}
+            onChangeTerminalType={(type) => {
+              setClientProjectData(prev => ({ ...prev, standardTerminalType: type }));
+            }}
+            onChangeSelectedLoads={(loads220, loads380) => {
+              setClientProjectData(prev => ({
+                ...prev,
+                selectedLoads220V: loads220,
+                selectedLoads380V: loads380
+              }));
+            }}
             onSaveTopologyParams={(params) => {
               setClientProjectData(prev => ({
                 ...prev,
@@ -3535,7 +4720,9 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
                 section3InstallationMethod: params.section3InstallationMethod,
                 customTransformerKVA: params.customTransformerKVA,
                 customTransformerEfficiencyPercent: params.customTransformerEfficiencyPercent,
-                customTransformerLossesKW: params.customTransformerLossesKW
+                customTransformerLossesKW: params.customTransformerLossesKW,
+                selectedLoads220V: params.selectedLoads220V ?? prev.selectedLoads220V,
+                selectedLoads380V: params.selectedLoads380V ?? prev.selectedLoads380V
               }));
               if (params.chargers && params.chargers.length > 0) {
                 setConfiguredChargers(prev => {
@@ -3577,463 +4764,81 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
             onConcludeTopology={() => {
               handleAutoSaveSnapshot();
             }}
+            externalUserBOMOverrides={bomUserOverrides}
+            externalDeletedItemIds={bomDeletedItemIds}
+            externalCustomAddedItems={bomCustomAddedItems}
+            externalLaborMode={bomLaborMode}
+            externalLaborPercent={bomLaborPercent}
+            externalGlobalBdiPercent={bomGlobalBdiPercent}
+            onUpdateBOMOverrides={(overrides) => {
+              setBomUserOverrides(overrides);
+              try { localStorage.setItem('coenergygo_bom_user_overrides', JSON.stringify(overrides)); } catch (e) {}
+            }}
+            onUpdateDeletedItemIds={(ids) => {
+              setBomDeletedItemIds(ids);
+              try { localStorage.setItem('coenergygo_bom_deleted_items', JSON.stringify(ids)); } catch (e) {}
+            }}
+            onUpdateCustomAddedItems={(items) => {
+              setBomCustomAddedItems(items);
+              try { localStorage.setItem('coenergygo_bom_custom_items', JSON.stringify(items)); } catch (e) {}
+            }}
+            onUpdateLaborMode={(mode) => setBomLaborMode(mode)}
+            onUpdateLaborPercent={(pct) => setBomLaborPercent(pct)}
+            onUpdateGlobalBdiPercent={(bdi) => setBomGlobalBdiPercent(bdi)}
           />
         </div>
       )}
 
-      {/* ─── TAB 7: RESULTADO CONSOLIDADO & DOSSIÊ EXECUTIVO DE IMPLANTAÇÃO ─── */}
-      {activeTab === 'resultado' && (
-        <div className="space-y-6">
-          {/* Barra de Ações do Laudo */}
-          <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 print:hidden">
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="bg-emerald-100 text-emerald-800 text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full">
-                  Dossiê Executivo de Engenharia
-                </span>
-                <span className="text-slate-400 text-xs font-semibold">
-                  CoenergyGO • Cordeiro Energia
-                </span>
-              </div>
-              <h2 className="text-xl font-black text-slate-800 mt-1">
-                Memorial Técnico-Descritivo de Implantação
-              </h2>
-              <p className="text-xs text-slate-500">
-                Consolidação completa: Veículos, Concessionária, NBR 17019, Curva DLM e Infraestrutura
-              </p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-3">
-              <button
-                type="button"
-                onClick={handleSaveCurrentProject}
-                disabled={savingProject}
-                className="bg-[#00B356] hover:bg-emerald-600 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
-                title="Salva este dimensionamento completo no banco de dados com os dados do Passo 1A"
-              >
-                {savingProject ? <Loader className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                <span>{savingProject ? 'Salvando Projeto...' : 'Salvar Projeto CoenergyGO'}</span>
-              </button>
-
-              <button
-                onClick={handleCopyExecutiveSummary}
-                className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs px-4 py-2.5 rounded-xl transition-all flex items-center gap-2"
-              >
-                {isCopied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4 text-slate-600" />}
-                {isCopied ? 'Memorial Copiado!' : 'Copiar Memorial'}
-              </button>
-
-              <button
-                onClick={() => window.print()}
-                className="bg-[#0A192F] hover:bg-slate-800 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-md transition-all flex items-center gap-2"
-              >
-                <Printer className="w-4 h-4 text-emerald-400" />
-                Imprimir / Salvar PDF
-              </button>
-            </div>
-          </div>
-
-          {/* BANNER FLUTUANTE DE SUCESSO DE SALVAMENTO */}
-          {saveSuccessMessage && (
-            <div className="bg-emerald-500/10 border-2 border-[#00B356] p-4 rounded-2xl flex items-center justify-between gap-4 text-xs animate-in fade-in duration-300">
-              <div className="flex items-center gap-3 text-emerald-950">
-                <div className="w-9 h-9 rounded-xl bg-[#00B356] text-white flex items-center justify-center shrink-0">
-                  <CheckCircle2 className="w-5 h-5" />
-                </div>
-                <div>
-                  <strong className="block text-sm text-[#00B356] font-black">
-                    {saveSuccessMessage}
-                  </strong>
-                  <span className="text-slate-600">
-                    O dimensionamento com todos os dados do Passo 1A foi gravado no banco de dados e adicionado ao seu histórico.
-                  </span>
-                </div>
-              </div>
-              <button
-                onClick={() => {
-                  setActiveTab('projetos');
-                  setSaveSuccessMessage(null);
-                }}
-                className="bg-[#0A192F] hover:bg-slate-800 text-white font-bold px-4 py-2 rounded-xl text-xs whitespace-nowrap transition-all shadow-sm cursor-pointer"
-              >
-                Ver no Dashboard de Projetos →
-              </button>
-            </div>
-          )}
-
-          {/* Banner de Viabilidade Executiva */}
-          <div className="bg-gradient-to-br from-[#0A192F] to-slate-900 text-white p-6 md:p-8 rounded-3xl shadow-xl border border-slate-800 relative overflow-hidden">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <span className="bg-[#00B356] text-white text-xs font-black uppercase px-3 py-1 rounded-full flex items-center gap-1.5 shadow">
-                    <CheckCircle2 className="w-4 h-4" />
-                    Instalação Aprovada & Viável
-                  </span>
-                  <span className="text-slate-400 text-xs font-medium">
-                    Laudo Nº COGO-{new Date().getFullYear()}-{Math.floor(1000 + Math.random() * 9000)}
-                  </span>
-                </div>
-                <h3 className="text-2xl font-black text-white">
-                  Estação de Recarga {applicationMode === 'individual' ? `${selectedVehicle.brand} ${selectedVehicle.model}` : applicationMode === 'condominio_frota' ? `Condomínio Coletivo (${totalChargersCount} Vagas)` : `Eletroposto Comercial (${totalChargersInstalledKW} kW)`}
-                </h3>
-                <p className="text-xs text-slate-300 max-w-2xl leading-relaxed">
-                  O dimensionamento atende integralmente à <strong>ABNT NBR 17019</strong>, <strong>ABNT NBR 5410</strong>, norma da concessionária <strong>{selectedUtility}</strong> e às exigências de segurança contra incêndio do Corpo de Bombeiros. A gestão dinâmica DLM assegura proteção contínua contra sobrecargas.
-                </p>
-              </div>
-
-              <div className="bg-white/10 backdrop-blur-md border border-white/10 p-4 rounded-2xl text-center min-w-[200px] space-y-1">
-                <p className="text-[10px] uppercase font-bold text-[#00B356] tracking-wider">Custo Total de Infra (BOM)</p>
-                <p className="text-2xl font-black text-white">
-                  R$ {totalEstimatedBOMCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                </p>
-                <p className="text-[10px] text-slate-400">
-                  Economia DLM: R$ {dlmResult.capexSavingsEstimateBRL.toLocaleString('pt-BR')}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Grid dos 5 Pilares de Engenharia */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {/* Pilar 1: Veículos e Configuração */}
-            <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm space-y-3">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-emerald-50 text-[#00B356] flex items-center justify-center">
-                    <Car className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-800">Passo 1A: Equipamentos</h4>
-                    <p className="text-[10px] text-slate-400">Porte da Instalação</p>
-                  </div>
-                </div>
-                <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
-                  {totalChargersCount} pts
-                </span>
-              </div>
-              <div className="space-y-2 text-xs">
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Modo:</span>
-                  <strong className="text-slate-800">
-                    {applicationMode === 'individual' ? 'Residencial Individual' : applicationMode === 'condominio_frota' ? 'Condomínio Multi-vagas' : 'Eletroposto Comercial'}
-                  </strong>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Potência Total Instalada:</span>
-                  <strong className="text-slate-800">{totalChargersInstalledKW} kW</strong>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Fator de Simultaneidade:</span>
-                  <strong className="text-[#00B356]">{(utilityAnalysis.simultaneityFactorApplied * 100).toFixed(0)}%</strong>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Carga Diversificada:</span>
-                  <strong className="text-[#E45318]">{utilityAnalysis.diversifiedChargersKW.toFixed(1)} kW</strong>
-                </div>
-                {applicationMode === 'individual' && (
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">Veículo Alvo:</span>
-                    <strong className="text-slate-800">{selectedVehicle.brand} {selectedVehicle.model}</strong>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Pilar 2: Concessionária & Padrão de Entrada */}
-            <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm space-y-3">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-orange-50 text-[#E45318] flex items-center justify-center">
-                    <Zap className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-800">Passo 1B: Concessionária & Vistoria</h4>
-                    <p className="text-[10px] text-slate-400">{selectedUtility} (ND-5.1 MAR/2026)</p>
-                  </div>
-                </div>
-                <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
-                  {effectiveHomologatedCategory.categoryId}
-                </span>
-              </div>
-              <div className="space-y-2 text-xs">
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Padrão Inspecionado:</span>
-                  <strong className="text-slate-800">
-                    {clientProjectData.fieldPhasesConfirmed || '1F'} {fieldBreakerAmps}A ({fieldCalculatedLimitKW} kW)
-                  </strong>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Cabos de Entrada (Campo):</span>
-                  <strong className={
-                    clientProjectData.fieldBreakerConfirmedA && clientProjectData.fieldBreakerConfirmedA >= 63 && clientProjectData.fieldCableGaugeMM2 && clientProjectData.fieldCableGaugeMM2 <= 10
-                      ? "text-red-600 font-black"
-                      : "text-slate-800"
-                  }>
-                    {clientProjectData.fieldCableGaugeMM2 || 10} mm² {
-                      clientProjectData.fieldBreakerConfirmedA && clientProjectData.fieldBreakerConfirmedA >= 63 && clientProjectData.fieldCableGaugeMM2 && clientProjectData.fieldCableGaugeMM2 <= 10
-                        ? "⚠️ Risco de Incêndio!"
-                        : ""
-                    }
-                  </strong>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Padrão Requerido:</span>
-                  <strong className="text-slate-800">{effectiveHomologatedCategory.categoryId} ({effectiveHomologatedCategory.breakerCurrentA}A)</strong>
-                </div>
-                {effectiveHomologatedCategory.caixaMedicao && (
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">Caixas Homologadas:</span>
-                    <strong className="text-slate-800">{effectiveHomologatedCategory.caixaMedicao} + {effectiveHomologatedCategory.caixaDisjuntor}</strong>
-                  </div>
-                )}
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Demanda Total Calculada:</span>
-                  <strong className="text-slate-800">{utilityAnalysis.calculatedDemandKVA.toFixed(1)} kVA</strong>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Diagnóstico Disjuntor:</span>
-                  <strong className={infrastructureSizing.breakerTripDiagnosis.willTripWithoutDLM ? "text-red-600 font-black" : "text-[#00B356] font-black"}>
-                    {infrastructureSizing.breakerTripDiagnosis.willTripWithoutDLM ? 'Cai sem DLM (Sobrecarga)' : 'Não Cai (Operação Segura)'}
-                  </strong>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Nível de Fornecimento:</span>
-                  <strong className="text-slate-800">{utilityAnalysis.supplyLevel}</strong>
-                </div>
-              </div>
-            </div>
-
-            {/* Pilar 3: Proteções Mandatórias NBR 17019 */}
-            <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm space-y-3">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
-                    <Shield className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-800">Passo 1C: NBR 17019</h4>
-                    <p className="text-[10px] text-slate-400">Proteções & Bombeiros</p>
-                  </div>
-                </div>
-                <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">CONFORME</span>
-              </div>
-              <div className="space-y-2 text-xs">
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Proteção Diferencial:</span>
-                  <strong className="text-slate-800">DR Tipo B / RDC-DD 6mA</strong>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Proteção Surtos:</span>
-                  <strong className="text-slate-800">DPS Classe II 20kA</strong>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Condutor Terra (PE):</span>
-                  <strong className="text-slate-800">Exclusivo interligado ao BEP</strong>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Botão de Emergência:</span>
-                  <strong className="text-slate-800">{auditHasEmergencyButton ? 'Conforme (≤ 5m)' : 'Não instalado'}</strong>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Corpo de Bombeiros:</span>
-                  <strong className="text-emerald-700">IT-41 / IT-30 Validado</strong>
-                </div>
-              </div>
-            </div>
-
-            {/* Pilar 4: Gestão Dinâmica DLM & Demanda */}
-            <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm space-y-3">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
-                    <Activity className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-800">Passo 2: Curva de Carga & DLM</h4>
-                    <p className="text-[10px] text-slate-400">Balanço de Potência</p>
-                  </div>
-                </div>
-                <span className="text-[10px] font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">
-                  {dlmEnableDLM ? 'DLM ATIVO' : 'DLM OFF'}
-                </span>
-              </div>
-              <div className="space-y-2 text-xs">
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Limite da Conexão:</span>
-                  <strong className="text-slate-800">{effectiveDlmGridLimitKW} kW</strong>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Demanda Máxima Medida:</span>
-                  <strong className="text-slate-800">{effectiveExistingLoadKW.toFixed(1)} kW</strong>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Folga de Demanda:</span>
-                  <strong className="text-emerald-700">
-                    {(effectiveDlmGridLimitKW - effectiveExistingLoadKW).toFixed(1)} kW
-                  </strong>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Modulação IEC 61851-1:</span>
-                  <strong className="text-slate-800">6A a 32A Dinâmica</strong>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Economia em Obras:</span>
-                  <strong className="text-[#00B356]">R$ {dlmResult.capexSavingsEstimateBRL.toLocaleString('pt-BR')}</strong>
-                </div>
-              </div>
-            </div>
-
-            {/* Pilar 5: Infraestrutura Eletrotécnica & QGBT */}
-            <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm space-y-4 md:col-span-2 lg:col-span-2">
-              <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-slate-100 pb-3 gap-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-orange-50 text-[#E45318] flex items-center justify-center">
-                    <Cable className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-800">Passo 3: Dimensionamento do QGBT & Infraestrutura Interna</h4>
-                    <p className="text-[10px] text-slate-400">NBR 5410 & NBR 17019</p>
-                  </div>
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
-                    infrastructureSizing.breakerTripDiagnosis.willTripWithoutDLM ? "bg-red-50 text-red-700 border border-red-200" : "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                  }`}>
-                    Disjuntor Geral: {infrastructureSizing.breakerTripDiagnosis.willTripWithoutDLM ? "Cai sem DLM / Seguro com DLM" : "Não Cai (Seguro)"}
-                  </span>
-                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full">
-                    Queda {infrastructureSizing.calculatedVoltageDropPercent}% ≤ 2.0%
-                  </span>
-                  <span className="text-[10px] font-bold text-slate-600 bg-slate-100 px-2.5 py-0.5 rounded-full">
-                    Cabo {infrastructureSizing.cableGaugePhaseMM2} mm²
-                  </span>
-                </div>
-              </div>
-
-              {/* Grid de Especificações do QGBT */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
-                <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 space-y-1">
-                  <span className="text-[10px] text-slate-400 font-bold uppercase block">Disjuntor Geral QGBT</span>
-                  <p className="text-sm font-black text-slate-800">{infrastructureSizing.qgbtMainBreakerA}A Tripolar</p>
-                  <p className="text-[10px] text-slate-500">Demanda Total: {infrastructureSizing.qgbtTotalInstalledKW} kW</p>
-                </div>
-
-                <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 space-y-1">
-                  <span className="text-[10px] text-slate-400 font-bold uppercase block">Barramento 380V (Potência VE)</span>
-                  <p className="text-sm font-black text-[#E45318]">{infrastructureSizing.panelSpecification.busbar380VRatingA}A</p>
-                  <p className="text-[10px] text-slate-500">Disjuntor VE: {infrastructureSizing.recommendedBreakerA}A Curva C</p>
-                </div>
-
-                <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 space-y-1">
-                  <span className="text-[10px] text-slate-400 font-bold uppercase block">Barramento 220V (Auxiliares)</span>
-                  <p className="text-sm font-black text-blue-600">{infrastructureSizing.panelSpecification.busbar220VRatingA}A</p>
-                  <p className="text-[10px] text-slate-500">{infrastructureSizing.auxiliaryCircuits.length} circuitos acessórios ativos</p>
-                </div>
-
-                <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 space-y-1">
-                  <span className="text-[10px] text-slate-400 font-bold uppercase block">Transformador / Subestação</span>
-                  <p className={`text-sm font-black ${infrastructureSizing.transformerDetails?.needed ? "text-[#E45318]" : "text-slate-800"}`}>
-                    {infrastructureSizing.transformerRecommendation.needed ? `${infrastructureSizing.transformerRecommendation.recommendedKVA} kVA` : 'Dispensado (BT)'}
-                  </p>
-                  <p className="text-[10px] text-slate-500">
-                    {infrastructureSizing.transformerDetails?.type === 'elevador_seco'
-                      ? 'Elevador 220V → 380V (A Seco)'
-                      : infrastructureSizing.transformerRecommendation.supplyLevel === 'MT'
-                      ? 'Média Tensão (ND-5.3)'
-                      : 'Direto em 220V (Sem Trafo)'}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Tabela Resumo da Lista Quantitativa de Materiais (BOM) */}
-          <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-4">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-              <div>
-                <h3 className="text-sm font-bold text-slate-800">
-                  Lista Quantitativa de Materiais e Equipamentos (BOM Consolidada)
-                </h3>
-                <p className="text-xs text-slate-400">
-                  Estimativa orçamentária do Padrão CEMIG Oficial (ND-5.1) e do QGBT com infraestrutura interna (NBR 5410)
-                </p>
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                {cemigBOMCost > 0 && (
-                  <span className="text-[11px] font-bold text-orange-900 bg-orange-50 border border-orange-200 px-3 py-1.5 rounded-xl">
-                    Padrão CEMIG: R$ {cemigBOMCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </span>
-                )}
-                <span className="text-[11px] font-bold text-emerald-900 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl">
-                  QGBT Interno: R$ {qgbtBOMCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                </span>
-                <span className="text-xs font-black text-white bg-[#0A192F] px-3.5 py-1.5 rounded-xl shadow-sm">
-                  Total Geral: R$ {totalEstimatedBOMCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                </span>
-              </div>
-            </div>
-
-            <div className="overflow-x-auto rounded-2xl border border-slate-100">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 border-b border-slate-100 text-[10px] font-black uppercase text-slate-500">
-                  <tr>
-                    <th className="p-3">Item</th>
-                    <th className="p-3">Categoria</th>
-                    <th className="p-3">Descrição Técnica</th>
-                    <th className="p-3">Especificação / Referência</th>
-                    <th className="p-3 text-center">Qtd</th>
-                    <th className="p-3 text-center">Un</th>
-                    <th className="p-3 text-right">Unitário (R$)</th>
-                    <th className="p-3 text-right">Total (R$)</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
-                  {infrastructureSizing.billOfMaterials.map((item, idx) => {
-                    const unitPrice = getEstimatedUnitPrice(item);
-                    return (
-                      <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="p-3 font-bold text-slate-400">{idx + 1}</td>
-                        <td className="p-3">
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
-                            {item.category.toUpperCase()}
-                          </span>
-                        </td>
-                        <td className="p-3 font-semibold text-slate-900">{item.description}</td>
-                        <td className="p-3 text-slate-500 text-[11px]">{item.spec} ({item.normReference})</td>
-                        <td className="p-3 text-center font-bold">{item.quantity}</td>
-                        <td className="p-3 text-center text-slate-400">{item.unit}</td>
-                        <td className="p-3 text-right text-slate-500">R$ {unitPrice.toFixed(2)}</td>
-                        <td className="p-3 text-right font-black text-slate-900">
-                          R$ {(item.quantity * unitPrice).toFixed(2)}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Rodapé do Laudo com Assinatura Técnica */}
-            <div className="border-t border-slate-100 pt-6 mt-6 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-400">
-              <div>
-                <p className="font-bold text-slate-600">Cordeiro Energia • Engenharia & Eletromobilidade</p>
-                <p className="text-[11px]">Sistema de Dimensionamento Automatizado CoenergyGO • Conforme ABNT NBR 17019 / NBR 5410</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={handleSaveCurrentProject}
-                  disabled={savingProject}
-                  className="bg-[#E45318] hover:bg-orange-600 text-white font-bold px-5 py-2.5 rounded-xl shadow transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
-                  title="Grava o dimensionamento completo no banco com os dados do Passo 1A"
-                >
-                  {savingProject ? <Loader className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                  <span>{savingProject ? 'Salvando...' : 'Salvar como Novo Projeto'}</span>
-                </button>
-              </div>
-            </div>
-          </div>
+      {/* ─── TAB 8: PASSO 5: MODELAGEM FINANCEIRA & 3 CENÁRIOS (PADRÃO BLEV - FOTOS 01 & 02) ─── */}
+      {activeTab === 'modelagem_financeira' && (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          <EVFinancialModelingBLEV
+            initialCapexBRL={
+              projectModularBOM?.totalProjectInvestmentBRL ||
+              unifiedCalculation.totalEstimatedCapexBRL ||
+              95000
+            }
+            capexBreakdown={
+              projectModularBOM
+                ? {
+                    materialsBRL: projectModularBOM.totalMaterialsNetBRL,
+                    laborBRL: projectModularBOM.totalLaborNetBRL,
+                    bdiBRL: projectModularBOM.globalBdiAmountBRL,
+                    totalBRL: projectModularBOM.totalProjectInvestmentBRL,
+                    itemsCount: projectModularBOM.totalItemsCount,
+                    syncedOrcamentoId: projectModularBOM.syncedOrcamentoProjetoId
+                  }
+                : undefined
+            }
+            totalChargersPowerKW={totalChargersInstalledKW}
+            chargerPowerKW={configuredChargers[0]?.powerKW || 22}
+            totalChargersCount={totalChargersCount}
+            configuredChargers={configuredChargers.map(c => ({
+              id: c.id,
+              name: c.name,
+              powerKW: c.powerKW,
+              type: c.type
+            }))}
+            selectedUtility={selectedUtility}
+            gridEnergyCostDefaultBRL={commercialHub.gridEnergyCostPerKWh || 0.85}
+            solarEnergyCostDefaultBRL={0.39}
+            vdmVehiclesPerDayDefault={clientProjectData.ahpVdm || 15000}
+            fleetDensityPercentDefault={clientProjectData.ahpFleetDensityPercent || 2.5}
+            averageSessionMinutesDefault={clientProjectData.ahpSessionMinutes || 35}
+            clientProjectData={clientProjectData}
+            dlmCapexSavingsBRL={unifiedCalculation.dlmEstimatedSavingsBRL || 0}
+            onSaveFinancialAssumptions={(updatedData) => {
+              setClientProjectData(prev => ({
+                ...prev,
+                ...updatedData
+              }));
+              handleAutoSaveSnapshot();
+              setSaveSuccessMessage("Premissas da Modelagem Financeira BLEV sincronizadas com sucesso!");
+              setTimeout(() => setSaveSuccessMessage(null), 5000);
+            }}
+            onNavigateToBOM={() => handleTabChange('resultado')}
+            onNavigateToTopologia={() => handleTabChange('infraestrutura')}
+          />
         </div>
       )}
 
@@ -4048,8 +4853,8 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
           creaCft: clientProjectData.creaCft || 'CREA-MG 148293/D',
           utility: clientProjectData.utility || selectedUtility || 'CEMIG Distribuição',
           address: clientProjectData.address || 'Belo Horizonte / MG',
-          standardCategory: currentStandardCategoryId,
-          standardBreakerA: 100,
+          standardCategory: effectiveHomologatedCategory.categoryId || currentStandardCategoryId,
+          standardBreakerA: effectiveBreakerAmpsForSizing,
           voltageV: 220,
           totalPowerKW: Number(totalChargersInstalledKW.toFixed(1)),
           chargers: configuredChargers.map(c => ({

@@ -98,7 +98,18 @@ export function evaluateCEMIG(input: UtilitySizingInput): UtilitySizingOutput {
     });
   }
 
-  if (calculatedDemandKVA <= 75.0 && totalInstallationLoadKW <= 75.0) {
+  if (input.currentStandardCategoryId === 'A4' || input.currentStandardCategoryId === 'A3a') {
+    supplyLevel = 'MT';
+    requiresTransformer = false;
+    category = CEMIG_CATEGORIES[input.currentStandardCategoryId] || CEMIG_CATEGORIES['A4'];
+    meteringScheme = 'Medição em Média Tensão (CEMIG ND-5.3 / Medidor 4 Quadrantes)';
+    actions.push({
+      type: 'obrigatoria',
+      title: `Instalação Atendida em Média Tensão (Grupo ${category.categoryId} — CEMIG ND-5.3)`,
+      description: `A unidade consumidora é atendida em Média Tensão com subestação/transformador particular existente. A potência dos carregadores é alimentada diretamente a partir do quadro geral de baixa tensão (QGBT) derivado do transformador do cliente, sem necessidade de novo padrão de baixa tensão na rua.`,
+      normReference: 'CEMIG ND-5.3 / ABNT NBR 14039'
+    });
+  } else if (calculatedDemandKVA <= 75.0 && totalInstallationLoadKW <= 75.0) {
     // Tabela 1 e 2 - Baixa Tensão Individual até 75 kVA (CEMIG ND-5.1 MAR/2026)
     if (totalInstallationLoadKW <= 8) category = CEMIG_CATEGORIES['A1'] || CEMIG_CATEGORIES['A'];
     else if (totalInstallationLoadKW <= 16) category = CEMIG_CATEGORIES['B1'];

@@ -27,7 +27,7 @@ export const UTILITY_DATABASE: Record<string, UtilityInfo> = {
     fullName: "Companhia Energética de Minas Gerais S.A.",
     region: "Minas Gerais",
     tensions: "127/220V ou 220/380V",
-    maxBTLimitKW: 75,
+    maxBTLimitKW: 304,
     standardsDocName: "ND-5.1, ND-5.2 e ND-5.3",
     categories: [
       { id: "A", phases: 1, limitKW: 8, breakerA: 40, desc: "Monofásico até 8 kW (Disjuntor 40A)" },
@@ -39,7 +39,15 @@ export const UTILITY_DATABASE: Record<string, UtilityInfo> = {
       { id: "C4", phases: 3, limitKW: 47, breakerA: 125, desc: "Trifásico até 47 kW (Disjuntor 125A)" },
       { id: "C5", phases: 3, limitKW: 57, breakerA: 150, desc: "Trifásico até 57 kW (Disjuntor 150A)" },
       { id: "C6", phases: 3, limitKW: 75, breakerA: 200, desc: "Trifásico até 75 kW (Disjuntor 200A)" },
-      { id: "F", phases: 3, limitKW: 304, breakerA: 400, desc: "Tipo F - Trifásico BT por opção (até 304 kVA)" }
+      { id: "F1", phases: 3, limitKW: 86, breakerA: 225, desc: "Tipo F1 — Trifásico BT até 86 kVA (Disjuntor 225A, TC 200/5)" },
+      { id: "F2", phases: 3, limitKW: 95, breakerA: 250, desc: "Tipo F2 — Trifásico BT até 95 kVA (Disjuntor 250A, TC 200/5)" },
+      { id: "F3", phases: 3, limitKW: 114, breakerA: 300, desc: "Tipo F3 — Trifásico BT até 114 kVA (Disjuntor 300A, TC 200/5)" },
+      { id: "F4", phases: 3, limitKW: 152, breakerA: 400, desc: "Tipo F4 — Trifásico BT até 152 kVA (Disjuntor 400A, TC 400/5)" },
+      { id: "F5", phases: 3, limitKW: 171, breakerA: 450, desc: "Tipo F5 — Trifásico BT até 171 kVA (Disjuntor 450A, TC 400/5)" },
+      { id: "F6", phases: 3, limitKW: 188, breakerA: 500, desc: "Tipo F6 — Trifásico BT até 188 kVA (Disjuntor 500A, TC 400/5)" },
+      { id: "F7", phases: 3, limitKW: 228, breakerA: 630, desc: "Tipo F7 — Trifásico BT até 228 kVA (Disjuntor 630A, TC 600/5)" },
+      { id: "F8", phases: 3, limitKW: 266, breakerA: 700, desc: "Tipo F8 — Trifásico BT até 266 kVA (Disjuntor 700A, TC 600/5)" },
+      { id: "F9", phases: 3, limitKW: 304, breakerA: 800, desc: "Tipo F9 — Trifásico BT até 304 kVA (Disjuntor 800A, TC 600/5)" }
     ]
   },
   CPFL: {

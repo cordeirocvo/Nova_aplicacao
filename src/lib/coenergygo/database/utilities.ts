@@ -284,6 +284,31 @@ export const CEMIG_CATEGORIES: Record<string, UtilityCategorySpec> = {
     subterraneoObrigatorio: true,
     hastesAterramento: 3
   },
+  'F7': {
+    categoryId: 'F7',
+    categoryName: 'Tipo F7 — Alta Demanda até 228 kVA (Disjuntor 630A)',
+    phases: 3,
+    voltage: '220/380V',
+    maxLimitKW: 228.0,
+    breakerCurrentA: 630,
+    cableGaugePhaseMM2: 240,
+    cableGaugeNeutralMM2: 240,
+    cableGaugeGroundMM2: 120,
+    caboFaseAlMM2: 240,
+    caboFaseVias: 2,
+    eletrodutoPol: '2x(4")',
+    eletrodutoPVCMM: 110,
+    eletrodutoAcoMM: 100,
+    tcRelacao: '600/5',
+    tcFatorTermico: 2.0,
+    tcQuantidade: 3,
+    caixaMedicao: 'CM-4',
+    caixaDisjuntor: 'CM-18',
+    meterBoxType: 'Caixa CM-4 (3 TCs 600/5) + Caixa CM-18',
+    posteHomologado: 'Entrada Subterrânea Obrigatória',
+    subterraneoObrigatorio: true,
+    hastesAterramento: 3
+  },
   'F7_600': {
     categoryId: 'F7_600',
     categoryName: 'Tipo F7 — Alta Demanda até 217 kW (Disjuntor 600A)',
@@ -382,6 +407,31 @@ export const CEMIG_CATEGORIES: Record<string, UtilityCategorySpec> = {
     posteHomologado: 'Entrada Subterrânea Obrigatória',
     subterraneoObrigatorio: true,
     hastesAterramento: 3
+  },
+  // ─── GRUPO A — MÉDIA TENSÃO (CEMIG ND-5.3 / SUBESTAÇÃO PARTICULAR 13.8 kV a 34.5 kV) ───
+  'A4': {
+    categoryId: 'A4',
+    categoryName: 'Grupo A4 — Média Tensão 13.8 kV / Subestação Particular (Demanda Contratada até 2.500 kW)',
+    phases: 3,
+    voltage: '13.8 kV Primário / 220V ou 380V Secundário',
+    maxLimitKW: 2500,
+    breakerCurrentA: 0,
+    cableGaugePhaseMM2: 185,
+    cableGaugeNeutralMM2: 185,
+    cableGaugeGroundMM2: 95,
+    meterBoxType: 'Cubículo / Painel de Medição de Média Tensão (4 Quadrantes CEMIG ND-5.3)'
+  },
+  'A3a': {
+    categoryId: 'A3a',
+    categoryName: 'Grupo A3a — Média Tensão 34.5 kV / Subestação Particular (Demanda Contratada até 5.000 kW)',
+    phases: 3,
+    voltage: '34.5 kV Primário / 220V ou 380V Secundário',
+    maxLimitKW: 5000,
+    breakerCurrentA: 0,
+    cableGaugePhaseMM2: 240,
+    cableGaugeNeutralMM2: 240,
+    cableGaugeGroundMM2: 120,
+    meterBoxType: 'Cubículo de Proteção e Medição em 34.5 kV'
   }
 };
 
@@ -447,6 +497,18 @@ export const CPFL_CATEGORIES: Record<string, UtilityCategorySpec> = {
     cableGaugeNeutralMM2: 35,
     cableGaugeGroundMM2: 16,
     meterBoxType: 'Painel Modular de Medição Indireta CPFL'
+  },
+  'A4': {
+    categoryId: 'A4',
+    categoryName: 'Grupo A4 — Média Tensão (Subestação Particular / Demanda Contratada)',
+    phases: 3,
+    voltage: '13.8 kV ou 34.5 kV',
+    maxLimitKW: 2500,
+    breakerCurrentA: 0,
+    cableGaugePhaseMM2: 185,
+    cableGaugeNeutralMM2: 185,
+    cableGaugeGroundMM2: 95,
+    meterBoxType: 'Cabine de Medição de Média Tensão CPFL'
   }
 };
 
@@ -512,6 +574,18 @@ export const ENERGISA_CATEGORIES: Record<string, UtilityCategorySpec> = {
     cableGaugeNeutralMM2: 50,
     cableGaugeGroundMM2: 25,
     meterBoxType: 'Painel Modular de Medição Indireta NDU 001'
+  },
+  'A4': {
+    categoryId: 'A4',
+    categoryName: 'Grupo A4 — Média Tensão (Subestação Particular Energisa)',
+    phases: 3,
+    voltage: '13.8 kV / 34.5 kV',
+    maxLimitKW: 2500,
+    breakerCurrentA: 0,
+    cableGaugePhaseMM2: 185,
+    cableGaugeNeutralMM2: 185,
+    cableGaugeGroundMM2: 95,
+    meterBoxType: 'Cubículo de Medição em MT Energisa'
   }
 };
 

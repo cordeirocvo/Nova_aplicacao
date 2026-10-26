@@ -313,16 +313,84 @@ export default function PadraoCemigPage() {
     }
   };
 
+  // Helper reativo: ao alterar/inserir/remover caixa de passagem Z (ZA, ZB, ZC, ZD), ajustar automaticamente Tampa FºFº, Brita nº 1, Niples e Buchas/Arruelas PVC
+  const sincronizarAcessoriosCaixaZ = (lista: ItemMaterialSugerido[], deltaCaixasZ: number) => {
+    const isCaixaZ = (cod: string, desc: string) =>
+      /^CX-SUBTERRANEA-Z[ABCD]$/i.test(cod) ||
+      /caixa\s+subterr[aâ]nea.*tipo\s+z[abcd]|caixa\s+de\s+passagem.*z[abcd]/i.test(desc);
+
+    const totalCaixasZ = lista
+      .filter((it) => isCaixaZ(it.codigo, it.descricao))
+      .reduce((acc, it) => acc + (Number(it.quantidade) || 0), 0);
+
+    const numDescidas =
+      categoriaDemanda === "ALTA_DEMANDA_TABELA_4"
+        ? Math.max(1, Math.round((resumoTecnico?.eletrodutosQtdeBarras || 2) / 2))
+        : 1;
+    const variacaoConexoes = deltaCaixasZ * 2 * numDescidas;
+
+    return lista.map((it) => {
+      // 1. Tampa e Aro de Ferro Fundido acompanha a quantidade de caixas Z (1:1)
+      if (/^TAMPA-FOFO-Z[ABCD]$/i.test(it.codigo)) {
+        const novaQtd = Math.max(0, totalCaixasZ);
+        return {
+          ...it,
+          quantidade: novaQtd,
+          precoTotal: novaQtd * it.precoUnitarioEstimado
+        };
+      }
+      // 2. Brita nº 1 acompanha na proporção de 3 sacos por caixa Z
+      if (it.codigo === "BRITA-1-DRAIN") {
+        const novaQtd = Math.max(0, 3 * totalCaixasZ);
+        return {
+          ...it,
+          quantidade: novaQtd,
+          precoTotal: novaQtd * it.precoUnitarioEstimado
+        };
+      }
+      // 3. Niples PVC aumentam/diminuem 2 por descida para cada caixa Z
+      if (/^NIPLE-PVC-ROSCAVEL-\d+$/i.test(it.codigo)) {
+        const novaQtd = Math.max(2 * numDescidas, (Number(it.quantidade) || 0) + variacaoConexoes);
+        return {
+          ...it,
+          quantidade: novaQtd,
+          precoTotal: novaQtd * it.precoUnitarioEstimado
+        };
+      }
+      // 4. Buchas e Arruelas PVC (exceto 3/4" do aterramento) aumentam/diminuem 2 por descida para cada caixa Z
+      if (/^BUCHA-ARRUELA-PVC-\d+$/i.test(it.codigo) && it.codigo !== "BUCHA-ARRUELA-PVC-34") {
+        const novaQtd = Math.max(2 * numDescidas, (Number(it.quantidade) || 0) + variacaoConexoes);
+        return {
+          ...it,
+          quantidade: novaQtd,
+          precoTotal: novaQtd * it.precoUnitarioEstimado
+        };
+      }
+      return it;
+    });
+  };
+
   // Alterar quantitativo de item
   const handleAlterarQuantidade = (index: number, novaQtd: number) => {
     if (novaQtd < 0) novaQtd = 0;
     setItens((prev) => {
       const copy = [...prev];
+      const itemAntigo = copy[index];
+      if (!itemAntigo) return copy;
+      const qtdAntiga = Number(itemAntigo.quantidade) || 0;
+      const qtdNova = Number(novaQtd) || 0;
       copy[index] = {
-        ...copy[index],
-        quantidade: Number(novaQtd),
-        precoTotal: Number(novaQtd) * copy[index].precoUnitarioEstimado
+        ...itemAntigo,
+        quantidade: qtdNova,
+        precoTotal: qtdNova * itemAntigo.precoUnitarioEstimado
       };
+
+      const ehCaixaZ =
+        /^CX-SUBTERRANEA-Z[ABCD]$/i.test(itemAntigo.codigo) ||
+        /caixa\s+subterr[aâ]nea.*tipo\s+z[abcd]|caixa\s+de\s+passagem.*z[abcd]/i.test(itemAntigo.descricao);
+      if (ehCaixaZ && qtdNova !== qtdAntiga) {
+        return sincronizarAcessoriosCaixaZ(copy, qtdNova - qtdAntiga);
+      }
       return copy;
     });
   };
@@ -370,24 +438,44 @@ export default function PadraoCemigPage() {
 
   // Remover item da lista
   const handleRemoverItem = (index: number) => {
-    setItens((prev) => prev.filter((_, idx) => idx !== index));
+    setItens((prev) => {
+      const itemRemovido = prev[index];
+      const filtrado = prev.filter((_, idx) => idx !== index);
+      if (
+        itemRemovido &&
+        (/^CX-SUBTERRANEA-Z[ABCD]$/i.test(itemRemovido.codigo) ||
+          /caixa\s+subterr[aâ]nea.*tipo\s+z[abcd]|caixa\s+de\s+passagem.*z[abcd]/i.test(itemRemovido.descricao))
+      ) {
+        return sincronizarAcessoriosCaixaZ(filtrado, -(Number(itemRemovido.quantidade) || 0));
+      }
+      return filtrado;
+    });
   };
 
   // Adicionar item vindo do modal
   const handleAdicionarItemDoModal = (novoItem: any) => {
-    setItens((prev) => [
-      ...prev,
-      {
-        codigo: novoItem.codigo,
-        descricao: novoItem.descricao,
-        categoria: novoItem.categoria,
-        unidade: novoItem.unidade,
-        quantidade: novoItem.quantidade,
-        precoUnitarioEstimado: novoItem.precoUnitario,
-        precoTotal: novoItem.precoTotal,
-        obrigatorioNorma: false
+    setItens((prev) => {
+      const novaLista = [
+        ...prev,
+        {
+          codigo: novoItem.codigo,
+          descricao: novoItem.descricao,
+          categoria: novoItem.categoria,
+          unidade: novoItem.unidade,
+          quantidade: novoItem.quantidade,
+          precoUnitarioEstimado: novoItem.precoUnitario,
+          precoTotal: novoItem.precoTotal,
+          obrigatorioNorma: false
+        }
+      ];
+      if (
+        /^CX-SUBTERRANEA-Z[ABCD]$/i.test(novoItem.codigo || "") ||
+        /caixa\s+subterr[aâ]nea.*tipo\s+z[abcd]|caixa\s+de\s+passagem.*z[abcd]/i.test(novoItem.descricao || "")
+      ) {
+        return sincronizarAcessoriosCaixaZ(novaLista, Number(novoItem.quantidade) || 0);
       }
-    ]);
+      return novaLista;
+    });
   };
 
   // Totais Financeiros
@@ -429,7 +517,9 @@ export default function PadraoCemigPage() {
         tipoEstrutura,
         posteHomologado: resumoTecnico?.posteHomologado || null,
         caboEntrada: `${resumoTecnico?.caboFaseMm2} mm²`,
-        eletroduto: `PVC Ø ${resumoTecnico?.eletrodutoPVCmm} mm`,
+        eletroduto: categoriaDemanda === "ALTA_DEMANDA_TABELA_4"
+          ? `${resumoTecnico?.eletrodutosQtdeBarras || 2}x Aço Galv. Ø ${resumoTecnico?.eletrodutoGalvDN || 80}mm + ${resumoTecnico?.curvasGalvQtde || 1}x Curva 90º`
+          : `PVC Ø ${resumoTecnico?.eletrodutoPVCmm} mm`,
         hastesQtde: resumoTecnico?.hastesAterramentoQtde || 2,
         valorMateriais: subtotalMateriais,
         valorMaoDeObra: subtotalMaoDeObra,
@@ -497,7 +587,9 @@ export default function PadraoCemigPage() {
       tipoEstrutura,
       posteHomologado: resumoTecnico?.posteHomologado,
       caboEntrada: `${resumoTecnico?.caboFaseMm2} mm²`,
-      eletroduto: `PVC Ø ${resumoTecnico?.eletrodutoPVCmm} mm`,
+      eletroduto: categoriaDemanda === "ALTA_DEMANDA_TABELA_4"
+        ? `${resumoTecnico?.eletrodutosQtdeBarras || 2}x Aço Galv. Ø ${resumoTecnico?.eletrodutoGalvDN || 80}mm + ${resumoTecnico?.curvasGalvQtde || 1}x Curva 90º`
+        : `PVC Ø ${resumoTecnico?.eletrodutoPVCmm} mm`,
       hastesQtde: resumoTecnico?.hastesAterramentoQtde,
       valorMateriais: subtotalMateriais,
       valorMaoDeObra: subtotalMaoDeObra,
@@ -1027,9 +1119,9 @@ export default function PadraoCemigPage() {
                 {/* Seletor de Tipo de Terminal */}
                 <div>
                   <label className="block text-[11px] font-bold text-slate-600 mb-1.5">
-                    Tipo de Terminal para Conexão aos Bornes do Disjuntor:
+                    Tipo de Terminal para Conexão dos Condutores no Projeto:
                   </label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                     <button
                       type="button"
                       onClick={() => setTipoTerminalDisjuntor("COMPRESSAO_OLHAL")}
@@ -1040,11 +1132,29 @@ export default function PadraoCemigPage() {
                       }`}
                     >
                       <div className="flex items-center justify-between mb-1">
-                        <span className="font-black text-xs text-slate-800">Terminal de Compressão Olhal</span>
-                        <span className="text-[9px] px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded font-bold">Parafuso / Chato</span>
+                        <span className="font-black text-xs text-slate-800">Terminal Olhal de Compressão</span>
+                        <span className="text-[9px] px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded font-bold">Olhal / Parafuso</span>
                       </div>
                       <p className="text-[10px] text-slate-500 font-normal leading-relaxed">
-                        Cobre estanhado tubular com furo para fixação mecânica aparafusada. Obrigatório para conexão em terminais bandeira e barramentos da Caixa CM-18.
+                        Terminal de compressão em cobre estanhado com olhal para fixação aparafusada em barramentos e terminais bandeira.
+                      </p>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setTipoTerminalDisjuntor("TUBULAR")}
+                      className={`p-3 rounded-xl border text-left transition ${
+                        tipoTerminalDisjuntor === "TUBULAR"
+                          ? "border-[#00BFA5] bg-emerald-50/70 text-slate-900 ring-2 ring-[#00BFA5]/30 font-bold"
+                          : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-black text-xs text-slate-800">Terminal Tubular</span>
+                        <span className="text-[9px] px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded font-bold">Tubular / Ilhós</span>
+                      </div>
+                      <p className="text-[10px] text-slate-500 font-normal leading-relaxed">
+                        Terminal tubular de cobre estanhado para prensagem nos condutores e conexão em bornes de disjuntores e painéis.
                       </p>
                     </button>
 
@@ -1079,7 +1189,7 @@ export default function PadraoCemigPage() {
                       Regra Técnica de Montagem: Múltiplos Cabos por Polo Requerem Terminal Bandeira
                     </p>
                     <p className="text-amber-800 text-[11px] leading-relaxed">
-                      Neste padrão chegam <strong>múltiplos condutores de {resumoTecnico.caboFaseMm2} mm² em paralelo por fase</strong>. O disjuntor de caixa moldada não comporta aperto direto de múltiplos condutores pesados em um único terminal. O sistema incluiu automaticamente <strong>3x Terminais Bandeira em cobre com parafusos proporcionais</strong> e padronizou <strong>Terminais de Compressão Olhal</strong> em todos os condutores para fixação segura.
+                      Neste padrão chegam <strong>múltiplos condutores de {resumoTecnico.caboFaseMm2} mm² em paralelo por fase</strong>. O sistema incluiu automaticamente <strong>3x Terminais Bandeira em cobre com parafusos proporcionais</strong> e aplicou <strong>{tipoTerminalDisjuntor === "TUBULAR" ? "Terminal Tubular" : "Terminal Olhal de Compressão"}</strong> conforme selecionado.
                     </p>
                   </div>
                 ) : (
@@ -1089,7 +1199,7 @@ export default function PadraoCemigPage() {
                       Entrada Direta no Disjuntor (1 Condutor por Fase)
                     </p>
                     <p className="text-emerald-800 text-[11px] leading-relaxed">
-                      Como chega apenas 1 cabo de {resumoTecnico?.caboFaseMm2} mm² por polo, ele entra diretamente nos bornes do disjuntor com <strong>{tipoTerminalDisjuntor === "COMPRESSAO_OLHAL" ? "Terminal de Compressão Olhal" : "Terminal Pino Maciço"}</strong>, sem necessidade de adaptador bandeira.
+                      Como chega apenas 1 cabo de {resumoTecnico?.caboFaseMm2} mm² por polo, ele entra diretamente nos bornes do disjuntor com <strong>{tipoTerminalDisjuntor === "COMPRESSAO_OLHAL" ? "Terminal Olhal de Compressão" : tipoTerminalDisjuntor === "TUBULAR" ? "Terminal Tubular" : "Terminal Pino Maciço"}</strong>, sem necessidade de adaptador bandeira.
                     </p>
                   </div>
                 )}
@@ -1483,11 +1593,11 @@ export default function PadraoCemigPage() {
                             : `${resumoTecnico.caboFaseMm2} mm² (PVC 70°C)`}
                         </span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-500">Dutos / Eletroduto:</span>
-                        <span className="font-bold text-slate-800">
+                      <div className="flex justify-between items-start">
+                        <span className="text-slate-500">Eletrodutos e Dutos:</span>
+                        <span className="font-bold text-slate-800 text-right">
                           {categoriaDemanda === "ALTA_DEMANDA_TABELA_4"
-                            ? 'Duto Corrugado PEAD Flexível 3" (85 mm)'
+                            ? `${resumoTecnico.eletrodutosQtdeBarras || 2}x Eletrodutos Aço Galv. Ø ${resumoTecnico.eletrodutoGalvDN || 80}mm (${resumoTecnico.eletrodutoGalvPol || '3"'}) + ${resumoTecnico.curvasGalvQtde || 1}x Curva(s) 90º`
                             : `PVC Ø ${resumoTecnico.eletrodutoPVCmm} mm (${resumoTecnico.eletrodutoPvcPol})`}
                         </span>
                       </div>

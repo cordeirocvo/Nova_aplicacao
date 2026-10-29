@@ -17,7 +17,9 @@ export async function GET() {
           unidade: true,
           precoUnitario: true,
           menorPreco: true,
-          fornecedorMenorPreco: true
+          fornecedorMenorPreco: true,
+          numeroOrcamentoMenorPreco: true,
+          dataUltimaCotacao: true
         }
       }),
       prisma.orcamentoItemPadrao.findMany({
@@ -28,7 +30,9 @@ export async function GET() {
           unidade: true,
           precoBaseUnitario: true,
           menorPreco: true,
-          fornecedorMenorPreco: true
+          fornecedorMenorPreco: true,
+          numeroOrcamentoMenorPreco: true,
+          dataUltimaCotacao: true
         }
       })
     ]);
@@ -39,6 +43,8 @@ export async function GET() {
       source: 'CEMIG_DB' | 'CAPEX_DB' | 'ESTIMATIVA_WEB';
       codigo?: string;
       unidade?: string;
+      numeroOrcamento?: string | null;
+      dataUltimaCotacao?: string | null;
     }> = {};
 
     const itemsList: Array<{
@@ -49,12 +55,16 @@ export async function GET() {
       precoUnitario: number;
       fornecedor: string;
       source: 'CEMIG_DB' | 'CAPEX_DB' | 'ESTIMATIVA_WEB';
+      numeroOrcamento?: string | null;
+      dataUltimaCotacao?: string | null;
     }> = [];
 
     // 1. Mapeia itens normativos da CEMIG
     cemigItems.forEach(item => {
       const price = item.menorPreco && item.menorPreco > 0 ? item.menorPreco : item.precoUnitario;
       const supplier = item.fornecedorMenorPreco || "Distribuidor CEMIG Homologado";
+      const dataCot = item.dataUltimaCotacao ? item.dataUltimaCotacao.toISOString() : null;
+      const numOrc = item.numeroOrcamentoMenorPreco || null;
       
       if (item.codigo) {
         catalog[item.codigo] = {
@@ -62,7 +72,9 @@ export async function GET() {
           supplier,
           source: 'CEMIG_DB',
           codigo: item.codigo,
-          unidade: item.unidade
+          unidade: item.unidade,
+          numeroOrcamento: numOrc,
+          dataUltimaCotacao: dataCot
         };
       }
       catalog[item.descricao.trim().toLowerCase()] = {
@@ -70,7 +82,9 @@ export async function GET() {
         supplier,
         source: 'CEMIG_DB',
         codigo: item.codigo,
-        unidade: item.unidade
+        unidade: item.unidade,
+        numeroOrcamento: numOrc,
+        dataUltimaCotacao: dataCot
       };
 
       itemsList.push({
@@ -80,7 +94,9 @@ export async function GET() {
         unidade: item.unidade || 'un',
         precoUnitario: price,
         fornecedor: supplier,
-        source: 'CEMIG_DB'
+        source: 'CEMIG_DB',
+        numeroOrcamento: numOrc,
+        dataUltimaCotacao: dataCot
       });
     });
 
@@ -89,6 +105,8 @@ export async function GET() {
       const price = item.menorPreco && item.menorPreco > 0 ? item.menorPreco : (item.precoBaseUnitario || 0);
       const isWeb = item.fornecedorMenorPreco === 'ESTIMATIVA_WEB';
       const supplier = item.fornecedorMenorPreco || "Fornecedor Homologado Cordeiro";
+      const dataCot = item.dataUltimaCotacao ? item.dataUltimaCotacao.toISOString() : null;
+      const numOrc = item.numeroOrcamentoMenorPreco || null;
 
       if (item.codigo) {
         catalog[item.codigo] = {
@@ -96,7 +114,9 @@ export async function GET() {
           supplier,
           source: isWeb ? 'ESTIMATIVA_WEB' : 'CAPEX_DB',
           codigo: item.codigo,
-          unidade: item.unidade
+          unidade: item.unidade,
+          numeroOrcamento: numOrc,
+          dataUltimaCotacao: dataCot
         };
       }
       catalog[item.descricao.trim().toLowerCase()] = {
@@ -104,7 +124,9 @@ export async function GET() {
         supplier,
         source: isWeb ? 'ESTIMATIVA_WEB' : 'CAPEX_DB',
         codigo: item.codigo || undefined,
-        unidade: item.unidade
+        unidade: item.unidade,
+        numeroOrcamento: numOrc,
+        dataUltimaCotacao: dataCot
       };
 
       itemsList.push({
@@ -114,7 +136,9 @@ export async function GET() {
         unidade: item.unidade || 'un',
         precoUnitario: price,
         fornecedor: supplier,
-        source: isWeb ? 'ESTIMATIVA_WEB' : 'CAPEX_DB'
+        source: isWeb ? 'ESTIMATIVA_WEB' : 'CAPEX_DB',
+        numeroOrcamento: numOrc,
+        dataUltimaCotacao: dataCot
       });
     });
 

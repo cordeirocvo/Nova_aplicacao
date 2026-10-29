@@ -31,7 +31,13 @@ import {
   Cpu,
   Truck,
   DollarSign,
-  ArrowRight
+  ArrowRight,
+  Send,
+  Copy,
+  Calendar,
+  Building2,
+  Tag,
+  AlertTriangle
 } from "lucide-react";
 import {
   ModularBOMOutput,
@@ -52,6 +58,8 @@ export interface CatalogItemRef {
   precoUnitario: number;
   fornecedor?: string;
   source?: string;
+  numeroOrcamento?: string | null;
+  dataUltimaCotacao?: string | null;
 }
 
 interface EVModularBOMTableProps {
@@ -191,6 +199,38 @@ export function EVModularBOMTable({
   const [catalogQuantity, setCatalogQuantity] = useState<number>(1);
   const [catalogTargetStage, setCatalogTargetStage] = useState<InstallationStageId>("ETAPA_1_PADRAO_CEMIG");
   const [isSubmittingNewItem, setIsSubmittingNewItem] = useState<boolean>(false);
+
+  // Estado para Sincronização Geral com o Gerenciador de Orçamentos e CAPEX
+  const [isAtualizandoTudo, setIsAtualizandoTudo] = useState<boolean>(false);
+  const [mensagemSincronizacao, setMensagemSincronizacao] = useState<{ tipo: "sucesso" | "erro"; texto: string } | null>(null);
+
+  // Estado para Modal de Envio para Equipe de Compras
+  const [showComprasModal, setShowComprasModal] = useState<boolean>(false);
+  const [enviandoCompras, setEnviandoCompras] = useState<boolean>(false);
+  const [solicitacaoEnviadaSucesso, setSolicitacaoEnviadaSucesso] = useState<boolean>(false);
+  const [copiadoClipboard, setCopiadoClipboard] = useState<boolean>(false);
+  const [observacoesCompras, setObservacoesCompras] = useState<string>("");
+
+  // Helper para verificar se preço está desatualizado ou pendente
+  const checkIfItemOutdated = (item: {
+    isPrecoDesatualizado?: boolean;
+    unitPriceBRL?: number;
+    dataUltimaCotacao?: string | null;
+    pricingSource?: string;
+    fornecedor?: string | null;
+  }) => {
+    if (item.isPrecoDesatualizado) return true;
+    if (!item.unitPriceBRL || item.unitPriceBRL <= 0) return true;
+    if (!item.dataUltimaCotacao) return true;
+    if (item.pricingSource === "ESTIMATIVA_WEB" || item.pricingSource === "DEFAULT") return true;
+    if (item.fornecedor === "ESTIMATIVA_WEB" || !item.fornecedor) return true;
+    const quoteDate = new Date(item.dataUltimaCotacao);
+    if (!isNaN(quoteDate.getTime())) {
+      const diffDays = (Date.now() - quoteDate.getTime()) / (1000 * 60 * 60 * 24);
+      if (diffDays > 90) return true;
+    }
+    return false;
+  };
 
   const [newItemForm, setNewItemForm] = useState<{
     descricao: string;
@@ -340,6 +380,112 @@ export function EVModularBOMTable({
     });
     return list;
   }, [modularBOM.stages]);
+
+  // Itens que requerem cotação ou atualização de preço
+  const itensDesatualizados = useMemo(() => {
+    return allConsolidatedItems.filter((it) => checkIfItemOutdated(it));
+  }, [allConsolidatedItems]);
+
+  // Função para sincronizar todos os preços com o catálogo mestre de orçamentos e CAPEX
+  const handleAtualizarTudoComCapex = async () => {
+    setIsAtualizandoTudo(true);
+    setMensagemSincronizacao(null);
+    try {
+      if (onRefreshCapexPrices) {
+        onRefreshCapexPrices();
+      }
+      const res = await fetch("/api/ev/bom/sync-capex");
+      if (!res.ok) throw new Error("Falha ao consultar catálogo do CAPEX");
+      const data = await res.json();
+      if (data.catalog) {
+        let atualizadosCount = 0;
+        allConsolidatedItems.forEach((it) => {
+          const key = (it.codigo || it.description).trim().toUpperCase();
+          const found = data.catalog[key];
+          if (found && typeof found.unitPrice === "number" && found.unitPrice > 0) {
+            onUpdateUnitPrice(it.id, found.unitPrice, it.codigo);
+            atualizadosCount++;
+          }
+        });
+        setMensagemSincronizacao({
+          tipo: "sucesso",
+          texto: `Atualização concluída: ${atualizadosCount} materiais atualizados com o banco de orçamentos e CAPEX.`
+        });
+        setTimeout(() => setMensagemSincronizacao(null), 6000);
+      }
+    } catch (err: any) {
+      setMensagemSincronizacao({
+        tipo: "erro",
+        texto: err?.message || "Erro ao sincronizar preços com o CAPEX."
+      });
+    } finally {
+      setIsAtualizandoTudo(false);
+    }
+  };
+
+  // Envio em lote dos itens pendentes para a equipe de compras
+  const handleEnviarEquipeCompras = async () => {
+    if (itensDesatualizados.length === 0) return;
+    setEnviandoCompras(true);
+    try {
+      const payload = {
+        projetoNome: "Eletroposto Recarga EV - Cordeiro Energia",
+        observacao: observacoesCompras,
+        materiais: itensDesatualizados.map((it) => ({
+          codigo: it.codigo,
+          descricao: it.description,
+          especificacao: it.spec,
+          quantidade: it.quantity,
+          unidade: it.unit,
+          etapa: it.stageTitle,
+          fornecedorAtual: it.fornecedor,
+          ultimoPreco: it.unitPriceBRL,
+          dataUltimaCotacao: it.dataUltimaCotacao,
+          motivo: !it.unitPriceBRL || it.unitPriceBRL <= 0
+            ? "SEM_PRECO"
+            : it.pricingSource === "ESTIMATIVA_WEB"
+            ? "ESTIMATIVA_WEB"
+            : !it.dataUltimaCotacao
+            ? "SEM_COTACAO_ANTERIOR"
+            : "COTACAO_VENCIDA"
+        }))
+      };
+
+      const res = await fetch("/api/orcamentos/solicitar-cotacao-lote", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || "Falha ao enviar solicitação para compras");
+      }
+
+      setSolicitacaoEnviadaSucesso(true);
+    } catch (err: any) {
+      alert(err.message || "Erro ao enviar solicitação de cotação.");
+    } finally {
+      setEnviandoCompras(false);
+    }
+  };
+
+  // Copiar lista formatada para a área de transferência (WhatsApp / E-mail)
+  const handleCopiarListaCompras = () => {
+    const header = `📋 *SOLICITAÇÃO DE COTAÇÃO - CORDEIRO ENERGIA*\nProjeto: Eletroposto Recarga VE\nTotal de Itens: ${itensDesatualizados.length}\nData: ${new Date().toLocaleDateString('pt-BR')}\n---------------------------------------\n`;
+    const itemsText = itensDesatualizados.map((it, idx) => {
+      const dataFmt = it.dataUltimaCotacao ? new Date(it.dataUltimaCotacao).toLocaleDateString("pt-BR") : "Sem cotação";
+      const orcFmt = it.numeroOrcamento ? ` (Orç. #${it.numeroOrcamento})` : "";
+      return `${idx + 1}. [${it.codigo || 'S/C'}] ${it.description}\n   - Qtd: ${it.quantity} ${it.unit}\n   - Fornecedor Atual: ${it.fornecedor || 'Pendente'}\n   - Cotação: ${dataFmt}${orcFmt}\n   - Etapa: ${it.stageTitle}`;
+    }).join("\n\n");
+
+    const fullText = `${header}${itemsText}\n\nFavor enviar cotações atualizadas.`;
+    navigator.clipboard.writeText(fullText);
+    setCopiadoClipboard(true);
+    setTimeout(() => setCopiadoClipboard(false), 3000);
+  };
+
+
 
   // Itens filtrados para a visão Consolidada
   const filteredConsolidatedItems = useMemo(() => {
@@ -718,6 +864,34 @@ export function EVModularBOMTable({
         </div>
       </div>
 
+      
+      {/* ─── FEEDBACK DE SINCRONIZAÇÃO DE PREÇOS ─── */}
+      {mensagemSincronizacao && (
+        <div
+          className={`p-3.5 rounded-2xl border flex items-center justify-between gap-3 text-xs font-semibold animate-in fade-in ${
+            mensagemSincronizacao.tipo === "sucesso"
+              ? "bg-emerald-950/80 border-emerald-600/70 text-emerald-200"
+              : "bg-rose-950/80 border-rose-600/70 text-rose-200"
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            {mensagemSincronizacao.tipo === "sucesso" ? (
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+            ) : (
+              <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+            )}
+            <span>{mensagemSincronizacao.texto}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setMensagemSincronizacao(null)}
+            className="text-slate-400 hover:text-white text-xs cursor-pointer px-2 py-0.5 rounded-lg hover:bg-white/10"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* ─── BARRA DE CONTROLE, FILTRO DE BUSCA E AÇÕES GLOBAIS ─── */}
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
         {/* Campo de Busca Rápida */}
@@ -757,6 +931,42 @@ export function EVModularBOMTable({
           >
             <Plus className="w-3.5 h-3.5" /> Novo Material
           </button>
+
+          {/* Botão Sincronizar Tudo com Gestão de Orçamentos e CAPEX */}
+          <button
+            type="button"
+            disabled={isAtualizandoTudo}
+            onClick={handleAtualizarTudoComCapex}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-sky-900/80 hover:bg-sky-800 border border-sky-600/70 text-sky-100 rounded-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer shadow-md disabled:opacity-50"
+            title="Sincronizar e atualizar todos os preços da lista com a base de dados de Gestão de Orçamentos e CAPEX"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isAtualizandoTudo ? "animate-spin text-sky-300" : "text-sky-400"}`} />
+            <span>{isAtualizandoTudo ? "Atualizando Tudo..." : "Atualizar Tudo c/ CAPEX"}</span>
+          </button>
+
+          {/* Botão Enviar Pendências para Equipe de Compras */}
+          <button
+            type="button"
+            onClick={() => {
+              setSolicitacaoEnviadaSucesso(false);
+              setShowComprasModal(true);
+            }}
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer shadow-md border ${
+              itensDesatualizados.length > 0
+                ? "bg-rose-950/80 hover:bg-rose-900 border-rose-600 text-rose-100 shadow-rose-950/50"
+                : "bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-300"
+            }`}
+            title="Enviar relação de itens sem preço ou com cotação desatualizada para a equipe de compras"
+          >
+            <Send className="w-3.5 h-3.5 text-rose-400" />
+            <span>Enviar a Compras</span>
+            {itensDesatualizados.length > 0 && (
+              <span className="px-1.5 py-0.2 rounded-full bg-rose-600 text-white font-mono text-[10px] font-bold">
+                {itensDesatualizados.length}
+              </span>
+            )}
+          </button>
+
 
           <button
             type="button"
@@ -881,6 +1091,7 @@ export function EVModularBOMTable({
                     <th className="p-3 w-28">Código / Ref</th>
                     <th className="p-3">Descrição Técnica do Material</th>
                     <th className="p-3">Fabricante / Homologação</th>
+                    <th className="p-3 w-44">Fornecedor & Cotação</th>
                     <th className="p-3 text-center w-24">Qtd (Editável)</th>
                     <th className="p-3 text-center w-16">Un</th>
                     <th className="p-3 text-right w-28">Unitário (R$)</th>
@@ -892,18 +1103,26 @@ export function EVModularBOMTable({
                 <tbody className="divide-y divide-slate-800/60 font-sans">
                   {filteredConsolidatedItems.length === 0 ? (
                     <tr>
-                      <td colSpan={11} className="p-8 text-center text-slate-500 font-medium">
+                      <td colSpan={12} className="p-8 text-center text-slate-500 font-medium">
                         Nenhum insumo encontrado para a busca especificada.
                       </td>
                     </tr>
                   ) : (
                     filteredConsolidatedItems.map((item, idx) => {
+                      const isOutdated = checkIfItemOutdated(item);
                       const isWebPrice = item.pricingSource === "ESTIMATIVA_WEB";
                       const isManualPrice = item.pricingSource === "MANUAL";
                       const isCemigNorm = item.pricingSource === "CEMIG_DB";
 
                       return (
-                        <tr key={item.id} className="hover:bg-slate-800/30 transition-colors group">
+                        <tr
+                          key={item.id}
+                          className={`transition-colors group ${
+                            isOutdated
+                              ? "bg-rose-950/20 hover:bg-rose-950/35 border-l-4 border-l-rose-500"
+                              : "hover:bg-slate-800/30"
+                          }`}
+                        >
                           {/* Índice */}
                           <td className="p-3 text-center font-mono text-[11px] text-slate-500 font-bold">
                             {idx + 1}
@@ -942,6 +1161,46 @@ export function EVModularBOMTable({
                           <td className="p-3 text-emerald-400 font-mono text-[11px]">
                             {item.manufacturer || "Nacional Homologado"}
                           </td>
+                          {/* Fornecedor & Cotação (Alerta Vermelho se Desatualizado) */}
+                          <td className="p-3">
+                            {isOutdated ? (
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-1.5 text-[11px] font-bold text-rose-400">
+                                  <AlertTriangle className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                                  <span className="truncate max-w-[130px]" title={item.fornecedor || "Sem fornecedor cotado"}>
+                                    {item.fornecedor || "Não cotado"}
+                                  </span>
+                                </div>
+                                <div className="text-[10px] text-rose-300 font-mono flex items-center gap-1 flex-wrap">
+                                  <span className="px-1.5 py-0.2 rounded bg-rose-950 border border-rose-800 text-[9px] font-black text-rose-200">
+                                    {item.numeroOrcamento ? `Orç. #${item.numeroOrcamento}` : "S/ Orç"}
+                                  </span>
+                                  <span>
+                                    {item.dataUltimaCotacao ? new Date(item.dataUltimaCotacao).toLocaleDateString("pt-BR") : "Pendente"}
+                                  </span>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="space-y-0.5">
+                                <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-200">
+                                  <Building2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                                  <span className="truncate max-w-[130px]" title={item.fornecedor || "Fornecedor Homologado"}>
+                                    {item.fornecedor || "Homologado"}
+                                  </span>
+                                </div>
+                                <div className="text-[10px] text-slate-400 font-mono flex items-center gap-1 flex-wrap">
+                                  {item.numeroOrcamento && (
+                                    <span className="px-1.5 py-0.2 rounded bg-slate-800 text-sky-300 font-bold border border-slate-700 text-[9px]">
+                                      Orç. #{item.numeroOrcamento}
+                                    </span>
+                                  )}
+                                  <span>
+                                    {item.dataUltimaCotacao ? new Date(item.dataUltimaCotacao).toLocaleDateString("pt-BR") : "Base CAPEX"}
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+                          </td>
 
                           {/* Quantidade Editável */}
                           <td className="p-2.5 text-center">
@@ -977,8 +1236,12 @@ export function EVModularBOMTable({
                                   const val = Math.max(0, parseFloat(e.target.value) || 0);
                                   onUpdateUnitPrice(item.id, val, item.codigo);
                                 }}
-                                className="w-24 bg-slate-950 border border-slate-700 focus:border-[#E45318] rounded px-1.5 py-1 text-right font-mono text-slate-200 text-xs transition-colors"
-                                title="Clique para editar o preço unitário"
+                                className={`w-24 bg-slate-950 border rounded px-1.5 py-1 text-right font-mono text-xs transition-colors ${
+                                  isOutdated
+                                    ? "border-rose-500 text-rose-400 font-black focus:border-rose-400 bg-rose-950/30"
+                                    : "border-slate-700 text-slate-200 focus:border-[#E45318]"
+                                }`}
+                                title={isOutdated ? "Preço pendente ou cotação desatualizada" : "Clique para editar o preço unitário"}
                               />
                             </div>
                           </td>
@@ -994,7 +1257,11 @@ export function EVModularBOMTable({
 
                           {/* Badge da Fonte de Preço */}
                           <td className="p-3">
-                            {isWebPrice ? (
+                            {isOutdated ? (
+                              <span className="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-rose-950 text-rose-300 border border-rose-700 flex items-center gap-1 w-max">
+                                <AlertTriangle className="w-3 h-3 text-rose-400" /> Cotação Pendente
+                              </span>
+                            ) : isWebPrice ? (
                               <span className="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-amber-950 text-amber-300 border border-amber-700/60 flex items-center gap-1 w-max">
                                 <Globe className="w-3 h-3 text-amber-400" /> Estimativa Web
                               </span>
@@ -1183,6 +1450,7 @@ export function EVModularBOMTable({
                     <th className="p-3 w-28">Código / Ref</th>
                     <th className="p-3">Descrição Técnica do Material</th>
                     <th className="p-3">Fabricante / Homologação</th>
+                    <th className="p-3 w-44">Fornecedor & Cotação</th>
                     <th className="p-3 text-center w-24">Qtd (Editável)</th>
                     <th className="p-3 text-center w-16">Un</th>
                     <th className="p-3 text-right w-28">Unitário (R$)</th>
@@ -1206,12 +1474,20 @@ export function EVModularBOMTable({
                     </tr>
                   ) : (
                     filteredCurrentStageItems.map((item, idx) => {
+                      const isOutdated = checkIfItemOutdated(item);
                       const isWebPrice = item.pricingSource === "ESTIMATIVA_WEB";
                       const isManualPrice = item.pricingSource === "MANUAL";
                       const isCemigNorm = item.pricingSource === "CEMIG_DB";
 
                       return (
-                        <tr key={item.id} className="hover:bg-slate-800/30 transition-colors group">
+                        <tr
+                          key={item.id}
+                          className={`transition-colors group ${
+                            isOutdated
+                              ? "bg-rose-950/20 hover:bg-rose-950/35 border-l-4 border-l-rose-500"
+                              : "hover:bg-slate-800/30"
+                          }`}
+                        >
                           {/* Índice */}
                           <td className="p-3 text-center font-mono text-[11px] text-slate-500 font-bold">
                             {idx + 1}
@@ -1242,6 +1518,46 @@ export function EVModularBOMTable({
                           {/* Fabricante */}
                           <td className="p-3 text-emerald-400 font-mono text-[11px]">
                             {item.manufacturer || "Nacional Homologado"}
+                          </td>
+                          {/* Fornecedor & Cotação (Alerta Vermelho se Desatualizado) */}
+                          <td className="p-3">
+                            {isOutdated ? (
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-1.5 text-[11px] font-bold text-rose-400">
+                                  <AlertTriangle className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                                  <span className="truncate max-w-[130px]" title={item.fornecedor || "Sem fornecedor cotado"}>
+                                    {item.fornecedor || "Não cotado"}
+                                  </span>
+                                </div>
+                                <div className="text-[10px] text-rose-300 font-mono flex items-center gap-1 flex-wrap">
+                                  <span className="px-1.5 py-0.2 rounded bg-rose-950 border border-rose-800 text-[9px] font-black text-rose-200">
+                                    {item.numeroOrcamento ? `Orç. #${item.numeroOrcamento}` : "S/ Orç"}
+                                  </span>
+                                  <span>
+                                    {item.dataUltimaCotacao ? new Date(item.dataUltimaCotacao).toLocaleDateString("pt-BR") : "Pendente"}
+                                  </span>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="space-y-0.5">
+                                <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-200">
+                                  <Building2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                                  <span className="truncate max-w-[130px]" title={item.fornecedor || "Fornecedor Homologado"}>
+                                    {item.fornecedor || "Homologado"}
+                                  </span>
+                                </div>
+                                <div className="text-[10px] text-slate-400 font-mono flex items-center gap-1 flex-wrap">
+                                  {item.numeroOrcamento && (
+                                    <span className="px-1.5 py-0.2 rounded bg-slate-800 text-sky-300 font-bold border border-slate-700 text-[9px]">
+                                      Orç. #{item.numeroOrcamento}
+                                    </span>
+                                  )}
+                                  <span>
+                                    {item.dataUltimaCotacao ? new Date(item.dataUltimaCotacao).toLocaleDateString("pt-BR") : "Base CAPEX"}
+                                  </span>
+                                </div>
+                              </div>
+                            )}
                           </td>
 
                           {/* Quantidade Editável */}
@@ -1278,8 +1594,12 @@ export function EVModularBOMTable({
                                   const val = Math.max(0, parseFloat(e.target.value) || 0);
                                   onUpdateUnitPrice(item.id, val, item.codigo);
                                 }}
-                                className="w-24 bg-slate-950 border border-slate-700 focus:border-[#E45318] rounded px-1.5 py-1 text-right font-mono text-slate-200 text-xs transition-colors"
-                                title="Clique para editar o preço unitário"
+                                className={`w-24 bg-slate-950 border rounded px-1.5 py-1 text-right font-mono text-xs transition-colors ${
+                                  isOutdated
+                                    ? "border-rose-500 text-rose-400 font-black focus:border-rose-400 bg-rose-950/30"
+                                    : "border-slate-700 text-slate-200 focus:border-[#E45318]"
+                                }`}
+                                title={isOutdated ? "Preço pendente ou cotação desatualizada" : "Clique para editar o preço unitário"}
                               />
                             </div>
                           </td>
@@ -1295,7 +1615,11 @@ export function EVModularBOMTable({
 
                           {/* Badge da Fonte de Preço */}
                           <td className="p-3">
-                            {isWebPrice ? (
+                            {isOutdated ? (
+                              <span className="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-rose-950 text-rose-300 border border-rose-700 flex items-center gap-1 w-max">
+                                <AlertTriangle className="w-3 h-3 text-rose-400" /> Cotação Pendente
+                              </span>
+                            ) : isWebPrice ? (
                               <span className="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-amber-950 text-amber-300 border border-amber-700/60 flex items-center gap-1 w-max">
                                 <Globe className="w-3 h-3 text-amber-400" /> Estimativa Web
                               </span>
@@ -1810,6 +2134,151 @@ export function EVModularBOMTable({
           </div>
         </div>
       )}
+
+      {/* ─── MODAL: ENVIAR LISTA DE PENDÊNCIAS PARA A EQUIPE DE COMPRAS ─── */}
+      {showComprasModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-[#0A192F] border border-slate-700 rounded-3xl w-full max-w-3xl p-5 sm:p-6 shadow-2xl relative text-white space-y-4 max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800 shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center">
+                  <Send className="w-4 h-4 text-rose-400" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black uppercase tracking-tight">
+                    Solicitar Cotação à Equipe de Compras
+                  </h3>
+                  <p className="text-[11px] text-slate-400">
+                    {itensDesatualizados.length} materiais selecionados com preço desatualizado ou pendentes de cotação
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowComprasModal(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg transition-colors cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {solicitacaoEnviadaSucesso ? (
+              <div className="p-6 text-center space-y-4 my-auto">
+                <div className="w-14 h-14 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center mx-auto">
+                  <CheckCircle2 className="w-8 h-8" />
+                </div>
+                <div>
+                  <h4 className="text-base font-black text-white">
+                    Solicitação Enviada com Sucesso para Compras!
+                  </h4>
+                  <p className="text-xs text-slate-300 mt-1 max-w-md mx-auto">
+                    Os materiais foram registrados com status <strong className="text-amber-400 font-mono">PENDENTE_COMPRAS</strong> no módulo de Gestão de Orçamentos e CAPEX.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowComprasModal(false)}
+                  className="px-6 py-2 bg-[#00B356] hover:bg-[#009b4a] text-white text-xs font-black uppercase tracking-wider rounded-xl transition-all cursor-pointer"
+                >
+                  Fechar Janela
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-3 overflow-y-auto pr-1 flex-1">
+                  <div className="bg-slate-950/70 border border-slate-800 rounded-xl p-3 flex items-center justify-between gap-3">
+                    <span className="text-xs text-slate-300">
+                      Total de itens para cotar: <strong className="text-rose-400 font-mono">{itensDesatualizados.length}</strong>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleCopiarListaCompras}
+                      className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-lg text-xs font-semibold text-slate-200 flex items-center gap-1.5 cursor-pointer"
+                    >
+                      {copiadoClipboard ? (
+                        <>
+                          <Check className="w-3.5 h-3.5 text-emerald-400" /> Copiado!
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5" /> Copiar para WhatsApp / E-mail
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  <div className="max-h-56 overflow-y-auto border border-slate-800 rounded-xl divide-y divide-slate-800 bg-slate-950/50">
+                    {itensDesatualizados.map((it, idx) => (
+                      <div key={it.id || idx} className="p-2.5 flex items-center justify-between gap-3 text-xs">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-[10px] text-slate-500 font-bold">#{idx + 1}</span>
+                            <span className="font-bold text-white truncate max-w-sm">{it.description}</span>
+                          </div>
+                          <div className="text-[10px] text-slate-400 flex items-center gap-2 mt-0.5">
+                            <span>Etapa: {it.stageTitle}</span>
+                            <span>•</span>
+                            <span>Qtd: {it.quantity} {it.unit}</span>
+                            <span>•</span>
+                            <span className="text-rose-400 font-mono">
+                              {it.fornecedor ? `Último: ${it.fornecedor}` : "Sem fornecedor"}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <span className="px-2 py-0.5 rounded text-[9px] font-black uppercase bg-rose-950 text-rose-300 border border-rose-700/60">
+                            {!it.unitPriceBRL || it.unitPriceBRL <= 0 ? "Sem Preço" : "Desatualizado"}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider block mb-1">
+                      Instruções / Observações Adicionais para a Equipe de Compras
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={observacoesCompras}
+                      onChange={(e) => setObservacoesCompras(e.target.value)}
+                      placeholder="Ex: Priorizar cotação com entrega para Uberlândia/MG em até 15 dias corridos..."
+                      className="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-white text-xs outline-none focus:border-[#00B356]"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setShowComprasModal(false)}
+                    className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold cursor-pointer"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    disabled={enviandoCompras || itensDesatualizados.length === 0}
+                    onClick={handleEnviarEquipeCompras}
+                    className="px-5 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 cursor-pointer shadow-lg shadow-rose-950/40 disabled:opacity-50"
+                  >
+                    {enviandoCompras ? (
+                      <>
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" /> Enviando Solicitação...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-3.5 h-3.5" /> Disparar Solicitação para Compras ({itensDesatualizados.length})
+                      </>
+                    )}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

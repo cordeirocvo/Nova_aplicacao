@@ -686,6 +686,10 @@ export interface BillOfMaterialItem {
   modelRef?: string;
   unitPriceBRL?: number;
   totalPriceBRL?: number;
+  fornecedor?: string | null;
+  dataUltimaCotacao?: string | null;
+  numeroOrcamento?: string | null;
+  isPrecoDesatualizado?: boolean;
 }
 
 export interface AuxiliaryCircuitsConfig {

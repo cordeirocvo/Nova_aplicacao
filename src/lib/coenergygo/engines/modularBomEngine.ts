@@ -88,7 +88,13 @@ export interface ModularBOMOptions {
   userBOMOverrides?: Record<string, { quantity?: number; unitPriceBRL?: number }>;
   deletedItemIds?: string[];
   customAddedItems?: BillOfMaterialItem[];
-  pricingCatalog?: Record<string, { unitPrice: number; supplier?: string; source?: 'CEMIG_DB' | 'CAPEX_DB' | 'ESTIMATIVA_WEB' }>;
+  pricingCatalog?: Record<string, {
+    unitPrice: number;
+    supplier?: string;
+    source?: 'CEMIG_DB' | 'CAPEX_DB' | 'ESTIMATIVA_WEB';
+    dataUltimaCotacao?: string | null;
+    numeroOrcamento?: string | null;
+  }>;
 }
 
 /**
@@ -200,30 +206,55 @@ export function calculateConductorLegs(
 /**
  * Função utilitária para buscar preço unitário no catálogo do CAPEX ou nos fallbacks
  */
+export interface ResolvedPriceResult {
+  price: number;
+  supplier: string;
+  source: 'CEMIG_DB' | 'CAPEX_DB' | 'ESTIMATIVA_WEB' | 'DEFAULT';
+  dataUltimaCotacao?: string | null;
+  numeroOrcamento?: string | null;
+  isPrecoDesatualizado: boolean;
+}
+
 function resolvePrice(
   codigo: string | undefined,
   description: string,
   fallbackPrice: number,
   fallbackSupplier: string,
-  pricingCatalog?: Record<string, { unitPrice: number; supplier?: string; source?: 'CEMIG_DB' | 'CAPEX_DB' | 'ESTIMATIVA_WEB' }>
-): { price: number; supplier: string; source: 'CEMIG_DB' | 'CAPEX_DB' | 'ESTIMATIVA_WEB' | 'DEFAULT' } {
+  pricingCatalog?: Record<string, {
+    unitPrice: number;
+    supplier?: string;
+    source?: 'CEMIG_DB' | 'CAPEX_DB' | 'ESTIMATIVA_WEB';
+    dataUltimaCotacao?: string | null;
+    numeroOrcamento?: string | null;
+  }>
+): ResolvedPriceResult {
   if (pricingCatalog) {
     // 1. Busca exata por código oficial CEMIG / CAPEX
     if (codigo && pricingCatalog[codigo] && pricingCatalog[codigo].unitPrice > 0) {
+      const entry = pricingCatalog[codigo];
+      const isOutdated = !entry.dataUltimaCotacao || entry.source === 'ESTIMATIVA_WEB' || entry.numeroOrcamento === 'PENDENTE_HOMOLOGACAO';
       return {
-        price: pricingCatalog[codigo].unitPrice,
-        supplier: pricingCatalog[codigo].supplier || 'Fornecedor Homologado',
-        source: pricingCatalog[codigo].source || 'CAPEX_DB'
+        price: entry.unitPrice,
+        supplier: entry.supplier || 'Fornecedor Homologado',
+        source: entry.source || 'CAPEX_DB',
+        dataUltimaCotacao: entry.dataUltimaCotacao || null,
+        numeroOrcamento: entry.numeroOrcamento || null,
+        isPrecoDesatualizado: isOutdated
       };
     }
 
     // 2. Busca por descrição limpa
     const cleanDesc = description.trim().toLowerCase();
     if (pricingCatalog[cleanDesc] && pricingCatalog[cleanDesc].unitPrice > 0) {
+      const entry = pricingCatalog[cleanDesc];
+      const isOutdated = !entry.dataUltimaCotacao || entry.source === 'ESTIMATIVA_WEB' || entry.numeroOrcamento === 'PENDENTE_HOMOLOGACAO';
       return {
-        price: pricingCatalog[cleanDesc].unitPrice,
-        supplier: pricingCatalog[cleanDesc].supplier || 'Fornecedor Homologado',
-        source: pricingCatalog[cleanDesc].source || 'CAPEX_DB'
+        price: entry.unitPrice,
+        supplier: entry.supplier || 'Fornecedor Homologado',
+        source: entry.source || 'CAPEX_DB',
+        dataUltimaCotacao: entry.dataUltimaCotacao || null,
+        numeroOrcamento: entry.numeroOrcamento || null,
+        isPrecoDesatualizado: isOutdated
       };
     }
   }
@@ -232,7 +263,10 @@ function resolvePrice(
   return {
     price: fallbackPrice,
     supplier: fallbackSupplier,
-    source: 'DEFAULT'
+    source: 'DEFAULT',
+    dataUltimaCotacao: null,
+    numeroOrcamento: null,
+    isPrecoDesatualizado: true
   };
 }
 
@@ -1643,12 +1677,40 @@ export function buildModularBOM(
         const price = override?.unitPriceBRL !== undefined ? override.unitPriceBRL : (it.unitPriceBRL || 0);
         const pricingSource = override?.unitPriceBRL !== undefined ? 'MANUAL' : it.pricingSource;
 
+        let fornecedor = it.fornecedor;
+        let dataUltimaCotacao = it.dataUltimaCotacao;
+        let numeroOrcamento = it.numeroOrcamento;
+        let isPrecoDesatualizado = it.isPrecoDesatualizado;
+
+        if (pricingCatalog) {
+          const entry = (it.codigo && pricingCatalog[it.codigo] && pricingCatalog[it.codigo].unitPrice > 0)
+            ? pricingCatalog[it.codigo]
+            : (pricingCatalog[it.description.trim().toLowerCase()] && pricingCatalog[it.description.trim().toLowerCase()].unitPrice > 0)
+              ? pricingCatalog[it.description.trim().toLowerCase()]
+              : null;
+
+          if (entry) {
+            fornecedor = entry.supplier || fornecedor || 'Fornecedor Homologado Cordeiro';
+            dataUltimaCotacao = entry.dataUltimaCotacao || dataUltimaCotacao || null;
+            numeroOrcamento = entry.numeroOrcamento || numeroOrcamento || null;
+            isPrecoDesatualizado = !entry.dataUltimaCotacao || entry.source === 'ESTIMATIVA_WEB' || entry.numeroOrcamento === 'PENDENTE_HOMOLOGACAO';
+          }
+        }
+
+        if (price <= 0 || !dataUltimaCotacao) {
+          isPrecoDesatualizado = true;
+        }
+
         return {
           ...it,
           quantity: qty,
           unitPriceBRL: price,
           totalPriceBRL: Number((qty * price).toFixed(2)),
-          pricingSource
+          pricingSource,
+          fornecedor: fornecedor || (it.manufacturer || 'Cordeiro / Não informado'),
+          dataUltimaCotacao: dataUltimaCotacao || null,
+          numeroOrcamento: numeroOrcamento || null,
+          isPrecoDesatualizado: Boolean(isPrecoDesatualizado)
         };
       });
 

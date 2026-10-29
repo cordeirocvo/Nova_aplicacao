@@ -2,9 +2,22 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { sincronizarCatalogoMaster } from "@/lib/orcamentos/sincronizarCatalogoMaster";
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    const { searchParams } = new URL(req.url);
+    const forceSync = searchParams.get("sync") === "true";
+
+    const totalAtual = await prisma.orcamentoItemPadrao.count();
+    if (totalAtual < 150 || forceSync) {
+      try {
+        await sincronizarCatalogoMaster();
+      } catch (syncErr) {
+        console.warn("Aviso na auto-sincronização do catálogo master:", syncErr);
+      }
+    }
+
     const itens = await prisma.orcamentoItemPadrao.findMany({
       orderBy: { descricao: "asc" }
     });

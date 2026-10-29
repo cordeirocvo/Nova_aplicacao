@@ -30,6 +30,7 @@ export default function OrcamentosDashboard() {
   const [isSolicitarNovoItemOpen, setIsSolicitarNovoItemOpen] = useState(false);
   const [salvandoPrecoId, setSalvandoPrecoId] = useState<string | null>(null);
   const [tempPrecos, setTempPrecos] = useState<Record<string, number>>({});
+  const [sincronizandoFontes, setSincronizandoFontes] = useState(false);
 
   // Estatísticas do Hub Master Data
   const [stats, setStats] = useState({
@@ -89,6 +90,25 @@ export default function OrcamentosDashboard() {
       console.error("Erro ao carregar dados do CAPEX:", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSincronizarFontes = async () => {
+    try {
+      setSincronizandoFontes(true);
+      const res = await fetch("/api/orcamentos/sincronizar-fontes", { method: "POST" });
+      const data = await res.json();
+      if (data.success) {
+        await carregarDados();
+        alert(`Catálogo Master Sincronizado com Sucesso!\n\n• Itens CEMIG processados: ${data.relatorio.totalCemigProcessados}\n• Itens Coenergy processados: ${data.relatorio.totalCoenergyProcessados}\n• Total de insumos no catálogo: ${data.relatorio.totalMasterFinal}`);
+      } else {
+        alert(data.error || "Erro ao sincronizar catálogo.");
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Falha de conexão ao sincronizar catálogo.");
+    } finally {
+      setSincronizandoFontes(false);
     }
   };
 
@@ -726,6 +746,18 @@ export default function OrcamentosDashboard() {
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Solicitar Insumo (Compras)</span>
+              </button>
+
+              {/* Botão Sincronizar CEMIG e Coenergy */}
+              <button
+                type="button"
+                disabled={sincronizandoFontes}
+                onClick={handleSincronizarFontes}
+                className="bg-[#0A192F] hover:bg-[#E45318] text-white px-4 py-2 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-sm transition-all cursor-pointer hover:scale-105 disabled:opacity-50"
+                title="Cadastrar e sincronizar automaticamente todos os itens do Padrão CEMIG e CoenergyGO"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 text-[#00B356] ${sincronizandoFontes ? "animate-spin" : ""}`} />
+                <span>{sincronizandoFontes ? "Sincronizando..." : "Sincronizar CEMIG e Coenergy"}</span>
               </button>
             </div>
           </div>

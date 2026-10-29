@@ -17,8 +17,10 @@ import {
   RefreshCw,
   Info,
   DollarSign,
-  Building2
+  Building2,
+  PackagePlus
 } from "lucide-react";
+import SeletorItemCatalogo from "./SeletorItemCatalogo";
 
 interface ItemConciliado {
   itemNumero: number;
@@ -164,12 +166,13 @@ export const ConciliacaoOrcamentoModal: React.FC<ConciliacaoOrcamentoModalProps>
     });
   };
 
-  // Alterar correspondência manual
-  const handleAlterarMatchManual = (idx: number, novoCodigoOficial: string) => {
-    const itemOficial = (catalogoOficial.length > 0 ? catalogoOficial : catalogoMateriais).find(
-      (m) => m.codigo === novoCodigoOficial
-    );
-
+  // Alterar correspondência manual ou cadastrar como novo item
+  const handleAlterarMatchManual = (
+    idx: number,
+    novoCodigoOficial: string,
+    novaDescricaoOficial?: string,
+    isNovoItem?: boolean
+  ) => {
     setItensConciliacao((prev) => {
       const copy = [...prev];
       if (!novoCodigoOficial) {
@@ -180,33 +183,91 @@ export const ConciliacaoOrcamentoModal: React.FC<ConciliacaoOrcamentoModalProps>
           confirmado: false,
           isMenorPreco: false
         };
-      } else if (itemOficial) {
-        const precoFornec = copy[idx].precoUnitarioFornecedor;
-        const menorAtual = itemOficial.menorPreco || itemOficial.precoUnitario || itemOficial.precoBaseUnitario || 0;
-        const eMenor = menorAtual > 0 ? precoFornec < menorAtual : true;
-
+      } else if (novoCodigoOficial === "__NOVO_ITEM__" || isNovoItem) {
         copy[idx] = {
           ...copy[idx],
-          codigoOficialSelecionado: itemOficial.codigo,
-          descricaoOficialSelecionada: itemOficial.descricao,
+          codigoOficialSelecionado: "__NOVO_ITEM__",
+          descricaoOficialSelecionada: novaDescricaoOficial || copy[idx].descricaoFornecedor,
           confirmado: true,
           confianca: 100,
-          origemMatch: "MANUAL",
-          explicacao: "Selecionado manualmente pelo operador.",
+          origemMatch: "NOVO_ITEM",
+          explicacao: "Item novo: será adicionado ao Catálogo Master e memória De-Para.",
           sugestao: {
-            codigo: itemOficial.codigo,
-            descricao: itemOficial.descricao,
-            categoria: itemOficial.categoria || itemOficial.tipo || "GERAL",
-            unidade: itemOficial.unidade || "un",
-            precoAtual: itemOficial.precoUnitario || itemOficial.precoBaseUnitario || 0,
-            menorPrecoAtual: itemOficial.menorPreco,
-            fornecedorMenorPreco: itemOficial.fornecedorMenorPreco
+            codigo: "__NOVO_ITEM__",
+            descricao: novaDescricaoOficial || copy[idx].descricaoFornecedor,
+            categoria: "GERAL",
+            unidade: copy[idx].unidadeFornecedor || "un",
+            precoAtual: copy[idx].precoUnitarioFornecedor,
+            menorPrecoAtual: copy[idx].precoUnitarioFornecedor,
+            fornecedorMenorPreco: fornecedorInfo?.razaoSocial || "Fornecedor"
           },
-          isMenorPreco: eMenor
+          isMenorPreco: true
         };
+      } else {
+        const itemOficial = (catalogoOficial.length > 0 ? catalogoOficial : catalogoMateriais).find(
+          (m) => m.codigo === novoCodigoOficial
+        );
+
+        if (itemOficial) {
+          const precoFornec = copy[idx].precoUnitarioFornecedor;
+          const menorAtual = itemOficial.menorPreco || itemOficial.precoUnitario || itemOficial.precoBaseUnitario || 0;
+          const eMenor = menorAtual > 0 ? precoFornec < menorAtual : true;
+
+          copy[idx] = {
+            ...copy[idx],
+            codigoOficialSelecionado: itemOficial.codigo,
+            descricaoOficialSelecionada: itemOficial.descricao,
+            confirmado: true,
+            confianca: 100,
+            origemMatch: "MANUAL",
+            explicacao: "Selecionado manualmente pelo operador no catálogo.",
+            sugestao: {
+              codigo: itemOficial.codigo,
+              descricao: itemOficial.descricao,
+              categoria: itemOficial.categoria || itemOficial.tipo || "GERAL",
+              unidade: itemOficial.unidade || "un",
+              precoAtual: itemOficial.precoUnitario || itemOficial.precoBaseUnitario || 0,
+              menorPrecoAtual: itemOficial.menorPreco,
+              fornecedorMenorPreco: itemOficial.fornecedorMenorPreco
+            },
+            isMenorPreco: eMenor
+          };
+        }
       }
       return copy;
     });
+  };
+
+  // Comando Automático: Adicionar Todos os Itens Pendentes sem vínculo ao Catálogo Master
+  const handleAdicionarTodosPendentes = () => {
+    let pendentesCount = 0;
+    setItensConciliacao((prev) =>
+      prev.map((it) => {
+        if (!it.codigoOficialSelecionado || it.codigoOficialSelecionado === "") {
+          pendentesCount++;
+          return {
+            ...it,
+            codigoOficialSelecionado: "__NOVO_ITEM__",
+            descricaoOficialSelecionada: it.descricaoFornecedor,
+            confirmado: true,
+            confianca: 100,
+            origemMatch: "NOVO_ITEM",
+            explicacao: "Item novo: será adicionado ao Catálogo Master e memória De-Para.",
+            sugestao: {
+              codigo: "__NOVO_ITEM__",
+              descricao: it.descricaoFornecedor,
+              categoria: "GERAL",
+              unidade: it.unidadeFornecedor || "un",
+              precoAtual: it.precoUnitarioFornecedor,
+              menorPrecoAtual: it.precoUnitarioFornecedor,
+              fornecedorMenorPreco: fornecedorInfo?.razaoSocial || "Fornecedor"
+            },
+            isMenorPreco: true
+          };
+        }
+        return it;
+      })
+    );
   };
 
   // Confirmar todos com alta confiança
@@ -253,10 +314,12 @@ export const ConciliacaoOrcamentoModal: React.FC<ConciliacaoOrcamentoModalProps>
         descricaoFornecedor: it.descricaoFornecedor,
         codigoOficial: it.codigoOficialSelecionado,
         descricaoOficial: it.descricaoOficialSelecionada,
+        cadastrarComoNovo: it.codigoOficialSelecionado === "__NOVO_ITEM__",
         precoUnitario: it.precoUnitarioFornecedor,
         quantidade: it.quantidade,
         unidade: it.unidadeFornecedor || null,
-        marca: it.marca || null
+        marca: it.marca || null,
+        categoria: it.sugestao?.categoria || "GERAL"
       }));
 
       const res = await fetch("/api/orcamentos/conciliacao", {
@@ -281,6 +344,7 @@ export const ConciliacaoOrcamentoModal: React.FC<ConciliacaoOrcamentoModalProps>
 
       setResultadoFinal({
         totalConfirmados: vinculos.length,
+        materiaisCriados: data.materiaisCriados || 0,
         materiaisAtualizados: data.materiaisAtualizados || vinculos.length,
         fornecedor: fornecedorInfo?.razaoSocial || "Fornecedor",
         numeroOrcamento: fornecedorInfo?.numeroOrcamento || "S/N"
@@ -543,7 +607,18 @@ export const ConciliacaoOrcamentoModal: React.FC<ConciliacaoOrcamentoModalProps>
                 </div>
 
                 {/* Botões de Ação em Lote */}
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {/* Comando para Adicionar Itens Inéditos / Pendentes Automaticamente */}
+                  <button
+                    type="button"
+                    onClick={handleAdicionarTodosPendentes}
+                    className="px-3 py-1.5 text-xs font-black bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-sm transition inline-flex items-center gap-1.5"
+                    title="Marca todos os itens que ainda não possuem vínculo para serem cadastrados automaticamente como novos itens no Catálogo Master"
+                  >
+                    <PackagePlus className="w-3.5 h-3.5" />
+                    Adicionar Pendentes ao Catálogo
+                  </button>
+
                   <button
                     type="button"
                     onClick={handleConfirmarAltaConfianca}
@@ -630,7 +705,12 @@ export const ConciliacaoOrcamentoModal: React.FC<ConciliacaoOrcamentoModalProps>
                               <td className="p-3 align-top space-y-2">
                                 {/* Badge de Confiança / Match */}
                                 <div className="flex items-center gap-2 flex-wrap">
-                                  {item.confianca >= 90 ? (
+                                  {item.codigoOficialSelecionado === "__NOVO_ITEM__" ? (
+                                    <span className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+                                      <PackagePlus className="w-3 h-3 text-emerald-600" />
+                                      Item Novo (Cadastrar no Catálogo)
+                                    </span>
+                                  ) : item.confianca >= 90 ? (
                                     <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
                                       <Check className="w-3 h-3 text-emerald-600" />
                                       {item.confianca}% de Confiança ({item.origemMatch})
@@ -654,19 +734,21 @@ export const ConciliacaoOrcamentoModal: React.FC<ConciliacaoOrcamentoModalProps>
                                   )}
                                 </div>
 
-                                {/* Select de correspondência oficial */}
-                                <select
-                                  value={item.codigoOficialSelecionado || ""}
-                                  onChange={(e) => handleAlterarMatchManual(originalIdx, e.target.value)}
-                                  className="w-full p-2 text-xs font-medium bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#00BFA5]"
-                                >
-                                  <option value="">-- Não vincular (Ignorar este item) --</option>
-                                  {(catalogoOficial.length > 0 ? catalogoOficial : catalogoMateriais).map((mat) => (
-                                    <option key={mat.codigo} value={mat.codigo}>
-                                      [{mat.codigo}] {mat.descricao} (Atual: R$ {(mat.precoUnitario || mat.precoBaseUnitario || 0).toFixed(2)})
-                                    </option>
-                                  ))}
-                                </select>
+                                {/* Seletor Pesquisável com Suporte a Sinônimos e Opção Adicionar Item */}
+                                <SeletorItemCatalogo
+                                  itemFornecedor={{
+                                    descricaoFornecedor: item.descricaoFornecedor,
+                                    codigoFornecedor: item.codigoFornecedor,
+                                    precoUnitarioFornecedor: item.precoUnitarioFornecedor,
+                                    unidadeFornecedor: item.unidadeFornecedor
+                                  }}
+                                  codigoSelecionado={item.codigoOficialSelecionado}
+                                  descricaoSelecionada={item.descricaoOficialSelecionada}
+                                  catalogo={catalogoOficial.length > 0 ? catalogoOficial : catalogoMateriais}
+                                  onSelect={(cod, desc, isNovo) =>
+                                    handleAlterarMatchManual(originalIdx, cod, desc, isNovo)
+                                  }
+                                />
                               </td>
 
                               {/* Lado Direito: Comparativo de Preço */}
@@ -757,16 +839,22 @@ export const ConciliacaoOrcamentoModal: React.FC<ConciliacaoOrcamentoModalProps>
               </p>
 
               <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-left text-xs space-y-1.5">
+                {Boolean(resultadoFinal?.materiaisCriados && resultadoFinal.materiaisCriados > 0) && (
+                  <p className="flex items-center gap-1.5 text-emerald-700 font-bold">
+                    <Check className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                    <b>{resultadoFinal.materiaisCriados}</b> novos itens cadastrados diretamente no Catálogo Master!
+                  </p>
+                )}
                 <p className="flex items-center gap-1.5 text-slate-700">
-                  <Check className="w-4 h-4 text-emerald-600" />
+                  <Check className="w-4 h-4 text-emerald-600 flex-shrink-0" />
                   Memória <i>De-Para</i> gravada (reconhecimento automático em futuros orçamentos).
                 </p>
                 <p className="flex items-center gap-1.5 text-slate-700">
-                  <Check className="w-4 h-4 text-emerald-600" />
+                  <Check className="w-4 h-4 text-emerald-600 flex-shrink-0" />
                   Preços unitários e menores preços atualizados no Padrão CEMIG e CAPEX.
                 </p>
                 <p className="flex items-center gap-1.5 text-slate-700">
-                  <Check className="w-4 h-4 text-emerald-600" />
+                  <Check className="w-4 h-4 text-emerald-600 flex-shrink-0" />
                   Histórico de cotação registrado para auditoria de compras.
                 </p>
               </div>

@@ -80,9 +80,54 @@ export async function POST(req: NextRequest) {
       }
 
       const atualizados: any[] = [];
+      const novosCadastrados: any[] = [];
 
       for (const v of vinculos) {
         if (!v.codigoOficial || !v.descricaoFornecedor) continue;
+
+        const isNovoCadastro = v.codigoOficial === "__NOVO_ITEM__" || v.cadastrarComoNovo === true;
+        let codigoFinal = v.codigoOficial;
+        let descricaoFinal = v.descricaoOficial && v.descricaoOficial !== "__NOVO_ITEM__"
+          ? v.descricaoOficial
+          : v.descricaoFornecedor;
+
+        // ─────────────────────────────────────────────────────────────────────────
+        // SE FOR NOVO ITEM A CADASTRAR NO SISTEMA:
+        // ─────────────────────────────────────────────────────────────────────────
+        if (isNovoCadastro) {
+          try {
+            const baseCod = v.codigoFornecedor && v.codigoFornecedor.trim().length > 0
+              ? `FORN-${v.codigoFornecedor.trim().replace(/[^A-Za-z0-9_-]/g, "")}`
+              : `ITEM-${Math.floor(100000 + Math.random() * 900000)}`;
+
+            let codCandidate = baseCod;
+            let counter = 1;
+            while (await prisma.orcamentoItemPadrao.findFirst({ where: { codigo: codCandidate } })) {
+              codCandidate = `${baseCod}-${counter++}`;
+            }
+
+            codigoFinal = codCandidate;
+            descricaoFinal = v.descricaoPersonalizada || v.descricaoFornecedor;
+
+            const novoItemCriado = await prisma.orcamentoItemPadrao.create({
+              data: {
+                codigo: codigoFinal,
+                descricao: descricaoFinal,
+                tipo: v.categoria || "GERAL",
+                unidade: v.unidade || v.unidadeFornecedor || "un",
+                precoBaseUnitario: Number(v.precoUnitario) || 0,
+                menorPreco: Number(v.precoUnitario) || 0,
+                fornecedorMenorPreco: fornecedorNome || "Fornecedor",
+                numeroOrcamentoMenorPreco: numeroOrcamento || null,
+                dataUltimaCotacao: new Date()
+              }
+            });
+
+            novosCadastrados.push(novoItemCriado);
+          } catch (createErr) {
+            console.error("Erro ao cadastrar novo item no catálogo master:", createErr);
+          }
+        }
 
         // 1. Salvar ou atualizar na memória De-Para (MaterialAlias)
         try {
@@ -92,8 +137,8 @@ export async function POST(req: NextRequest) {
               id: v.aliasId || "novo-alias"
             },
             update: {
-              codigoOficial: v.codigoOficial,
-              descricaoOficial: v.descricaoOficial,
+              codigoOficial: codigoFinal,
+              descricaoOficial: descricaoFinal,
               confianca: 1.0,
               origem: "USUARIO"
             },
@@ -102,8 +147,8 @@ export async function POST(req: NextRequest) {
               fornecedorCnpj: fornecedorCnpj || null,
               codigoFornecedor: v.codigoFornecedor || null,
               descricaoFornecedor: v.descricaoFornecedor,
-              codigoOficial: v.codigoOficial,
-              descricaoOficial: v.descricaoOficial || null,
+              codigoOficial: codigoFinal,
+              descricaoOficial: descricaoFinal,
               confianca: 1.0,
               origem: "USUARIO"
             }
@@ -116,8 +161,8 @@ export async function POST(req: NextRequest) {
               fornecedorCnpj: fornecedorCnpj || null,
               codigoFornecedor: v.codigoFornecedor || null,
               descricaoFornecedor: v.descricaoFornecedor,
-              codigoOficial: v.codigoOficial,
-              descricaoOficial: v.descricaoOficial || null,
+              codigoOficial: codigoFinal,
+              descricaoOficial: descricaoFinal,
               confianca: 1.0,
               origem: "USUARIO"
             }
@@ -129,7 +174,7 @@ export async function POST(req: NextRequest) {
           try {
             await prisma.cotacaoHistorico.create({
               data: {
-                codigoOficial: v.codigoOficial,
+                codigoOficial: codigoFinal,
                 fornecedorNome: fornecedorNome || "Fornecedor Não Informado",
                 fornecedorCnpj: fornecedorCnpj || null,
                 numeroOrcamento: numeroOrcamento || null,
@@ -146,77 +191,82 @@ export async function POST(req: NextRequest) {
           }
         }
 
-        // 3. Atualizar Catálogo Master CAPEX (OrcamentoItemPadrao)
-        try {
-          const existingCapex = await prisma.orcamentoItemPadrao.findFirst({
-            where: {
-              OR: [
-                { codigo: v.codigoOficial },
-                { id: v.codigoOficial.startsWith("CAPEX-") ? v.codigoOficial.replace("CAPEX-", "") : undefined },
-                { descricao: { equals: v.descricaoOficial || v.codigoOficial, mode: "insensitive" } }
-              ]
-            }
-          });
-
-          if (existingCapex && v.precoUnitario) {
-            const novoPreco = Number(v.precoUnitario);
-            const menorPrecoAtual = existingCapex.menorPreco;
-            const eMenorPreco = menorPrecoAtual === null || novoPreco <= menorPrecoAtual;
-
-            const updatedCapex = await prisma.orcamentoItemPadrao.update({
-              where: { id: existingCapex.id },
-              data: {
-                precoBaseUnitario: novoPreco,
-                menorPreco: eMenorPreco ? novoPreco : menorPrecoAtual,
-                fornecedorMenorPreco: eMenorPreco ? fornecedorNome : existingCapex.fornecedorMenorPreco,
-                numeroOrcamentoMenorPreco: eMenorPreco ? numeroOrcamento : existingCapex.numeroOrcamentoMenorPreco,
-                dataUltimaCotacao: new Date()
+        // 3. Se não for item novo (já existia no catálogo), atualizar Catálogo Master CAPEX (OrcamentoItemPadrao)
+        if (!isNovoCadastro) {
+          try {
+            const existingCapex = await prisma.orcamentoItemPadrao.findFirst({
+              where: {
+                OR: [
+                  { codigo: codigoFinal },
+                  { id: codigoFinal.startsWith("CAPEX-") ? codigoFinal.replace("CAPEX-", "") : undefined },
+                  { descricao: { equals: descricaoFinal || codigoFinal, mode: "insensitive" } }
+                ]
               }
             });
-            atualizados.push(updatedCapex);
+
+            if (existingCapex && v.precoUnitario) {
+              const novoPreco = Number(v.precoUnitario);
+              const menorPrecoAtual = existingCapex.menorPreco;
+              const eMenorPreco = menorPrecoAtual === null || novoPreco <= menorPrecoAtual;
+
+              const updatedCapex = await prisma.orcamentoItemPadrao.update({
+                where: { id: existingCapex.id },
+                data: {
+                  precoBaseUnitario: novoPreco,
+                  menorPreco: eMenorPreco ? novoPreco : menorPrecoAtual,
+                  fornecedorMenorPreco: eMenorPreco ? fornecedorNome : existingCapex.fornecedorMenorPreco,
+                  numeroOrcamentoMenorPreco: eMenorPreco ? numeroOrcamento : existingCapex.numeroOrcamentoMenorPreco,
+                  dataUltimaCotacao: new Date()
+                }
+              });
+              atualizados.push(updatedCapex);
+            }
+          } catch (capexErr) {
+            console.warn("Aviso ao atualizar catálogo master CAPEX:", capexErr);
           }
-        } catch (capexErr) {
-          console.warn("Aviso ao atualizar catálogo master CAPEX:", capexErr);
         }
 
-        // 4. Sincronizar simultaneamente com Catálogo CEMIG (CemigMaterialPreco)
-        try {
-          const materialCemig = await prisma.cemigMaterialPreco.findFirst({
-            where: {
-              OR: [
-                { codigo: v.codigoOficial },
-                { descricao: { equals: v.descricaoOficial || v.codigoOficial, mode: "insensitive" } }
-              ]
-            }
-          });
-
-          if (materialCemig && v.precoUnitario) {
-            const novoPreco = Number(v.precoUnitario);
-            const menorPrecoAtual = materialCemig.menorPreco;
-            const eMenorPreco = menorPrecoAtual === null || novoPreco <= menorPrecoAtual;
-
-            const updatedCemig = await prisma.cemigMaterialPreco.update({
-              where: { id: materialCemig.id },
-              data: {
-                precoUnitario: novoPreco,
-                menorPreco: eMenorPreco ? novoPreco : menorPrecoAtual,
-                fornecedorMenorPreco: eMenorPreco ? fornecedorNome : materialCemig.fornecedorMenorPreco,
-                numeroOrcamentoMenorPreco: eMenorPreco ? numeroOrcamento : materialCemig.numeroOrcamentoMenorPreco,
-                dataUltimaCotacao: new Date()
+        // 4. Sincronizar simultaneamente com Catálogo CEMIG (CemigMaterialPreco) se existir
+        if (!isNovoCadastro) {
+          try {
+            const materialCemig = await prisma.cemigMaterialPreco.findFirst({
+              where: {
+                OR: [
+                  { codigo: codigoFinal },
+                  { descricao: { equals: descricaoFinal || codigoFinal, mode: "insensitive" } }
+                ]
               }
             });
-            if (atualizados.every(a => a.id !== updatedCemig.id)) {
-              atualizados.push(updatedCemig);
+
+            if (materialCemig && v.precoUnitario) {
+              const novoPreco = Number(v.precoUnitario);
+              const menorPrecoAtual = materialCemig.menorPreco;
+              const eMenorPreco = menorPrecoAtual === null || novoPreco <= menorPrecoAtual;
+
+              const updatedCemig = await prisma.cemigMaterialPreco.update({
+                where: { id: materialCemig.id },
+                data: {
+                  precoUnitario: novoPreco,
+                  menorPreco: eMenorPreco ? novoPreco : menorPrecoAtual,
+                  fornecedorMenorPreco: eMenorPreco ? fornecedorNome : materialCemig.fornecedorMenorPreco,
+                  numeroOrcamentoMenorPreco: eMenorPreco ? numeroOrcamento : materialCemig.numeroOrcamentoMenorPreco,
+                  dataUltimaCotacao: new Date()
+                }
+              });
+              if (atualizados.every(a => a.id !== updatedCemig.id)) {
+                atualizados.push(updatedCemig);
+              }
             }
+          } catch (cemigErr) {
+            console.warn("Aviso ao sincronizar CEMIG:", cemigErr);
           }
-        } catch (cemigErr) {
-          console.warn("Aviso ao sincronizar CEMIG:", cemigErr);
         }
       }
 
       return NextResponse.json({
         success: true,
         confirmadosCount: vinculos.length,
+        materiaisCriados: novosCadastrados.length,
         materiaisAtualizados: atualizados.length
       });
     }

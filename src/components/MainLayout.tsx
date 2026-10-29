@@ -51,6 +51,7 @@ const NAV_SECTIONS: NavSection[] = [
       { name: 'Equipamentos', href: '/engenharia/equipamentos', icon: Package },
       { name: 'CoenergyGO', href: '/carregamento', icon: BatteryCharging, badge: 'VE' },
       { name: 'Padrão CEMIG & CAPEX', href: '/engenharia/padrao-cemig', icon: Zap, badge: 'ND 5.1' },
+      { name: 'Subestação MT & Proteção', href: '/engenharia/subestacao-mt', icon: Zap, badge: 'ND 5.3' },
       { name: 'Painéis & Diagramas CAD', href: '/engenharia/paineis-eletricos', icon: Layers, badge: 'AutoCAD' },
       { name: 'Dimensionamento Elétrico', href: '/engenharia/eletrica', icon: Zap },
       { name: 'Gestão de Orçamentos (CAPEX)', href: '/orcamentos', icon: ListTodo, requiresBudgets: true },

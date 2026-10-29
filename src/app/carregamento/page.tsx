@@ -8,8 +8,9 @@ import {
   BatteryCharging, Gauge, ArrowRight, BookOpen, Layers, Flame, Activity,
   Cable, FileSpreadsheet, Upload, AlertCircle, Printer, Check, Copy, Award,
   Building2, Trash2, Sliders, RefreshCw, Cpu, CheckSquare, Sparkles, Calculator,
-  Settings, Globe, ExternalLink, Save, Download, Compass, DollarSign, Box
+  Settings, Globe, ExternalLink, Save, Download, Compass, DollarSign, Box, ShoppingBag
 } from "lucide-react";
+import { SolicitarNovoMaterialModal } from "@/components/orcamentos/SolicitarNovoMaterialModal";
 import { 
   BRAZIL_ELECTRIC_VEHICLES, 
   ElectricVehicle, 
@@ -283,6 +284,7 @@ export default function CoenergyGODashboard() {
   const [isCopied, setIsCopied] = useState<boolean>(false);
   const [activeLoadedProjectId, setActiveLoadedProjectId] = useState<string | null>(null);
   const [showEngineeringReportsHubModal, setShowEngineeringReportsHubModal] = useState<boolean>(false);
+  const [showSolicitarMaterialModal, setShowSolicitarMaterialModal] = useState<boolean>(false);
 
   // ─── CARREGAR PROJETOS EXISTENTES (BANCO SUPABASE + LOCALSTORAGE RESILIENTE) ─
   useEffect(() => {
@@ -322,13 +324,26 @@ export default function CoenergyGODashboard() {
                   ...p,
                   id: p.id,
                   // Priorizar estruturas ricas do snapshot
+                  userBOMOverrides: parsed.userBOMOverrides || p.userBOMOverrides || parsed.clientProjectData?.userBOMOverrides || {},
+                  deletedItemIds: parsed.deletedItemIds || p.deletedItemIds || parsed.clientProjectData?.deletedItemIds || [],
+                  customAddedItems: parsed.customAddedItems || p.customAddedItems || parsed.clientProjectData?.customAddedItems || [],
+                  laborMode: parsed.laborMode || p.laborMode || 'TABELADO',
+                  laborPercent: typeof parsed.laborPercent === 'number' ? parsed.laborPercent : (typeof p.laborPercent === 'number' ? p.laborPercent : 25),
+                  globalBdiPercent: typeof parsed.globalBdiPercent === 'number' ? parsed.globalBdiPercent : (typeof p.globalBdiPercent === 'number' ? p.globalBdiPercent : 20),
+                  financialAssumptions: parsed.financialAssumptions || p.financialAssumptions || null,
                   configuredChargers: parsed.configuredChargers || p.configuredChargers,
                   attachedSheetsList: parsed.attachedSheetsList || p.attachedSheetsList,
                   smartMeterSummary: parsed.smartMeterSummary || p.smartMeterSummary,
                   dailyPeaksState: parsed.dailyPeaksState || p.dailyPeaksState,
                   customCircuits220V: parsed.customCircuits220V || p.customCircuits220V,
                   customCircuits380V: parsed.customCircuits380V || p.customCircuits380V,
-                  clientProjectData: parsed.clientProjectData || p.clientProjectData
+                  clientProjectData: {
+                    ...p.clientProjectData,
+                    ...parsed.clientProjectData,
+                    userBOMOverrides: parsed.userBOMOverrides || p.userBOMOverrides || parsed.clientProjectData?.userBOMOverrides || {},
+                    deletedItemIds: parsed.deletedItemIds || p.deletedItemIds || parsed.clientProjectData?.deletedItemIds || [],
+                    customAddedItems: parsed.customAddedItems || p.customAddedItems || parsed.clientProjectData?.customAddedItems || []
+                  }
                 };
               }
             } catch (e) {
@@ -381,6 +396,13 @@ export default function CoenergyGODashboard() {
               cpd.standardCategory = cpd.targetNewCategory;
             }
           }
+
+          cpd.userBOMOverrides = proj.userBOMOverrides || cpd.userBOMOverrides || {};
+          cpd.deletedItemIds = proj.deletedItemIds || cpd.deletedItemIds || [];
+          cpd.customAddedItems = proj.customAddedItems || cpd.customAddedItems || [];
+          proj.userBOMOverrides = cpd.userBOMOverrides;
+          proj.deletedItemIds = cpd.deletedItemIds;
+          proj.customAddedItems = cpd.customAddedItems;
 
           proj.clientProjectData = cpd;
           return proj;
@@ -2504,12 +2526,38 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
                 Padrão CEMIG & CAPEX
               </Link>
               <button
+                onClick={() => setShowSolicitarMaterialModal(true)}
+                className="bg-slate-800 hover:bg-slate-700 text-amber-300 px-4 py-3 rounded-2xl flex items-center gap-2 border border-amber-500/40 text-xs font-bold transition-all shadow-sm cursor-pointer"
+                title="Solicitar inclusão de novo material ao catálogo master com notificação para compras"
+              >
+                <ShoppingBag className="w-4 h-4 text-amber-400" />
+                <span>Solicitar Insumo (Compras)</span>
+              </button>
+              <button
                 onClick={handleStartNewProject}
-                className="bg-gradient-to-r from-[#E45318] to-[#ff6b2b] text-white px-5 py-3 rounded-2xl flex items-center gap-2 shadow-lg hover:shadow-orange-500/20 hover:scale-[1.02] transition-all font-bold text-sm cursor-pointer"
+                className="bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-3 rounded-2xl flex items-center gap-2 border border-slate-700 text-xs font-bold transition-all shadow-sm cursor-pointer"
                 title="Iniciar Novo Projeto em Branco (Limpar todos os dados)"
               >
-                <Plus className="w-5 h-5" />
+                <Plus className="w-4 h-4" />
                 Novo Projeto
+              </button>
+              <button
+                onClick={handleSaveCurrentProject}
+                disabled={savingProject}
+                className="bg-gradient-to-r from-[#00B356] to-[#009447] text-white px-5 py-3 rounded-2xl flex items-center gap-2 shadow-lg hover:shadow-emerald-500/20 hover:scale-[1.02] transition-all font-bold text-sm cursor-pointer disabled:opacity-60"
+                title="Salvar Projeto e Lista de Materiais no Banco de Dados"
+              >
+                {savingProject ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    Salvando...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4" />
+                    Salvar Projeto
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -4773,18 +4821,21 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
             onUpdateBOMOverrides={(overrides) => {
               setBomUserOverrides(overrides);
               try { localStorage.setItem('coenergygo_bom_user_overrides', JSON.stringify(overrides)); } catch (e) {}
+              handleAutoSaveSnapshot();
             }}
             onUpdateDeletedItemIds={(ids) => {
               setBomDeletedItemIds(ids);
               try { localStorage.setItem('coenergygo_bom_deleted_items', JSON.stringify(ids)); } catch (e) {}
+              handleAutoSaveSnapshot();
             }}
             onUpdateCustomAddedItems={(items) => {
               setBomCustomAddedItems(items);
               try { localStorage.setItem('coenergygo_bom_custom_items', JSON.stringify(items)); } catch (e) {}
+              handleAutoSaveSnapshot();
             }}
-            onUpdateLaborMode={(mode) => setBomLaborMode(mode)}
-            onUpdateLaborPercent={(pct) => setBomLaborPercent(pct)}
-            onUpdateGlobalBdiPercent={(bdi) => setBomGlobalBdiPercent(bdi)}
+            onUpdateLaborMode={(mode) => { setBomLaborMode(mode); handleAutoSaveSnapshot(); }}
+            onUpdateLaborPercent={(pct) => { setBomLaborPercent(pct); handleAutoSaveSnapshot(); }}
+            onUpdateGlobalBdiPercent={(bdi) => { setBomGlobalBdiPercent(bdi); handleAutoSaveSnapshot(); }}
           />
         </div>
       )}
@@ -4920,6 +4971,16 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
           hasDLM: dlmEnableDLM || dlmResult.isLimitationAccepted || (dlmResult.maxOverloadWithoutDLMKW > 0),
           dlmSystemType: 'beny',
           deficitKW: dlmResult.maxOverloadWithoutDLMKW
+        }}
+      />
+
+      <SolicitarNovoMaterialModal
+        isOpen={showSolicitarMaterialModal}
+        onClose={() => setShowSolicitarMaterialModal(false)}
+        origem="COENERGYGO_VE"
+        onItemCriado={(novoItem) => {
+          setSaveSuccessMessage(`Material "${novoItem.descricao}" cadastrado e enviado para compras!`);
+          setTimeout(() => setSaveSuccessMessage(null), 5000);
         }}
       />
     </div>

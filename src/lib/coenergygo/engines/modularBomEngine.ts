@@ -1638,7 +1638,7 @@ export function buildModularBOM(
     const mappedItems = rawStageItems
       .filter((it) => !deletedSet.has(it.id))
       .map((it) => {
-        const override = userBOMOverrides[it.id];
+        const override = userBOMOverrides[it.id] || (it.codigo ? userBOMOverrides[it.codigo] : undefined);
         const qty = override?.quantity !== undefined ? override.quantity : it.quantity;
         const price = override?.unitPriceBRL !== undefined ? override.unitPriceBRL : (it.unitPriceBRL || 0);
         const pricingSource = override?.unitPriceBRL !== undefined ? 'MANUAL' : it.pricingSource;
@@ -1665,7 +1665,7 @@ export function buildModularBOM(
       ? mappedItems
       : mappedItems.map((it) => {
           // Respeitar override manual explícito feito diretamente no próprio item acessório
-          if (userBOMOverrides[it.id]?.quantity !== undefined) {
+          if (userBOMOverrides[it.id]?.quantity !== undefined || (it.codigo && userBOMOverrides[it.codigo]?.quantity !== undefined)) {
             return it;
           }
           const cod = it.codigo || '';

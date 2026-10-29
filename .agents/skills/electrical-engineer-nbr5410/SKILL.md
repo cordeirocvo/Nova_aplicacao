@@ -59,3 +59,4 @@ A infraestrutura para eletromobilidade é composta por até 4 trechos elétricos
 
 ### 5. Alerta de Padrão da Concessionária (CEMIG ND-5.1):
 - Se a carga simultânea total ultrapassar o limite do padrão contratado/instalado (ex: Cat C6 = 75 kW / 200A), o sistema emite alerta visual e técnico imediato recomendando a categoria superior ou migração para Média Tensão (ND-5.3).
+- Para o projeto da subestação de média tensão (tipo de SE, estudo de proteção, coordenograma, relé), use a skill `cemig-subestacao-mt`.

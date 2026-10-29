@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import {
   Zap,
   Calculator,
@@ -33,12 +34,13 @@ import {
   Database,
   Sparkles,
   UploadCloud,
-  TrendingDown
+  TrendingDown,
+  ShoppingBag
 } from "lucide-react";
 import AdicionarMaterialModal from "@/components/cemig/AdicionarMaterialModal";
 import PropostaModal from "@/components/cemig/PropostaModal";
 import CotacaoDistribuidoresModal from "@/components/cemig/CotacaoDistribuidoresModal";
-import ConciliacaoOrcamentoModal from "@/components/orcamentos/ConciliacaoOrcamentoModal";
+import { SolicitarNovoMaterialModal } from "@/components/orcamentos/SolicitarNovoMaterialModal";
 import {
   dimensionarPadraoCemig,
   TipoPadrao,
@@ -103,7 +105,7 @@ export default function PadraoCemigPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isPropostaModalOpen, setIsPropostaModalOpen] = useState(false);
   const [isCotacaoModalOpen, setIsCotacaoModalOpen] = useState(false);
-  const [isConciliacaoModalOpen, setIsConciliacaoModalOpen] = useState(false);
+  const [isSolicitarModalOpen, setIsSolicitarModalOpen] = useState(false);
   const [propostaParaModal, setPropostaParaModal] = useState<any>(null);
 
   // Histórico de Propostas Salvas
@@ -1775,14 +1777,15 @@ export default function PadraoCemigPage() {
               </div>
 
               <div className="flex items-center gap-2 flex-wrap">
-                <button
-                  type="button"
-                  onClick={() => setIsConciliacaoModalOpen(true)}
-                  className="bg-[#00B356] hover:bg-[#009447] text-white px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 shadow-sm transition active:scale-95"
-                  title="Importar orçamentos de fornecedores em PDF ou Foto com IA multimodal"
+                <Link
+                  href="/orcamentos/configuracoes"
+                  className="bg-[#0A192F] hover:bg-[#1E293B] text-white px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 shadow-sm transition active:scale-95 border border-slate-700"
+                  title="Gerenciar catálogo de insumos e importar orçamentos (PDF/Foto) no Concentrador de Gestão de Orçamentos"
                 >
-                  <Sparkles className="w-4 h-4" /> Importar Orçamento (PDF / Foto)
-                </button>
+                  <Sparkles className="w-4 h-4 text-[#00B356]" />
+                  <span>Gestão de Orçamentos & Cotações IA</span>
+                  <ExternalLink className="w-3 h-3 text-slate-400" />
+                </Link>
                 <button
                   type="button"
                   onClick={() => setIsCotacaoModalOpen(true)}
@@ -1790,6 +1793,14 @@ export default function PadraoCemigPage() {
                   title="Gerar lista em PDF dos materiais físicos (sem mão de obra) para envio a distribuidores e lojas"
                 >
                   <FileText className="w-4 h-4" /> PDF p/ Lojas / Distribuidores
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsSolicitarModalOpen(true)}
+                  className="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 shadow-sm transition active:scale-95"
+                  title="Solicitar inclusão de novo material ao catálogo master com alerta automático para a equipe de compras"
+                >
+                  <ShoppingBag className="w-4 h-4" /> Solicitar Insumo (Compras)
                 </button>
                 <button
                   type="button"
@@ -2306,23 +2317,14 @@ export default function PadraoCemigPage() {
         />
       )}
 
-      <ConciliacaoOrcamentoModal
-        isOpen={isConciliacaoModalOpen}
-        onClose={() => setIsConciliacaoModalOpen(false)}
-        catalogoMateriais={catalogoMateriais}
-        onSucesso={async (novosPrecos) => {
-          if (typeof window !== "undefined") {
-            try {
-              const raw = localStorage.getItem("padrao_cemig_custom_precos");
-              const current = raw ? JSON.parse(raw) : {};
-              const merged = { ...current, ...novosPrecos };
-              localStorage.setItem("padrao_cemig_custom_precos", JSON.stringify(merged));
-            } catch (e) {}
-          }
-          const mapa = await carregarPrecosDB();
-          calcularListaPadrao({ ...mapa, ...novosPrecos });
-          setStatusSalvamentoPreco("Catálogo atualizado via IA com sucesso!");
-          setTimeout(() => setStatusSalvamentoPreco(null), 3500);
+      <SolicitarNovoMaterialModal
+        isOpen={isSolicitarModalOpen}
+        onClose={() => setIsSolicitarModalOpen(false)}
+        origem="PADRAO_CEMIG"
+        onItemCriado={(novoItem) => {
+          handleAdicionarItemDoModal(novoItem);
+          setStatusSalvamentoPreco(`Novo material ${novoItem.descricao} adicionado e enviado para cotação!`);
+          setTimeout(() => setStatusSalvamentoPreco(null), 4000);
         }}
       />
     </>

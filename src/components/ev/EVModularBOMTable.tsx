@@ -56,8 +56,8 @@ export interface CatalogItemRef {
 
 interface EVModularBOMTableProps {
   modularBOM: ModularBOMOutput;
-  onUpdateQuantity: (itemId: string, quantity: number) => void;
-  onUpdateUnitPrice: (itemId: string, unitPrice: number) => void;
+  onUpdateQuantity: (itemId: string, quantity: number, itemCode?: string) => void;
+  onUpdateUnitPrice: (itemId: string, unitPrice: number, itemCode?: string) => void;
   onDeleteItem: (itemId: string) => void;
   onRestoreOriginal: () => void;
   hasModifications: boolean;
@@ -952,7 +952,7 @@ export function EVModularBOMTable({
                               value={item.quantity}
                               onChange={(e) => {
                                 const val = Math.max(0, parseFloat(e.target.value) || 0);
-                                onUpdateQuantity(item.id, val);
+                                onUpdateQuantity(item.id, val, item.codigo);
                               }}
                               className="w-18 bg-slate-950 border border-slate-700 focus:border-[#E45318] rounded px-1.5 py-1 text-center font-mono font-bold text-amber-400 text-xs transition-colors"
                               title="Clique para editar a quantidade"
@@ -975,7 +975,7 @@ export function EVModularBOMTable({
                                 value={item.unitPriceBRL !== undefined ? item.unitPriceBRL : 0}
                                 onChange={(e) => {
                                   const val = Math.max(0, parseFloat(e.target.value) || 0);
-                                  onUpdateUnitPrice(item.id, val);
+                                  onUpdateUnitPrice(item.id, val, item.codigo);
                                 }}
                                 className="w-24 bg-slate-950 border border-slate-700 focus:border-[#E45318] rounded px-1.5 py-1 text-right font-mono text-slate-200 text-xs transition-colors"
                                 title="Clique para editar o preço unitário"
@@ -1253,7 +1253,7 @@ export function EVModularBOMTable({
                               value={item.quantity}
                               onChange={(e) => {
                                 const val = Math.max(0, parseFloat(e.target.value) || 0);
-                                onUpdateQuantity(item.id, val);
+                                onUpdateQuantity(item.id, val, item.codigo);
                               }}
                               className="w-18 bg-slate-950 border border-slate-700 focus:border-[#E45318] rounded px-1.5 py-1 text-center font-mono font-bold text-amber-400 text-xs transition-colors"
                               title="Clique para editar a quantidade"
@@ -1276,7 +1276,7 @@ export function EVModularBOMTable({
                                 value={item.unitPriceBRL !== undefined ? item.unitPriceBRL : 0}
                                 onChange={(e) => {
                                   const val = Math.max(0, parseFloat(e.target.value) || 0);
-                                  onUpdateUnitPrice(item.id, val);
+                                  onUpdateUnitPrice(item.id, val, item.codigo);
                                 }}
                                 className="w-24 bg-slate-950 border border-slate-700 focus:border-[#E45318] rounded px-1.5 py-1 text-right font-mono text-slate-200 text-xs transition-colors"
                                 title="Clique para editar o preço unitário"

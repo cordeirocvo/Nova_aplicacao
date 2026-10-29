@@ -1834,29 +1834,41 @@ export function EVTopologyChainViewer({
 
           <EVModularBOMTable
             modularBOM={modularBOM}
-            onUpdateQuantity={(itemId, qty) => {
+            onUpdateQuantity={(itemId, qty, itemCode) => {
               setUserBOMOverrides(prev => {
-                const updated = {
+                const updated: Record<string, { quantity?: number; unitPriceBRL?: number }> = {
                   ...prev,
                   [itemId]: {
                     ...prev[itemId],
                     quantity: qty
                   }
                 };
+                if (itemCode) {
+                  updated[itemCode] = {
+                    ...prev[itemCode],
+                    quantity: qty
+                  };
+                }
                 try { localStorage.setItem('coenergygo_bom_user_overrides', JSON.stringify(updated)); } catch (e) {}
                 if (onUpdateBOMOverrides) onUpdateBOMOverrides(updated);
                 return updated;
               });
             }}
-            onUpdateUnitPrice={(itemId, price) => {
+            onUpdateUnitPrice={(itemId, price, itemCode) => {
               setUserBOMOverrides(prev => {
-                const updated = {
+                const updated: Record<string, { quantity?: number; unitPriceBRL?: number }> = {
                   ...prev,
                   [itemId]: {
                     ...prev[itemId],
                     unitPriceBRL: price
                   }
                 };
+                if (itemCode) {
+                  updated[itemCode] = {
+                    ...prev[itemCode],
+                    unitPriceBRL: price
+                  };
+                }
                 try { localStorage.setItem('coenergygo_bom_user_overrides', JSON.stringify(updated)); } catch (e) {}
                 if (onUpdateBOMOverrides) onUpdateBOMOverrides(updated);
                 return updated;

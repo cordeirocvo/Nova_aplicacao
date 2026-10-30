@@ -66,6 +66,7 @@ interface EVModularBOMTableProps {
   modularBOM: ModularBOMOutput;
   onUpdateQuantity: (itemId: string, quantity: number, itemCode?: string) => void;
   onUpdateUnitPrice: (itemId: string, unitPrice: number, itemCode?: string) => void;
+  onBatchUpdateUnitPrices?: (updates: Array<{ itemId: string; price: number; itemCode?: string }>) => void;
   onDeleteItem: (itemId: string) => void;
   onRestoreOriginal: () => void;
   hasModifications: boolean;
@@ -167,6 +168,7 @@ export function EVModularBOMTable({
   modularBOM,
   onUpdateQuantity,
   onUpdateUnitPrice,
+  onBatchUpdateUnitPrices,
   onDeleteItem,
   onRestoreOriginal,
   hasModifications,

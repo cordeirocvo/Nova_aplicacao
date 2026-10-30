@@ -851,7 +851,9 @@ export function EVTopologyChainViewer({
       setCustomAddedItems(prev => {
         const updated = [...prev, customItem];
         try { localStorage.setItem('coenergygo_bom_custom_items', JSON.stringify(updated)); } catch (err) {}
-        if (onUpdateCustomAddedItems) onUpdateCustomAddedItems(updated);
+        if (onUpdateCustomAddedItems) {
+          setTimeout(() => onUpdateCustomAddedItems(updated), 0);
+        }
         return updated;
       });
     } catch (e) {
@@ -1850,7 +1852,9 @@ export function EVTopologyChainViewer({
                   };
                 }
                 try { localStorage.setItem('coenergygo_bom_user_overrides', JSON.stringify(updated)); } catch (e) {}
-                if (onUpdateBOMOverrides) onUpdateBOMOverrides(updated);
+                if (onUpdateBOMOverrides) {
+                  setTimeout(() => onUpdateBOMOverrides(updated), 0);
+                }
                 return updated;
               });
             }}
@@ -1870,7 +1874,31 @@ export function EVTopologyChainViewer({
                   };
                 }
                 try { localStorage.setItem('coenergygo_bom_user_overrides', JSON.stringify(updated)); } catch (e) {}
-                if (onUpdateBOMOverrides) onUpdateBOMOverrides(updated);
+                if (onUpdateBOMOverrides) {
+                  setTimeout(() => onUpdateBOMOverrides(updated), 0);
+                }
+                return updated;
+              });
+            }}
+            onBatchUpdateUnitPrices={(updates) => {
+              setUserBOMOverrides(prev => {
+                const updated: Record<string, { quantity?: number; unitPriceBRL?: number }> = { ...prev };
+                for (const u of updates) {
+                  updated[u.itemId] = {
+                    ...updated[u.itemId],
+                    unitPriceBRL: u.price
+                  };
+                  if (u.itemCode) {
+                    updated[u.itemCode] = {
+                      ...updated[u.itemCode],
+                      unitPriceBRL: u.price
+                    };
+                  }
+                }
+                try { localStorage.setItem('coenergygo_bom_user_overrides', JSON.stringify(updated)); } catch (e) {}
+                if (onUpdateBOMOverrides) {
+                  setTimeout(() => onUpdateBOMOverrides(updated), 0);
+                }
                 return updated;
               });
             }}
@@ -1878,7 +1906,9 @@ export function EVTopologyChainViewer({
               setDeletedItemIds(prev => {
                 const updated = [...prev, itemId];
                 try { localStorage.setItem('coenergygo_bom_deleted_items', JSON.stringify(updated)); } catch (e) {}
-                if (onUpdateDeletedItemIds) onUpdateDeletedItemIds(updated);
+                if (onUpdateDeletedItemIds) {
+                  setTimeout(() => onUpdateDeletedItemIds(updated), 0);
+                }
                 return updated;
               });
             }}

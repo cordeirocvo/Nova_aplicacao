@@ -207,11 +207,11 @@ export function sizeCableAndConduitSection(params: {
     : installationMethod === 'E'
     ? 'Método E (Cabo multipolar / multiplexado ao ar livre em isoladores ou fixado em poste - NBR 5410)'
     : installationMethod === 'B1'
-    ? 'Método B1 (Condutores isolados em eletroduto de seção circular embutido em alvenaria - NBR 5410 Tabela 33)'
+    ? 'Método B1 (Condutores unipolares em eletroduto aparente ou embutido - NBR 5410 Tabela 33)'
     : installationMethod === 'B2'
-    ? 'Método B2 (Cabo multipolar em eletroduto sobre parede ou aparente - NBR 5410 Tabela 33)'
+    ? 'Método B2 (Cabo multipolar em eletroduto aparente ou embutido - NBR 5410 Tabela 33)'
     : installationMethod === 'C'
-    ? 'Método C (Cabos unipolares ou multipolares fixados diretamente na parede/perfilado - NBR 5410)'
+    ? 'Método C (Cabos unipolares ou multipolares fixados diretamente na parede/perfilado/bandeja - NBR 5410)'
     : 'Método D (Cabos em eletroduto enterrado no solo - NBR 5410 Tabela 33)';
 
   const tempRef = installationMethod === 'D' ? '20°C (Solo, FCT=1.00)' : '30°C (Ar Ambiente, FCT=1.00)';
@@ -246,7 +246,8 @@ export function sizeCableAndConduitSection(params: {
 
       const correctedCap = cap * DERATING_FACTOR;
 
-      if (correctedCap >= currentPerVia) {
+      // Tolerância de engenharia de 0,5% ou até 0,5A (evita salto de bitola comercial por 0,2A decorrente de arredondamento)
+      if (correctedCap >= currentPerVia || (currentPerVia - correctedCap) <= 0.5 || correctedCap >= (currentPerVia * 0.99)) {
         selectedSpec = spec;
         chosenConductors = numVias;
         ampacityPerCable = cap;

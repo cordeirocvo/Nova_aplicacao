@@ -2966,8 +2966,8 @@ export function EVTopologyChainViewer({
                             </label>
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-1.5">
                               {[
-                                { id: 'B1', title: 'Método B1', sub: 'Embutido', desc: 'Duto alvenaria' },
-                                { id: 'B2', title: 'Método B2', sub: 'Aparente', desc: 'Duto em parede' },
+                                { id: 'B1', title: 'Método B1', sub: 'Cabos Unipolares', desc: 'Duto aparente/embutido' },
+                                { id: 'B2', title: 'Método B2', sub: 'Cabo Multipolar', desc: 'Duto aparente/embutido' },
                                 { id: 'C', title: 'Método C', sub: 'Bandeja/Perf.', desc: 'Direto em perfil' },
                                 { id: 'D', title: 'Método D', sub: 'Enterrado', desc: 'Duto solo 20°C' },
                                 { id: 'F', title: 'Método F', sub: 'Aéreo Multiplex', desc: 'Postes / Ar livre' },
@@ -3812,8 +3812,8 @@ export function EVTopologyChainViewer({
                             </label>
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-1.5">
                               {[
-                                { id: 'B1', title: 'B1', sub: 'Embutido' },
-                                { id: 'B2', title: 'B2', sub: 'Aparente' },
+                                { id: 'B1', title: 'B1', sub: 'Cabos Unipolares' },
+                                { id: 'B2', title: 'B2', sub: 'Cabo Multipolar' },
                                 { id: 'C', title: 'C', sub: 'Perfil' },
                                 { id: 'D', title: 'D', sub: 'Enterrado' },
                                 { id: 'F', title: 'F', sub: 'Aéreo Multiplex' },

@@ -24,6 +24,7 @@ interface EVTopologyStoreState {
   section1MarginPercent: number;
   section1ConductorMaterial?: 'copper' | 'aluminum';
   section1InstallationMethod?: 'B1' | 'B2' | 'C' | 'D' | 'F' | 'E';
+  section1MaxAllowedVoltageDropPercent?: number;
   section2DistanceM: number;       // Painel 220V -> Trafo
   section2MarginPercent: number;
   section2ConductorMaterial?: 'copper' | 'aluminum';
@@ -111,6 +112,7 @@ interface EVTopologyStoreState {
     section1MarginPercent?: number;
     section1ConductorMaterial?: 'copper' | 'aluminum';
     section1InstallationMethod?: 'B1' | 'B2' | 'C' | 'D' | 'F' | 'E';
+    section1MaxAllowedVoltageDropPercent?: number;
     section2DistanceM?: number;
     section2MarginPercent?: number;
     section2ConductorMaterial?: 'copper' | 'aluminum';
@@ -154,6 +156,10 @@ interface EVTopologyStoreState {
   updateSectionInstallationMethod: (
     section: 'trecho_1' | 'trecho_2' | 'trecho_3',
     method: 'B1' | 'B2' | 'C' | 'D' | 'F' | 'E'
+  ) => void;
+  updateSectionMaxVoltageDrop: (
+    section: 'trecho_1' | 'trecho_2' | 'trecho_3',
+    maxDropPercent: number
   ) => void;
   updateAuxiliaryConfig: (updates: Partial<EVTopologyStoreState['auxiliaryConfig']>) => void;
   setSelectedDrawerNodeId: (nodeId: string | null) => void;
@@ -259,6 +265,7 @@ export const useEVTopologyStore = create<EVTopologyStoreState>((set, get) => {
       section1MarginPercent: currentState.section1MarginPercent ?? 10,
       section1ConductorMaterial: currentState.section1ConductorMaterial ?? 'copper',
       section1InstallationMethod: currentState.section1InstallationMethod ?? 'B1',
+      section1MaxAllowedVoltageDropPercent: currentState.section1MaxAllowedVoltageDropPercent ?? 3.0,
       section2DistanceM: currentState.section2DistanceM ?? 5,
       section2MarginPercent: currentState.section2MarginPercent ?? 10,
       section2ConductorMaterial: currentState.section2ConductorMaterial ?? 'copper',
@@ -291,6 +298,7 @@ export const useEVTopologyStore = create<EVTopologyStoreState>((set, get) => {
     section1MarginPercent: 10,
     section1ConductorMaterial: 'copper',
     section1InstallationMethod: 'B1',
+    section1MaxAllowedVoltageDropPercent: 3.0,
     section2DistanceM: 5,
     section2MarginPercent: 10,
     section2ConductorMaterial: 'copper',
@@ -438,6 +446,7 @@ export const useEVTopologyStore = create<EVTopologyStoreState>((set, get) => {
           section1MarginPercent: data.section1MarginPercent ?? state.section1MarginPercent,
           section1ConductorMaterial: data.section1ConductorMaterial ?? state.section1ConductorMaterial,
           section1InstallationMethod: data.section1InstallationMethod ?? state.section1InstallationMethod,
+          section1MaxAllowedVoltageDropPercent: data.section1MaxAllowedVoltageDropPercent ?? state.section1MaxAllowedVoltageDropPercent ?? 3.0,
           section2DistanceM: data.section2DistanceM ?? state.section2DistanceM,
           section2MarginPercent: data.section2MarginPercent ?? state.section2MarginPercent,
           section2ConductorMaterial: data.section2ConductorMaterial ?? state.section2ConductorMaterial,
@@ -704,6 +713,19 @@ export const useEVTopologyStore = create<EVTopologyStoreState>((set, get) => {
           updates.section2InstallationMethod = method;
         } else if (section === 'trecho_3') {
           updates.section3InstallationMethod = method;
+        }
+        return {
+          ...updates,
+          topologyOutput: computeOutput(updates)
+        };
+      });
+    },
+
+    updateSectionMaxVoltageDrop: (section: 'trecho_1' | 'trecho_2' | 'trecho_3', maxDropPercent: number) => {
+      set((state) => {
+        const updates: Partial<EVTopologyStoreState> = {};
+        if (section === 'trecho_1') {
+          updates.section1MaxAllowedVoltageDropPercent = maxDropPercent;
         }
         return {
           ...updates,

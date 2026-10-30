@@ -242,6 +242,8 @@ export function EVTopologyChainViewer({
     updateSectionDistanceAndMargin,
     updateSectionMaterial,
     updateSectionInstallationMethod,
+    updateSectionMaxVoltageDrop,
+    section1MaxAllowedVoltageDropPercent,
     updateAuxiliaryConfig,
     setSelectedDrawerNodeId
   } = useEVTopologyStore();
@@ -1374,6 +1376,10 @@ export function EVTopologyChainViewer({
                   <ArrowRight className="w-4 h-4 text-amber-500 -ml-1 group-hover:translate-x-1 transition-transform" />
                 </div>
                 <div className="mt-1 flex flex-col items-center gap-0.5">
+                  <span className="text-[10px] font-mono font-black text-emerald-400 bg-emerald-950/90 px-2 py-0.5 rounded-full border border-emerald-500/50 shadow-sm flex items-center gap-1 whitespace-nowrap" title={`Corrente que vai passar no Trecho 1: Ib = ${sections.section1_standardToPanel220.designCurrentA} A`}>
+                    <Zap className="w-3 h-3 text-emerald-400" />
+                    {sections.section1_standardToPanel220.designCurrentA} A
+                  </span>
                   <span className="text-[9px] font-mono font-bold text-amber-400 bg-amber-950/40 px-1.5 py-0.5 rounded border border-amber-800/40 text-center whitespace-nowrap">
                     {sections.section1_standardToPanel220.conductorsPerPhase > 1
                       ? `${sections.section1_standardToPanel220.conductorsPerPhase}x (${sections.section1_standardToPanel220.cableGaugePhaseMM2}mm²)`
@@ -1457,6 +1463,12 @@ export function EVTopologyChainViewer({
                       <ArrowRight className="w-4 h-4 text-amber-500 -ml-1 group-hover:translate-x-1 transition-transform" />
                     </div>
                     <div className="mt-1 flex flex-col items-center gap-0.5">
+                      {sections.section2_panel220ToTrafo && (
+                        <span className="text-[10px] font-mono font-black text-amber-400 bg-amber-950/90 px-2 py-0.5 rounded-full border border-amber-500/50 shadow-sm flex items-center gap-1 whitespace-nowrap" title={`Corrente que vai passar no Trecho 2: Ib = ${sections.section2_panel220ToTrafo.designCurrentA} A`}>
+                          <Zap className="w-3 h-3 text-amber-400" />
+                          {sections.section2_panel220ToTrafo.designCurrentA} A
+                        </span>
+                      )}
                       <span className="text-[9px] font-mono font-bold text-amber-400 bg-amber-950/40 px-1.5 py-0.5 rounded border border-amber-800/40 text-center whitespace-nowrap">
                         {sections.section2_panel220ToTrafo && sections.section2_panel220ToTrafo.conductorsPerPhase > 1
                           ? `${sections.section2_panel220ToTrafo.conductorsPerPhase}x (${sections.section2_panel220ToTrafo.cableGaugePhaseMM2}mm²)`
@@ -1520,6 +1532,12 @@ export function EVTopologyChainViewer({
                       <ArrowRight className="w-4 h-4 text-amber-500 -ml-1 group-hover:translate-x-1 transition-transform" />
                     </div>
                     <div className="mt-1 flex flex-col items-center gap-0.5">
+                      {sections.section3_trafoToPanel380 && (
+                        <span className="text-[10px] font-mono font-black text-sky-400 bg-sky-950/90 px-2 py-0.5 rounded-full border border-sky-500/50 shadow-sm flex items-center gap-1 whitespace-nowrap" title={`Corrente que vai passar no Trecho 3: Ib = ${sections.section3_trafoToPanel380.designCurrentA} A`}>
+                          <Zap className="w-3 h-3 text-sky-400" />
+                          {sections.section3_trafoToPanel380.designCurrentA} A
+                        </span>
+                      )}
                       <span className="text-[9px] font-mono font-bold text-amber-400 bg-amber-950/40 px-1.5 py-0.5 rounded border border-amber-800/40 text-center whitespace-nowrap">
                         {sections.section3_trafoToPanel380 && sections.section3_trafoToPanel380.conductorsPerPhase > 1
                           ? `${sections.section3_trafoToPanel380.conductorsPerPhase}x (${sections.section3_trafoToPanel380.cableGaugePhaseMM2}mm²)`
@@ -1616,9 +1634,23 @@ export function EVTopologyChainViewer({
                   <div className="h-1 w-10 bg-gradient-to-r from-slate-700 to-[#E45318] group-hover:h-1.5 transition-all rounded" />
                   <ArrowRight className="w-4 h-4 text-[#E45318] -ml-1 group-hover:translate-x-1 transition-transform" />
                 </div>
-                <span className="text-[9px] font-mono font-bold text-amber-400 mt-1 bg-amber-950/40 px-1.5 py-0.5 rounded border border-amber-800/40 text-center">
-                  {sections.section4_chargersFeeders.map((f: any) => `${f.cableGaugePhaseMM2}mm²`).join(' | ')}
-                </span>
+                <div className="mt-1 flex flex-col items-center gap-0.5">
+                  <div className="flex items-center gap-1 flex-wrap justify-center max-w-[150px]">
+                    {sections.section4_chargersFeeders.map((f: any, i: number) => (
+                      <span
+                        key={f.sectionId || i}
+                        className="text-[9px] font-mono font-black text-emerald-300 bg-emerald-950/90 px-1.5 py-0.5 rounded border border-emerald-500/50 shadow-xs flex items-center gap-0.5"
+                        title={`Carregador #${i + 1}: ${chargers[i]?.name || ''} — Corrente Ib = ${f.designCurrentA}A`}
+                      >
+                        <Zap className="w-2.5 h-2.5 text-emerald-400" />
+                        {sections.section4_chargersFeeders.length > 1 ? `C${i + 1}: ${f.designCurrentA}A` : `${f.designCurrentA} A`}
+                      </span>
+                    ))}
+                  </div>
+                  <span className="text-[9px] font-mono font-bold text-amber-400 bg-amber-950/40 px-1.5 py-0.5 rounded border border-amber-800/40 text-center">
+                    {sections.section4_chargersFeeders.map((f: any) => `${f.cableGaugePhaseMM2}mm²`).join(' | ')}
+                  </span>
+                </div>
               </div>
 
               {/* ─── BLOCO 5: LISTA DINÂMICA DE CARREGADORES NA PONTA ─── */}
@@ -1731,7 +1763,15 @@ export function EVTopologyChainViewer({
                       </p>
                     </div>
 
-                    <div className="mt-3 pt-2 border-t border-slate-800 space-y-1 text-[11px] text-slate-400">
+                    <div className="mt-3 pt-2 border-t border-slate-800 space-y-1.5 text-[11px] text-slate-400">
+                      <div className="flex items-center justify-between bg-slate-950/80 px-2 py-1 rounded border border-slate-800">
+                        <span className="text-slate-300 font-semibold flex items-center gap-1 text-[10px]">
+                          <Zap className="w-3 h-3 text-amber-400" /> Corrente de Carga (Ib):
+                        </span>
+                        <span className="font-mono font-black text-emerald-400 text-xs">
+                          {sections.section4_chargersFeeders[idx]?.designCurrentA || charger.currentInA} A
+                        </span>
+                      </div>
                       <div className="flex items-center justify-between">
                         <span>Disjuntor Sugerido</span>
                         <span className="font-mono font-bold text-emerald-400">
@@ -2803,6 +2843,17 @@ export function EVTopologyChainViewer({
                           <p className="text-[11px] text-slate-400">
                             De <strong>{sec.fromNode}</strong> até <strong>{sec.toNode}</strong>
                           </p>
+
+                          {/* Destaque da Corrente que passa no trecho */}
+                          <div className="bg-slate-950/90 p-2.5 rounded-lg border border-slate-700/80 flex items-center justify-between text-xs">
+                            <div className="flex items-center gap-2">
+                              <Zap className="w-4 h-4 text-emerald-400" />
+                              <span className="text-slate-200 font-bold">Corrente que vai passar no trecho (Ib):</span>
+                            </div>
+                            <span className="font-mono font-black text-emerald-400 text-sm px-2.5 py-0.5 rounded bg-emerald-950/60 border border-emerald-500/40">
+                              {sec.designCurrentA} A
+                            </span>
+                          </div>
                         </div>
 
                         {/* Edição Rápida de Comprimento, Margem e Material do Condutor */}
@@ -2877,6 +2928,36 @@ export function EVTopologyChainViewer({
                               </button>
                             </div>
                           </div>
+
+                          {selectedDrawerNodeId === 'trecho_1' && (
+                            <div className="pt-2 border-t border-slate-800/80">
+                              <label className="block text-slate-400 text-[10px] uppercase font-bold mb-1.5 flex items-center justify-between">
+                                <span>Tolerância de Queda de Tensão (ΔV máx):</span>
+                                <span className="text-emerald-400 font-mono font-bold">{(section1MaxAllowedVoltageDropPercent ?? 3.0).toFixed(1)}%</span>
+                              </label>
+                              <div className="grid grid-cols-3 gap-2">
+                                {[
+                                  { val: 2.5, label: '2.5%', desc: 'Rigoroso' },
+                                  { val: 3.0, label: '3.0%', desc: 'NBR 5410 Padrão' },
+                                  { val: 4.0, label: '4.0%', desc: 'Flexível NBR' }
+                                ].map((opt) => (
+                                  <button
+                                    key={opt.val}
+                                    type="button"
+                                    onClick={() => updateSectionMaxVoltageDrop('trecho_1', opt.val)}
+                                    className={`px-2 py-1.5 rounded-lg text-xs font-bold transition-all border text-center ${
+                                      (section1MaxAllowedVoltageDropPercent ?? 3.0) === opt.val
+                                        ? 'bg-[#00B356]/20 border-[#00B356] text-white shadow-sm'
+                                        : 'bg-slate-800/60 border-slate-700 text-slate-400 hover:text-white'
+                                    }`}
+                                  >
+                                    <span className="block font-mono">{opt.label}</span>
+                                    <span className="text-[8px] text-slate-400 font-normal block">{opt.desc}</span>
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
 
                           {/* Seletor de Método de Instalação NBR 5410 (Tabela 33) */}
                           <div className="pt-2 border-t border-slate-800/80">
@@ -3975,9 +4056,13 @@ export function EVTopologyChainViewer({
                                 <span className="text-[10px] text-[#E45318] font-bold block">{c.brand} {c.model}</span>
                                 <h5 className="font-sans font-bold text-white text-xs">{c.name} ({c.powerKW} kW • {c.voltageV}V)</h5>
                               </div>
-                              <span className="px-2 py-0.5 rounded bg-slate-800 text-amber-400 font-bold text-[11px]">
-                                {c.currentInA} A
-                              </span>
+                              <div className="text-right">
+                                <span className="text-[9px] text-slate-400 block font-sans">Corrente do Carregador:</span>
+                                <span className="px-2.5 py-0.5 rounded-full bg-emerald-950 border border-emerald-500/50 text-emerald-400 font-mono font-black text-xs inline-flex items-center gap-1">
+                                  <Zap className="w-3 h-3 text-emerald-400" />
+                                  {feeder?.designCurrentA || c.currentInA} A
+                                </span>
+                              </div>
                             </div>
 
                             {feeder ? (
@@ -3996,6 +4081,10 @@ export function EVTopologyChainViewer({
                                 </div>
 
                                 <div className="bg-slate-950/40 p-2 rounded space-y-1 text-[11px]">
+                                  <div className="flex justify-between border-b border-slate-800/80 pb-1">
+                                    <span className="text-slate-400">Corrente de Projeto (Ib):</span>
+                                    <span className="text-emerald-400 font-bold font-mono">⚡ {feeder.designCurrentA} A</span>
+                                  </div>
                                   <div className="flex justify-between">
                                     <span className="text-slate-400">Distância Terminal (Do QDC-VE 380V ao Carregador):</span>
                                     <span className="text-slate-200 font-bold">{feeder.distanceTotalM} m ({c.distanceMeters ?? 15}m nominais + {c.marginPercent}% folga)</span>

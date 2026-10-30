@@ -63,7 +63,7 @@ const CABLE_SPECS: AmpacityRow[] = [
   { gaugeMM2: 50.0, outerDiameterMM: 12.2, areaExternalMM2: 116.9, b1_2cond: 151,  b1_3cond: 134,  b2_2cond: 134,  b2_3cond: 118,  c_2cond: 175,  c_3cond: 151, al_b1_3cond: 104, al_aereo_3cond: 160 },
   { gaugeMM2: 70.0, outerDiameterMM: 14.2, areaExternalMM2: 158.4, b1_2cond: 192,  b1_3cond: 171,  b2_2cond: 171,  b2_3cond: 151,  c_2cond: 222,  c_3cond: 192, al_b1_3cond: 133, al_aereo_3cond: 205 },
   { gaugeMM2: 95.0, outerDiameterMM: 16.4, areaExternalMM2: 211.2, b1_2cond: 232,  b1_3cond: 207,  b2_2cond: 207,  b2_3cond: 182,  c_2cond: 269,  c_3cond: 232, al_b1_3cond: 161, al_aereo_3cond: 250 },
-  { gaugeMM2: 120.0, outerDiameterMM: 18.2, areaExternalMM2: 260.2, b1_2cond: 269, b1_3cond: 239,  b2_2cond: 239,  b2_3cond: 210,  c_2cond: 312,  c_3cond: 269, al_b1_3cond: 186, al_aereo_3cond: 290 },
+  { gaugeMM2: 120.0, outerDiameterMM: 18.2, areaExternalMM2: 260.2, b1_2cond: 269, b1_3cond: 239,  b2_2cond: 239,  b2_3cond: 210,  c_2cond: 312,  c_3cond: 269, al_b1_3cond: 186, al_aereo_3cond: 265 },
   { gaugeMM2: 150.0, outerDiameterMM: 20.4, areaExternalMM2: 326.9, b1_2cond: 300, b1_3cond: 272,  b2_2cond: 272,  b2_3cond: 240,  c_2cond: 358,  c_3cond: 309, al_b1_3cond: 211, al_aereo_3cond: 330 },
   { gaugeMM2: 185.0, outerDiameterMM: 22.8, areaExternalMM2: 408.3, b1_2cond: 341, b1_3cond: 310,  b2_2cond: 310,  b2_3cond: 273,  c_2cond: 408,  c_3cond: 353, al_b1_3cond: 240, al_aereo_3cond: 380 },
   { gaugeMM2: 240.0, outerDiameterMM: 26.0, areaExternalMM2: 530.9, b1_2cond: 400, b1_3cond: 364,  b2_2cond: 364,  b2_3cond: 321,  c_2cond: 481,  c_3cond: 415, al_b1_3cond: 282, al_aereo_3cond: 450 }
@@ -98,6 +98,7 @@ export interface ChainTopologyInputParams {
   section1MarginPercent: number;
   section1ConductorMaterial?: 'copper' | 'aluminum';
   section1InstallationMethod?: 'B1' | 'B2' | 'C' | 'D' | 'F' | 'E';
+  section1MaxAllowedVoltageDropPercent?: number;
   section2DistanceM: number;       // Painel 220V -> Trafo
   section2MarginPercent: number;
   section2ConductorMaterial?: 'copper' | 'aluminum';
@@ -462,6 +463,7 @@ export function calculateChainTopology(params: ChainTopologyInputParams): ChainT
     section1MarginPercent,
     section1ConductorMaterial = 'copper',
     section1InstallationMethod = 'B1',
+    section1MaxAllowedVoltageDropPercent,
     section2DistanceM,
     section2MarginPercent,
     section2ConductorMaterial = 'copper',
@@ -1011,7 +1013,7 @@ export function calculateChainTopology(params: ChainTopologyInputParams): ChainT
     voltageV: gridSupplyVoltage,
     conductorMaterial: section1ConductorMaterial,
     installationMethod: section1InstallationMethod,
-    maxAllowedVoltageDropPercent: 2.5,
+    maxAllowedVoltageDropPercent: section1MaxAllowedVoltageDropPercent ?? 3.0,
     includeNeutral: true,
     minGaugeMM2: section1ConductorMaterial === 'aluminum' ? Math.max(16, standardMinGaugeMM2) : standardMinGaugeMM2,
     minConductorsPerPhase: standardConductorsPerPhase,

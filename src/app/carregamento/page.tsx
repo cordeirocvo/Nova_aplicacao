@@ -152,6 +152,7 @@ export default function CoenergyGODashboard() {
   const [clientProjectData, setClientProjectData] = useState<ClientProjectData>(BLANK_CLIENT_PROJECT_DATA);
   const [projectLatitude, setProjectLatitude] = useState<number>(-19.471676);
   const [projectLongitude, setProjectLongitude] = useState<number>(-44.258735);
+  const [isManualCoordinatesLocked, setIsManualCoordinatesLocked] = useState<boolean>(false);
 
   // Localização física da garagem e Segurança contra Incêndio (IT-41 CBPMESP / IT-30 CBMMG)
   const [condoLocation, setCondoLocation] = useState<CondoEnvironmentLocation>('terreo_coberto');
@@ -1070,6 +1071,7 @@ export default function CoenergyGODashboard() {
   useEffect(() => {
     const rawAddress = clientProjectData.address?.trim();
     if (!rawAddress || rawAddress.length < 4 || rawAddress === "Endereço a definir") return;
+    if (isManualCoordinatesLocked || clientProjectData.isManualCoordinatesLocked) return;
 
     // Se o endereço é o padrão de Sete Lagoas, aplica diretamente as coordenadas de alta precisão
     if (rawAddress.toLowerCase().includes('olavo bilac')) {
@@ -1091,7 +1093,7 @@ export default function CoenergyGODashboard() {
     }, 600);
 
     return () => clearTimeout(timer);
-  }, [clientProjectData.address]);
+  }, [clientProjectData.address, isManualCoordinatesLocked, clientProjectData.isManualCoordinatesLocked]);
 
 
   const handleFireSafetyChange = (updated: Partial<FireSafetyChecklist>) => {
@@ -1274,11 +1276,26 @@ export default function CoenergyGODashboard() {
 
     setClientProjectData(mergedClientData);
 
-    // 3. Sincronizar Coordenadas Geodésicas imediatamente para o projeto carregado
+    // 3. Sincronizar Coordenadas Geodésicas imediatamente para o projeto carregado (com prioridade para coordenadas salvas)
     const contextLower = `${cleanAddress} ${cleanName}`.toLowerCase();
-    if (contextLower.includes('olavo bilac') || contextLower.includes('sete lagoas')) {
+    if (typeof p.latitude === 'number' && typeof p.longitude === 'number' && (p.latitude !== -19.471676 || contextLower.includes('olavo bilac'))) {
+      setProjectLatitude(p.latitude);
+      setProjectLongitude(p.longitude);
+      setIsManualCoordinatesLocked(true);
+    } else if (typeof p.clientProjectData?.customLatitude === 'number' && typeof p.clientProjectData?.customLongitude === 'number') {
+      setProjectLatitude(p.clientProjectData.customLatitude);
+      setProjectLongitude(p.clientProjectData.customLongitude);
+      setIsManualCoordinatesLocked(true);
+    } else if (contextLower.includes('carlos antonio giordani') || contextLower.includes('henrique nery')) {
+      setProjectLatitude(-19.4703402);
+      setProjectLongitude(-44.2634043);
+      setIsManualCoordinatesLocked(true);
+    } else if (contextLower.includes('olavo bilac')) {
       setProjectLatitude(-19.471676);
       setProjectLongitude(-44.258735);
+    } else if (contextLower.includes('sete lagoas')) {
+      setProjectLatitude(-19.4658);
+      setProjectLongitude(-44.2467);
     } else if (contextLower.includes('uberlândia') || contextLower.includes('uberlandia')) {
       setProjectLatitude(typeof p.latitude === 'number' ? p.latitude : -18.9077034);
       setProjectLongitude(typeof p.longitude === 'number' ? p.longitude : -48.3258897);
@@ -1870,6 +1887,9 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
       clientAddress: clientProjectData.address || "",
       latitude: projectLatitude,
       longitude: projectLongitude,
+      customLatitude: projectLatitude,
+      customLongitude: projectLongitude,
+      isManualCoordinatesLocked: isManualCoordinatesLocked,
       utility: selectedUtility,
       entranceCategory: effectiveHomologatedCategory.categoryId,
       existingEntranceCategory: currentStandardCategoryId,
@@ -2934,8 +2954,25 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
             onCoordinatesChange={(coords) => {
               setProjectLatitude(coords.lat);
               setProjectLongitude(coords.lon);
-              if (coords.address) {
-                setClientProjectData(prev => ({ ...prev, address: coords.address }));
+              setIsManualCoordinatesLocked(true);
+              setClientProjectData(prev => ({
+                ...prev,
+                customLatitude: coords.lat,
+                customLongitude: coords.lon,
+                isManualCoordinatesLocked: true,
+                ...(coords.address ? { address: coords.address } : {})
+              }));
+              try {
+                const updatedDraft = buildCurrentProjectSnapshot(activeLoadedProjectId || 'proj-auto-saved-current');
+                updatedDraft.latitude = coords.lat;
+                updatedDraft.longitude = coords.lon;
+                if (coords.address) updatedDraft.clientAddress = coords.address;
+                localStorage.setItem('coenergygo_active_draft', JSON.stringify(updatedDraft));
+                if (activeLoadedProjectId) {
+                  localStorage.setItem(`coenergygo_project_${activeLoadedProjectId}`, JSON.stringify(updatedDraft));
+                }
+              } catch (e) {
+                console.warn("Aviso ao salvar coordenadas:", e);
               }
             }}
           />

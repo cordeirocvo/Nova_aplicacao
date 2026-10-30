@@ -120,6 +120,9 @@ export interface ClientProjectData {
   clientPhone?: string;
   clientEmail?: string;
   address?: string;
+  customLatitude?: number;
+  customLongitude?: number;
+  isManualCoordinatesLocked?: boolean;
   utility: UtilityId;
   installationNumber: string; // Número da Unidade Consumidora (UC) / Instalação / PN
   meterNumber: string; // Número do Medidor da Concessionária

@@ -141,6 +141,9 @@ export interface EVLocationScoringCockpitProps {
     ahpFixedOpexBRL?: number;
     ahpCustomRealEstateModels?: CustomRealEstatePartnershipOption[];
     ahpCustomCompetitors?: CompetitorStationFeature[];
+    ahpCustomLatitude?: number;
+    ahpCustomLongitude?: number;
+    ahpLocationPreset?: string;
   }) => void;
   onApplyToProject?: (data: {
     powerKW: number;
@@ -381,31 +384,132 @@ export default function EVLocationScoringCockpit({
 
   // Calibração Numérica Fina do Ponto Alvo (Ligação Nova / Coordenadas Exatas Google Maps)
   const [showTargetCalibrateModal, setShowTargetCalibrateModal] = useState<boolean>(false);
-  const [customTargetLat, setCustomTargetLat] = useState<string>(currentLat ? currentLat.toString() : '-18.9077034');
-  const [customTargetLon, setCustomTargetLon] = useState<string>(currentLon ? currentLon.toString() : '-48.3258897');
+  const [customTargetLat, setCustomTargetLat] = useState<string>(currentLat ? currentLat.toString() : '-19.4703402');
+  const [customTargetLon, setCustomTargetLon] = useState<string>(currentLon ? currentLon.toString() : '-44.2634043');
+  const [targetSearchInput, setTargetSearchInput] = useState<string>('');
+  const [isSearchingTarget, setIsSearchingTarget] = useState<boolean>(false);
+  const [targetSearchSuccessFeedback, setTargetSearchSuccessFeedback] = useState<string | null>(null);
+  const [targetCalibrateSuccess, setTargetCalibrateSuccess] = useState<boolean>(false);
 
   useEffect(() => {
     if (typeof currentLat === 'number') setCustomTargetLat(currentLat.toString());
     if (typeof currentLon === 'number') setCustomTargetLon(currentLon.toString());
   }, [currentLat, currentLon]);
 
+  // Recupera coordenadas calibradas salvas localmente se existirem
+  useEffect(() => {
+    try {
+      const savedKey = `coenergygo_calibrated_coords_${projectId || 'default'}`;
+      const raw = localStorage.getItem(savedKey);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (typeof parsed.lat === 'number' && typeof parsed.lon === 'number') {
+          if (initialLatitude === -19.471676 && parsed.lat !== -19.471676) {
+            setCurrentLat(parsed.lat);
+            setCurrentLon(parsed.lon);
+            if (parsed.address) setCurrentAddress(parsed.address);
+          }
+        }
+      }
+    } catch (_) {}
+  }, [projectId]);
+
   const handleSaveTargetCalibration = () => {
     const latN = parseFloat(customTargetLat);
     const lonN = parseFloat(customTargetLon);
     if (isNaN(latN) || isNaN(lonN) || latN < -90 || latN > 90 || lonN < -180 || lonN > 180) {
-      alert("Coordenadas inválidas. Insira valores decimais válidos (ex: -18.9077034, -48.3258897).");
+      alert("Coordenadas inválidas. Insira valores decimais válidos (ex: -19.4703402, -44.2634043).");
       return;
     }
     const cleanLat = Number(latN.toFixed(7));
     const cleanLon = Number(lonN.toFixed(7));
     setCurrentLat(cleanLat);
     setCurrentLon(cleanLon);
+    setLocationPreset('personalizado');
+
+    // Blindagem de persistência no localStorage imediata
+    try {
+      localStorage.setItem(`coenergygo_calibrated_coords_${projectId || 'default'}`, JSON.stringify({
+        lat: cleanLat,
+        lon: cleanLon,
+        address: currentAddress
+      }));
+    } catch (_) {}
+
     onCoordinatesChange?.({
       lat: cleanLat,
       lon: cleanLon,
       address: currentAddress
     });
-    setShowTargetCalibrateModal(false);
+
+    onAhpStateChange?.({
+      ahpCustomLatitude: cleanLat,
+      ahpCustomLongitude: cleanLon,
+      ahpLocationPreset: 'personalizado'
+    });
+
+    setTargetCalibrateSuccess(true);
+    setTimeout(() => {
+      setTargetCalibrateSuccess(false);
+      setShowTargetCalibrateModal(false);
+    }, 1200);
+  };
+
+  const handleSearchTargetAddress = async (queryToSearch?: string) => {
+    const q = (queryToSearch || targetSearchInput || currentAddress || '').trim();
+    if (!q || q.length < 3) {
+      alert("Por favor, digite um endereço, número ou coordenadas válidas para buscar.");
+      return;
+    }
+    try {
+      setIsSearchingTarget(true);
+      setTargetSearchSuccessFeedback(null);
+      const res = await fetch(`/api/ev/geocode?address=${encodeURIComponent(q)}`);
+      if (!res.ok) throw new Error("Erro na requisição de geocodificação");
+      const data = await res.json();
+      if (!data.success || typeof data.lat !== 'number' || typeof data.lon !== 'number') {
+        alert(`Não foi possível localizar o endereço "${q}". Tente incluir a cidade ou cole as coordenadas decimais do Google Maps.`);
+        return;
+      }
+      
+      const cleanLat = Number(data.lat.toFixed(7));
+      const cleanLon = Number(data.lon.toFixed(7));
+      const newAddress = data.formattedAddress || q;
+
+      setCurrentLat(cleanLat);
+      setCurrentLon(cleanLon);
+      setCurrentAddress(newAddress);
+      setCustomTargetLat(cleanLat.toString());
+      setCustomTargetLon(cleanLon.toString());
+      setLocationPreset('personalizado');
+
+      try {
+        localStorage.setItem(`coenergygo_calibrated_coords_${projectId || 'default'}`, JSON.stringify({
+          lat: cleanLat,
+          lon: cleanLon,
+          address: newAddress
+        }));
+      } catch (_) {}
+
+      onCoordinatesChange?.({
+        lat: cleanLat,
+        lon: cleanLon,
+        address: newAddress
+      });
+
+      onAhpStateChange?.({
+        ahpCustomLatitude: cleanLat,
+        ahpCustomLongitude: cleanLon,
+        ahpLocationPreset: 'personalizado'
+      });
+
+      setTargetSearchSuccessFeedback(`✓ Localizado com precisão: ${cleanLat}, ${cleanLon}`);
+      setTimeout(() => setTargetSearchSuccessFeedback(null), 5000);
+    } catch (err: any) {
+      alert(`Erro ao buscar endereço: ${err?.message || 'Serviço temporariamente indisponível'}`);
+    } finally {
+      setIsSearchingTarget(false);
+    }
   };
 
   // Sincronizar automaticamente a Categoria de Rede do AHP com o status do padrão (Ligação Nova vs Existente)
@@ -2712,56 +2816,113 @@ export default function EVLocationScoringCockpit({
 
         {/* Modal / Painel Inline de Calibração do Ponto Alvo */}
         {showTargetCalibrateModal && (
-          <div className="bg-slate-900/95 border border-orange-500/40 rounded-2xl p-3.5 space-y-2.5 animate-in fade-in duration-200">
+          <div className="bg-slate-900/95 border border-orange-500/50 rounded-2xl p-4 space-y-3.5 animate-in fade-in duration-200 shadow-xl shadow-black/50">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-orange-400 animate-pulse" />
                 <span className="text-xs font-bold text-orange-400 flex items-center gap-1.5">
-                  Calibração de Coordenadas Numéricas do Ponto Alvo (Google Maps)
+                  Calibração Geodésica do Ponto Alvo (Google Maps / Alta Precisão)
                 </span>
               </div>
               <button
                 type="button"
                 onClick={() => setShowTargetCalibrateModal(false)}
-                className="text-slate-400 hover:text-white text-xs font-bold px-2 py-0.5 rounded-lg hover:bg-slate-800"
+                className="text-slate-400 hover:text-white text-xs font-bold px-2 py-0.5 rounded-lg hover:bg-slate-800 transition-colors"
               >
                 ✕ Fechar
               </button>
             </div>
-            <p className="text-[11px] text-slate-300">
-              Insira a latitude e longitude exatas da edificação para posicionar o ponto da ligação nova com precisão milimétrica.
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
-              <div className="sm:col-span-5">
-                <label className="text-[10px] text-slate-400 block mb-0.5 font-mono">Latitude (ex: -18.9077034)</label>
+
+            {/* Busca Inteligente por Endereço ou Link Google Maps */}
+            <div className="bg-slate-950/70 border border-slate-800 rounded-xl p-3 space-y-2">
+              <label className="text-[11px] font-bold text-slate-300 block">
+                🔍 Buscar por Endereço, Número ou Link/Coordenadas do Google Maps:
+              </label>
+              <div className="flex flex-col sm:flex-row gap-2">
                 <input
                   type="text"
-                  value={customTargetLat}
-                  onChange={(e) => setCustomTargetLat(e.target.value)}
-                  placeholder="-18.9077034"
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono focus:border-orange-500 focus:outline-none"
+                  value={targetSearchInput}
+                  onChange={(e) => setTargetSearchInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleSearchTargetAddress();
+                    }
+                  }}
+                  placeholder="Ex: Rua Carlos Antônio Giordani, 1580, Sete Lagoas OU cole coordenadas -19.4703402, -44.2634043"
+                  className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-orange-500 focus:outline-none"
                 />
-              </div>
-              <div className="sm:col-span-5">
-                <label className="text-[10px] text-slate-400 block mb-0.5 font-mono">Longitude (ex: -48.3258897)</label>
-                <input
-                  type="text"
-                  value={customTargetLon}
-                  onChange={(e) => setCustomTargetLon(e.target.value)}
-                  placeholder="-48.3258897"
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono focus:border-orange-500 focus:outline-none"
-                />
-              </div>
-              <div className="sm:col-span-2 flex items-end">
                 <button
                   type="button"
-                  onClick={handleSaveTargetCalibration}
-                  className="w-full bg-[#E45318] hover:bg-orange-600 text-white font-bold text-xs rounded-lg px-3 py-2 transition-colors flex items-center justify-center gap-1 shadow"
+                  onClick={() => handleSearchTargetAddress()}
+                  disabled={isSearchingTarget}
+                  className="bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white font-bold text-xs rounded-lg px-4 py-2 transition-colors flex items-center justify-center gap-1.5 whitespace-nowrap shadow"
                 >
-                  <CheckCircle className="w-3.5 h-3.5" />
-                  <span>Salvar</span>
+                  {isSearchingTarget ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Localizando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Search className="w-3.5 h-3.5" />
+                      <span>Localizar no Mapa</span>
+                    </>
+                  )}
                 </button>
               </div>
+              {targetSearchSuccessFeedback && (
+                <div className="text-emerald-400 text-[11px] font-medium animate-in fade-in flex items-center gap-1.5 pt-1">
+                  <CheckCircle className="w-3.5 h-3.5 shrink-0" />
+                  <span>{targetSearchSuccessFeedback}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Inserção Numérica Direta de Latitude e Longitude */}
+            <div className="border-t border-slate-800/80 pt-3">
+              <p className="text-[11px] text-slate-300 mb-2">
+                Ou insira/ajuste a latitude e longitude numéricas exatas com precisão milimétrica:
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
+                <div className="sm:col-span-5">
+                  <label className="text-[10px] text-slate-400 block mb-0.5 font-mono">Latitude (ex: -19.4703402)</label>
+                  <input
+                    type="text"
+                    value={customTargetLat}
+                    onChange={(e) => setCustomTargetLat(e.target.value)}
+                    placeholder="-19.4703402"
+                    className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono focus:border-orange-500 focus:outline-none"
+                  />
+                </div>
+                <div className="sm:col-span-5">
+                  <label className="text-[10px] text-slate-400 block mb-0.5 font-mono">Longitude (ex: -44.2634043)</label>
+                  <input
+                    type="text"
+                    value={customTargetLon}
+                    onChange={(e) => setCustomTargetLon(e.target.value)}
+                    placeholder="-44.2634043"
+                    className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono focus:border-orange-500 focus:outline-none"
+                  />
+                </div>
+                <div className="sm:col-span-2 flex items-end">
+                  <button
+                    type="button"
+                    onClick={handleSaveTargetCalibration}
+                    className="w-full bg-[#E45318] hover:bg-orange-600 active:scale-95 text-white font-bold text-xs rounded-lg px-3 py-2 transition-all flex items-center justify-center gap-1.5 shadow"
+                  >
+                    <CheckCircle className="w-3.5 h-3.5" />
+                    <span>Salvar</span>
+                  </button>
+                </div>
+              </div>
+
+              {targetCalibrateSuccess && (
+                <div className="mt-2 text-emerald-400 text-xs font-bold animate-in fade-in flex items-center gap-1.5 bg-emerald-950/40 border border-emerald-500/40 px-3 py-1.5 rounded-lg">
+                  <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>✓ Coordenadas salvas e sincronizadas com sucesso no projeto!</span>
+                </div>
+              )}
             </div>
           </div>
         )}

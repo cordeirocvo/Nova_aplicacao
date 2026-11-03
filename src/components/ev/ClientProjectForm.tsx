@@ -33,6 +33,58 @@ export default function ClientProjectForm({
   const [isUploading, setIsUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
   const [extractedPreview, setExtractedPreview] = useState<any | null>(null);
+  const [isAnalyzingLocation, setIsAnalyzingLocation] = useState(false);
+  const [locationAnalysisError, setLocationAnalysisError] = useState<string | null>(null);
+
+  const triggerLocationAnalysis = async (addrToUse?: string, latToUse?: number, lonToUse?: number) => {
+    const targetAddr = addrToUse || data.address;
+    if (!targetAddr) return;
+
+    try {
+      setIsAnalyzingLocation(true);
+      setLocationAnalysisError(null);
+
+      let cityName = 'Sete Lagoas';
+      const parts = targetAddr.split(',');
+      for (const p of parts) {
+        if (p.includes('-')) {
+          const candidate = p.split('-')[0]?.trim();
+          if (candidate) cityName = candidate;
+        }
+      }
+
+      const res = await fetch('/api/ev/location-agent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          address: targetAddr,
+          lat: latToUse || data.customLatitude || currentLat || -19.4703402,
+          lon: lonToUse || data.customLongitude || currentLon || -44.2634043,
+          cityName,
+          commercialAnchorType: data.commercialAnchorType || 'Galeria de lojas 24 horas',
+          propertyOwner: data.propertyOwner || 'Sr. Saint Clair',
+          clientName: data.clientName || 'Coenergy',
+          idleFeePerMinute: data.idleFeePerMinute !== undefined ? data.idleFeePerMinute : 1.50,
+          idleFeeGraceMinutes: data.idleFeeGraceMinutes !== undefined ? data.idleFeeGraceMinutes : 15,
+          manualStations: data.manualCompetitorStations || []
+        })
+      });
+
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && json.diagnostic) {
+          onChange({ locationDiagnostic: json.diagnostic });
+        }
+      } else {
+        const err = await res.json().catch(() => ({}));
+        setLocationAnalysisError(err.error || 'Falha ao analisar local');
+      }
+    } catch (err: any) {
+      setLocationAnalysisError(err.message || 'Erro de rede na análise do local');
+    } finally {
+      setIsAnalyzingLocation(false);
+    }
+  };
 
   useEffect(() => {
     if (!data.utilityBillFileName) {
@@ -631,8 +683,86 @@ export default function ClientProjectForm({
                   if (onLocationResolved) {
                     onLocationResolved({ address: loc.address, lat: loc.lat, lon: loc.lon });
                   }
+                  triggerLocationAnalysis(loc.address, loc.lat, loc.lon);
                 }}
               />
+
+              {/* BARRA DO AGENTE DE INTELIGÊNCIA TERRITORIAL */}
+              <div className="mt-2.5 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] text-slate-500 font-semibold flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-[#E45318]" />
+                    Agente Territorial • Metodologia Business Plan BLEV
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => triggerLocationAnalysis()}
+                    disabled={isAnalyzingLocation || !data.address}
+                    className="text-[11px] font-bold text-[#E45318] hover:text-[#c24210] flex items-center gap-1 px-2.5 py-1 rounded-lg bg-orange-50 border border-orange-200 hover:bg-orange-100 transition-all disabled:opacity-50 cursor-pointer"
+                  >
+                    {isAnalyzingLocation ? (
+                      <>
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                        <span>Consultando IBGE, Vias & Concorrência...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-3 h-3" />
+                        <span>{data.locationDiagnostic ? 'Atualizar Análise do Ponto' : 'Analisar Entorno com Agente IA'}</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {locationAnalysisError && (
+                  <div className="text-[10px] text-rose-600 bg-rose-50 border border-rose-200 p-2 rounded-xl">
+                    {locationAnalysisError}
+                  </div>
+                )}
+
+                {data.locationDiagnostic && (
+                  <div className="bg-slate-900 text-white p-3.5 rounded-2xl border border-slate-800 space-y-2 shadow-sm animate-in fade-in duration-300">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[9px] uppercase tracking-wider font-black px-2 py-0.5 rounded-full bg-emerald-500/20 text-[#00B356] border border-emerald-500/30">
+                          {data.locationDiagnostic.vereditoGeral}
+                        </span>
+                        <span className="text-[10px] text-slate-300 font-bold">
+                          Score AHP: <span className="text-[#00B356] font-black">{data.locationDiagnostic.scoreAHP}</span> / 10
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-slate-400">
+                        {data.locationDiagnostic.cidade} - {data.locationDiagnostic.uf}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[10px]">
+                      <div className="bg-white/5 p-2 rounded-xl">
+                        <span className="text-slate-400 block text-[9px] uppercase">População (IBGE)</span>
+                        <strong className="text-white text-xs">{data.locationDiagnostic.ibge?.populacaoEstimada?.toLocaleString('pt-BR')} hab.</strong>
+                      </div>
+                      <div className="bg-white/5 p-2 rounded-xl">
+                        <span className="text-slate-400 block text-[9px] uppercase">Frota VE 2026</span>
+                        <strong className="text-amber-400 text-xs">{data.locationDiagnostic.ibge?.frotaEletricaEstimada?.toLocaleString('pt-BR')} veículos</strong>
+                      </div>
+                      <div className="bg-white/5 p-2 rounded-xl">
+                        <span className="text-slate-400 block text-[9px] uppercase">Perfil da Via</span>
+                        <strong className="text-blue-400 text-xs uppercase">{data.locationDiagnostic.via?.tipoVia || 'Arterial'}</strong>
+                      </div>
+                      <div className="bg-white/5 p-2 rounded-xl">
+                        <span className="text-slate-400 block text-[9px] uppercase">Concorrência DC (5 km)</span>
+                        <strong className={data.locationDiagnostic.concorrencia?.monopolioNaturalDC ? 'text-[#00B356] text-xs' : 'text-orange-400 text-xs'}>
+                          {data.locationDiagnostic.concorrencia?.monopolioNaturalDC ? 'Monopólio DC' : `${data.locationDiagnostic.concorrencia?.totalCarregadoresRapidosDC} DC Mapeados`}
+                        </strong>
+                      </div>
+                    </div>
+
+                    <p className="text-[10px] text-slate-300 leading-relaxed pt-1 border-t border-slate-800">
+                      {data.locationDiagnostic.concorrencia?.vereditoConcorrencia}
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

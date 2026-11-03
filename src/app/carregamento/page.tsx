@@ -5077,7 +5077,8 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
           enableDLM: dlmEnableDLM || dlmResult.isLimitationAccepted,
           hasDLM: dlmEnableDLM || dlmResult.isLimitationAccepted || (dlmResult.maxOverloadWithoutDLMKW > 0),
           dlmSystemType: 'beny',
-          deficitKW: dlmResult.maxOverloadWithoutDLMKW
+          deficitKW: dlmResult.maxOverloadWithoutDLMKW,
+          locationDiagnostic: clientProjectData.locationDiagnostic
         }}
       />
 

@@ -125,6 +125,8 @@ export interface ClientProjectData {
   idleFeePerMinute?: number; // Sobretaxa de ociosidade após a recarga em R$/min (ex: 1.50)
   idleFeeGraceMinutes?: number; // Minutos de tolerância antes do início da sobretaxa de ociosidade (ex: 15)
   facadePhotoUrl?: string; // Foto da fachada do estacionamento / imóvel para o cabeçalho executivo
+  locationDiagnostic?: any; // Diagnóstico territorial inteligente do agente (IBGE + OSM + Concorrência DC)
+  manualCompetitorStations?: Array<{ name: string; powerKW: number; isDC: boolean; distanceKm: number }>; // Carregadores manuais informados pelo usuário
   address?: string;
   customLatitude?: number;
   customLongitude?: number;

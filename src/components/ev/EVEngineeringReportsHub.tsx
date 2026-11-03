@@ -82,6 +82,7 @@ interface EVEngineeringReportsHubProps {
     hasDLM?: boolean;
     dlmSystemType?: 'beny' | 'weg' | 'schneider' | 'abb' | 'generic';
     deficitKW?: number;
+    locationDiagnostic?: any;
   };
 }
 
@@ -1016,9 +1017,31 @@ export function EVEngineeringReportsHub({
                           </h4>
                         </div>
                         <span className="text-[10px] font-bold uppercase text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full">
-                          Inteligência AHP
+                          Inteligência AHP & Agente Territorial
                         </span>
                       </div>
+
+                      {/* BANNER DE MACRO-MERCADO MUNICIPAL (BASE IBGE & ABVE) */}
+                      {projectData.locationDiagnostic?.ibge && (
+                        <div className="bg-slate-900 text-white p-3 rounded-2xl grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-[10px]">
+                          <div className="border-r border-slate-700/60 pr-1">
+                            <span className="text-slate-400 block uppercase font-bold text-[9px]">Município Sede</span>
+                            <strong className="text-white text-xs">{projectData.locationDiagnostic.ibge.nome} - {projectData.locationDiagnostic.ibge.uf}</strong>
+                          </div>
+                          <div className="border-r border-slate-700/60 pr-1">
+                            <span className="text-slate-400 block uppercase font-bold text-[9px]">População Oficial (IBGE)</span>
+                            <strong className="text-[#00B356] text-xs">{projectData.locationDiagnostic.ibge.populacaoEstimada.toLocaleString('pt-BR')} hab.</strong>
+                          </div>
+                          <div className="border-r border-slate-700/60 pr-1">
+                            <span className="text-slate-400 block uppercase font-bold text-[9px]">Frota VE Projetada 2026</span>
+                            <strong className="text-amber-400 text-xs">{projectData.locationDiagnostic.ibge.frotaEletricaEstimada.toLocaleString('pt-BR')} veículos</strong>
+                          </div>
+                          <div>
+                            <span className="text-slate-400 block uppercase font-bold text-[9px]">Motorização da Região</span>
+                            <strong className="text-blue-400 text-xs">{projectData.locationDiagnostic.ibge.densidadeVeiculosHabitante} veíc./hab.</strong>
+                          </div>
+                        </div>
+                      )}
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-[11px] leading-relaxed">
                         <div className="border border-slate-200 p-3.5 rounded-2xl space-y-2 bg-slate-50/50">
@@ -1039,6 +1062,11 @@ export function EVEngineeringReportsHub({
                             <li>
                               <strong>Sobretaxa de Ociosidade (Idle Fee):</strong> Cobrança compulsória de <strong>R$ {(projectData.idleFeePerMinute !== undefined ? projectData.idleFeePerMinute : 1.50).toFixed(2)}/minuto</strong> após <strong>{projectData.idleFeeGraceMinutes || 15} minutos</strong> de tolerância do término da recarga, garantindo 100% de giro das vagas.
                             </li>
+                            {projectData.locationDiagnostic?.via && (
+                              <li>
+                                <strong>Perfil da Via:</strong> Classificada como {projectData.locationDiagnostic.via.tipoVia.toUpperCase()} ({projectData.locationDiagnostic.via.nomeVia}), com velocidade de tráfego de ~{projectData.locationDiagnostic.via.velocidadeEstimadaKmh} km/h e {projectData.locationDiagnostic.via.totalComercios500m} comércios e conveniências mapeados no raio de 500m.
+                              </li>
+                            )}
                           </ul>
                         </div>
 
@@ -1048,7 +1076,11 @@ export function EVEngineeringReportsHub({
                             <span>Impacto Viário & Densidade Competitiva Monopolista</span>
                           </strong>
                           <p className="text-slate-600">
-                            Varredura de dados geográficos e de tráfego local confirmando <strong>ausência total de intervenções viárias limitantes até 2027</strong>, assegurando corredor arterial permanentemente desobstruído.
+                            {projectData.locationDiagnostic?.concorrencia ? (
+                              <span>{projectData.locationDiagnostic.concorrencia.vereditoConcorrencia}</span>
+                            ) : (
+                              <span>Varredura de dados geográficos e de tráfego local confirmando <strong>ausência total de intervenções viárias limitantes até 2027</strong>, assegurando corredor arterial permanentemente desobstruído.</span>
+                            )}
                           </p>
                           <ul className="list-disc pl-4 space-y-1 text-slate-600 text-[10px]">
                             <li>

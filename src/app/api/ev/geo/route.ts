@@ -436,6 +436,22 @@ export async function GET(request: NextRequest) {
   const combinedRaw: EnrichedChargingStation[] = [...googlePlacesStations, ...liveOsmStations, ...ESTACOES_BASE];
 
   // 4. Execução de Haversine e filtragem pelo raio selecionado
+  // REGRA DE NEGÓCIO MANDATÓRIA: O hub que a CoenergyGO / Cordeiro Energia quer instalar
+  // NÃO pode ser considerado na conta para o cálculo da concorrência em nenhum projeto avaliado!
+  const isOwnCoenergyHub = (st: EnrichedChargingStation, distKM: number) => {
+    const nomeLower = (st.nome || '').toLowerCase();
+    const opLower = (st.operador || '').toLowerCase();
+    return (
+      opLower.includes('cordeiro energia') ||
+      opLower.includes('coenergy') ||
+      opLower.includes('coenergygo') ||
+      nomeLower.includes('cordeiro energia') ||
+      nomeLower.includes('coenergy') ||
+      nomeLower.includes('coenergygo') ||
+      distKM < 0.25 // Menos de 250m do ponto alvo avaliado é o próprio hub do projeto
+    );
+  };
+
   const withDistance = combinedRaw.map(estacao => {
     const d = calculateHaversineDistanceKM(lat, lon, estacao.latitude, estacao.longitude);
     return {
@@ -444,7 +460,7 @@ export async function GET(request: NextRequest) {
       distancia_km: Number(d.toFixed(2))
     };
   })
-  .filter(e => e.distancia_km <= raioKM)
+  .filter(e => e.distancia_km <= raioKM && !isOwnCoenergyHub(e, e.distancia_km))
   .sort((a, b) => a.distancia_km - b.distancia_km);
 
   // 5. Deduplicação espacial por proximidade (postos com menos de 120 metros são unificados)

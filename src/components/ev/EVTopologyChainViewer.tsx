@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useEVTopologyStore } from '@/lib/coenergygo/store/useEVTopologyStore';
 import { TopologyChargerNode } from '@/lib/coenergygo/types';
 import { HOMOLOGATED_CHARGERS } from '@/lib/ev/chargersDatabase';
@@ -340,7 +340,15 @@ export function EVTopologyChainViewer({
     }
   };
   const [showAddChargerModal, setShowAddChargerModal] = useState(false);
-  const [includeEntranceStandardInBOM, setIncludeEntranceStandardInBOM] = useState<boolean>(true);
+  // Calibração Automática de Engenharia (Cordeiro Energia):
+  // Se o padrão já é existente e adequado (sem modificação), NÃO é considerado no orçamento nem no CAPEX.
+  // Caso seja ligação nova ou se houver modificação de categoria, é automaticamente considerado.
+  const shouldAutoIncludeStandard = isNewConnection || !isExistingStandardAdequate;
+  const [includeEntranceStandardInBOM, setIncludeEntranceStandardInBOM] = useState<boolean>(shouldAutoIncludeStandard);
+
+  useEffect(() => {
+    setIncludeEntranceStandardInBOM(isNewConnection || !isExistingStandardAdequate);
+  }, [isNewConnection, isExistingStandardAdequate]);
   const [useMetalEnclosureCemar, setUseMetalEnclosureCemar] = useState<boolean>(true);
   const [includeEmergencyShutdown, setIncludeEmergencyShutdown] = useState<boolean>(true);
   const [customLaborPercent, setCustomLaborPercent] = useState<number>(28);
@@ -2006,6 +2014,10 @@ export function EVTopologyChainViewer({
             onExportCSV={handleExportBOMCSV}
             onRefreshCapexPrices={loadCapexCatalog}
             onNavigateToFinancialModeling={onNavigateToFinancialModeling}
+            includeEntranceStandardInBOM={includeEntranceStandardInBOM}
+            onToggleIncludeEntranceStandard={setIncludeEntranceStandardInBOM}
+            isNewConnection={isNewConnection}
+            isExistingStandardAdequate={isExistingStandardAdequate}
           />
         </div>
       )}

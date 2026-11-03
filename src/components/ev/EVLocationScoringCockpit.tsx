@@ -919,12 +919,42 @@ export default function EVLocationScoringCockpit({
       }
     }
 
-    return combined.sort((a, b) => a.distancia_km - b.distancia_km);
+    // Regra de Negócio Mandatória: O próprio hub da CoenergyGO / Cordeiro Energia JAMAIS entra na conta de concorrência
+    const isOwnCoenergyHub = (st: any) => {
+      const nomeLower = (st.nome || '').toLowerCase();
+      const opLower = (st.operador || '').toLowerCase();
+      const dist = typeof st.distancia_km === 'number' ? st.distancia_km : calculateHaversineDistanceKM(currentLat, currentLon, st.latitude, st.longitude);
+      return (
+        opLower.includes('cordeiro energia') ||
+        opLower.includes('coenergy') ||
+        opLower.includes('coenergygo') ||
+        nomeLower.includes('cordeiro energia') ||
+        nomeLower.includes('coenergy') ||
+        nomeLower.includes('coenergygo') ||
+        dist < 0.25
+      );
+    };
+
+    return combined
+      .filter(st => !isOwnCoenergyHub(st))
+      .sort((a, b) => a.distancia_km - b.distancia_km);
   }, [customCompetitors, geoData, currentLat, currentLon]);
 
   // Recalcula dinamicamente a distância do concorrente mais próximo para alimentar o Pilar 5 (AHP)
   useEffect(() => {
-    const externalStations = allRenderedStations.filter(st => st.distancia_km >= 0.08);
+    const isOwnCoenergyHub = (st: any) => {
+      const nomeLower = (st.nome || '').toLowerCase();
+      const opLower = (st.operador || '').toLowerCase();
+      return (
+        opLower.includes('cordeiro energia') ||
+        opLower.includes('coenergy') ||
+        opLower.includes('coenergygo') ||
+        nomeLower.includes('cordeiro energia') ||
+        nomeLower.includes('coenergy') ||
+        nomeLower.includes('coenergygo')
+      );
+    };
+    const externalStations = allRenderedStations.filter(st => !isOwnCoenergyHub(st) && st.distancia_km >= 0.15);
     if (externalStations.length > 0) {
       // Prioriza eletropostos DC rápidos (concorrentes diretos de alta potência) ou o mais próximo
       const dcStations = externalStations.filter(st => st.potencia_kw >= 30);

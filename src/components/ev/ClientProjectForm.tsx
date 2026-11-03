@@ -706,6 +706,38 @@ export default function ClientProjectForm({
                 </div>
               </button>
             </div>
+
+            {/* Informação sobre Considerar ou Não o Padrão no Orçamento do Projeto */}
+            <div className={`p-3 rounded-xl border text-xs flex items-center justify-between gap-2.5 transition-all ${
+              !data.isNewConnection
+                ? 'bg-emerald-50 border-emerald-200 text-emerald-950'
+                : 'bg-orange-50 border-orange-200 text-orange-950'
+            }`}>
+              <div className="flex items-center gap-2.5">
+                <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
+                  !data.isNewConnection ? 'bg-emerald-100 text-[#00B356]' : 'bg-orange-100 text-[#E45318]'
+                }`}>
+                  {!data.isNewConnection ? <CheckCircle2 className="w-4 h-4" /> : <Zap className="w-4 h-4" />}
+                </div>
+                <div>
+                  <strong className="block text-[11px]">
+                    {!data.isNewConnection
+                      ? 'Padrão Existente Mantido — Desconsiderado do Orçamento (R$ 0,00)'
+                      : 'Ligação Nova — Custo do Padrão Automaticamente Considerado no Orçamento'}
+                  </strong>
+                  <span className="text-[10px] text-slate-500 block leading-snug">
+                    {!data.isNewConnection
+                      ? 'Como o padrão é existente e não haverá modificação, o custo de caixa, disjuntor de entrada e poste não é cobrado no projeto.'
+                      : 'O fornecimento e a instalação do novo padrão de entrada da concessionária estão computados no CAPEX.'}
+                  </span>
+                </div>
+              </div>
+              <span className={`text-[10px] font-black px-2.5 py-1 rounded-full shrink-0 uppercase tracking-wider ${
+                !data.isNewConnection ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-orange-100 text-orange-800 border border-orange-300'
+              }`}>
+                {!data.isNewConnection ? 'R$ 0,00 (ISENTO)' : 'AUTOMÁTICO NO CAPEX'}
+              </span>
+            </div>
           </div>
 
           {data.isNewConnection && (

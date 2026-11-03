@@ -92,6 +92,10 @@ interface EVModularBOMTableProps {
   onExportCSV: () => void;
   onRefreshCapexPrices?: () => void;
   onNavigateToFinancialModeling?: () => void;
+  includeEntranceStandardInBOM?: boolean;
+  onToggleIncludeEntranceStandard?: (include: boolean) => void;
+  isExistingStandardAdequate?: boolean;
+  isNewConnection?: boolean;
 }
 
 const STAGE_ORDER_LIST: InstallationStageId[] = [
@@ -186,7 +190,11 @@ export function EVModularBOMTable({
   syncedOrcamentoId,
   onExportCSV,
   onRefreshCapexPrices,
-  onNavigateToFinancialModeling
+  onNavigateToFinancialModeling,
+  includeEntranceStandardInBOM = true,
+  onToggleIncludeEntranceStandard,
+  isExistingStandardAdequate = true,
+  isNewConnection = false
 }: EVModularBOMTableProps) {
   // Aba ativa selecionada pelo usuário (Consolidada ou uma das 10 etapas físicas)
   const [activeTab, setActiveTab] = useState<ActiveBOMTab>("CONSOLIDADA");
@@ -579,6 +587,57 @@ export function EVModularBOMTable({
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300 font-['Montserrat',sans-serif]">
+
+      {/* ─── CONTROLE DE IMPACTO DO PADRÃO DE ENTRADA NO ORÇAMENTO & CAPEX ─── */}
+      <div className={`p-4 rounded-2xl border transition-all flex flex-col md:flex-row items-start md:items-center justify-between gap-3 ${
+        !includeEntranceStandardInBOM
+          ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-200'
+          : 'bg-orange-500/10 border-orange-500/30 text-orange-200'
+      }`}>
+        <div className="flex items-center gap-3">
+          <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+            !includeEntranceStandardInBOM ? 'bg-emerald-500/20 text-emerald-400' : 'bg-orange-500/20 text-orange-400'
+          }`}>
+            {!includeEntranceStandardInBOM ? <CheckCircle2 className="w-5 h-5" /> : <Zap className="w-5 h-5" />}
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-900 border border-slate-700 text-slate-300">
+                Padrão de Entrada da Concessionária
+              </span>
+              <span className="text-xs font-bold text-white">
+                {!includeEntranceStandardInBOM
+                  ? 'Padrão Existente Adequado — Desconsiderado do Orçamento (R$ 0,00)'
+                  : 'Ligação Nova / Adequação de Padrão — Custo Considerado no Orçamento'}
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-400 mt-0.5 leading-relaxed">
+              {!includeEntranceStandardInBOM
+                ? 'O padrão já existe no local e não haverá modificação. Custos de poste, caixa de medição e disjuntor de entrada estão desconsiderados no projeto.'
+                : 'O projeto requer ligação nova ou aumento/modificação de categoria na concessionária. Os custos do padrão foram automaticamente computados no CAPEX.'}
+            </p>
+          </div>
+        </div>
+
+        {onToggleIncludeEntranceStandard && (
+          <button
+            type="button"
+            onClick={() => onToggleIncludeEntranceStandard(!includeEntranceStandardInBOM)}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border shrink-0 cursor-pointer flex items-center gap-1.5 ${
+              !includeEntranceStandardInBOM
+                ? 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-slate-700'
+                : 'bg-emerald-600 hover:bg-emerald-500 text-white border-emerald-500 shadow-md'
+            }`}
+          >
+            <Sliders className="w-3.5 h-3.5" />
+            <span>
+              {!includeEntranceStandardInBOM
+                ? 'Considerar Custo no Projeto (Opcional)'
+                : 'Desconsiderar Custo (Manter Padrão Existente)'}
+            </span>
+          </button>
+        )}
+      </div>
       {/* ─── BANNER DE STATUS DA GESTÃO DE ORÇAMENTOS (CAPEX) EM SEGUNDO PLANO ─── */}
       <div className="bg-gradient-to-r from-[#0A192F] via-slate-900 to-[#0A192F] border border-slate-700/80 rounded-2xl p-4 md:p-5 shadow-xl text-white flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">

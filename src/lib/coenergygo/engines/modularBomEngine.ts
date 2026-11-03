@@ -1819,7 +1819,10 @@ export function buildModularBOM(
     );
 
     let subtotalLaborBRL = 0;
-    if (effectiveStageMode === 'TABELADO') {
+    if (sId === 'ETAPA_1_PADRAO_CEMIG' && !includeEntranceStandardInBOM) {
+      // Padrão existente mantido sem modificação: Custo de mão de obra e materiais ZERADOS no orçamento
+      subtotalLaborBRL = 0;
+    } else if (effectiveStageMode === 'TABELADO') {
       if (stageOverride?.fixedAmountBRL !== undefined) {
         subtotalLaborBRL = stageOverride.fixedAmountBRL;
       } else if (tabeladoLaborBRL > 0) {

@@ -84,6 +84,7 @@ export interface LocationDiagnosticOutput {
   scoreAHP: number; // 0 a 10
   vereditoGeral: 'GO — ALTAMENTE RECOMENDADO' | 'GO COM RESSALVAS' | 'NO-GO — INVIÁVEL';
   resumoExecutivoTexto: string;
+  resumoExecutivoParagrafos?: string[];
 }
 
 // ─── TABELA DE REFERÊNCIA DEMOGRÁFICA MUNICIPAL (BASE IBGE CENSO 2022 / PROJEÇÃO 2026) ────
@@ -221,10 +222,10 @@ export function analyzeCompetition(
   } else {
     const detalhesDc = dcStations.map(s => {
       const obsPart = s.observacao ? ` [obs: ${s.observacao}]` : '';
-      return `${s.nome} (${s.potenciaKW} kW DC a ${s.distanciaKm} km${obsPart})`;
+      return `${s.nome}: ${s.potenciaKW} kW DC a ${s.distanciaKm} km${obsPart}`;
     }).join('; ');
 
-    vereditoConcorrencia = `Identificado(s) ${dcStations.length} carregador(es) rápido(s) DC no raio de ${radiusLimitKm} km: ${detalhesDc}. O concorrente DC mais próximo situa-se a ${closestDC?.distanciaKm} km (${closestDC?.nome} - ${closestDC?.potenciaKW} kW${closestDC?.observacao ? `, obs: ${closestDC?.observacao}` : ''}).`;
+    vereditoConcorrencia = `A varredura de concorrência identificou ${dcStations.length} estação(ões) de recarga rápida DC no raio de ${radiusLimitKm} km: ${detalhesDc}. O concorrente DC mais próximo situa-se a ${closestDC?.distanciaKm} km (${closestDC?.nome} - ${closestDC?.potenciaKW} kW${closestDC?.observacao ? `, obs: ${closestDC?.observacao}` : ''}). Diante desse cenário competitivo, a implantação do Hub CoenergyGO se consolida estrategicamente com carregador rápido DC BENY de 60 kW com dois conectores CCS2 simultâneos, diferenciando-se pela ancoragem comercial com conveniência 24 horas, recarga de alta velocidade em 35 a 45 minutos e total segurança patrimonial.`;
   }
 
   return {
@@ -310,11 +311,31 @@ export function buildLocationExecutiveSummary(params: {
     ? 'GO — ALTAMENTE RECOMENDADO' 
     : (scoreAHP >= 6.5 ? 'GO COM RESSALVAS' : 'NO-GO — INVIÁVEL');
 
-  // Redação executiva de alta densidade técnica
-  const resumoTexto = `O ponto comercial analisado em ${enderecoFormatado} (${cidade}/${uf}) apresenta índice de atratividade excelente para a implantação do Hub Comercial de Recarga Rápida DC da ${clienteContratante}. Localizado em via de perfil ${via.tipoVia.toUpperCase()} com fluxo contínuo e ancorado em ${ancoraComercialTipo} com estacionamento privativo cedido pelo ${proprietarioImovel}, o ativo atende com perfeição à janela ideal de conveniência de 35 a 45 minutos. No macro-mercado municipal, ${cidade} conta com população estimada em ${ibge.populacaoEstimada.toLocaleString('pt-BR')} habitantes e frota projetada de mais de ${ibge.frotaEletricaEstimada.toLocaleString('pt-BR')} veículos elétricos (BEV e PHEV). A varredura de concorrência confirma ${concorrencia.vereditoConcorrencia} A gestão do pátio será garantida pela regra de ${idleFee.regraTexto}`;
+  // Limpeza criteriosa do endereço: remove CEP e evita repetições redundantes da cidade
+  let cleanAddress = (enderecoFormatado || '')
+    .replace(/,\s*\d{5}-?\d{3}/gi, '')
+    .replace(/CEP:?\s*\d{5}-?\d{3}/gi, '')
+    .replace(/\b\d{5}-\d{3}\b/g, '')
+    .trim();
+
+  // Se o endereço já contiver a cidade, não duplica
+  const normAddr = cleanAddress.toLowerCase();
+  const normCity = cidade.toLowerCase();
+  const hasCity = normAddr.includes(normCity);
+  const displayAddress = hasCity ? cleanAddress : `${cleanAddress}, ${cidade} - ${uf}`;
+
+  // Estrutura executiva em parágrafos justificados (Padrão Av. Amazonas) sem regras de ociosidade
+  const paragrafos = [
+    `O ponto comercial analisado na ${displayAddress} apresenta índice de atratividade excelente para a implantação do Hub Comercial de Recarga Rápida DC da ${clienteContratante}.`,
+    `Localizado em via de perfil ${via.tipoVia.toUpperCase()} com fluxo contínuo e ancorado em ${ancoraComercialTipo} com estacionamento privativo cedido pelo ${proprietarioImovel}, o ativo atende com perfeição à janela ideal de conveniência de 35 a 45 minutos.`,
+    `No macro-mercado municipal, ${cidade} conta com população estimada em ${ibge.populacaoEstimada.toLocaleString('pt-BR')} habitantes e frota projetada de mais de ${ibge.frotaEletricaEstimada.toLocaleString('pt-BR')} veículos elétricos (BEV e PHEV).`,
+    `A varredura de concorrência confirma: ${concorrencia.vereditoConcorrencia}`
+  ];
+
+  const resumoTexto = paragrafos.join('\n\n');
 
   return {
-    enderecoFormatado,
+    enderecoFormatado: displayAddress,
     lat,
     lon,
     cidade,
@@ -330,6 +351,7 @@ export function buildLocationExecutiveSummary(params: {
     },
     scoreAHP,
     vereditoGeral,
-    resumoExecutivoTexto: resumoTexto
+    resumoExecutivoTexto: resumoTexto,
+    resumoExecutivoParagrafos: paragrafos
   };
 }

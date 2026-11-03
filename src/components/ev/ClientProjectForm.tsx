@@ -37,12 +37,19 @@ export default function ClientProjectForm({
   const [locationAnalysisError, setLocationAnalysisError] = useState<string | null>(null);
 
   const triggerLocationAnalysis = async (addrToUse?: string, latToUse?: number, lonToUse?: number) => {
-    const targetAddr = addrToUse || data.address;
-    if (!targetAddr) return;
+    const rawAddr = addrToUse || data.address;
+    if (!rawAddr) return;
 
     try {
       setIsAnalyzingLocation(true);
       setLocationAnalysisError(null);
+
+      // Limpa CEP e redundâncias antes de consultar
+      const targetAddr = rawAddr
+        .replace(/,\s*\d{5}-?\d{3}/gi, '')
+        .replace(/CEP:?\s*\d{5}-?\d{3}/gi, '')
+        .replace(/\b\d{5}-\d{3}\b/g, '')
+        .trim();
 
       let cityName = 'Sete Lagoas';
       const parts = targetAddr.split(',');

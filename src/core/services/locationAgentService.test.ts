@@ -130,5 +130,8 @@ describe('Location Agent Service — Demographic, Competition & Idle Fee Engine'
     assert.match(summary.resumoExecutivoTexto, /Coenergy/);
     assert.match(summary.resumoExecutivoTexto, /Sete Lagoas/);
     assert.match(summary.resumoExecutivoTexto, /Monopólio Natural de Recarga Rápida DC/);
+    assert.ok(Array.isArray(summary.resumoExecutivoParagrafos));
+    assert.strictEqual(summary.resumoExecutivoParagrafos?.length, 4);
+    assert.doesNotMatch(summary.resumoExecutivoTexto, /regra de Aplicação compulsória de Sobretaxa de Ociosidade/i);
   });
 });

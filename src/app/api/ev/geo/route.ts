@@ -17,7 +17,7 @@ export interface EnrichedChargingStation extends NearbyChargingStation {
  * Base geodésica de eletropostos para Minas Gerais e SP.
  * Em produção, essa base é enriquecida via OpenChargeMap / Overpass OSM e cache Parquet/DuckDB.
  */
-const ESTACOES_BASE: EnrichedChargingStation[] = [
+export const ESTACOES_BASE: EnrichedChargingStation[] = [
   // ─── MONTES CLAROS & NORTE DE MINAS (CORREDOR BR-251 / BR-135) ───
   {
     id_estacao: 'MOC_001',

@@ -8,6 +8,7 @@ import {
   RoadAndPoiData
 } from '@/core/services/locationAgentService';
 import { calculateHaversineDistanceKM } from '@/lib/ev/locationScoringEngine';
+import { ESTACOES_BASE } from '@/app/api/ev/geo/route';
 
 export const dynamic = 'force-dynamic';
 
@@ -110,9 +111,36 @@ async function fetchOverpassRoadAndPOIs(lat: number, lon: number): Promise<RoadA
  * Consulta estações de recarga concorrentes em múltiplas fontes (OpenChargeMap e Google Places)
  */
 async function fetchNearbyCompetitorStations(lat: number, lon: number, radiusKm: number = 5.0) {
-  const stations: Array<{ id: string; name: string; lat: number; lon: number; powerKW: number; isDC: boolean; distanceKm: number }> = [];
+  const stations: Array<{ id: string; name: string; lat: number; lon: number; powerKW: number; isDC: boolean; distanceKm: number; conector?: string; observacao?: string }> = [];
 
-  // 1. Consulta OpenChargeMap se conectividade estiver disponível
+  // 1. Processa a base homologada de eletropostos curados do Passo 1B (ESTACOES_BASE)
+  if (Array.isArray(ESTACOES_BASE)) {
+    for (const st of ESTACOES_BASE) {
+      const dist = calculateHaversineDistanceKM(lat, lon, st.latitude, st.longitude);
+      const isOwnHub = dist < 0.25 || 
+                       (st.operador || '').toLowerCase().includes('cordeiro') ||
+                       (st.nome || '').toLowerCase().includes('cordeiro') ||
+                       (st.nome || '').toLowerCase().includes('olavo bilac') ||
+                       (st.nome || '').toLowerCase().includes('coenergy');
+      if (isOwnHub || dist > radiusKm) continue;
+
+      const power = st.potencia_kw || 30;
+      const isDC = power >= 30;
+      stations.push({
+        id: st.id_estacao || `base_${st.latitude}_${st.longitude}`,
+        name: st.nome,
+        lat: st.latitude,
+        lon: st.longitude,
+        powerKW: power,
+        isDC,
+        distanceKm: dist,
+        conector: Array.isArray(st.conectores) ? st.conectores.join(', ') : (isDC ? 'CCS2' : 'Tipo 2'),
+        observacao: `${st.operador || 'Rede de Recarga'}${st.endereco ? ` • ${st.endereco}` : ''}`
+      });
+    }
+  }
+
+  // 2. Consulta OpenChargeMap se conectividade estiver disponível
   try {
     const ocmKey = process.env.OPENCHARGEMAP_API_KEY || '1e345fc5-d143-4416-8f3b-550ff1f22e86';
     const ocmUrl = `https://api.openchargemap.io/v3/poi/?output=json&latitude=${lat}&longitude=${lon}&distance=${radiusKm}&distanceunit=KM&maxresults=25&key=${ocmKey}`;
@@ -145,15 +173,20 @@ async function fetchNearbyCompetitorStations(lat: number, lon: number, radiusKm:
             }
           }
 
-          stations.push({
-            id: `OCM_${item.ID}`,
-            name: item.AddressInfo?.Title || 'Eletroposto OCM',
-            lat: itemLat,
-            lon: itemLon,
-            powerKW: maxKW || (isDC ? 60 : 7.4),
-            isDC,
-            distanceKm: dist
-          });
+          const alreadyExists = stations.some(s => calculateHaversineDistanceKM(s.lat, s.lon, itemLat, itemLon) < 0.12);
+          if (!alreadyExists) {
+            stations.push({
+              id: `OCM_${item.ID}`,
+              name: item.AddressInfo?.Title || 'Eletroposto OCM',
+              lat: itemLat,
+              lon: itemLon,
+              powerKW: maxKW || (isDC ? 60 : 7.4),
+              isDC,
+              distanceKm: dist,
+              conector: isDC ? 'CCS2' : 'Tipo 2',
+              observacao: item.AddressInfo?.AddressLine1 || ''
+            });
+          }
         }
       }
     }

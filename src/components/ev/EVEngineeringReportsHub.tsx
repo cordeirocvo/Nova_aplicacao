@@ -458,9 +458,17 @@ export function EVEngineeringReportsHub({
                           </div>
                         </div>
 
-                        <p className="text-slate-600 text-[11px] leading-relaxed bg-white p-3 rounded-xl border border-slate-200/80">
-                          {projectData.locationDiagnostic.resumoExecutivoTexto || `O ponto comercial apresenta alta atratividade para motoristas de aplicativos e frotistas em trânsito, com tempo de parada alinhado à janela ideal de 35 a 45 minutos.`}
-                        </p>
+                        <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 space-y-2.5 text-justify leading-relaxed text-[11px] text-slate-700">
+                          {projectData.locationDiagnostic.resumoExecutivoParagrafos ? (
+                            projectData.locationDiagnostic.resumoExecutivoParagrafos.map((p: string, pIdx: number) => (
+                              <p key={pIdx}>{p}</p>
+                            ))
+                          ) : (
+                            (projectData.locationDiagnostic.resumoExecutivoTexto || 'O ponto comercial apresenta alta atratividade para motoristas de aplicativos e frotistas em trânsito, com tempo de parada alinhado à janela ideal de 35 a 45 minutos.').split('\n\n').map((p: string, pIdx: number) => (
+                              <p key={pIdx}>{p}</p>
+                            ))
+                          )}
+                        </div>
                       </div>
                     )}
 
@@ -541,6 +549,8 @@ export function EVEngineeringReportsHub({
                         {projectData.chargers?.map((ch, idx) => {
                           const isDual = (ch.powerKW >= 60 && ch.type === 'DC') || (ch.connector && ch.connector.includes('2x'));
                           const isFastDC = ch.type === 'DC' || ch.powerKW >= 30;
+                          const brandName = ch.brand || (ch.powerKW >= 30 ? 'BENY' : 'BENY');
+                          const modelDisplayName = ch.name || (ch.powerKW === 60 ? 'BENY BDC-60 kW DC Comercial Rápido (Dual Gun)' : `${ch.powerKW} kW Dispensador DC Rápido`);
                           return (
                             <div key={ch.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200/80">
                               <div className="flex items-center gap-2.5">
@@ -548,9 +558,9 @@ export function EVEngineeringReportsHub({
                                   {idx + 1}
                                 </span>
                                 <div>
-                                  <strong className="text-slate-900 text-xs block">{ch.name}</strong>
+                                  <strong className="text-slate-900 text-xs block">{modelDisplayName}</strong>
                                   <span className="text-slate-500 text-[10px]">
-                                    {ch.brand || 'WEG'} • Conector: <strong>{ch.connector || (isFastDC ? 'CCS2' : 'Tipo 2')}</strong> • {isDual ? '2 Vagas Simultâneas (Dual-Gun)' : '1 Vaga'}
+                                    {brandName} • Conector: <strong>{ch.connector || (isFastDC ? 'CCS2' : 'Tipo 2')}</strong> • {isDual ? '2 Vagas Simultâneas (Dual-Gun)' : '1 Vaga'}
                                   </span>
                                 </div>
                               </div>
@@ -580,14 +590,14 @@ export function EVEngineeringReportsHub({
                         }`}>
                           {projectData.locationDiagnostic?.concorrencia?.monopolioNaturalDC !== false
                             ? '✓ Monopólio Natural DC Comprovado'
-                            : 'Atenção Competitiva DC'}
+                            : 'Mapeamento Competitivo DC Ativo'}
                         </span>
                       </div>
 
-                      <p className="text-slate-700 text-[11px] leading-relaxed bg-white p-3 rounded-xl border border-slate-200/80">
+                      <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 text-justify text-slate-700 text-[11px] leading-relaxed">
                         {projectData.locationDiagnostic?.concorrencia?.vereditoConcorrencia || 
-                          `Monopólio Natural de Recarga Rápida DC comprovado no raio de 5 km. Os postos concorrentes mapeados operam exclusivamente com recarga lenta AC (7.4 kW a 22 kW), garantindo atratividade soberana ao Hub da CoenergyGO.`}
-                      </p>
+                          `A varredura de concorrência mapeou as estações de recarga no raio de 5 km, avaliando potências nominais e operadores locais para posicionamento estratégico do Hub CoenergyGO.`}
+                      </div>
 
                       {/* Tabela Meticulosa de Eletropostos Mapeados */}
                       {Array.isArray(projectData.competitorStationsList) && projectData.competitorStationsList.length > 0 && (
@@ -634,21 +644,21 @@ export function EVEngineeringReportsHub({
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-center">
                         <span className="text-[10px] uppercase font-bold text-emerald-800">Investimento Total Consolidado</span>
-                        <p className="text-xl font-black text-[#00B356] mt-1">
-                          R$ {(projectData.totalInvestmentBRL || 35000).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        <p className="text-xl font-black text-[#00B356] mt-1 font-mono">
+                          R$ {(projectData.totalInvestmentBRL || 106498.88).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                         </p>
                         <span className="text-[10px] text-emerald-700">Orçamento Modular BOM (Equip. + Obra)</span>
                       </div>
                       <div className="p-4 bg-orange-50 border border-orange-200 rounded-2xl text-center">
-                        <span className="text-[10px] uppercase font-bold text-orange-800">Sobretaxa de Ociosidade (Idle Fee)</span>
-                        <p className="text-xl font-black text-[#E45318] mt-1">
-                          R$ {(projectData.idleFeePerMinute || 1.50).toFixed(2)} / min
+                        <span className="text-[10px] uppercase font-bold text-orange-800">Potência & Capacidade do Hub</span>
+                        <p className="text-xl font-black text-[#E45318] mt-1 font-mono">
+                          {totalPower.toFixed(1)} kW DC Rápido
                         </p>
-                        <span className="text-[10px] text-orange-700">Após {projectData.idleFeeGraceMinutes || 15} min de tolerância (giro de vagas)</span>
+                        <span className="text-[10px] text-orange-700">{evBaysCount} Vagas Simultâneas (Dual-Gun CCS2) • 35 a 45 min</span>
                       </div>
                       <div className="p-4 bg-blue-50 border border-blue-200 rounded-2xl text-center">
                         <span className="text-[10px] uppercase font-bold text-blue-800">Mitigação de CO₂ Estimada</span>
-                        <p className="text-xl font-black text-blue-700 mt-1">~{(evBaysCount * 6.2).toFixed(1)} ton/ano</p>
+                        <p className="text-xl font-black text-blue-700 mt-1 font-mono">~{(evBaysCount * 6.2).toFixed(1)} ton/ano</p>
                         <span className="text-[10px] text-blue-600">Sustentabilidade ESG ({evBaysCount} vagas ativas)</span>
                       </div>
                     </div>

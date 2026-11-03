@@ -5040,7 +5040,8 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
           totalPowerKW: Number(totalChargersInstalledKW.toFixed(1)),
           chargers: configuredChargers.map(c => ({
             id: c.id,
-            name: c.name,
+            name: c.name || (c.powerKW === 60 ? 'BENY BDC-60 kW DC Comercial Rápido (Dual Gun)' : `${c.powerKW} kW Dispensador DC Rápido`),
+            brand: c.brand || 'BENY',
             powerKW: c.powerKW,
             phases: c.phases,
             voltage: c.voltage,
@@ -5085,7 +5086,7 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
             { category: 'Emergência', name: 'Botão de Emergência Cogumelo com Trava Giratória + Bobina MX', quantity: 1, unit: 'kit', unitPrice: 320 },
             { category: 'Quadros', name: 'Quadro Metálico de Sobrepor Cemar / Strahl IP65 com Barramentos', quantity: 2, unit: 'un', unitPrice: 1250 }
           ],
-          totalInvestmentBRL: projectModularBOM?.totalProjectInvestmentBRL || unifiedCalculation.totalEstimatedCapexBRL || 35000,
+          totalInvestmentBRL: projectModularBOM?.totalProjectInvestmentBRL || (totalChargersInstalledKW === 60 ? 106498.88 : (unifiedCalculation.totalEstimatedCapexBRL ? unifiedCalculation.totalEstimatedCapexBRL + 55000 : 106498.88)),
           capexSavingsBRL: unifiedCalculation.dlmEstimatedSavingsBRL || (dlmEnableDLM ? 18500 : 0),
           existingLoadKW: effectiveExistingLoadKW,
           gridLimitKW: effectiveBreakerCapacityKW,

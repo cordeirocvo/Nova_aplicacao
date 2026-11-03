@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { 
-  Compass, MapPin, Layers, Maximize2, RotateCcw, 
+  Compass, MapPin, Layers, Maximize2, RotateCcw, Camera, 
   Zap, Fuel, ShieldAlert, CheckCircle2, AlertTriangle,
   Move, Radio, Eye
 } from "lucide-react";
@@ -159,7 +159,7 @@ export default function EVStationMap({
       const currentCenter = map.getCenter();
       const distMeters = currentCenter.distanceTo(L.latLng(targetLat, targetLon));
       if (distMeters > 50) {
-        map.setView([targetLat, targetLon], map.getZoom() || 14, { animate: true });
+        map.flyTo([targetLat, targetLon], Math.max(map.getZoom() || 15, 14), { animate: true, duration: 1.2 });
       }
     } catch (_) {}
 
@@ -437,6 +437,19 @@ export default function EVStationMap({
     }
   };
 
+    const handleFitBounds = () => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
+    const points: [number, number][] = [[targetLat, targetLon]];
+    stations.forEach(st => {
+      if (typeof st.latitude === 'number' && typeof st.longitude === 'number') {
+        points.push([st.latitude, st.longitude]);
+      }
+    });
+    const bounds = L.latLngBounds(points);
+    map.fitBounds(bounds, { padding: [40, 40], maxZoom: 16 });
+  };
+
   return (
     <div className="relative rounded-2xl overflow-hidden border border-slate-700/60 shadow-lg bg-[#0A192F]">
       {/* Container do Mapa Leaflet */}
@@ -470,6 +483,29 @@ export default function EVStationMap({
           >
             <Layers className="w-3.5 h-3.5" />
             <span className="hidden sm:inline text-[10px]">{mapTheme === 'dark' ? 'Dark' : 'Ruas'}</span>
+          </button>
+
+          {/* Google Street View da Fachada */}
+          <a
+            href={`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${targetLat},${targetLon}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="p-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1 bg-slate-700/80 hover:bg-slate-700 text-slate-200"
+            title="Abrir Fachada no Google Street View"
+          >
+            <Camera className="w-3.5 h-3.5 text-blue-400" />
+            <span className="hidden md:inline text-[10px]">Street View</span>
+          </a>
+
+          {/* Enquadrar Concorrência na Tela */}
+          <button
+            type="button"
+            onClick={handleFitBounds}
+            className="p-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1 bg-slate-700/80 hover:bg-slate-700 text-slate-200 cursor-pointer"
+            title="Enquadrar ponto proposto e concorrência na tela"
+          >
+            <Maximize2 className="w-3.5 h-3.5 text-emerald-400" />
+            <span className="hidden md:inline text-[10px]">Enquadrar</span>
           </button>
 
           {/* Alternar Círculos de Buffer */}

@@ -1,4 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { 
+  parseAddressBR, 
+  cleanStreetQueryForSearch, 
+  extractDirectCoordinates,
+  removeAcentos
+} from '@/lib/ev/addressParserBR';
 
 // Coordenadas canônicas de cidades frequentes em MG/SP como fallback de resiliência
 const CIDADES_CANONICAS: Record<string, { lat: number; lon: number; nomeFormatado: string }> = {
@@ -14,17 +20,22 @@ const CIDADES_CANONICAS: Record<string, { lat: number; lon: number; nomeFormatad
   'CAMPINAS': { lat: -22.9099, lon: -47.0626, nomeFormatado: 'Campinas - SP, Brasil' }
 };
 
-// Âncoras geodésicas de alta precisão para projetos de engenharia conhecidos
+// Âncoras geodésicas de alta precisão para projetos de engenharia homologados
 const PONTOS_NOTAVEIS_PROJETOS: Record<string, { lat: number; lon: number; nomeFormatado: string }> = {
-  'OLAVO BILAC': { 
-    lat: -19.471676, 
-    lon: -44.258735, 
-    nomeFormatado: 'Rua Olavo Bilac 1085, Canaã, Sete Lagoas - MG, 35700-221, Brasil' 
-  },
   'CARLOS ANTONIO GIORDANI': {
     lat: -19.4703402,
     lon: -44.2634043,
     nomeFormatado: 'Rua Carlos Antônio Giordani, 1580, Henrique Nery, Sete Lagoas - MG, 35700-750, Brasil'
+  },
+  'HENRIQUE NERY': {
+    lat: -19.4703402,
+    lon: -44.2634043,
+    nomeFormatado: 'Rua Carlos Antônio Giordani, 1580, Henrique Nery, Sete Lagoas - MG, 35700-750, Brasil'
+  },
+  'OLAVO BILAC': { 
+    lat: -19.471676, 
+    lon: -44.258735, 
+    nomeFormatado: 'Rua Olavo Bilac, 974, Canaã / Santo Antônio, Sete Lagoas - MG, 35700-221, Brasil' 
   },
   'DANGELIS': { 
     lat: -16.657055, 
@@ -53,345 +64,357 @@ const PONTOS_NOTAVEIS_PROJETOS: Record<string, { lat: number; lon: number; nomeF
   }
 };
 
-function normalizarTexto(str: string): string {
-  return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+export type MatchRank = 'rooftop' | 'street' | 'neighborhood' | 'city' | 'regional';
+
+export interface GeocodeSuggestion {
+  title: string;
+  subtitle: string;
+  fullAddress: string;
+  lat: number;
+  lon: number;
+  matchRank: MatchRank;
+  source: string;
 }
 
 /**
- * Tenta extrair coordenadas numéricas diretamente do texto ou de URLs do Google Maps / OpenStreetMap
+ * Consulta o Photon (Geocodificador Komoot baseado em OpenStreetMap / Elasticsearch)
  */
-function extrairCoordenadasDiretas(texto: string): { lat: number; lon: number } | null {
-  if (!texto) return null;
-
-  // 1. Padrão "lat, lon" direto (ex: -19.4703402, -44.2634043 ou -19.4703402,-44.2634043)
-  const regexCoord = /(-?\d{1,2}\.\d+)\s*,\s*(-?\d{1,3}\.\d+)/;
-  const matchCoord = texto.match(regexCoord);
-  if (matchCoord) {
-    const lat = parseFloat(matchCoord[1]);
-    const lon = parseFloat(matchCoord[2]);
-    if (!isNaN(lat) && !isNaN(lon) && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180) {
-      return { lat, lon };
-    }
-  }
-
-  // 2. URL do Google Maps com @lat,lon ou ?q=lat,lon
-  const regexGoogleMaps = /@(-?\d{1,2}\.\d+),(-?\d{1,3}\.\d+)|[?&]q=(-?\d{1,2}\.\d+),(-?\d{1,3}\.\d+)/;
-  const matchG = texto.match(regexGoogleMaps);
-  if (matchG) {
-    const lat = parseFloat(matchG[1] || matchG[3]);
-    const lon = parseFloat(matchG[2] || matchG[4]);
-    if (!isNaN(lat) && !isNaN(lon) && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180) {
-      return { lat, lon };
-    }
-  }
-
-  return null;
-}
-
-function buscarFallbackCidade(endereco: string): { lat: number; lon: number; nomeFormatado: string } | null {
-  const norm = normalizarTexto(endereco);
-  
-  // 1. Verifica se bate em pontos notáveis do projeto (ex: Olavo Bilac, Carlos Antonio Giordani)
-  for (const [chave, coords] of Object.entries(PONTOS_NOTAVEIS_PROJETOS)) {
-    if (norm.includes(chave)) {
-      return coords;
-    }
-  }
-
-  // 2. Fallback por cidade
-  for (const [cidade, coords] of Object.entries(CIDADES_CANONICAS)) {
-    if (norm.includes(cidade)) {
-      return coords;
-    }
-  }
-  return null;
-}
-
-/**
- * Consulta o Photon (Geocodificador de Alta Performance da Komoot baseado em OpenStreetMap / Elasticsearch)
- */
-async function geocodeViaPhoton(query: string): Promise<{ lat: number; lon: number; formattedAddress: string } | null> {
+async function queryPhoton(query: string, limit = 5): Promise<GeocodeSuggestion[]> {
   try {
-    const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=4&lang=default`;
+    const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=${limit}&lang=default`;
     const res = await fetch(url, {
-      headers: {
-        'User-Agent': 'CordeiroEnergia-EVPlanner/1.0 (eng@cordeiroenergia.com.br)'
-      },
+      headers: { 'User-Agent': 'CordeiroEnergia-EVPlanner/2.0 (eng@cordeiroenergia.com.br)' },
       signal: AbortSignal.timeout(3500)
+    });
+
+    if (!res.ok) return [];
+    const data = await res.json();
+    if (!data?.features || !Array.isArray(data.features)) return [];
+
+    const suggestions: GeocodeSuggestion[] = [];
+    for (const f of data.features) {
+      const p = f.properties || {};
+      const coords = f.geometry?.coordinates;
+      if (!coords || coords.length < 2) continue;
+
+      const lon = coords[0];
+      const lat = coords[1];
+
+      // Filtra para manter no Brasil
+      if (lat < -35 || lat > 6 || lon < -75 || lon > -30) continue;
+
+      const street = p.street || p.name || '';
+      const housenumber = p.housenumber || '';
+      const neighborhood = p.district || p.suburb || p.locality || '';
+      const city = p.city || p.town || p.county || '';
+      const state = p.state || '';
+      const postcode = p.postcode || '';
+
+      const title = [street, housenumber].filter(Boolean).join(', ') || p.name || 'Endereço';
+      const subtitle = [neighborhood, city, state, postcode].filter(Boolean).join(' - ');
+      const fullAddress = [title, subtitle].filter(Boolean).join(', ');
+
+      const matchRank: MatchRank = housenumber ? 'rooftop' : street ? 'street' : neighborhood ? 'neighborhood' : 'city';
+
+      suggestions.push({
+        title,
+        subtitle,
+        fullAddress,
+        lat: Number(lat.toFixed(7)),
+        lon: Number(lon.toFixed(7)),
+        matchRank,
+        source: 'photon_osm'
+      });
+    }
+
+    return suggestions;
+  } catch (_) {
+    return [];
+  }
+}
+
+/**
+ * Consulta o Nominatim da OpenStreetMap Foundation com parâmetros estruturados
+ */
+async function queryNominatimStructured(params: { street?: string; city?: string; state?: string; postalcode?: string }): Promise<GeocodeSuggestion | null> {
+  try {
+    const query = new URLSearchParams({
+      format: 'json',
+      addressdetails: '1',
+      limit: '1',
+      countrycodes: 'br'
+    });
+
+    if (params.street) query.set('street', params.street);
+    if (params.city) query.set('city', params.city);
+    if (params.state) query.set('state', params.state);
+    if (params.postalcode) query.set('postalcode', params.postalcode);
+
+    const url = `https://nominatim.openstreetmap.org/search?${query.toString()}`;
+    const res = await fetch(url, {
+      headers: { 'User-Agent': 'CordeiroEnergia-EVPlanner/2.0 (contato@cordeiroenergia.com.br)' },
+      signal: AbortSignal.timeout(4000)
     });
 
     if (!res.ok) return null;
     const data = await res.json();
-    if (!Array.isArray(data.features) || data.features.length === 0) return null;
-
-    // Prioriza features no Brasil
-    const brFeatures = data.features.filter((f: any) => 
-      f.properties?.countrycode === 'BR' || 
-      (f.properties?.country && f.properties.country.toLowerCase().includes('brasil'))
-    );
-    const chosen = brFeatures.length > 0 ? brFeatures[0] : data.features[0];
-
-    if (chosen && chosen.geometry && Array.isArray(chosen.geometry.coordinates)) {
-      const [lon, lat] = chosen.geometry.coordinates;
-      const p = chosen.properties || {};
-      const parts = [
-        p.name || p.street,
-        p.housenumber,
-        p.district || p.locality,
-        p.city,
-        p.state,
-        'Brasil'
-      ].filter(Boolean);
+    if (Array.isArray(data) && data.length > 0) {
+      const item = data[0];
+      const lat = parseFloat(item.lat);
+      const lon = parseFloat(item.lon);
+      const addr = item.address || {};
+      const matchRank: MatchRank = addr.house_number ? 'rooftop' : addr.road ? 'street' : 'city';
 
       return {
+        title: [addr.road, addr.house_number].filter(Boolean).join(', ') || item.display_name.split(',')[0],
+        subtitle: [addr.suburb || addr.neighbourhood, addr.city || addr.town, addr.state, addr.postcode].filter(Boolean).join(' - '),
+        fullAddress: item.display_name,
         lat: Number(lat.toFixed(7)),
         lon: Number(lon.toFixed(7)),
-        formattedAddress: parts.join(', ') || p.name || query
+        matchRank,
+        source: 'nominatim_structured'
       };
     }
-  } catch (err: any) {
-    // console.warn("Photon geocode falhou:", err?.message || err);
-  }
+  } catch (_) {}
   return null;
 }
 
 /**
- * Consulta o Nominatim (OpenStreetMap) com consulta estruturada ou livre
+ * Consulta de CEP na BrasilAPI v2 (dados CNEFE/IBGE + Correios)
  */
-async function geocodeViaNominatim(query: string, structured?: { street?: string; city?: string; state?: string }): Promise<{ lat: number; lon: number; formattedAddress: string } | null> {
+async function queryBrasilAPICEP(cleanCep: string): Promise<GeocodeSuggestion | null> {
   try {
-    let url = '';
-    if (structured && structured.street && structured.city) {
-      url = `https://nominatim.openstreetmap.org/search?format=json&street=${encodeURIComponent(structured.street)}&city=${encodeURIComponent(structured.city)}&country=Brazil&addressdetails=1&limit=1`;
-    } else {
-      url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&addressdetails=1&limit=1&countrycodes=br`;
-    }
-
-    const res = await fetch(url, {
-      headers: {
-        'User-Agent': 'CordeiroEnergia-EVPlanner/2.0 (contato@cordeiroenergia.com.br)'
-      },
-      signal: AbortSignal.timeout(3500)
+    const res = await fetch(`https://brasilapi.com.br/api/cep/v2/${cleanCep}`, {
+      signal: AbortSignal.timeout(3000)
     });
-
     if (!res.ok) return null;
-    const results = await res.json();
-    if (Array.isArray(results) && results.length > 0) {
-      const top = results[0];
+    const cepData = await res.json();
+    const lat = parseFloat(cepData?.location?.coordinates?.latitude);
+    const lon = parseFloat(cepData?.location?.coordinates?.longitude);
+
+    if (!isNaN(lat) && !isNaN(lon)) {
       return {
-        lat: parseFloat(top.lat),
-        lon: parseFloat(top.lon),
-        formattedAddress: top.display_name
+        title: [cepData.street, cepData.neighborhood].filter(Boolean).join(', '),
+        subtitle: `${cepData.city} - ${cepData.state}, CEP ${cepData.cep}`,
+        fullAddress: `${cepData.street || ''}, ${cepData.neighborhood || ''}, ${cepData.city} - ${cepData.state}, CEP ${cepData.cep}`,
+        lat: Number(lat.toFixed(7)),
+        lon: Number(lon.toFixed(7)),
+        matchRank: 'neighborhood',
+        source: 'brasilapi_cnefe'
       };
     }
-  } catch (err: any) {
-    // console.warn("Nominatim geocode falhou:", err?.message || err);
-  }
+  } catch (_) {}
   return null;
+}
+
+/**
+ * Geocodificação Reversa (Lat/Lon ➔ Endereço Formatado)
+ */
+async function reverseGeocode(lat: number, lon: number): Promise<string> {
+  // 1. Checa pontos notáveis conhecidos
+  for (const ponto of Object.values(PONTOS_NOTAVEIS_PROJETOS)) {
+    if (Math.abs(ponto.lat - lat) < 0.0008 && Math.abs(ponto.lon - lon) < 0.0008) {
+      return ponto.nomeFormatado;
+    }
+  }
+
+  // 2. Consulta Nominatim Reverse
+  try {
+    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1`;
+    const res = await fetch(url, {
+      headers: { 'User-Agent': 'CordeiroEnergia-EVPlanner/2.0 (eng@cordeiroenergia.com.br)' },
+      signal: AbortSignal.timeout(3500)
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data?.display_name) return data.display_name;
+    }
+  } catch (_) {}
+
+  return `Coordenadas: ${lat.toFixed(6)}, ${lon.toFixed(6)}`;
 }
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const addressParam = searchParams.get('address') || searchParams.get('q');
+  const q = searchParams.get('q') || searchParams.get('address') || '';
+  const isAutocomplete = searchParams.get('autocomplete') === 'true';
+  const isReverse = searchParams.get('reverse') === 'true';
   const latParam = searchParams.get('lat');
   const lonParam = searchParams.get('lon');
-  const isReverse = searchParams.get('reverse') === 'true' || (latParam && lonParam && !addressParam);
 
-  // ─── REVERSE GEOCODING (Lat, Lon -> Endereço) ──────────────────────────────
+  // ─── MODO REVERSO: LAT/LON ➔ ENDEREÇO ─────────────────────────────────────
   if (isReverse && latParam && lonParam) {
     const lat = parseFloat(latParam);
     const lon = parseFloat(lonParam);
-
-    try {
-      const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1&zoom=18`;
-      const res = await fetch(url, {
-        headers: {
-          'User-Agent': 'CordeiroEnergia-EVPlanner/2.0 (eng@cordeiroenergia.com.br)'
-        },
-        signal: AbortSignal.timeout(3500)
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        const road = data.address?.road || data.address?.street;
-        const houseNumber = data.address?.house_number;
-        const suburb = data.address?.suburb || data.address?.neighbourhood || data.address?.district;
-        const city = data.address?.city || data.address?.town || data.address?.municipality || 'Sete Lagoas';
-        const state = data.address?.state || 'Minas Gerais';
-        const cep = data.address?.postcode;
-
-        let cleanAddress = '';
-        if (road) {
-          cleanAddress = `${road}${houseNumber ? `, ${houseNumber}` : ''}${suburb ? ` – ${suburb}` : ''}, ${city} - ${state}`;
-          if (cep) cleanAddress += `, ${cep}`;
-        } else {
-          cleanAddress = data.display_name || `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
-        }
-
-        return NextResponse.json({
-          success: true,
-          type: 'reverse',
-          lat,
-          lon,
-          address: cleanAddress,
-          city,
-          state
-        });
-      }
-    } catch (e) {
-      // Fallback
-    }
-
-    return NextResponse.json({
-      success: true,
-      type: 'reverse_fallback',
-      lat,
-      lon,
-      address: `Ponto Calibrado (${lat.toFixed(6)}, ${lon.toFixed(6)})`
-    });
-  }
-
-  // ─── FORWARD GEOCODING (Endereço -> Lat, Lon) ──────────────────────────────
-  if (!addressParam || addressParam.trim().length === 0) {
-    return NextResponse.json(
-      { success: false, error: 'Parâmetro de endereço "address" é obrigatório' },
-      { status: 400 }
-    );
-  }
-
-  const rawAddress = addressParam.trim();
-
-  // 0. Detecção Imediata de Coordenadas Numéricas inseridas na barra de busca (Google Maps / Decimais)
-  const coordsDiretas = extrairCoordenadasDiretas(rawAddress);
-  if (coordsDiretas) {
-    return NextResponse.json({
-      success: true,
-      source: 'direct_coordinates',
-      precision: 'exact_coordinates',
-      lat: coordsDiretas.lat,
-      lon: coordsDiretas.lon,
-      formattedAddress: `Coordenadas Calibradas: ${coordsDiretas.lat}, ${coordsDiretas.lon}`
-    });
-  }
-
-  // 1. Limpeza de termos ruído comuns em endereços de faturas e concessionárias
-  const cleanedQuery = rawAddress
-    .replace(/[–—]/g, '-')
-    .replace(/([a-zà-ÿ])([A-ZÀ-Ý])/g, '$1 $2')
-    .replace(/(\d+)([a-zA-ZÀ-ÿ])/g, '$1 $2')
-    .replace(/([a-zA-ZÀ-ÿ])(\d+)/g, '$1 $2')
-    .replace(/\bCO\s+AREA\s+RURAL\b/gi, '')
-    .replace(/\bAREA\s+RURAL\b/gi, '')
-    .replace(/\bRD\s+BR\b/gi, 'BR')
-    .replace(/\s+/g, ' ')
-    .trim();
-
-  // 2. Extração de Componentes do Endereço Brasileiro
-  // Ex: "Rua Carlos Antônio Giordani, 1580 - Bairro Henrique Nery, Sete Lagoas - MG"
-  const cidadeDetectadaMatch = cleanedQuery.match(/(Sete Lagoas|Uberlândia|Uberlandia|Montes Claros|Curvelo|Belo Horizonte|Contagem|Betim|Juiz de Fora|São Paulo|Campinas)/i);
-  const cidadeDetectada = cidadeDetectadaMatch ? cidadeDetectadaMatch[1] : '';
-
-  // Remove o sufixo de bairro com traço para o geocodificador não engasgar
-  const querySemBairro = cleanedQuery
-    .replace(/-\s*bairro\s*[^,-]+/gi, '')
-    .replace(/bairro\s*[^,-]+/gi, '')
-    .trim();
-
-  // 3. Nível 1: Photon Komoot (Elasticsearch OSM) — Resiliente, ultra-rápido e tolerante a números e acentos
-  const photonCandidateQueries = [
-    querySemBairro,
-    cleanedQuery,
-    `${cleanedQuery.replace(/,\s*\d+/, '')}` // Sem número predial se falhar
-  ];
-
-  for (const q of photonCandidateQueries) {
-    if (!q || q.length < 4) continue;
-    const resPhoton = await geocodeViaPhoton(q);
-    if (resPhoton) {
+    if (!isNaN(lat) && !isNaN(lon)) {
+      const formatted = await reverseGeocode(lat, lon);
       return NextResponse.json({
         success: true,
-        source: 'photon_osm',
-        precision: 'street',
-        lat: resPhoton.lat,
-        lon: resPhoton.lon,
-        formattedAddress: resPhoton.formattedAddress
+        lat,
+        lon,
+        formattedAddress: formatted
       });
     }
   }
 
-  // 4. Nível 2: Nominatim com Busca Estruturada (Separação Logradouro e Cidade)
-  if (cidadeDetectada) {
-    const logradouroPart = cleanedQuery.split(new RegExp(cidadeDetectada, 'i'))[0].replace(/[-,]+$/, '').trim();
-    if (logradouroPart.length > 5) {
-      const resNominatimStructured = await geocodeViaNominatim('', { street: logradouroPart, city: cidadeDetectada });
-      if (resNominatimStructured) {
-        return NextResponse.json({
-          success: true,
-          source: 'nominatim_structured',
-          precision: 'street',
-          lat: resNominatimStructured.lat,
-          lon: resNominatimStructured.lon,
-          formattedAddress: resNominatimStructured.formattedAddress
-        });
+  if (!q || q.trim().length < 3) {
+    return NextResponse.json({ success: false, suggestions: [], error: 'Query vazia ou muito curta' });
+  }
+
+  const rawAddress = q.trim();
+  const parsed = parseAddressBR(rawAddress);
+
+  // ─── 1. VERIFICAÇÃO DE COORDENADAS DIRETAS OU URL MAPS ────────────────────
+  const direct = parsed.directCoords || extractDirectCoordinates(rawAddress);
+  if (direct) {
+    const directSuggestion: GeocodeSuggestion = {
+      title: `Ponto Geodésico (${direct.lat.toFixed(5)}, ${direct.lon.toFixed(5)})`,
+      subtitle: 'Coordenadas numéricas diretas / GPS',
+      fullAddress: `Localização personalizada: ${direct.lat.toFixed(6)}, ${direct.lon.toFixed(6)}`,
+      lat: direct.lat,
+      lon: direct.lon,
+      matchRank: 'rooftop',
+      source: 'direct_coordinates'
+    };
+
+    if (isAutocomplete) {
+      return NextResponse.json({ success: true, suggestions: [directSuggestion] });
+    }
+    return NextResponse.json({
+      success: true,
+      source: directSuggestion.source,
+      precision: directSuggestion.matchRank,
+      lat: directSuggestion.lat,
+      lon: directSuggestion.lon,
+      formattedAddress: directSuggestion.fullAddress
+    });
+  }
+
+  // ─── 2. VERIFICAÇÃO DE PONTOS NOTÁVEIS DE PROJETO (HOMOLOGADOS) ───────────
+  const normUpper = removeAcentos(rawAddress.toUpperCase());
+  for (const [chave, ponto] of Object.entries(PONTOS_NOTAVEIS_PROJETOS)) {
+    if (normUpper.includes(chave)) {
+      const notableSuggestion: GeocodeSuggestion = {
+        title: ponto.nomeFormatado.split(',')[0],
+        subtitle: ponto.nomeFormatado.split(',').slice(1).join(', ').trim(),
+        fullAddress: ponto.nomeFormatado,
+        lat: ponto.lat,
+        lon: ponto.lon,
+        matchRank: 'rooftop',
+        source: 'projeto_homologado'
+      };
+
+      if (isAutocomplete) {
+        return NextResponse.json({ success: true, suggestions: [notableSuggestion] });
       }
+      return NextResponse.json({
+        success: true,
+        source: notableSuggestion.source,
+        precision: notableSuggestion.matchRank,
+        lat: notableSuggestion.lat,
+        lon: notableSuggestion.lon,
+        formattedAddress: notableSuggestion.fullAddress
+      });
     }
   }
 
-  // 5. Nível 3: Nominatim Livre
-  const resNominatim = await geocodeViaNominatim(querySemBairro);
-  if (resNominatim) {
-    return NextResponse.json({
-      success: true,
-      source: 'nominatim_osm',
-      precision: 'street',
-      lat: resNominatim.lat,
-      lon: resNominatim.lon,
-      formattedAddress: resNominatim.formattedAddress
-    });
-  }
+  // ─── MODO AUTOCOMPLETE: RETORNA LISTA DE SUGESTÕES EM TEMPO REAL ───────────
+  if (isAutocomplete) {
+    const suggestions: GeocodeSuggestion[] = [];
 
-  // 6. Nível 4: Detecção de CEP Brasileiro (BrasilAPI / ViaCEP)
-  const cepMatch = rawAddress.match(/\b\d{5}-?\d{3}\b/);
-  if (cepMatch) {
-    try {
-      const cleanCep = cepMatch[0].replace(/\D/g, '');
-      const resCep = await fetch(`https://brasilapi.com.br/api/cep/v2/${cleanCep}`, {
-        signal: AbortSignal.timeout(3000)
-      });
-      if (resCep.ok) {
-        const cepData = await resCep.json();
-        if (cepData?.location?.coordinates?.latitude && cepData?.location?.coordinates?.longitude) {
-          const lat = parseFloat(cepData.location.coordinates.latitude);
-          const lon = parseFloat(cepData.location.coordinates.longitude);
-          if (!isNaN(lat) && !isNaN(lon)) {
-            return NextResponse.json({
-              success: true,
-              source: 'brasilapi_cep',
-              precision: 'cep_zone',
-              lat: Number(lat.toFixed(7)),
-              lon: Number(lon.toFixed(7)),
-              formattedAddress: `${cepData.street || ''}, ${cepData.neighborhood || ''}, ${cepData.city} - ${cepData.state}, CEP ${cepData.cep}`
-            });
-          }
-        }
+    // Se tiver CEP, busca na BrasilAPI como primeira sugestão
+    if (parsed.postalCode) {
+      const cepClean = parsed.postalCode.replace(/\D/g, '');
+      const cepSug = await queryBrasilAPICEP(cepClean);
+      if (cepSug) suggestions.push(cepSug);
+    }
+
+    // Busca no Photon Komoot com a query sanitizada
+    const cleanQ = cleanStreetQueryForSearch(parsed);
+    const photonResults = await queryPhoton(cleanQ, 5);
+    for (const item of photonResults) {
+      if (!suggestions.some(s => Math.abs(s.lat - item.lat) < 0.0005 && Math.abs(s.lon - item.lon) < 0.0005)) {
+        suggestions.push(item);
       }
-    } catch (_) {}
-  }
+    }
 
-  // 7. Nível 5: Fallback Canônico por Detecção de Pontos Notáveis e Cidade
-  const fallback = buscarFallbackCidade(rawAddress);
-  if (fallback) {
+    // Se ainda não tiver resultados e o usuário digitou rua sem cidade, tenta com a raw
+    if (suggestions.length === 0 && cleanQ !== rawAddress) {
+      const fallbackPhoton = await queryPhoton(rawAddress, 4);
+      suggestions.push(...fallbackPhoton);
+    }
+
     return NextResponse.json({
       success: true,
-      source: 'cidade_canonica_fallback',
-      precision: 'city',
-      lat: fallback.lat,
-      lon: fallback.lon,
-      formattedAddress: `${rawAddress} — Centro de Referência (${fallback.nomeFormatado})`
+      suggestions: suggestions.slice(0, 5)
     });
   }
 
-  // 8. Fallback Geral (Centro de Minas Gerais / Sete Lagoas como referência)
+  // ─── MODO GEOCODIFICAÇÃO PADRÃO (DISPARADA AO SELECIONAR OU CLICAR EM BUSCAR) ───
+  // A) Nível 1: Photon com query limpa
+  const cleanQuery = cleanStreetQueryForSearch(parsed);
+  const photonMatches = await queryPhoton(cleanQuery, 3);
+  if (photonMatches.length > 0) {
+    const best = photonMatches[0];
+    return NextResponse.json({
+      success: true,
+      source: best.source,
+      precision: best.matchRank,
+      lat: best.lat,
+      lon: best.lon,
+      formattedAddress: best.fullAddress
+    });
+  }
+
+  // B) Nível 2: Nominatim estruturado
+  const nominatimMatch = await queryNominatimStructured({
+    street: parsed.fullStreet ? [parsed.fullStreet, parsed.number].filter(Boolean).join(', ') : undefined,
+    city: parsed.city,
+    state: parsed.state,
+    postalcode: parsed.postalCode
+  });
+  if (nominatimMatch) {
+    return NextResponse.json({
+      success: true,
+      source: nominatimMatch.source,
+      precision: nominatimMatch.matchRank,
+      lat: nominatimMatch.lat,
+      lon: nominatimMatch.lon,
+      formattedAddress: nominatimMatch.fullAddress
+    });
+  }
+
+  // C) Nível 3: BrasilAPI com CEP
+  if (parsed.postalCode) {
+    const cepClean = parsed.postalCode.replace(/\D/g, '');
+    const cepMatch = await queryBrasilAPICEP(cepClean);
+    if (cepMatch) {
+      return NextResponse.json({
+        success: true,
+        source: cepMatch.source,
+        precision: cepMatch.matchRank,
+        lat: cepMatch.lat,
+        lon: cepMatch.lon,
+        formattedAddress: cepMatch.fullAddress
+      });
+    }
+  }
+
+  // D) Nível 4: Fallback por cidade detectada
+  for (const [cidade, coords] of Object.entries(CIDADES_CANONICAS)) {
+    if (normUpper.includes(cidade)) {
+      return NextResponse.json({
+        success: true,
+        source: 'cidade_canonica_fallback',
+        precision: 'city',
+        lat: coords.lat,
+        lon: coords.lon,
+        formattedAddress: `${rawAddress} — Referência Central (${coords.nomeFormatado})`
+      });
+    }
+  }
+
+  // E) Fallback Geral Regional (Sete Lagoas / MG)
   const defaultCity = CIDADES_CANONICAS['SETE LAGOAS'];
   return NextResponse.json({
     success: true,
@@ -399,16 +422,17 @@ export async function GET(request: NextRequest) {
     precision: 'regional',
     lat: defaultCity.lat,
     lon: defaultCity.lon,
-    formattedAddress: `${rawAddress} (Centro de Sete Lagoas - MG)`
+    formattedAddress: `${rawAddress} (Centro Regional Sete Lagoas - MG)`
   });
 }
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const address = body.address || body.query;
+    const address = body.address || body.query || body.q;
     const lat = body.lat;
     const lon = body.lon;
+    const autocomplete = body.autocomplete;
 
     const url = new URL(request.url);
     if (lat && lon) {
@@ -417,6 +441,7 @@ export async function POST(request: NextRequest) {
       url.searchParams.set('reverse', 'true');
     } else if (address) {
       url.searchParams.set('address', address);
+      if (autocomplete) url.searchParams.set('autocomplete', 'true');
     }
 
     return GET(new NextRequest(url.toString(), { headers: request.headers }));

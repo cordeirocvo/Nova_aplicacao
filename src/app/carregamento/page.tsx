@@ -1050,6 +1050,11 @@ export default function CoenergyGODashboard() {
     if (updated.clientName !== undefined) setClientName(updated.clientName);
     if (updated.projectName !== undefined) setProjectName(updated.projectName);
     if (updated.utility) setSelectedUtility(updated.utility);
+    if (typeof updated.customLatitude === 'number' && typeof updated.customLongitude === 'number') {
+      setProjectLatitude(updated.customLatitude);
+      setProjectLongitude(updated.customLongitude);
+      setIsManualCoordinatesLocked(true);
+    }
     if (updated.standardCategory) {
       setCurrentStandardCategoryId(updated.standardCategory);
       setCustomHomologatedCategoryId(updated.standardCategory);
@@ -1296,27 +1301,36 @@ export default function CoenergyGODashboard() {
       }
     }
     setClientProjectData(mergedClientData);
-    if (typeof p.latitude === 'number' && typeof p.longitude === 'number' && (p.latitude !== -19.471676 || contextLower.includes('olavo bilac'))) {
-      setProjectLatitude(p.latitude);
-      setProjectLongitude(p.longitude);
-      setIsManualCoordinatesLocked(true);
-    } else if (typeof p.clientProjectData?.customLatitude === 'number' && typeof p.clientProjectData?.customLongitude === 'number') {
-      setProjectLatitude(p.clientProjectData.customLatitude);
-      setProjectLongitude(p.clientProjectData.customLongitude);
-      setIsManualCoordinatesLocked(true);
-    } else if (contextLower.includes('carlos antonio giordani') || contextLower.includes('henrique nery')) {
+    // Isolamento Geodésico Rigoroso: Prioridade absoluta para a cidade do projeto atual
+    if (contextLower.includes('carlos antonio giordani') || contextLower.includes('henrique nery')) {
       setProjectLatitude(-19.4703402);
       setProjectLongitude(-44.2634043);
       setIsManualCoordinatesLocked(true);
     } else if (contextLower.includes('olavo bilac')) {
       setProjectLatitude(-19.471676);
       setProjectLongitude(-44.258735);
+      setIsManualCoordinatesLocked(true);
     } else if (contextLower.includes('sete lagoas')) {
-      setProjectLatitude(-19.4658);
-      setProjectLongitude(-44.2467);
+      if (typeof p.latitude === 'number' && p.latitude < -19.3 && p.latitude > -19.6 && typeof p.longitude === 'number') {
+        setProjectLatitude(p.latitude);
+        setProjectLongitude(p.longitude);
+      } else {
+        setProjectLatitude(-19.4703402);
+        setProjectLongitude(-44.2634043);
+      }
+      setIsManualCoordinatesLocked(true);
     } else if (contextLower.includes('uberlândia') || contextLower.includes('uberlandia')) {
-      setProjectLatitude(typeof p.latitude === 'number' ? p.latitude : -18.9077034);
-      setProjectLongitude(typeof p.longitude === 'number' ? p.longitude : -48.3258897);
+      setProjectLatitude(typeof p.latitude === 'number' && p.latitude > -19.1 ? p.latitude : -18.9077034);
+      setProjectLongitude(typeof p.longitude === 'number' && p.longitude < -47.5 ? p.longitude : -48.3258897);
+      setIsManualCoordinatesLocked(true);
+    } else if (typeof p.clientProjectData?.customLatitude === 'number' && typeof p.clientProjectData?.customLongitude === 'number') {
+      setProjectLatitude(p.clientProjectData.customLatitude);
+      setProjectLongitude(p.clientProjectData.customLongitude);
+      setIsManualCoordinatesLocked(true);
+    } else if (typeof p.latitude === 'number' && typeof p.longitude === 'number') {
+      setProjectLatitude(p.latitude);
+      setProjectLongitude(p.longitude);
+      setIsManualCoordinatesLocked(true);
     } else if (contextLower.includes('montes claros') || contextLower.includes('dangelis') || contextLower.includes('br 251')) {
       setProjectLatitude(typeof p.latitude === 'number' ? p.latitude : -16.657055);
       setProjectLongitude(typeof p.longitude === 'number' ? p.longitude : -43.740725);
@@ -3004,7 +3018,14 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
           {/* 1. Identificação do Cliente, Responsável Técnico e Anexo Inteligente de Fatura */}
           <ClientProjectForm
             data={clientProjectData}
+            currentLat={projectLatitude}
+            currentLon={projectLongitude}
             onChange={handleClientProjectChange}
+            onLocationResolved={(loc) => {
+              setProjectLatitude(loc.lat);
+              setProjectLongitude(loc.lon);
+              setIsManualCoordinatesLocked(true);
+            }}
             availableCategories={Object.keys(availableCategories)}
             onApplyEstimatedLoadToStep1B={(kw) => {
               setManualExistingLoadKW(kw);

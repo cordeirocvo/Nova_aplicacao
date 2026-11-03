@@ -9,19 +9,26 @@ import {
   AlertTriangle, Flame, ShieldAlert, Download, Camera, Image as ImageIcon, Clock, Store, DollarSign
 } from "lucide-react";
 import { ClientProjectData, UtilityId } from "@/lib/coenergygo";
+import AddressAutocompleteInput from "./AddressAutocompleteInput";
 
 interface ClientProjectFormProps {
   data: ClientProjectData;
   onChange: (updated: Partial<ClientProjectData>) => void;
   availableCategories: string[];
   onApplyEstimatedLoadToStep1B?: (kw: number) => void;
+  currentLat?: number;
+  currentLon?: number;
+  onLocationResolved?: (loc: { address: string; lat: number; lon: number }) => void;
 }
 
 export default function ClientProjectForm({
   data,
   onChange,
   availableCategories,
-  onApplyEstimatedLoadToStep1B
+  onApplyEstimatedLoadToStep1B,
+  currentLat,
+  currentLon,
+  onLocationResolved
 }: ClientProjectFormProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
@@ -606,14 +613,25 @@ export default function ClientProjectForm({
             </div>
 
             <div className="sm:col-span-2">
-              <label className="text-slate-600 font-semibold block mb-1">Endereço da Instalação:</label>
-              <input
-                type="text"
+              <label className="text-slate-600 font-semibold block mb-1">
+                Endereço da Instalação / Local do Ponto:
+              </label>
+              <AddressAutocompleteInput
                 value={data.address || ''}
-                onFocus={() => clearIfExample('address', ['Rua, Número, Bairro, Cidade - UF', 'Endereço da Unidade Consumidora'])}
-                onChange={(e) => onChange({ address: e.target.value })}
-                className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 focus:outline-none focus:border-[#E45318]"
-                placeholder="Rua, Número, Bairro, Cidade - UF"
+                currentLat={data.customLatitude || currentLat}
+                currentLon={data.customLongitude || currentLon}
+                placeholder="Rua, Número, Bairro, Cidade - UF (ou digite/cole coordenadas)"
+                onChange={(addr) => onChange({ address: addr })}
+                onSelectLocation={(loc) => {
+                  onChange({
+                    address: loc.address,
+                    customLatitude: loc.lat,
+                    customLongitude: loc.lon
+                  });
+                  if (onLocationResolved) {
+                    onLocationResolved({ address: loc.address, lat: loc.lat, lon: loc.lon });
+                  }
+                }}
               />
             </div>
           </div>

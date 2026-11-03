@@ -708,7 +708,7 @@ export default function ClientProjectForm({
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] text-slate-500 font-semibold flex items-center gap-1.5">
                     <Sparkles className="w-3.5 h-3.5 text-[#E45318]" />
-                    Agente Territorial • Metodologia Business Plan BLEV
+                    Agente Territorial • Metodologia CoenergyGO Intelligence
                   </span>
                   <button
                     type="button"

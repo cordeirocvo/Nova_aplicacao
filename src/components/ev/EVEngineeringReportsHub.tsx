@@ -84,6 +84,8 @@ interface EVEngineeringReportsHubProps {
     dlmSystemType?: 'beny' | 'weg' | 'schneider' | 'abb' | 'generic';
     deficitKW?: number;
     locationDiagnostic?: any;
+    ahpTotalScore?: number;
+    ahpRating?: string;
     existingLoadKW?: number;
     gridLimitKW?: number;
     headroomKW?: number;
@@ -112,7 +114,13 @@ export function EVEngineeringReportsHub({
   const evBaysCount = projectData.evBaysCount || chargingPointsCount;
   const chargersCount = projectData.chargers?.length || 1;
 
-  // Cálculo da Viabilidade Econômico-Financeira & Negócios (Modelo BLEV / CoenergyGO)
+  // Score AHP Unificado (SSOT com Cockpit AHP)
+  const effectiveAhpScore = typeof projectData.ahpTotalScore === 'number' && projectData.ahpTotalScore > 0
+    ? projectData.ahpTotalScore
+    : (projectData.locationDiagnostic?.scoreAHP ? projectData.locationDiagnostic.scoreAHP * 10 : 66.5);
+  const effectiveAhpRating = projectData.ahpRating || (effectiveAhpScore >= 80 ? 'EXCELENTE (GO)' : (effectiveAhpScore >= 65 ? 'MUITO BOM (GO)' : 'GO COM RESSALVAS'));
+
+  // Cálculo da Viabilidade Econômico-Financeira & Negócios (Modelo CoenergyGO / CoenergyGO)
   const financialViability: HubFinancialViabilityResult = calculateHubFinancialViability({
     chargers: (projectData.chargers && projectData.chargers.length > 0)
       ? projectData.chargers.map(c => ({
@@ -177,7 +185,7 @@ export function EVEngineeringReportsHub({
     },
     {
       id: 'viabilidade_negocios',
-      title: '6. Dossiê de Viabilidade & Negócios (BLEV)',
+      title: '6. Dossiê de Viabilidade & Negócios (CoenergyGO)',
       subtitle: 'Estudo executivo com DRE, sensibilidade 4h/6h/9h, CEMIG BT Grupo F e Payback',
       icon: TrendingUp,
       tag: 'Investidores & Diretoria'
@@ -373,7 +381,7 @@ export function EVEngineeringReportsHub({
                             Sumário Executivo & Negócios
                           </span>
                           <span className="text-[10px] text-slate-400 font-mono">
-                            Referência: Metodologia BLEV Educação & Padrão Av. Amazonas
+                            Metodologia CoenergyGO Intelligence • Padrão Cordeiro Energia
                           </span>
                         </div>
                         <span className="text-[10px] text-slate-400 font-bold">
@@ -423,7 +431,7 @@ export function EVEngineeringReportsHub({
                             2. Macro-Diagnóstico Demográfico & Frota de Veículos Elétricos (IBGE 2026)
                           </h4>
                           <span className="text-[10px] font-black text-[#00B356] bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-                            Score AHP: {projectData.locationDiagnostic.scoreAHP} / 10 ({projectData.locationDiagnostic.vereditoGeral})
+                            Score AHP: {effectiveAhpScore.toFixed(1)} / 100 ({effectiveAhpRating})
                           </span>
                         </div>
 
@@ -459,15 +467,33 @@ export function EVEngineeringReportsHub({
                         </div>
 
                         <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 space-y-2.5 text-justify leading-relaxed text-[11px] text-slate-700">
-                          {projectData.locationDiagnostic.resumoExecutivoParagrafos ? (
-                            projectData.locationDiagnostic.resumoExecutivoParagrafos.map((p: string, pIdx: number) => (
+                          {(() => {
+                            // Sanitização contra menção a ociosidade/Idle Fee e ajuste da concorrência
+                            const hasFastCompetitors = (projectData.competitorStationsList || []).some((s: any) => (s.potencia_kw || s.potenciaKW || 0) >= 30 || s.is_dc || s.isDC);
+                            const fastComps = (projectData.competitorStationsList || []).filter((s: any) => (s.potencia_kw || s.potenciaKW || 0) >= 30 || s.is_dc || s.isDC);
+
+                            let paras: string[] = projectData.locationDiagnostic.resumoExecutivoParagrafos 
+                              ? [...projectData.locationDiagnostic.resumoExecutivoParagrafos]
+                              : (projectData.locationDiagnostic.resumoExecutivoTexto || '').split('\n\n');
+
+                            // Filtrar parágrafos que mencionem ociosidade ou idle fee
+                            paras = paras.filter((p: string) => !p.toLowerCase().includes('ociosidade') && !p.toLowerCase().includes('idle fee'));
+
+                            // Se houver concorrentes rápidos reais, garantir que o parágrafo de concorrência não declare falso monopólio
+                            if (hasFastCompetitors && fastComps.length > 0) {
+                              const listaDC = fastComps.map((s: any) => `${s.nome || s.name} (${s.potencia_kw || s.potenciaKW || 60} kW a ${(s.distancia_km || s.distanciaKm || 0).toFixed(1)} km)`).join(', ');
+                              paras = paras.map((p: string) => {
+                                if (p.toLowerCase().includes('monopólio natural') || p.toLowerCase().includes('0 pontos') || p.toLowerCase().includes('exclusivamente com recarga lenta')) {
+                                  return `A varredura de concorrência identifica ${fastComps.length} postos com recarga rápida DC no raio de 3 a 5 km: ${listaDC}. Diante desse cenário competitivo, a implantação do Hub CoenergyGO se consolida estrategicamente com carregador rápido BENY DC de 60 kW com dois conectores CCS2 simultâneos, diferenciando-se pela ancoragem comercial com conveniência 24 horas, recarga em 35 a 45 minutos e alta segurança patrimonial.`;
+                                }
+                                return p;
+                              });
+                            }
+
+                            return paras.map((p: string, pIdx: number) => (
                               <p key={pIdx}>{p}</p>
-                            ))
-                          ) : (
-                            (projectData.locationDiagnostic.resumoExecutivoTexto || 'O ponto comercial apresenta alta atratividade para motoristas de aplicativos e frotistas em trânsito, com tempo de parada alinhado à janela ideal de 35 a 45 minutos.').split('\n\n').map((p: string, pIdx: number) => (
-                              <p key={pIdx}>{p}</p>
-                            ))
-                          )}
+                            ));
+                          })()}
                         </div>
                       </div>
                     )}
@@ -588,15 +614,21 @@ export function EVEngineeringReportsHub({
                             ? 'bg-emerald-100 text-[#00B356] border border-emerald-300'
                             : 'bg-orange-100 text-[#E45318] border border-orange-300'
                         }`}>
-                          {projectData.locationDiagnostic?.concorrencia?.monopolioNaturalDC !== false
-                            ? '✓ Monopólio Natural DC Comprovado'
-                            : 'Mapeamento Competitivo DC Ativo'}
+                          {(Array.isArray(projectData.competitorStationsList) && projectData.competitorStationsList.some((s: any) => (s.potencia_kw || s.potenciaKW || 0) >= 30 || s.is_dc || s.isDC)) || projectData.locationDiagnostic?.concorrencia?.monopolioNaturalDC === false
+                            ? '⚡ Ambiente Competitivo DC Mapeado'
+                            : '✓ Monopólio Natural DC Comprovado'}
                         </span>
                       </div>
 
                       <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 text-justify text-slate-700 text-[11px] leading-relaxed">
-                        {projectData.locationDiagnostic?.concorrencia?.vereditoConcorrencia || 
-                          `A varredura de concorrência mapeou as estações de recarga no raio de 5 km, avaliando potências nominais e operadores locais para posicionamento estratégico do Hub CoenergyGO.`}
+                        {(() => {
+                        const fastCompetitors = (projectData.competitorStationsList || []).filter((s: any) => (s.potencia_kw || s.potenciaKW || 0) >= 30 || s.is_dc || s.isDC);
+                        if (fastCompetitors.length > 0) {
+                          const nomes = fastCompetitors.map((s: any) => `${s.nome || s.name} (${s.potencia_kw || s.potenciaKW || 60} kW DC a ${(s.distancia_km || s.distanciaKm || 0).toFixed(1)} km)`).join(', ');
+                          return `A varredura de concorrência mapeou ${fastCompetitors.length} estação(ões) de recarga rápida DC no raio de 3 a 5 km: ${nomes}. O ponto alvo do Hub CoenergyGO se posiciona de forma soberana com dispensador BENY DC de 60 kW com 2 pistolas CCS2 simultâneas, ancoragem comercial contínua de 24 horas, recarga em 35 a 45 minutos e alta segurança patrimonial.`;
+                        }
+                        return projectData.locationDiagnostic?.concorrencia?.vereditoConcorrencia || `A varredura de concorrência mapeou as estações de recarga no raio de 5 km, avaliando potências nominais e operadores locais para posicionamento estratégico do Hub CoenergyGO.`;
+                      })()}
                       </div>
 
                       {/* Tabela Meticulosa de Eletropostos Mapeados */}
@@ -640,7 +672,7 @@ export function EVEngineeringReportsHub({
                       )}
                     </div>
 
-                    {/* 6. INDICADORES ECONÔMICOS CONSOLIDADOS (SSOT: BOM MODULAR & BLEV) */}
+                    {/* 6. INDICADORES ECONÔMICOS CONSOLIDADOS (SSOT: BOM MODULAR & CoenergyGO) */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-center">
                         <span className="text-[10px] uppercase font-bold text-emerald-800">Investimento Total Consolidado</span>
@@ -659,7 +691,7 @@ export function EVEngineeringReportsHub({
                       <div className="p-4 bg-blue-50 border border-blue-200 rounded-2xl text-center">
                         <span className="text-[10px] uppercase font-bold text-blue-800">Mitigação de CO₂ Estimada</span>
                         <p className="text-xl font-black text-blue-700 mt-1 font-mono">~{(evBaysCount * 6.2).toFixed(1)} ton/ano</p>
-                        <span className="text-[10px] text-blue-600">Sustentabilidade ESG ({evBaysCount} vagas ativas)</span>
+                        <span className="text-[10px] text-blue-600">Sustentabilidade ESG (~0,42 kg CO₂/kWh evitado vs fóssil)</span>
                       </div>
                     </div>
                   </div>
@@ -1141,7 +1173,7 @@ export function EVEngineeringReportsHub({
                   </div>
                 )}
 
-                {/* 6. DOSSIÊ DE VIABILIDADE TÉCNICA, ECONÔMICO-FINANCEIRA & NEGÓCIOS (5 CAPÍTULOS OFICIAIS BLEV) */}
+                {/* 6. DOSSIÊ DE VIABILIDADE TÉCNICA, ECONÔMICO-FINANCEIRA & NEGÓCIOS (5 CAPÍTULOS OFICIAIS CoenergyGO) */}
                 {selectedReport === 'viabilidade_negocios' && (
                   <div className="space-y-6 text-xs text-slate-700">
                     
@@ -1192,7 +1224,7 @@ export function EVEngineeringReportsHub({
                             O presente projeto contempla a implantação e homologação de um Hub Comercial de Recarga Rápida DC com potência agregada de <strong className="text-[#00B356]">{totalPower.toFixed(1)} kW</strong> ({chargingPointsCount} pontos/pistolas de recarga simultâneos atendendo {evBaysCount} vagas exclusivas).
                           </p>
                           <p className="text-slate-400 text-[11px] leading-relaxed">
-                            A modelagem adota a metodologia de inteligência financeira da <strong>BLEV Educação</strong> e o rigor eletrotécnico da <strong>Cordeiro Energia</strong>, combinando alta rentabilidade de fluxo de caixa, segurança jurídica (CNAE 5229-0/99 + Resolução ANEEL 819/2018) e maximização da margem operacional com usina solar própria.
+                            A modelagem adota a metodologia de inteligência financeira da <strong>CoenergyGO Intelligence</strong> e o rigor eletrotécnico da <strong>Cordeiro Energia</strong>, combinando alta rentabilidade de fluxo de caixa, segurança jurídica (CNAE 5229-0/99 + Resolução ANEEL 819/2018) e maximização da margem operacional com usina solar própria.
                           </p>
                         </div>
 
@@ -1201,10 +1233,10 @@ export function EVEngineeringReportsHub({
                           <div className="bg-white/5 border border-white/10 rounded-2xl p-3.5 text-center space-y-1">
                             <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Score do Ponto AHP</span>
                             <div className="text-3xl font-black text-[#00B356]">
-                              {financialViability.locationScore.overallScore} <span className="text-sm font-normal text-slate-400">/ 10.0</span>
+                              {effectiveAhpScore.toFixed(1)} <span className="text-sm font-normal text-slate-400">/ 100</span>
                             </div>
                             <span className="text-[10px] font-bold text-emerald-400 uppercase bg-emerald-950/60 px-2 py-0.5 rounded-full inline-block">
-                              Classificação: {financialViability.locationScore.verdict}
+                              Classificação: {effectiveAhpRating}
                             </span>
                           </div>
 
@@ -1350,7 +1382,7 @@ export function EVEngineeringReportsHub({
                               <strong>Tempo de Permanência Ideal (35 a 45 minutos):</strong> Duração perfeita para recarga rápida DC de 20% a 80% da bateria, maximizando o fluxo de consumo no comércio anexo.
                             </li>
                             <li>
-                              <strong>Sobretaxa de Ociosidade (Idle Fee):</strong> Cobrança compulsória de <strong>R$ {(projectData.idleFeePerMinute !== undefined ? projectData.idleFeePerMinute : 1.50).toFixed(2)}/minuto</strong> após <strong>{projectData.idleFeeGraceMinutes || 15} minutos</strong> de tolerância do término da recarga, garantindo 100% de giro das vagas.
+                              <strong>Rotatividade Operacional Natural:</strong> Janela de atendimento de 35 a 45 minutos da tecnologia DC dual-gun CCS2, garantindo alto giro e conveniência contínua.
                             </li>
                             {projectData.locationDiagnostic?.via && (
                               <li>
@@ -1592,7 +1624,7 @@ export function EVEngineeringReportsHub({
                     </div>
 
                     {/* ══════════════════════════════════════════════════════════════════
-                        CAPÍTULO 5: MODELAGEM FINANCEIRA, FLUXO DE CAIXA E COMODATO (BLEV)
+                        CAPÍTULO 5: MODELAGEM FINANCEIRA, FLUXO DE CAIXA E COMODATO (CoenergyGO)
                     ══════════════════════════════════════════════════════════════════ */}
                     <div className="border border-slate-200 rounded-2xl p-4 space-y-3 bg-white">
                       <div className="flex items-center justify-between border-b pb-2">

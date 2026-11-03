@@ -1264,7 +1264,7 @@ export function formatPaybackMonthsAndYears(paybackMonths: number): string {
 }
 
 /**
- * 3. PROJEÇÃO FINANCEIRA & OPERACIONAL EM 3 CENÁRIOS (CONECTADA AO QUADRO BLEV — FOTOS 01 E 02)
+ * 3. PROJEÇÃO FINANCEIRA & OPERACIONAL EM 3 CENÁRIOS (CONECTADA AO QUADRO CoenergyGO — FOTOS 01 E 02)
  */
 export function calculateScenarioProjections(
   input: LocationInputData,

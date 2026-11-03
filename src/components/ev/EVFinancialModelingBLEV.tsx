@@ -279,7 +279,7 @@ export function EVFinancialModelingBLEV({
     useAutoCapex
   ]);
 
-  // ─── 3. CÁLCULO DOS 3 CENÁRIOS OPERACIONAIS (PADRÃO BLEV / FOTOS 01 & 02) ───
+  // ─── 3. CÁLCULO DOS 3 CENÁRIOS OPERACIONAIS (PADRÃO CoenergyGO / FOTOS 01 & 02) ───
   const financialOptions: FinancialModelingOptions = useMemo(() => ({
     energySourceMode,
     gridCostPerKWh: energyCostPerKWh,
@@ -429,7 +429,7 @@ export function EVFinancialModelingBLEV({
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Projecao_Financeira_BLEV_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute("download", `Projecao_Financeira_CoenergyGO_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -437,7 +437,7 @@ export function EVFinancialModelingBLEV({
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300 font-['Montserrat',sans-serif]">
-      {/* ─── BANNER PRINCIPAL DO PASSO 5: INTEGRAÇÃO SSOT & BRANDING BLEV ──── */}
+      {/* ─── BANNER PRINCIPAL DO PASSO 5: INTEGRAÇÃO SSOT & BRANDING CoenergyGO ──── */}
       <div className="bg-gradient-to-r from-[#0A192F] via-slate-900 to-[#0A192F] border border-slate-700/80 rounded-3xl p-5 md:p-6 shadow-2xl text-white relative overflow-hidden">
         <div className="absolute top-0 right-0 w-80 h-80 bg-[#00B356]/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-80 h-80 bg-[#E45318]/10 rounded-full blur-3xl pointer-events-none" />
@@ -450,7 +450,7 @@ export function EVFinancialModelingBLEV({
                 Passo 5: Viabilidade Econômico-Financeira
               </span>
               <span className="px-3 py-1 rounded-full text-[10px] font-bold text-slate-300 bg-slate-800 border border-slate-700">
-                Padrão BLEV / Carlos Magno • Fotos 01 &amp; 02
+                Metodologia CoenergyGO • Cenários Operacionais
               </span>
               <span className="px-3 py-1 rounded-full text-[10px] font-bold text-amber-300 bg-amber-500/10 border border-amber-500/30 flex items-center gap-1">
                 <CheckCircle2 className="w-3 h-3 text-[#00B356]" />
@@ -661,7 +661,7 @@ export function EVFinancialModelingBLEV({
           </div>
 
           <p className="text-[11px] text-slate-400">
-            Alterne entre energia da concessionária ou geração solar própria para simular a explosão de margem do modelo BLEV.
+            Alterne entre energia da concessionária ou geração solar própria para simular a explosão de margem do modelo CoenergyGO.
           </p>
 
           <div className="grid grid-cols-3 gap-2">
@@ -1010,7 +1010,7 @@ export function EVFinancialModelingBLEV({
         </div>
       </div>
 
-      {/* ─── OS 3 CENÁRIOS OPERACIONAIS (PADRÃO BLEV - FOTOS 01 & 02) ─────────── */}
+      {/* ─── OS 3 CENÁRIOS OPERACIONAIS (PADRÃO CoenergyGO - FOTOS 01 & 02) ─────────── */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-black text-white uppercase tracking-tight flex items-center gap-2">
@@ -1139,7 +1139,7 @@ export function EVFinancialModelingBLEV({
         <div className="flex items-center justify-between flex-wrap gap-2 border-b border-slate-800 pb-2">
           <span className="font-black text-slate-200 uppercase text-xs tracking-wider flex items-center gap-1.5">
             <BookOpen className="w-4 h-4 text-[#00B356]" />
-            Memória de Cálculo &amp; Rastreabilidade das Fórmulas (Padrão BLEV - Fotos 01 &amp; 02):
+            Memória de Cálculo &amp; Rastreabilidade das Fórmulas (Metodologia CoenergyGO):
           </span>
           <span className="text-[10px] font-mono text-slate-400">
             Algoritmo Matemático: <code className="text-emerald-400">calculateScenarioProjections()</code>

@@ -80,7 +80,7 @@ const EVLocationScoringCockpit = dynamic(
   () => import("@/components/ev/EVLocationScoringCockpit"),
   { ssr: false, loading: () => <EVTabLoadingSkeleton label="Carregando Cockpit de Inteligência Locacional & Mapa..." /> }
 );
-const EVFinancialModelingBLEV = dynamic(
+const EVFinancialModelingBLEV = dynamic<any>(
   () => import("@/components/ev/EVFinancialModelingBLEV").then(mod => mod.EVFinancialModelingBLEV),
   { ssr: false, loading: () => <EVTabLoadingSkeleton label="Carregando Modelagem Financeira & Viabilidade..." /> }
 );
@@ -535,7 +535,7 @@ export default function CoenergyGODashboard() {
             const draftBdi = parsedDraft?.globalBdiPercent ?? parsedDraft?.clientProjectData?.globalBdiPercent;
             if (typeof draftBdi === 'number') setBomGlobalBdiPercent(draftBdi);
 
-            // Restauração das premissas financeiras BLEV (Passo 5 / Foto 2)
+            // Restauração das premissas financeiras CoenergyGO (Passo 5 / Foto 2)
             const draftFinancial = parsedDraft?.financialAssumptions || parsedDraft?.clientProjectData;
             if (draftFinancial && typeof draftFinancial === 'object') {
               try {
@@ -660,7 +660,7 @@ export default function CoenergyGODashboard() {
             const draftBdi = parsedDraft?.globalBdiPercent ?? parsedDraft?.clientProjectData?.globalBdiPercent;
             if (typeof draftBdi === 'number') setBomGlobalBdiPercent(draftBdi);
 
-            // Restauração das premissas financeiras BLEV (Passo 5 / Foto 2)
+            // Restauração das premissas financeiras CoenergyGO (Passo 5 / Foto 2)
             const draftFinancial = parsedDraft?.financialAssumptions || parsedDraft?.clientProjectData;
             if (draftFinancial && typeof draftFinancial === 'object') {
               try {
@@ -1559,7 +1559,7 @@ export default function CoenergyGODashboard() {
       localStorage.setItem('coenergygo_bom_custom_items', JSON.stringify(restoredCustomItems));
     } catch (e) {}
 
-    // 9C. Restaurar premissas financeiras da Modelagem BLEV (Passo 5 / Foto 2)
+    // 9C. Restaurar premissas financeiras da Modelagem CoenergyGO (Passo 5 / Foto 2)
     const rawFin = p.financialAssumptions || p.clientProjectData || {};
     if (rawFin.ahpTariffBRL !== undefined || rawFin.ahpEnergyCostBRL !== undefined) {
       try {
@@ -2752,7 +2752,7 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
               }`}
             >
               <DollarSign className="w-4 h-4 text-emerald-300" />
-              <span>Passo 5: Modelagem Financeira & 3 Cenários (BLEV)</span>
+              <span>Passo 5: Modelagem Financeira & 3 Cenários (CoenergyGO)</span>
             </button>
 
             <button
@@ -4953,7 +4953,7 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
         </div>
       )}
 
-      {/* ─── TAB 8: PASSO 5: MODELAGEM FINANCEIRA & 3 CENÁRIOS (PADRÃO BLEV - FOTOS 01 & 02) ─── */}
+      {/* ─── TAB 8: PASSO 5: MODELAGEM FINANCEIRA & 3 CENÁRIOS (PADRÃO CoenergyGO - FOTOS 01 & 02) ─── */}
       {activeTab === 'modelagem_financeira' && (
         <div className="space-y-6 animate-in fade-in duration-200">
           <EVFinancialModelingBLEV
@@ -4991,11 +4991,12 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
             averageSessionMinutesDefault={clientProjectData.ahpSessionMinutes || 35}
             clientProjectData={clientProjectData}
             dlmCapexSavingsBRL={unifiedCalculation.dlmEstimatedSavingsBRL || 0}
-            onSaveFinancialAssumptions={(updatedData) => {
+            onSaveFinancialAssumptions={(updatedData: any) => {
               setClientProjectData(prev => {
                 let hasChanges = false;
-                for (const key of Object.keys(updatedData) as (keyof typeof updatedData)[]) {
-                  if (prev[key] !== updatedData[key]) {
+                const prevAny = prev as any;
+                for (const key of Object.keys(updatedData)) {
+                  if (prevAny[key] !== updatedData[key]) {
                     hasChanges = true;
                     break;
                   }
@@ -5109,7 +5110,9 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
           hasDLM: dlmEnableDLM || dlmResult.isLimitationAccepted || (dlmResult.maxOverloadWithoutDLMKW > 0),
           dlmSystemType: 'beny',
           deficitKW: dlmResult.maxOverloadWithoutDLMKW,
-          locationDiagnostic: clientProjectData.locationDiagnostic
+          locationDiagnostic: clientProjectData.locationDiagnostic,
+          ahpTotalScore: clientProjectData.ahpTotalScore,
+          ahpRating: clientProjectData.ahpRating
         }}
       />
 

@@ -1001,7 +1001,7 @@ export function EVModularBOMTable({
               type="button"
               onClick={onNavigateToFinancialModeling}
               className="flex items-center gap-1.5 px-3.5 py-1.5 bg-gradient-to-r from-emerald-600 via-teal-600 to-[#00B356] hover:from-emerald-500 hover:to-teal-500 text-white rounded-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer shadow-md shadow-emerald-950/40"
-              title="Avançar para Modelagem Financeira & 3 Cenários (Padrão BLEV - Fotos 01 & 02)"
+              title="Avançar para Modelagem Financeira & 3 Cenários (Metodologia CoenergyGO)"
             >
               <DollarSign className="w-3.5 h-3.5" /> Modelagem Financeira (Passo 5) →
             </button>

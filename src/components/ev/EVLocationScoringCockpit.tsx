@@ -3197,7 +3197,7 @@ export default function EVLocationScoringCockpit({
           <div>
             <h4 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
               <DollarSign className="w-4 h-4 text-[#00B356]" />
-              Modelagem Financeira (Padrão BLEV) &amp; Projeção em 3 Cenários (Fotos 01 &amp; 02)
+              Modelagem Financeira (Padrão CoenergyGO) &amp; Projeção em 3 Cenários (Fotos 01 &amp; 02)
             </h4>
             <p className="text-[11px] text-slate-400 mt-0.5">
               Cálculos iniciados com os valores padrão do sistema (<strong className="text-white">{chargerPowerKW} kW</strong>, <strong className="text-emerald-400">{Math.max(1, Math.round(vdm * (fleetDensity / 100))).toLocaleString('pt-BR')} VEs/dia</strong>) e 100% editáveis abaixo (sincronizados com o Passo 1A).

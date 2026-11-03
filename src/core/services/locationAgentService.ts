@@ -269,7 +269,7 @@ export function calculateIdleFeeProjection(
 }
 
 /**
- * 4. Sintetiza o Diagnóstico Territorial Executivo (Estilo Business Plan Av. Amazonas / BLEV)
+ * 4. Sintetiza o Diagnóstico Territorial Executivo (Estilo Business Plan Av. Amazonas / CoenergyGO)
  */
 export function buildLocationExecutiveSummary(params: {
   enderecoFormatado: string;
@@ -324,7 +324,7 @@ export function buildLocationExecutiveSummary(params: {
   const hasCity = normAddr.includes(normCity);
   const displayAddress = hasCity ? cleanAddress : `${cleanAddress}, ${cidade} - ${uf}`;
 
-  // Estrutura executiva em parágrafos justificados (Padrão Av. Amazonas) sem regras de ociosidade
+  // Estrutura executiva em parágrafos justificados (Padrão Executivo) sem regras de ociosidade
   const paragrafos = [
     `O ponto comercial analisado na ${displayAddress} apresenta índice de atratividade excelente para a implantação do Hub Comercial de Recarga Rápida DC da ${clienteContratante}.`,
     `Localizado em via de perfil ${via.tipoVia.toUpperCase()} com fluxo contínuo e ancorado em ${ancoraComercialTipo} com estacionamento privativo cedido pelo ${proprietarioImovel}, o ativo atende com perfeição à janela ideal de conveniência de 35 a 45 minutos.`,

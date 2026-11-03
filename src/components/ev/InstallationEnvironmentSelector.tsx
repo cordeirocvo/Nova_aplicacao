@@ -454,7 +454,7 @@ export default function InstallationEnvironmentSelector({
             </label>
           </div>
 
-          {/* ─── PAINEL DE MODELAGEM FINANCEIRA E BUSINESS PLAN (BLEV / COENERGYGO — FOTO 01 CONECTADO) ─── */}
+          {/* ─── PAINEL DE MODELAGEM FINANCEIRA E BUSINESS PLAN (CoenergyGO / COENERGYGO — FOTO 01 CONECTADO) ─── */}
           <div className="p-5 rounded-2xl bg-[#0A192F] text-white space-y-4 border border-slate-800 shadow-md">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
               <div className="flex items-center gap-2.5">
@@ -463,7 +463,7 @@ export default function InstallationEnvironmentSelector({
                 </span>
                 <div>
                   <h4 className="text-sm font-bold text-white flex items-center gap-2">
-                    Modelagem Financeira &amp; Viabilidade de Negócios (Padrão BLEV • Conectado ao Payback)
+                    Modelagem Financeira &amp; Viabilidade de Negócios (Padrão CoenergyGO • Conectado ao Payback)
                   </h4>
                   <p className="text-[11px] text-slate-400">
                     Mantém os valores iniciais adotados pelo sistema e alimenta em tempo real o Lucro Líquido e o Payback no Passo 1B.

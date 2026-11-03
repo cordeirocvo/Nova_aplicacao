@@ -292,7 +292,7 @@ export interface CommercialHubOperationalData {
   hasAutonomousPayment: boolean; // Totem ou aplicativo com tarifação integrada
   gridSupplyVoltage?: 220 | 380; // Tensão de fornecimento local da rede (ex: 220V CEMIG ou 380V)
 
-  // ─── PARÂMETROS DE NEGÓCIO & VIABILIDADE FINANCEIRA (MODELO BLEV / COENERGYGO) ───
+  // ─── PARÂMETROS DE NEGÓCIO & VIABILIDADE FINANCEIRA (MODELO CoenergyGO / COENERGYGO) ───
   sellingPricePerKWh?: number; // Preço de venda ao usuário final (R$/kWh, ex: R$ 2,00)
   gridEnergyCostPerKWh?: number; // Custo de energia concessionária (TUSD + TE + Impostos, ex: R$ 1,00)
   solarEnergyCostPerKWh?: number; // Custo de energia usina solar própria GD / Mercado Livre (ex: R$ 0,50)

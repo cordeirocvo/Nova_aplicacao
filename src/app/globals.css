@@ -40,3 +40,74 @@ body:has([data-tv="true"]),
   color: #FFFFFF !important;
 }
 
+
+
+/* =========================================================================
+   ESTILOS DE IMPRESSÃO PROFISSIONAL A4 (PADRÃO CORDEIRO ENERGIA / COENERGYGO)
+   ========================================================================= */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 6mm 8mm;
+  }
+
+  html, body {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    min-height: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Oculta todo o conteúdo fora da folha A4 oficial */
+  body * {
+    visibility: hidden;
+  }
+
+  /* Torna estritamente visível a folha A4 e seus elementos filhos */
+  #printable-report-sheet,
+  #printable-report-sheet * {
+    visibility: visible !important;
+  }
+
+  /* Posiciona a folha no topo exato da página A4 impressa sem margens pretas */
+  #printable-report-sheet {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+    overflow: visible !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  /* Oculta modais, cabeçalhos de controle, sidebars e botões de navegação */
+  #coenergygo-reports-hub-modal,
+  #coenergygo-reports-hub-modal > div {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  #coenergygo-reports-header,
+  #coenergygo-reports-sidebar,
+  .no-print,
+  button {
+    display: none !important;
+    visibility: hidden !important;
+  }
+}

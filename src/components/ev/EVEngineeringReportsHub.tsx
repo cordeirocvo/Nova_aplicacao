@@ -179,15 +179,35 @@ export function EVEngineeringReportsHub({
   ];
 
   const handlePrint = () => {
+    const originalTitle = document.title;
+    const reportTitles: Record<ReportType, string> = {
+      executivo: 'Cordeiro_Energia_Sumario_Executivo_Carregador_Sete_Lagoas_Coenergy',
+      memorial_descritivo: 'Cordeiro_Energia_Memorial_Descritivo_Carregador_Sete_Lagoas_Coenergy',
+      memorial_calculo: 'Cordeiro_Energia_Memorial_Calculo_Eletrotecnico_Carregador_Sete_Lagoas_Coenergy',
+      caderno_obra: 'Cordeiro_Energia_Caderno_Encargos_Obra_Carregador_Sete_Lagoas_Coenergy',
+      comissionamento: 'Cordeiro_Energia_Protocolo_Comissionamento_Carregador_Sete_Lagoas_Coenergy',
+      viabilidade_negocios: 'Cordeiro_Energia_Estudo_Viabilidade_Financeira_Carregador_Sete_Lagoas_Coenergy',
+    };
+
+    const newTitle = reportTitles[selectedReport] || 'Cordeiro_Energia_Memorial_Calculo_Sete_Lagoas_Coenergy';
+    document.title = newTitle;
+
+    const cleanup = () => {
+      document.title = originalTitle;
+      window.removeEventListener('afterprint', cleanup);
+    };
+
+    window.addEventListener('afterprint', cleanup);
     window.print();
+    setTimeout(cleanup, 2000);
   };
 
   return (
-    <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-2 sm:p-4 transition-all">
+    <div id="coenergygo-reports-hub-modal" className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-2 sm:p-4 transition-all">
       <div className="w-full max-w-6xl bg-white text-slate-800 rounded-3xl shadow-2xl flex flex-col max-h-[95vh] overflow-hidden border border-slate-200">
         
         {/* ─── TOPO DE AÇÕES & IDENTIDADE VISUAL CORDEIRO ENERGIA ─── */}
-        <div className="bg-[#0A192F] text-white p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4 border-b border-slate-800">
+        <div id="coenergygo-reports-header" className="bg-[#0A192F] text-white p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4 border-b border-slate-800">
           <div className="flex items-center gap-3">
             <div className="bg-white p-1.5 rounded-xl">
               <img src="/logo.png" alt="Cordeiro Energia" className="h-7 object-contain" />
@@ -229,7 +249,7 @@ export function EVEngineeringReportsHub({
         <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
           
           {/* Menu Lateral de Seleção dos 5 Relatórios */}
-          <div className="w-full md:w-80 bg-slate-50 border-r border-slate-200 p-4 overflow-y-auto space-y-2">
+          <div id="coenergygo-reports-sidebar" className="w-full md:w-80 bg-slate-50 border-r border-slate-200 p-4 overflow-y-auto space-y-2">
             <div className="text-[11px] font-black uppercase tracking-wider text-slate-400 mb-3 px-1">
               Selecione o Relatório Desejado:
             </div>
@@ -280,7 +300,7 @@ export function EVEngineeringReportsHub({
 
           {/* Área de Visualização do Documento (Simulação A4 Limpa e Pronta para Impressão) */}
           <div className="flex-1 bg-slate-200 p-4 sm:p-6 overflow-y-auto print:p-0 print:bg-white">
-            <div className="max-w-[210mm] mx-auto bg-white p-8 sm:p-12 shadow-xl print:shadow-none border border-slate-200 print:border-none min-h-[297mm] flex flex-col justify-between font-['Montserrat',sans-serif]">
+            <div id="printable-report-sheet" className="max-w-[210mm] mx-auto bg-white p-8 sm:p-12 shadow-xl print:shadow-none border border-slate-200 print:border-none min-h-[297mm] flex flex-col justify-between font-['Montserrat',sans-serif] print:p-0 print:m-0 print:border-none print:shadow-none">
               
               {/* CABEÇALHO DO LAUDO (IDENTIDADE CORDEIRO ENERGIA) */}
               <div>
@@ -296,6 +316,11 @@ export function EVEngineeringReportsHub({
                     </h1>
                     <p className="text-xs text-slate-500 font-medium mt-0.5">
                       Projeto: <strong>{projectData.projectName}</strong> • Cliente: <strong>{projectData.clientName}</strong>
+                      {projectData.propertyOwner && (
+                        <span className="ml-1 text-slate-600 font-normal">
+                          (Cedente: <strong>{projectData.propertyOwner}</strong>)
+                        </span>
+                      )}
                     </p>
                   </div>
                   <div className="text-right">
@@ -583,30 +608,55 @@ export function EVEngineeringReportsHub({
                             <td className="p-2">25 m</td>
                             <td className="p-2">185 A</td>
                             <td className="p-2 font-bold text-[#E45318]">200A CM</td>
-                            <td className="p-2">95 mm² Cu</td>
+                            <td className="p-2">95 mm² Cu <span className="text-[10px] text-slate-500 font-sans block sm:inline">(ou 120 mm² Al)</span></td>
                             <td className="p-2">Duto 2.1/2"</td>
                             <td className="p-2 text-right text-emerald-600 font-bold">0.82%</td>
                           </tr>
-                          {projectData.hasTransformer && (
+                          {(projectData.hasTransformer || totalPower >= 40) && (
+                            <>
+                              <tr>
+                                <td className="p-2 font-bold font-sans">Trecho 2 (QGBT ➔ Trafo Dyn1)</td>
+                                <td className="p-2">10 m</td>
+                                <td className="p-2">135 A</td>
+                                <td className="p-2 font-bold text-[#E45318]">150A CM</td>
+                                <td className="p-2">70 mm² Cu</td>
+                                <td className="p-2">Duto 2"</td>
+                                <td className="p-2 text-right text-emerald-600 font-bold">0.45%</td>
+                              </tr>
+                              <tr>
+                                <td className="p-2 font-bold font-sans">Trecho 3 (Trafo Dyn1 ➔ QDC-VE)</td>
+                                <td className="p-2">15 m</td>
+                                <td className="p-2">91 A</td>
+                                <td className="p-2 font-bold text-[#E45318]">125A CM</td>
+                                <td className="p-2">35 mm² Cu</td>
+                                <td className="p-2">Duto 2"</td>
+                                <td className="p-2 text-right text-emerald-600 font-bold">0.35%</td>
+                              </tr>
+                              <tr>
+                                <td className="p-2 font-bold font-sans">Trecho 4 (QDC-VE ➔ Carregador DC 60 kW)</td>
+                                <td className="p-2">15 m</td>
+                                <td className="p-2">
+                                  <span>91 A total</span>
+                                  <span className="text-[10px] text-slate-500 font-sans block">45.5 A/conector (2x CCS2)</span>
+                                </td>
+                                <td className="p-2 font-bold text-[#E45318]">100A CM</td>
+                                <td className="p-2">25/35 mm² Cu</td>
+                                <td className="p-2">Duto 2"</td>
+                                <td className="p-2 text-right text-emerald-600 font-bold">0.40%</td>
+                              </tr>
+                            </>
+                          )}
+                          {!projectData.hasTransformer && totalPower < 40 && (
                             <tr>
-                              <td className="p-2 font-bold font-sans">Trecho 2 (QGBT ➔ Trafo Dyn1)</td>
-                              <td className="p-2">10 m</td>
-                              <td className="p-2">140 A</td>
-                              <td className="p-2 font-bold text-amber-600">150A CM</td>
-                              <td className="p-2">70 mm² Cu</td>
-                              <td className="p-2">Duto 2"</td>
-                              <td className="p-2 text-right text-emerald-600 font-bold">0.45%</td>
+                              <td className="p-2 font-bold font-sans">Trecho Terminal (Alimentador VE)</td>
+                              <td className="p-2">15 m</td>
+                              <td className="p-2">32 A</td>
+                              <td className="p-2 font-bold text-slate-900">40A DIN</td>
+                              <td className="p-2">6.0 mm² Cu</td>
+                              <td className="p-2">Duto 1"</td>
+                              <td className="p-2 text-right text-emerald-600 font-bold">1.12%</td>
                             </tr>
                           )}
-                          <tr>
-                            <td className="p-2 font-bold font-sans">Trecho Terminal (Alimentador VE)</td>
-                            <td className="p-2">15 m</td>
-                            <td className="p-2">32 A</td>
-                            <td className="p-2 font-bold text-slate-900">40A DIN</td>
-                            <td className="p-2">6.0 mm² Cu</td>
-                            <td className="p-2">Duto 1"</td>
-                            <td className="p-2 text-right text-emerald-600 font-bold">1.12%</td>
-                          </tr>
                         </tbody>
                       </table>
                     </div>

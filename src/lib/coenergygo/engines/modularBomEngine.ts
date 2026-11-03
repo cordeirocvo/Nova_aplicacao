@@ -416,7 +416,8 @@ function generateConduitItem({
   conduitQuantity?: number;
   pricingCatalog?: any;
 }): ModularBOMItem {
-  const cleanInches = conduitInches.replace('/', '_').replace('"', '');
+  const safeInches = conduitInches || `${Math.max(1, Math.round((conduitDiameterMM || 75) / 25.4))}"`;
+  const cleanInches = safeInches.replace('/', '_').replace(/"/g, '');
   const totalMeters = Math.ceil(distanceTotalM * Math.max(1, conduitQuantity));
   const resConduit = resolvePrice(
     `DUTO-PEAD-${cleanInches}`,

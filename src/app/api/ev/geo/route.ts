@@ -491,6 +491,12 @@ export async function GET(request: NextRequest) {
   return NextResponse.json(payload);
 }
 
+function getStatusMarkerColor(status?: string): string {
+  if (status === 'Disponível') return '#00B356';
+  if (status === 'Ocupado') return '#F59E0B';
+  return '#EF4444';
+}
+
 /**
  * Converte a lista de estações e o ponto alvo no padrão RFC 7946 GeoJSON FeatureCollection
  */
@@ -516,7 +522,7 @@ function converterParaGeoJSON(estacoes: any[], targetLat: number, targetLon: num
 
   // Estações Concorrentes
   for (const st of estacoes) {
-    const color = st.status === 'Disponível' ? '#00B356' : st.status === 'Ocupado' ? '#F59E0B' : '#EF4444';
+    const color = getStatusMarkerColor(st.status);
     features.push({
       type: 'Feature',
       geometry: {

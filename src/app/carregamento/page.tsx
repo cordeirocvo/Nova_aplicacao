@@ -1274,10 +1274,28 @@ export default function CoenergyGODashboard() {
       mergedClientData.energiaCompensadaKWh = undefined;
     }
 
+        const contextLower = `${cleanAddress} ${cleanName}`.toLowerCase();
+    if (contextLower.includes('carlos antonio giordani') || contextLower.includes('henrique nery') || (isSeteLagoas && (!rawClientData.clientName || rawClientData.clientName === 'Cliente Particular'))) {
+      if (!mergedClientData.clientName || mergedClientData.clientName === 'Cliente Particular') {
+        mergedClientData.clientName = 'Coenergy';
+      }
+      if (!mergedClientData.propertyOwner) {
+        mergedClientData.propertyOwner = 'Sr. Saint Clair';
+      }
+      if (!mergedClientData.commercialAnchorType) {
+        mergedClientData.commercialAnchorType = 'Galeria de lojas aberta 24 horas';
+      }
+      if (!mergedClientData.targetPublic) {
+        mergedClientData.targetPublic = 'Motoristas de aplicativo (Uber/99), clientes locais e viajantes';
+      }
+      if (mergedClientData.idleFeePerMinute === undefined) {
+        mergedClientData.idleFeePerMinute = 1.50;
+      }
+      if (mergedClientData.idleFeeGraceMinutes === undefined) {
+        mergedClientData.idleFeeGraceMinutes = 15;
+      }
+    }
     setClientProjectData(mergedClientData);
-
-    // 3. Sincronizar Coordenadas Geodésicas imediatamente para o projeto carregado (com prioridade para coordenadas salvas)
-    const contextLower = `${cleanAddress} ${cleanName}`.toLowerCase();
     if (typeof p.latitude === 'number' && typeof p.longitude === 'number' && (p.latitude !== -19.471676 || contextLower.includes('olavo bilac'))) {
       setProjectLatitude(p.latitude);
       setProjectLongitude(p.longitude);
@@ -4935,8 +4953,17 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
         isOpen={showEngineeringReportsHubModal}
         onClose={() => setShowEngineeringReportsHubModal(false)}
         projectData={{
-          projectName: clientProjectData.projectName || 'Projeto de Eletromobilidade CoenergyGO',
-          clientName: clientProjectData.clientName || 'Cliente Cordeiro Energia',
+          projectName: clientProjectData.projectName || 'Hub CoenergyGO Sete Lagoas',
+          clientName: clientProjectData.clientName || 'Coenergy',
+          propertyOwner: clientProjectData.propertyOwner || 'Sr. Saint Clair',
+          commercialAnchorType: clientProjectData.commercialAnchorType || 'Galeria de lojas aberta 24 horas',
+          targetPublic: clientProjectData.targetPublic || 'Motoristas de aplicativo (Uber/99), clientes locais e viajantes',
+          idleFeePerMinute: clientProjectData.idleFeePerMinute !== undefined ? clientProjectData.idleFeePerMinute : 1.50,
+          idleFeeGraceMinutes: clientProjectData.idleFeeGraceMinutes !== undefined ? clientProjectData.idleFeeGraceMinutes : 15,
+          facadePhotoUrl: clientProjectData.facadePhotoUrl,
+          onUpdateFacadePhoto: (url) => {
+            handleClientProjectChange({ facadePhotoUrl: url });
+          },
           technicalResponsible: clientProjectData.technicalResponsible || 'Eng. Eletricista Responsável',
           creaCft: clientProjectData.creaCft || 'CREA-MG 148293/D',
           utility: clientProjectData.utility || selectedUtility || 'CEMIG Distribuição',

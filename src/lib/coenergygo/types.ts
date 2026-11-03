@@ -119,6 +119,12 @@ export interface ClientProjectData {
   clientName: string;
   clientPhone?: string;
   clientEmail?: string;
+  propertyOwner?: string; // Cedente / Proprietário do Imóvel (ex: Sr. Saint Clair)
+  commercialAnchorType?: string; // Perfil de Ancoragem Comercial (ex: Galeria de Lojas 24h)
+  targetPublic?: string; // Público-Alvo Principal (ex: Motoristas de Aplicativo Uber/99, Comércio Local, Viajantes)
+  idleFeePerMinute?: number; // Sobretaxa de ociosidade após a recarga em R$/min (ex: 1.50)
+  idleFeeGraceMinutes?: number; // Minutos de tolerância antes do início da sobretaxa de ociosidade (ex: 15)
+  facadePhotoUrl?: string; // Foto da fachada do estacionamento / imóvel para o cabeçalho executivo
   address?: string;
   customLatitude?: number;
   customLongitude?: number;

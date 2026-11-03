@@ -6,7 +6,7 @@ import {
   Upload, FileText, CheckCircle2, AlertCircle, 
   Loader2, Sparkles, Shield, Eye, Trash2, HelpCircle,
   Sun, BarChart3, TrendingUp, ArrowRight,
-  AlertTriangle, Flame, ShieldAlert, Download
+  AlertTriangle, Flame, ShieldAlert, Download, Camera, Image as ImageIcon, Clock, Store, DollarSign
 } from "lucide-react";
 import { ClientProjectData, UtilityId } from "@/lib/coenergygo";
 
@@ -535,15 +535,49 @@ export default function ClientProjectForm({
               />
             </div>
 
-            <div className="sm:col-span-2">
-              <label className="text-slate-600 font-semibold block mb-1">Nome / Razão Social do Cliente:</label>
+            <div>
+              <label className="text-slate-600 font-semibold block mb-1">Nome / Razão Social do Cliente (Operadora):</label>
               <input
                 type="text"
                 value={data.clientName}
                 onFocus={() => clearIfExample('clientName', ['Cliente Particular', 'Cliente CEMIG', 'Cliente Informado na Fatura', 'Cliente Geral'])}
                 onChange={(e) => onChange({ clientName: e.target.value })}
                 className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#E45318]"
-                placeholder="Nome do cliente ou empresa"
+                placeholder="Ex: Coenergy"
+              />
+            </div>
+
+            <div>
+              <label className="text-slate-600 font-semibold block mb-1">Proprietário / Cedente do Imóvel:</label>
+              <input
+                type="text"
+                value={data.propertyOwner || ''}
+                onFocus={() => clearIfExample('propertyOwner', ['Proprietário do Imóvel'])}
+                onChange={(e) => onChange({ propertyOwner: e.target.value })}
+                className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#E45318]"
+                placeholder="Ex: Sr. Saint Clair (Comodato do Estacionamento)"
+              />
+            </div>
+
+            <div>
+              <label className="text-slate-600 font-semibold block mb-1">Ancoragem Comercial / Conveniência:</label>
+              <input
+                type="text"
+                value={data.commercialAnchorType || ''}
+                onChange={(e) => onChange({ commercialAnchorType: e.target.value })}
+                className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 focus:outline-none focus:border-[#E45318]"
+                placeholder="Ex: Galeria de lojas 24 horas"
+              />
+            </div>
+
+            <div>
+              <label className="text-slate-600 font-semibold block mb-1">Público-Alvo Principal:</label>
+              <input
+                type="text"
+                value={data.targetPublic || ''}
+                onChange={(e) => onChange({ targetPublic: e.target.value })}
+                className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 focus:outline-none focus:border-[#E45318]"
+                placeholder="Ex: Uber/99, clientes locais e viajantes"
               />
             </div>
 
@@ -1014,6 +1048,99 @@ export default function ClientProjectForm({
             <label htmlFor="hasPcdAccessibleBay" className="text-xs text-slate-700 font-medium cursor-pointer leading-tight">
               <strong>Vaga Reservada PCD Inclusiva (NBR 9050):</strong> Incluir sinalização horizontal com faixa de transferência de 1,20m e altura do conector adaptada (0,80m a 1,20m do solo).
             </label>
+          </div>
+        </div>
+
+        {/* Sobretaxa de Ociosidade (Idle Fee) & Foto da Fachada */}
+        <div className="pt-3 border-t border-slate-100">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
+            <div>
+              <label className="text-slate-600 font-semibold block mb-1 flex items-center gap-1.5">
+                <DollarSign className="w-3.5 h-3.5 text-[#E45318]" />
+                <span>Sobretaxa de Ociosidade (Idle Fee):</span>
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-2 text-slate-400 font-bold text-xs">R$</span>
+                <input
+                  type="number"
+                  step="0.10"
+                  min="0"
+                  value={data.idleFeePerMinute !== undefined ? data.idleFeePerMinute : 1.50}
+                  onChange={(e) => onChange({ idleFeePerMinute: e.target.value === '' ? undefined : Number(e.target.value) })}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl pl-9 pr-14 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#E45318]"
+                  placeholder="1.50"
+                />
+                <span className="absolute right-3 top-2 text-slate-400 text-xs">/min</span>
+              </div>
+              <span className="text-[10px] text-slate-400 mt-0.5 block">
+                Tarifa cobrada por minuto de permanência indevida
+              </span>
+            </div>
+
+            <div>
+              <label className="text-slate-600 font-semibold block mb-1 flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-blue-600" />
+                <span>Tolerância após Fim da Recarga:</span>
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  min="0"
+                  value={data.idleFeeGraceMinutes !== undefined ? data.idleFeeGraceMinutes : 15}
+                  onChange={(e) => onChange({ idleFeeGraceMinutes: e.target.value === '' ? undefined : Number(e.target.value) })}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 pr-14 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#E45318]"
+                  placeholder="15"
+                />
+                <span className="absolute right-3 top-2 text-slate-400 text-xs">minutos</span>
+              </div>
+              <span className="text-[10px] text-slate-400 mt-0.5 block">
+                Prazo livre para o motorista liberar a vaga
+              </span>
+            </div>
+
+            <div className="sm:col-span-2 lg:col-span-1">
+              <label className="text-slate-600 font-semibold block mb-1 flex items-center gap-1.5">
+                <Camera className="w-3.5 h-3.5 text-[#00B356]" />
+                <span>Foto da Fachada / Estacionamento:</span>
+              </label>
+              {data.facadePhotoUrl ? (
+                <div className="flex items-center gap-3 p-1.5 bg-slate-50 border border-slate-200 rounded-xl">
+                  <img src={data.facadePhotoUrl} alt="Fachada" className="w-12 h-10 object-cover rounded-lg border" />
+                  <div className="flex-1 min-w-0">
+                    <span className="text-[10px] font-bold text-slate-700 block truncate">Foto Anexada</span>
+                    <button
+                      type="button"
+                      onClick={() => onChange({ facadePhotoUrl: undefined })}
+                      className="text-[10px] text-rose-600 hover:underline font-semibold"
+                    >
+                      Remover foto
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <label className="border-2 border-dashed border-slate-300 hover:border-[#E45318] rounded-xl p-2 flex items-center justify-center gap-2 cursor-pointer transition-colors bg-slate-50/50">
+                  <ImageIcon className="w-4 h-4 text-slate-400" />
+                  <span className="text-[11px] text-slate-600 font-medium">Anexar foto frontal (ou deixar p/ depois)</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const reader = new FileReader();
+                      reader.onload = (ev) => {
+                        onChange({ facadePhotoUrl: ev.target?.result as string });
+                      };
+                      reader.readAsDataURL(file);
+                    }}
+                  />
+                </label>
+              )}
+              <span className="text-[10px] text-slate-400 mt-0.5 block">
+                Estampa o cabeçalho executivo do Dossiê
+              </span>
+            </div>
           </div>
         </div>
       </div>

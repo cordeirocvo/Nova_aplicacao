@@ -379,6 +379,7 @@ export default function EVLocationScoringCockpit({
   const [customCompetitors, setCustomCompetitors] = useState<CompetitorStationFeature[]>(savedCustomCompetitors || []);
   const [manualStationName, setManualStationName] = useState<string>('');
   const [manualStationAddress, setManualStationAddress] = useState<string>('');
+  const [manualStationNotes, setManualStationNotes] = useState<string>('');
   const [manualStationPower, setManualStationPower] = useState<number>(60);
   const [isAddingManualStation, setIsAddingManualStation] = useState<boolean>(false);
 
@@ -1052,7 +1053,8 @@ export default function EVLocationScoringCockpit({
         status: 'Disponível',
         conectores: isDC ? ['CCS2', 'CHAdeMO'] : ['Tipo 2'],
         isCalibrated: isCalibrated,
-        metodo_posicionamento: metodo
+        metodo_posicionamento: metodo,
+        observacao: manualStationNotes.trim() || undefined
       };
 
       const updatedCompetitors = [newStation, ...customCompetitors];
@@ -1064,6 +1066,7 @@ export default function EVLocationScoringCockpit({
 
       setManualStationName('');
       setManualStationAddress('');
+      setManualStationNotes('');
     } catch (e: any) {
       alert("Erro ao adicionar eletroposto: " + (e?.message || "Falha na localização"));
     } finally {
@@ -2975,19 +2978,19 @@ export default function EVLocationScoringCockpit({
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 pt-0.5">
-            <div className="sm:col-span-4">
+            <div className="sm:col-span-3">
               <input
                 type="text"
-                placeholder="Nome do Posto (Ex: Posto Espigão ou Posto Tem Tem)"
+                placeholder="Nome do Posto (Ex: Posto Espigão)"
                 value={manualStationName}
                 onChange={(e) => setManualStationName(e.target.value)}
                 className="w-full bg-slate-950/80 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-purple-400"
               />
             </div>
-            <div className="sm:col-span-5">
+            <div className="sm:col-span-3">
               <input
                 type="text"
-                placeholder="Endereço (Ex: Av. Imbaúbas, 1676) OU Coordenadas (Ex: -18.9104592, -48.3037299)"
+                placeholder="Endereço OU Coordenadas (-18.9104, -48.3037)"
                 value={manualStationAddress}
                 onChange={(e) => setManualStationAddress(e.target.value)}
                 onKeyDown={(e) => {
@@ -2999,13 +3002,30 @@ export default function EVLocationScoringCockpit({
                 className="w-full bg-slate-950/80 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-purple-400 font-mono"
               />
             </div>
+            <div className="sm:col-span-3">
+              <input
+                type="text"
+                placeholder="Observação (Ex: restrito a hóspedes, 24h)"
+                value={manualStationNotes}
+                onChange={(e) => setManualStationNotes(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAddManualCompetitor();
+                  }
+                }}
+                className="w-full bg-slate-950/80 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-purple-400"
+              />
+            </div>
             <div className="sm:col-span-1">
               <select
                 value={manualStationPower}
                 onChange={(e) => setManualStationPower(Number(e.target.value))}
-                className="w-full bg-slate-950/80 border border-slate-700/80 rounded-xl px-2 py-2 text-xs text-amber-400 font-bold focus:outline-none focus:border-purple-400"
+                className="w-full bg-slate-950/80 border border-slate-700/80 rounded-xl px-1.5 py-2 text-xs text-amber-400 font-bold focus:outline-none focus:border-purple-400"
                 title="Potência do Carregador Concorrente"
               >
+                <option value="7.4">7,4 kW (AC)</option>
+                <option value="11">11 kW (AC)</option>
                 <option value="22">22 kW (AC)</option>
                 <option value="40">40 kW (DC)</option>
                 <option value="50">50 kW (DC)</option>
@@ -3104,6 +3124,11 @@ export default function EVLocationScoringCockpit({
                                 </span>
                               )}
                             </div>
+                            {st.observacao && (
+                              <span className="text-[10px] text-purple-300 font-medium block truncate max-w-xs italic">
+                                📝 Obs: {st.observacao}
+                              </span>
+                            )}
                             {st.endereco && (
                               <span className="text-[10px] text-slate-500 font-normal block truncate max-w-xs">
                                 {st.endereco}
@@ -4195,7 +4220,12 @@ ORDER BY distancia_km ASC;`}
                       </div>
                     </td>
                     <td className="py-2.5 px-3 text-slate-300 font-sans text-[10px]">
-                      {st.endereco ? `${st.endereco}${st.cidade ? ` (${st.cidade})` : ''}` : (st.cidade || 'Região Mapeada')}
+                      <div>{st.endereco ? `${st.endereco}${st.cidade ? ` (${st.cidade})` : ''}` : (st.cidade || 'Região Mapeada')}</div>
+                      {st.observacao && (
+                        <div className="text-[9.5px] text-purple-300 font-medium italic mt-0.5">
+                          📝 Obs: {st.observacao}
+                        </div>
+                      )}
                     </td>
                     <td className="py-2.5 px-3 text-center text-slate-400 text-[10px]">
                       {Number(st.latitude).toFixed(5)}, {Number(st.longitude).toFixed(5)}

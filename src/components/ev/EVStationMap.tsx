@@ -24,6 +24,7 @@ export interface StationGeoItem {
   distancia_rota_km?: number;
   origem?: 'MANUAL_PLUGSHARE' | 'GOOGLE_PLACES' | 'OPENSTREETMAP';
   isCalibrated?: boolean;
+  observacao?: string;
 }
 
 export interface EVStationMapProps {
@@ -396,6 +397,11 @@ export default function EVStationMap({
             ${conectoresStr}
           </div>
           ${st.endereco ? `<p style="font-size: 10px; color: #64748B; margin: 0 0 6px 0; line-height: 1.2;">📍 ${st.endereco}</p>` : ''}
+          ${st.observacao ? `
+            <div style="background: #FDF4FF; border: 1px solid #F5D0FE; padding: 4px 6px; border-radius: 6px; font-size: 9.5px; color: #86198F; margin-bottom: 6px; line-height: 1.3;">
+              📝 <strong>Obs:</strong> ${st.observacao}
+            </div>
+          ` : ''}
           ${isManual ? `
             <div style="background: #FAF5FF; border: 1px solid #E9D5FF; padding: 5px; border-radius: 6px; font-size: 9px; color: #7E22CE; font-weight: bold; line-height: 1.3;">
               🎯 <strong>Pino Calibrável:</strong> Arraste este pino no mapa para ajustar a posição no lote exato.

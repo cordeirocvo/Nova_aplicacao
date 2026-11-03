@@ -37,6 +37,7 @@ export interface CompetitorStation {
   isDC: boolean;
   conector?: string;
   origem: 'openchargemap' | 'google_places' | 'manual';
+  observacao?: string;
 }
 
 export interface CompetitionAnalysis {

@@ -263,6 +263,7 @@ export interface CompetitorStationFeature {
   conectores?: string[];
   isCalibrated?: boolean;
   metodo_posicionamento?: 'endereco_osm' | 'coordenadas_gps' | 'link_google_maps' | 'arraste_mapa';
+  observacao?: string;
 }
 
 export type RealCurveExtractionMode = 'worst_case_envelope' | 'worst_day_peak' | 'average_real';

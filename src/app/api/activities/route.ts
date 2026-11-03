@@ -1,59 +1,42 @@
-import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { checkAndSendAlarm } from "@/lib/services/whatsappService";
-import { appendHistory } from "@/lib/historyUtils";
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { PrismaActivityRepository } from '@/infrastructure/database/repositories/PrismaActivityRepository';
+import { WhatsAppAlarmGateway } from '@/infrastructure/gateways/WhatsAppAlarmGateway';
+import { CreateActivityUseCase } from '@/core/use-cases/activity/CreateActivityUseCase';
+
+const createActivitySchema = z.object({
+  instalacao: z.string().optional(),
+  solicitacao: z.string().optional(),
+  observacao: z.string().optional(),
+  obsInstalacao: z.string().optional(),
+  observacoes: z.string().optional(),
+  status: z.string().optional(),
+  vendedor: z.string().optional(),
+  telefoneCliente: z.string().optional(),
+  cidade: z.string().optional(),
+  dataPrevista: z.string().optional(),
+  telefoneVendedor: z.string().optional(),
+  anexoFotos: z.array(z.string()).optional(),
+  anexoArquivos: z.array(z.string()).optional()
+});
 
 export async function POST(req: Request) {
   try {
-    const data = await req.json();
+    const rawBody = await req.json();
+    const validation = createActivitySchema.safeParse(rawBody);
 
-    if (!prisma) {
-      console.error("FATAL: Prisma client is undefined in API route");
-      return NextResponse.json({ error: "Database initialization failed" }, { status: 500 });
+    if (!validation.success) {
+      return NextResponse.json({ error: 'Dados inválidos', details: validation.error.format() }, { status: 400 });
     }
 
-    if (!prisma.planilhaInstalacao) {
-       console.error("FATAL: PlanilhaInstalacao model missing from Prisma client", Object.keys(prisma));
-       return NextResponse.json({ error: "Database model missing" }, { status: 500 });
-    }
-    
-    const obsValue = data.observacao || data.obsInstalacao || data.observacoes || "";
-    const newActivity = await prisma.planilhaInstalacao.create({
-      data: {
-        instalacao: data.instalacao,
-        solicitacao: data.solicitacao,
-        observacao: obsValue,
-        obsInstalacao: obsValue,
-        status: data.status,
-        vendedor: data.vendedor,
-        telefoneCliente: data.telefoneCliente,
-        cidade: data.cidade,
-        dataPrevista: data.dataPrevista,
-        automaticoPrevInstala: data.dataPrevista || null,
-        telefoneVendedor: data.telefoneVendedor,
-        anexoFotos: data.anexoFotos || [],
-        anexoArquivos: data.anexoArquivos || [],
-        manualInstalacao: true,
-        historico: appendHistory([], "Atividade criada manualmente")
-      }
-    });
+    const repository = new PrismaActivityRepository();
+    const alarmGateway = new WhatsAppAlarmGateway();
+    const useCase = new CreateActivityUseCase(repository, alarmGateway);
 
-    try {
-      await checkAndSendAlarm(newActivity.id);
-    } catch (alarmError) {
-      console.error("ALARM_ERROR", alarmError);
-      // Don't fail the request if only the alarm fails
-    }
-
+    const newActivity = await useCase.execute(validation.data);
     return NextResponse.json(newActivity, { status: 201 });
   } catch (error: any) {
-    console.error("CREATE_ACTIVITY_ERROR", {
-       message: error.message,
-       stack: error.stack
-    });
-    return new NextResponse(JSON.stringify({ error: error.message }), { 
-      status: 500,
-      headers: { "Content-Type": "application/json" }
-    });
+    console.error('CREATE_ACTIVITY_ERROR', { message: error.message, stack: error.stack });
+    return NextResponse.json({ error: error.message || 'Erro interno ao criar atividade' }, { status: 500 });
   }
 }

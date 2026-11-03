@@ -4992,13 +4992,21 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
             clientProjectData={clientProjectData}
             dlmCapexSavingsBRL={unifiedCalculation.dlmEstimatedSavingsBRL || 0}
             onSaveFinancialAssumptions={(updatedData) => {
-              setClientProjectData(prev => ({
-                ...prev,
-                ...updatedData
-              }));
+              setClientProjectData(prev => {
+                let hasChanges = false;
+                for (const key of Object.keys(updatedData) as (keyof typeof updatedData)[]) {
+                  if (prev[key] !== updatedData[key]) {
+                    hasChanges = true;
+                    break;
+                  }
+                }
+                if (!hasChanges) return prev;
+                return {
+                  ...prev,
+                  ...updatedData
+                };
+              });
               handleAutoSaveSnapshot();
-              setSaveSuccessMessage("Premissas da Modelagem Financeira BLEV sincronizadas com sucesso!");
-              setTimeout(() => setSaveSuccessMessage(null), 5000);
             }}
             onNavigateToBOM={() => handleTabChange('resultado')}
             onNavigateToTopologia={() => handleTabChange('infraestrutura')}

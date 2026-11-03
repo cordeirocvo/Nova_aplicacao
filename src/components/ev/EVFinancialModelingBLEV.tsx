@@ -95,10 +95,10 @@ export function EVFinancialModelingBLEV({
 
   // Mantém sincronizado com Passo 4B quando o modo auto estiver ativo
   useEffect(() => {
-    if (useAutoCapex && initialCapexBRL > 0) {
+    if (useAutoCapex && initialCapexBRL > 0 && manualCapexBRL !== initialCapexBRL) {
       setManualCapexBRL(initialCapexBRL);
     }
-  }, [initialCapexBRL, useAutoCapex]);
+  }, [initialCapexBRL, useAutoCapex, manualCapexBRL]);
 
   const effectiveCapexBRL = useAutoCapex && initialCapexBRL > 0 ? initialCapexBRL : manualCapexBRL;
 
@@ -138,35 +138,88 @@ export function EVFinancialModelingBLEV({
 
   const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
 
-  // Sincroniza com clientProjectData quando um novo projeto ou rascunho é carregado
-  useEffect(() => {
-    if (clientProjectData) {
-      if (typeof clientProjectData.ahpTariffBRL === 'number') setTariffPerKWh(clientProjectData.ahpTariffBRL);
-      if (typeof clientProjectData.ahpEnergyCostBRL === 'number') setEnergyCostPerKWh(clientProjectData.ahpEnergyCostBRL);
-      if (typeof clientProjectData.ahpSolarEnergyCostBRL === 'number') setSolarEnergyCostPerKWh(clientProjectData.ahpSolarEnergyCostBRL);
-      if (typeof clientProjectData.ahpFixedOpexBRL === 'number') setFixedOpexBRL(clientProjectData.ahpFixedOpexBRL);
-      if (typeof clientProjectData.ahpVariableOpexPercent === 'number') setVariableOpexPercent(clientProjectData.ahpVariableOpexPercent);
-      if (typeof clientProjectData.ahpSessionMinutes === 'number') setAvgSessionMinutes(clientProjectData.ahpSessionMinutes);
-      if (typeof clientProjectData.ahpVdm === 'number') setVdm(clientProjectData.ahpVdm);
-      if (typeof clientProjectData.ahpFleetDensityPercent === 'number') setFleetDensity(clientProjectData.ahpFleetDensityPercent);
-      if (clientProjectData.ahpEnergySourceMode) setEnergySourceMode(clientProjectData.ahpEnergySourceMode as any);
-      if (typeof clientProjectData.ahpSolarSharePercent === 'number') setSolarSharePercent(clientProjectData.ahpSolarSharePercent);
-      if (clientProjectData.ahpRealEstateModel) setRealEstateModel(clientProjectData.ahpRealEstateModel);
-      if (typeof clientProjectData.ahpRevenueSharePercent === 'number') setRevenueSharePercent(clientProjectData.ahpRevenueSharePercent);
-      if (typeof clientProjectData.ahpFixedRentBRL === 'number') setFixedRentBRL(clientProjectData.ahpFixedRentBRL);
-      if (Array.isArray(clientProjectData.ahpCustomRealEstateModels)) setCustomRealEstateModels(clientProjectData.ahpCustomRealEstateModels as any);
-      if (typeof clientProjectData.ahpCapexBRL === 'number') {
-        setManualCapexBRL(clientProjectData.ahpCapexBRL);
-      }
-      if (typeof (clientProjectData as any).ahpUseAutoCapex === 'boolean') {
-        setUseAutoCapex((clientProjectData as any).ahpUseAutoCapex);
-      }
-    }
-  }, [clientProjectData]);
+  // Sincroniza com clientProjectData apenas quando valores externos diferem dos estados locais
+  const lastSyncProjectIdRef = React.useRef<string | undefined>(undefined);
 
-  // Propagação contínua automática para o pai e para localStorage a cada alteração nos inputs
+  useEffect(() => {
+    if (!clientProjectData) return;
+    const currentProjectId = (clientProjectData as any).id || clientProjectData.projectName || clientProjectData.clientName;
+    if (currentProjectId && currentProjectId !== lastSyncProjectIdRef.current) {
+      lastSyncProjectIdRef.current = currentProjectId;
+    }
+
+    if (typeof clientProjectData.ahpTariffBRL === 'number' && clientProjectData.ahpTariffBRL !== tariffPerKWh) {
+      setTariffPerKWh(clientProjectData.ahpTariffBRL);
+    }
+    if (typeof clientProjectData.ahpEnergyCostBRL === 'number' && clientProjectData.ahpEnergyCostBRL !== energyCostPerKWh) {
+      setEnergyCostPerKWh(clientProjectData.ahpEnergyCostBRL);
+    }
+    if (typeof clientProjectData.ahpSolarEnergyCostBRL === 'number' && clientProjectData.ahpSolarEnergyCostBRL !== solarEnergyCostPerKWh) {
+      setSolarEnergyCostPerKWh(clientProjectData.ahpSolarEnergyCostBRL);
+    }
+    if (typeof clientProjectData.ahpFixedOpexBRL === 'number' && clientProjectData.ahpFixedOpexBRL !== fixedOpexBRL) {
+      setFixedOpexBRL(clientProjectData.ahpFixedOpexBRL);
+    }
+    if (typeof clientProjectData.ahpVariableOpexPercent === 'number' && clientProjectData.ahpVariableOpexPercent !== variableOpexPercent) {
+      setVariableOpexPercent(clientProjectData.ahpVariableOpexPercent);
+    }
+    if (typeof clientProjectData.ahpSessionMinutes === 'number' && clientProjectData.ahpSessionMinutes !== avgSessionMinutes) {
+      setAvgSessionMinutes(clientProjectData.ahpSessionMinutes);
+    }
+    if (typeof clientProjectData.ahpVdm === 'number' && clientProjectData.ahpVdm !== vdm) {
+      setVdm(clientProjectData.ahpVdm);
+    }
+    if (typeof clientProjectData.ahpFleetDensityPercent === 'number' && clientProjectData.ahpFleetDensityPercent !== fleetDensity) {
+      setFleetDensity(clientProjectData.ahpFleetDensityPercent);
+    }
+    if (clientProjectData.ahpEnergySourceMode && clientProjectData.ahpEnergySourceMode !== energySourceMode) {
+      setEnergySourceMode(clientProjectData.ahpEnergySourceMode as any);
+    }
+    if (typeof clientProjectData.ahpSolarSharePercent === 'number' && clientProjectData.ahpSolarSharePercent !== solarSharePercent) {
+      setSolarSharePercent(clientProjectData.ahpSolarSharePercent);
+    }
+    if (clientProjectData.ahpRealEstateModel && clientProjectData.ahpRealEstateModel !== realEstateModel) {
+      setRealEstateModel(clientProjectData.ahpRealEstateModel);
+    }
+    if (typeof clientProjectData.ahpRevenueSharePercent === 'number' && clientProjectData.ahpRevenueSharePercent !== revenueSharePercent) {
+      setRevenueSharePercent(clientProjectData.ahpRevenueSharePercent);
+    }
+    if (typeof clientProjectData.ahpFixedRentBRL === 'number' && clientProjectData.ahpFixedRentBRL !== fixedRentBRL) {
+      setFixedRentBRL(clientProjectData.ahpFixedRentBRL);
+    }
+    if (Array.isArray(clientProjectData.ahpCustomRealEstateModels) && JSON.stringify(clientProjectData.ahpCustomRealEstateModels) !== JSON.stringify(customRealEstateModels)) {
+      setCustomRealEstateModels(clientProjectData.ahpCustomRealEstateModels as any);
+    }
+    if (typeof clientProjectData.ahpCapexBRL === 'number' && clientProjectData.ahpCapexBRL !== manualCapexBRL) {
+      setManualCapexBRL(clientProjectData.ahpCapexBRL);
+    }
+    if (typeof (clientProjectData as any).ahpUseAutoCapex === 'boolean' && (clientProjectData as any).ahpUseAutoCapex !== useAutoCapex) {
+      setUseAutoCapex((clientProjectData as any).ahpUseAutoCapex);
+    }
+  }, [
+    clientProjectData,
+    tariffPerKWh,
+    energyCostPerKWh,
+    solarEnergyCostPerKWh,
+    fixedOpexBRL,
+    variableOpexPercent,
+    avgSessionMinutes,
+    vdm,
+    fleetDensity,
+    energySourceMode,
+    solarSharePercent,
+    realEstateModel,
+    revenueSharePercent,
+    fixedRentBRL,
+    customRealEstateModels,
+    manualCapexBRL,
+    useAutoCapex
+  ]);
+
+  // Propagação contínua automática para o pai e para localStorage apenas em alterações deliberadas
   const onSaveAssumptionsRef = React.useRef(onSaveFinancialAssumptions);
   onSaveAssumptionsRef.current = onSaveFinancialAssumptions;
+  const isInitialMount = React.useRef(true);
   const lastFinancialSigRef = React.useRef<string>('');
 
   useEffect(() => {
@@ -190,6 +243,14 @@ export function EVFinancialModelingBLEV({
     };
 
     const sig = JSON.stringify(payload);
+
+    // Na primeira renderização (montagem do componente), memoriza a assinatura sem disparar callback no pai
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      lastFinancialSigRef.current = sig;
+      return;
+    }
+
     if (sig !== lastFinancialSigRef.current) {
       lastFinancialSigRef.current = sig;
       try {

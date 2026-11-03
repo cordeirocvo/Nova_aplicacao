@@ -58,6 +58,7 @@ interface EVEngineeringReportsHubProps {
       currentA?: number;
       type?: string;
       connector?: string;
+      quantity?: number;
     }>;
     sections?: any;
     hasTransformer?: boolean;
@@ -497,49 +498,100 @@ export function EVEngineeringReportsHub({
                       </div>
                     </div>
 
-                    {/* 4. GESTÃO DINÂMICA DE CARGA (DLM) & SISTEMAS DE MERCADO */}
-                    <div className="space-y-3 pt-2 border-t border-slate-200">
-                      <div className="flex items-center justify-between">
-                        <h3 className="font-bold text-slate-900 uppercase text-xs flex items-center gap-2">
-                          <Zap className="w-4 h-4 text-[#E45318]" />
-                          <span>4. Gestão Dinâmica de Carga (DLM) & Sistemas Prontos de Mercado</span>
-                        </h3>
-                        <span className="text-[10px] font-bold uppercase bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full border border-amber-300">
-                          IEC 61851-1 / NBR 17019
-                        </span>
-                      </div>
+                    {/* 4. ARQUITETURA DE ALIMENTAÇÃO & GESTÃO DE CARGA (DLM) */}
+                    {(() => {
+                      const gridLimitKW = projectData.standardBreakerA 
+                        ? Number(((projectData.standardBreakerA * (projectData.voltageV || 220) * 1.732) / 1000).toFixed(1)) 
+                        : 75;
+                      const buildingLoadKW = projectData.realPeakKW !== undefined ? projectData.realPeakKW : 35;
+                      const totalDemandKW = Number((buildingLoadKW + totalPower).toFixed(1));
+                      const isDLMNeeded = Boolean((projectData.deficitKW && projectData.deficitKW > 0) || (totalDemandKW > gridLimitKW));
+                      const availableMarginKW = Math.max(0, Number((gridLimitKW - totalDemandKW).toFixed(1)));
 
-                      <p className="text-[11px] text-slate-600 leading-relaxed">
-                        Para viabilizar a recarga de alta potência sem a necessidade de aumento oneroso da demanda contratada ou troca de padrão junto à concessionária, o projeto adota o sistema de <strong>Gestão Dinâmica de Carga (DLM - Dynamic Load Management)</strong>. O sistema monitora em tempo real a corrente consumida pelo imóvel e modula continuamente a potência entregue aos veículos elétricos (de 6A a 32A por conector).
-                      </p>
+                      return (
+                        <div className="space-y-3 pt-2 border-t border-slate-200">
+                          <div className="flex items-center justify-between">
+                            <h3 className="font-bold text-slate-900 uppercase text-xs flex items-center gap-2">
+                              <Zap className="w-4 h-4 text-[#E45318]" />
+                              <span>
+                                {isDLMNeeded 
+                                  ? "4. Gestão Dinâmica de Carga (DLM) & Sistemas Prontos de Mercado" 
+                                  : "4. Topologia Elétrica de Alimentação & Distribuição de Carga Plena"}
+                              </span>
+                            </h3>
+                            <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full border ${
+                              isDLMNeeded 
+                                ? 'bg-amber-100 text-amber-800 border-amber-300' 
+                                : 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                            }`}>
+                              {isDLMNeeded ? "IEC 61851-1 / NBR 17019" : "Carga Plena (100%) - NBR 17019"}
+                            </span>
+                          </div>
 
-                      {/* Renderização Vetorial Didática do Fluxo DLM */}
-                      <div className="my-3">
-                        <DLMSystemVisualizer 
-                          systemType={projectData.dlmSystemType || 'beny'}
-                          gridLimitKW={projectData.standardBreakerA ? Number(((projectData.standardBreakerA * (projectData.voltageV || 220) * 1.732) / 1000).toFixed(1)) : 75}
-                          buildingLoadKW={projectData.realPeakKW || 35}
-                          evLoadKW={totalPower}
-                          isThrottled={Boolean(projectData.deficitKW && projectData.deficitKW > 0)}
-                          evCount={chargingPointsCount}
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-[11px]">
-                        <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5">
-                          <strong className="text-slate-900 block uppercase text-[10px] text-[#E45318]">Mecanismo de Proteção e Watchdog Fail-Safe:</strong>
-                          <p className="text-slate-600 leading-relaxed">
-                            Caso ocorra falha de comunicação no barramento RS485 Modbus ou perda do sinal dos TCs de medição por tempo superior a <strong>5 segundos</strong>, o sistema comuta imediatamente para o modo de segurança (Fail-Safe), reduzindo a corrente de todos os carregadores para a taxa mínima de <strong>6A</strong> ou desarmando preventivamente os circuitos de recarga para impedir a queda do disjuntor geral da concessionária.
+                          <p className="text-[11px] text-slate-600 leading-relaxed">
+                            {isDLMNeeded ? (
+                              <>
+                                Para viabilizar a recarga de alta potência sem a necessidade de aumento oneroso da demanda contratada ou troca de padrão junto à concessionária, o projeto adota o sistema de <strong>Gestão Dinâmica de Carga (DLM - Dynamic Load Management)</strong>. O sistema monitora em tempo real a corrente consumida pelo imóvel e modula continuamente a potência entregue aos veículos elétricos (de 6A a 32A por conector).
+                              </>
+                            ) : (
+                              <>
+                                A capacidade homologada do padrão de entrada (<strong>{gridLimitKW} kW</strong> / {projectData.standardBreakerA || 200}A) atende com folga integral à soma da carga do imóvel (<strong>{buildingLoadKW} kW</strong>) e das estações de recarga (<strong>{totalPower.toFixed(1)} kW</strong>), totalizando <strong>{totalDemandKW} kW</strong> (margem de sobra: <strong>{availableMarginKW} kW</strong>). Dessa forma, a instalação opera em regime de <strong>Alimentação Direta em Carga Plena (Dedicação Exclusiva)</strong>, dispensando módulos adicionais de controle por DLM no cenário atual.
+                              </>
+                            )}
                           </p>
+
+                          {/* Renderização Vetorial Didática do Fluxo DLM / Topologia Direta */}
+                          <div className="my-3">
+                            <DLMSystemVisualizer 
+                              systemType={projectData.dlmSystemType || 'beny'}
+                              gridLimitKW={gridLimitKW}
+                              buildingLoadKW={buildingLoadKW}
+                              evLoadKW={totalPower}
+                              isThrottled={Boolean(projectData.deficitKW && projectData.deficitKW > 0)}
+                              evCount={chargingPointsCount}
+                              hasDLM={isDLMNeeded}
+                              deficitKW={projectData.deficitKW || 0}
+                              standardBreakerA={projectData.standardBreakerA || 200}
+                              voltageV={projectData.voltageV || 220}
+                              utilityName={projectData.utility || 'CEMIG Distribuição'}
+                              chargers={projectData.chargers}
+                            />
+                          </div>
+
+                          {isDLMNeeded ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-[11px]">
+                              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5">
+                                <strong className="text-slate-900 block uppercase text-[10px] text-[#E45318]">Mecanismo de Proteção e Watchdog Fail-Safe:</strong>
+                                <p className="text-slate-600 leading-relaxed">
+                                  Caso ocorra falha de comunicação no barramento RS485 Modbus ou perda do sinal dos TCs de medição por tempo superior a <strong>5 segundos</strong>, o sistema comuta imediatamente para o modo de segurança (Fail-Safe), reduzindo a corrente de todos os carregadores para a taxa mínima de <strong>6A</strong> ou desarmando preventivamente os circuitos de recarga para impedir a queda do disjuntor geral da concessionária.
+                                </p>
+                              </div>
+                              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5">
+                                <strong className="text-slate-900 block uppercase text-[10px] text-[#00B356]">Sinergia com Geração Solar e Tarifa Branca:</strong>
+                                <p className="text-slate-600 leading-relaxed">
+                                  O controlador integra leitura bidirecional com inversores fotovoltaicos locais. Havendo injeção na rede (excedente solar), o sistema transfere 100% da sobra para os carregadores antes da exportação. No horário de ponta da concessionária (17h30 às 20h30), o algoritmo restringe a corrente para evitar tarifas de sobreconsumo.
+                                </p>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-[11px]">
+                              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5">
+                                <strong className="text-slate-900 block uppercase text-[10px] text-[#00B356]">Operação em Carga Plena & Seletividade (NBR 17019):</strong>
+                                <p className="text-slate-600 leading-relaxed">
+                                  Cada estação de recarga possui circuito alimentador exclusivo derivado do Quadro de Distribuição de Circuitos de Recarga (QDC-VE), dotado de disjuntor termomagnético Curva C e dispositivo IDR Tipo B (30mA) dedicado, garantindo operação a 100% da potência nominal sem interferência nas cargas comuns do imóvel.
+                                </p>
+                              </div>
+                              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5">
+                                <strong className="text-slate-900 block uppercase text-[10px] text-[#E45318]">Infraestrutura DLM-Ready (Expansão Futura):</strong>
+                                <p className="text-slate-600 leading-relaxed">
+                                  Embora dispensável na fase atual, a infraestrutura física de eletrodutos e espaço em trilho DIN no padrão/QDC-VE foi projetada com taxa de reserva superior a 30%, possibilitando a instalação futura de TCs de medição e gateway DLM caso o cliente decida aumentar o número de carregadores sem trocar o padrão da concessionária.
+                                </p>
+                              </div>
+                            </div>
+                          )}
                         </div>
-                        <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5">
-                          <strong className="text-slate-900 block uppercase text-[10px] text-[#00B356]">Sinergia com Geração Solar e Tarifa Branca:</strong>
-                          <p className="text-slate-600 leading-relaxed">
-                            O controlador integra leitura bidirecional com inversores fotovoltaicos locais. Havendo injeção na rede (excedente solar), o sistema transfere 100% da sobra para os carregadores antes da exportação. No horário de ponta da concessionária (17h30 às 20h30), o algoritmo restringe a corrente para evitar tarifas de sobreconsumo.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
+                      );
+                    })()}
 
                     {/* 5. SUBESTAÇÃO E TRANSFORMADOR PARA RECARGA DE VE (Dyn1) */}
                     {(projectData.hasTransformer || totalPower >= 22) && (

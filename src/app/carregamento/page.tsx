@@ -4766,6 +4766,7 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
               voltageV: c.voltage,
               currentInA: c.currentInA,
               connector: c.connector,
+              quantity: c.quantity,
               type: c.type,
               distanceMeters: c.distanceMeters,
               marginPercent: c.marginPercent,
@@ -5022,7 +5023,8 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
             phases: c.phases,
             voltage: c.voltage,
             type: c.type,
-            connector: c.connector
+            connector: c.connector,
+            quantity: c.quantity
           })),
           sections: {
             section1: {

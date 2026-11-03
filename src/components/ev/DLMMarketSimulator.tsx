@@ -361,6 +361,7 @@ export default function DLMMarketSimulator({
         evCount={vehicles.length}
         enableSolarSurplus={solarGenerationKW > 0}
         solarKW={solarGenerationKW}
+        hasDLM={true}
       />
 
       {/* ─── COMPARATIVO DE SEGURANÇA: SEM DLM VS COM DLM ─── */}

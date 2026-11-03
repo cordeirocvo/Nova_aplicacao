@@ -2,11 +2,21 @@
 
 import React from "react";
 import { 
-  Cpu, Zap, Home, ShieldCheck, ArrowRight, Gauge, 
-  Layers, AlertTriangle, CheckCircle2, Sliders, Radio, Activity
+  Zap, ShieldCheck, CheckCircle2, Sliders, Activity, Info
 } from "lucide-react";
 
-interface DLMSystemVisualizerProps {
+export interface ConfiguredChargerVisualItem {
+  id?: string;
+  name: string;
+  powerKW: number;
+  phases?: number;
+  voltage?: number;
+  type?: string;
+  connector?: string;
+  quantity?: number;
+}
+
+export interface DLMSystemVisualizerProps {
   systemType?: 'beny' | 'weg' | 'schneider' | 'abb' | 'generic';
   gridLimitKW: number;
   buildingLoadKW: number;
@@ -15,6 +25,20 @@ interface DLMSystemVisualizerProps {
   evCount?: number;
   enableSolarSurplus?: boolean;
   solarKW?: number;
+  hasDLM?: boolean;
+  deficitKW?: number;
+  standardBreakerA?: number;
+  voltageV?: number;
+  utilityName?: string;
+  chargers?: ConfiguredChargerVisualItem[];
+}
+
+function calculateNominalCurrentA(powerKW: number, voltageV: number = 380, phases: number = 3): number {
+  if (powerKW <= 0) return 0;
+  if (phases === 1 || voltageV <= 240) {
+    return Math.round((powerKW * 1000) / (voltageV || 220));
+  }
+  return Math.round((powerKW * 1000) / (Math.sqrt(3) * (voltageV || 380)));
 }
 
 export default function DLMSystemVisualizer({
@@ -25,11 +49,22 @@ export default function DLMSystemVisualizer({
   isThrottled = false,
   evCount = 2,
   enableSolarSurplus = false,
-  solarKW = 0
+  solarKW = 0,
+  hasDLM,
+  deficitKW,
+  standardBreakerA = 200,
+  voltageV = 220,
+  utilityName = 'CEMIG',
+  chargers = []
 }: DLMSystemVisualizerProps) {
   const totalDemandKW = Number((buildingLoadKW + evLoadKW).toFixed(1));
   const availableMarginKW = Number(Math.max(0, gridLimitKW - totalDemandKW).toFixed(1));
-  const usagePercent = Math.min(100, Math.round((totalDemandKW / gridLimitKW) * 100));
+  const usagePercent = Math.min(100, Math.round((totalDemandKW / Math.max(1, gridLimitKW)) * 100));
+
+  // Determina se o DLM é necessário na instalação
+  const effectiveHasDLM = typeof hasDLM === 'boolean'
+    ? hasDLM
+    : Boolean(isThrottled || (deficitKW !== undefined && deficitKW > 0) || (gridLimitKW > 0 && totalDemandKW > gridLimitKW));
 
   // Título e detalhes do sistema selecionado
   const SYSTEM_CONFIGS: Record<string, {
@@ -43,7 +78,7 @@ export default function DLMSystemVisualizer({
     beny: {
       name: "BENY DLB Box (Hardwired RS485)",
       badge: "TCs Bipartidos + Modbus",
-      desc: "Medição direta nos condutores de entrada via TCs (transformadores de corrente) e comando aos carregadores BCP via RS485 com latência < 2s.",
+      desc: "Medição direta nos condutores de entrada via TCs e comando aos carregadores via RS485 com latência < 2s.",
       protocol: "RS485 Modbus RTU / Wi-Fi",
       sensor: "3x TCs Bipartidos (100A a 600A) no Padrão",
       controller: "Módulo Dinâmico BENY DLB Box"
@@ -51,7 +86,7 @@ export default function DLMSystemVisualizer({
     weg: {
       name: "WEG WEMOB Smart DLM",
       badge: "Painel Hub Centralizado",
-      desc: "Controlador industrial em trilho DIN com comunicação Ethernet/Modbus gerenciando até 30 estações WEMOB (Wall, Parking, Station).",
+      desc: "Controlador industrial em trilho DIN gerenciando até 30 estações WEMOB via Ethernet/Modbus.",
       protocol: "Modbus TCP / RTU / OCPP 1.6J",
       sensor: "Multimedidor de Grandezas Elétricas no QGBT",
       controller: "Central WEG WEMOB DLM Controller"
@@ -59,7 +94,7 @@ export default function DLMSystemVisualizer({
     schneider: {
       name: "Schneider EcoStruxure LMS",
       badge: "Solução Corporativa Industrial",
-      desc: "EV Charging Expert com gateway inteligente gerenciando até 1.000 pontos em múltiplos quadros com divisão por prioridades.",
+      desc: "EV Charging Expert gerenciando até 1.000 pontos em múltiplos quadros com divisão por prioridades.",
       protocol: "Ethernet TCP/IP / Modbus / BACnet",
       sensor: "Medidores Schneider PowerLogic iEM3000 / PM5000",
       controller: "Gateway Schneider EcoStruxure LMS"
@@ -67,7 +102,7 @@ export default function DLMSystemVisualizer({
     abb: {
       name: "ABB Dynamic Load Management",
       badge: "Medidor MID Integrado",
-      desc: "Balanceamento dinâmico entre carregadores Terra AC/DC com leitura direta de medidores ABB B23/B24 e ajuste contínuo de corrente.",
+      desc: "Balanceamento dinâmico entre carregadores Terra AC/DC com leitura direta de medidores ABB B23/B24.",
       protocol: "RS485 Modbus / OCPP Smart Charging",
       sensor: "Medidor Trifásico ABB B23/B24 no Padrão",
       controller: "Firmware DLM Embarcado nos Carregadores"
@@ -75,7 +110,7 @@ export default function DLMSystemVisualizer({
     generic: {
       name: "OCPP 1.6J / 2.0.1 Smart Charging",
       badge: "Protocolo Aberto Cloud/Local",
-      desc: "Gestão inteligente via servidor central através de perfis padronizados ChargePointMaxProfile e TxDefaultProfile da norma OCPP.",
+      desc: "Gestão inteligente via servidor central através de perfis padronizados ChargePointMaxProfile da norma OCPP.",
       protocol: "WebSockets JSON (OCPP 1.6J / 2.0.1)",
       sensor: "Smart Metering com telemetria via API/MQTT",
       controller: "Servidor OCPP / Gateway Local"
@@ -84,31 +119,158 @@ export default function DLMSystemVisualizer({
 
   const systemInfo = SYSTEM_CONFIGS[systemType] || SYSTEM_CONFIGS.beny;
 
+  // ─── RESOLUÇÃO DINÂMICA DOS CARREGADORES BASEADO NA SIMULAÇÃO ──────────────
+  interface DisplayChargerCard {
+    title: string;
+    name: string;
+    connector: string;
+    powerKW: number;
+    currentA: number;
+    type: 'AC' | 'DC';
+    isExpansion?: boolean;
+  }
+
+  const displayChargers: [DisplayChargerCard, DisplayChargerCard] = React.useMemo(() => {
+    if (chargers && chargers.length > 0) {
+      if (chargers.length === 1) {
+        const single = chargers[0];
+        const isDualGun = (single.powerKW >= 40 && single.type === 'DC') || 
+                          (single.connector && single.connector.toLowerCase().includes('2x'));
+        
+        if (isDualGun) {
+          const halfPower = Number((single.powerKW / 2).toFixed(1));
+          const current = calculateNominalCurrentA(halfPower, single.voltage || 380, 3);
+          const baseConn = single.connector ? single.connector.replace(/2x/gi, '').trim() : 'CCS2';
+          return [
+            {
+              title: "CARREGADOR VE 1 (Vaga A)",
+              name: single.name,
+              connector: `${baseConn} (Pistola 1)`,
+              powerKW: halfPower,
+              currentA: current,
+              type: 'DC'
+            },
+            {
+              title: "CARREGADOR VE 2 (Vaga B)",
+              name: single.name,
+              connector: `${baseConn} (Pistola 2)`,
+              powerKW: halfPower,
+              currentA: current,
+              type: 'DC'
+            }
+          ];
+        } else {
+          const current = calculateNominalCurrentA(single.powerKW, single.voltage || voltageV, single.phases || 1);
+          return [
+            {
+              title: "CARREGADOR VE 1 (Vaga A)",
+              name: single.name,
+              connector: single.connector || (single.powerKW >= 30 ? 'Conector CCS2' : 'Conector Tipo 2'),
+              powerKW: single.powerKW,
+              currentA: current,
+              type: (single.type as any) || (single.powerKW >= 30 ? 'DC' : 'AC')
+            },
+            {
+              title: "VAGA FUTURA (Expansão)",
+              name: "Ponto de Recarga Reserva",
+              connector: "Infraestrutura Seca Tubulada",
+              powerKW: 0,
+              currentA: 0,
+              type: 'AC',
+              isExpansion: true
+            }
+          ];
+        }
+      }
+
+      // 2 ou mais carregadores configurados
+      const c1 = chargers[0];
+      const c2 = chargers[1];
+      const curr1 = calculateNominalCurrentA(c1.powerKW, c1.voltage || 380, c1.phases || 3);
+      const curr2 = calculateNominalCurrentA(c2.powerKW, c2.voltage || 380, c2.phases || 3);
+
+      return [
+        {
+          title: "CARREGADOR VE 1 (Vaga A)",
+          name: c1.name,
+          connector: c1.connector || (c1.powerKW >= 30 ? 'CCS2 / DC Rápido' : 'Tipo 2 / AC'),
+          powerKW: c1.powerKW,
+          currentA: curr1,
+          type: (c1.type as any) || (c1.powerKW >= 30 ? 'DC' : 'AC')
+        },
+        {
+          title: "CARREGADOR VE 2 (Vaga B)",
+          name: c2.name,
+          connector: c2.connector || (c2.powerKW >= 30 ? 'CCS2 / DC Rápido' : 'Tipo 2 / AC'),
+          powerKW: c2.powerKW,
+          currentA: curr2,
+          type: (c2.type as any) || (c2.powerKW >= 30 ? 'DC' : 'AC')
+        }
+      ];
+    }
+
+    // Fallback padrão se não houver carregadores definidos na lista
+    const splitPower = Number((evLoadKW / Math.max(1, evCount)).toFixed(1));
+    const current = calculateNominalCurrentA(splitPower, voltageV, 3);
+    return [
+      {
+        title: "CARREGADOR VE 1 (Vaga A)",
+        name: "Estação de Recarga 1",
+        connector: "Conector Tipo 2 / CCS2",
+        powerKW: splitPower,
+        currentA: current,
+        type: splitPower >= 30 ? 'DC' : 'AC'
+      },
+      {
+        title: "CARREGADOR VE 2 (Vaga B)",
+        name: "Estação de Recarga 2",
+        connector: "Pistola 2 / Dual Gun",
+        powerKW: splitPower,
+        currentA: current,
+        type: splitPower >= 30 ? 'DC' : 'AC'
+      }
+    ];
+  }, [chargers, evLoadKW, evCount, voltageV]);
+
   return (
     <div className="bg-[#0A192F] text-white p-5 rounded-3xl border border-slate-800 space-y-5 shadow-2xl">
       {/* Cabeçalho do Diagrama */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-black uppercase text-amber-400 bg-amber-500/10 border border-amber-500/30 px-2.5 py-0.5 rounded-full flex items-center gap-1">
-              <Activity className="w-3 h-3 animate-pulse" />
-              Arquitetura Eletrotécnica Ilustrada
+            <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full flex items-center gap-1 border ${
+              effectiveHasDLM
+                ? 'text-amber-400 bg-amber-500/10 border-amber-500/30'
+                : 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30'
+            }`}>
+              {effectiveHasDLM ? <Activity className="w-3 h-3 animate-pulse" /> : <ShieldCheck className="w-3 h-3 text-[#00B356]" />}
+              {effectiveHasDLM ? "Arquitetura Eletrotécnica & DLM" : "Topologia Elétrica Direta (NBR 17019)"}
             </span>
             <span className="text-xs text-slate-400 font-mono">NBR 17019 & IEC 61851-1</span>
           </div>
           <h3 className="text-base font-bold text-white mt-1 flex items-center gap-2">
-            Gestão Dinâmica de Carga (DLM) & Integração de Mercado
+            {effectiveHasDLM 
+              ? "Gestão Dinâmica de Carga (DLM) & Integração de Mercado"
+              : "Topologia Elétrica Direta & Distribuição de Carga Plena"}
           </h3>
           <p className="text-xs text-slate-400">
-            {systemInfo.desc}
+            {effectiveHasDLM 
+              ? systemInfo.desc 
+              : `A capacidade homologada do padrão (${gridLimitKW} kW) atende integralmente à demanda simultânea do imóvel (${buildingLoadKW} kW) e das estações de recarga (${evLoadKW} kW). O sistema opera de forma direta e contínua em carga plena, dispensando modulação por DLM.`}
           </p>
         </div>
 
-        {/* Badge do Sistema de Mercado */}
+        {/* Badge de Status / Sistema Selecionado */}
         <div className="text-right bg-slate-900/90 border border-slate-700/80 p-2.5 rounded-2xl">
-          <span className="text-[9px] font-mono text-slate-400 block uppercase">Sistema Selecionado:</span>
-          <span className="text-xs font-black text-[#00B356]">{systemInfo.name}</span>
-          <span className="text-[10px] text-amber-400 block font-mono">{systemInfo.badge}</span>
+          <span className="text-[9px] font-mono text-slate-400 block uppercase">
+            {effectiveHasDLM ? "Sistema Selecionado:" : "Modo Operacional:"}
+          </span>
+          <span className="text-xs font-black text-[#00B356]">
+            {effectiveHasDLM ? systemInfo.name : "100% Carga Plena (Direta)"}
+          </span>
+          <span className="text-[10px] text-amber-400 block font-mono">
+            {effectiveHasDLM ? systemInfo.badge : `Folga Segura: ${availableMarginKW} kW`}
+          </span>
         </div>
       </div>
 
@@ -127,7 +289,9 @@ export default function DLMSystemVisualizer({
               <strong className="text-blue-400 text-sm">{buildingLoadKW} kW</strong>
             </div>
             <div className="border-l border-slate-800 pl-3">
-              <span className="text-[10px] text-slate-400 block uppercase">Carga VE (Controlada):</span>
+              <span className="text-[10px] text-slate-400 block uppercase">
+                {effectiveHasDLM ? "Carga VE (Controlada):" : "Carga VE (Total):"}
+              </span>
               <strong className="text-emerald-400 text-sm">{evLoadKW} kW</strong>
             </div>
           </div>
@@ -139,11 +303,15 @@ export default function DLMSystemVisualizer({
                 <strong className={`text-sm ${usagePercent > 95 ? 'text-amber-400' : 'text-emerald-400'}`}>
                   {totalDemandKW} kW ({usagePercent}%)
                 </strong>
-                {isThrottled && (
+                {isThrottled ? (
                   <span className="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-1.5 py-0.5 rounded font-bold">
                     MODULADO DLM
                   </span>
-                )}
+                ) : !effectiveHasDLM ? (
+                  <span className="text-[9px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-1.5 py-0.5 rounded font-bold">
+                    CARGA PLENA
+                  </span>
+                ) : null}
               </div>
             </div>
             <div className="w-24 bg-slate-800 h-2.5 rounded-full overflow-hidden border border-slate-700">
@@ -179,7 +347,7 @@ export default function DLMSystemVisualizer({
               <stop offset="100%" stopColor="#00803d" />
             </linearGradient>
 
-            {/* Marcadores de Seta com refX/refY exatos (a ponta da seta termina exatamente no fim da linha sem invadir o card) */}
+            {/* Marcadores de Seta com refX/refY exatos */}
             <marker id="arrowBlueRight" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="8" markerHeight="8" orient="auto">
               <path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#38bdf8" />
             </marker>
@@ -188,9 +356,6 @@ export default function DLMSystemVisualizer({
             </marker>
             <marker id="arrowDlmRight" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="8" markerHeight="8" orient="auto">
               <path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#E45318" />
-            </marker>
-            <marker id="arrowGreenRight" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="8" markerHeight="8" orient="auto">
-              <path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#00B356" />
             </marker>
             <marker id="arrowBlueUp" viewBox="0 0 10 10" refX="5" refY="1" markerUnits="userSpaceOnUse" markerWidth="8" markerHeight="8" orient="auto">
               <path d="M 1.5 9 L 5 1 L 8.5 9 z" fill="#38bdf8" />
@@ -203,47 +368,72 @@ export default function DLMSystemVisualizer({
             <circle cx="70" cy="36" r="20" fill="#3b82f6" fillOpacity="0.15" stroke="#3b82f6" strokeWidth="1.5" />
             <path d="M 70 24 L 63 38 L 68 38 L 65 48 L 77 34 L 72 34 Z" fill="#60a5fa" />
             <text x="70" y="75" textAnchor="middle" fill="#f8fafc" fontSize="12" fontWeight="bold" fontFamily="sans-serif">REDE PÚBLICA</text>
-            <text x="70" y="93" textAnchor="middle" fill="#94a3b8" fontSize="10" fontFamily="monospace">CEMIG 220/127V</text>
+            <text x="70" y="93" textAnchor="middle" fill="#94a3b8" fontSize="10" fontFamily="monospace">
+              {utilityName.split(' ')[0]} {voltageV}/127V
+            </text>
             <text x="70" y="110" textAnchor="middle" fill="#38bdf8" fontSize="10" fontWeight="bold" fontFamily="monospace">Limite: {gridLimitKW} kW</text>
             <rect x="18" y="122" width="104" height="15" rx="4" fill="#1e293b" />
             <text x="70" y="133" textAnchor="middle" fill="#94a3b8" fontSize="8" fontFamily="sans-serif">Transformador Rua</text>
           </g>
 
-          {/* Linha de Energia: Rede Pública -> Padrão (Sem invasão de borda e com badge limpo) */}
+          {/* Linha de Energia: Rede Pública -> Padrão */}
           <path d="M 165 110 L 221 110" stroke="#38bdf8" strokeWidth="2.5" markerEnd="url(#arrowBlueRight)" />
           <g transform="translate(168, 86)">
             <rect x="0" y="0" width="53" height="16" rx="4" fill="#0f172a" stroke="#1e293b" strokeWidth="1" />
             <text x="26.5" y="11.5" textAnchor="middle" fill="#38bdf8" fontSize="8" fontWeight="bold">Alimentação</text>
           </g>
 
-          {/* ─── 2. PADRÃO DE ENTRADA & MEDIÇÃO COM TCs DE MEDIÇÃO ─── */}
+          {/* ─── 2. PADRÃO DE ENTRADA & MEDIÇÃO ─── */}
           <g transform="translate(225, 35)">
-            <rect x="0" y="0" width="180" height="175" rx="16" fill="#0f172a" stroke="#E45318" strokeWidth="1.5" />
+            <rect x="0" y="0" width="180" height="175" rx="16" fill="#0f172a" stroke={effectiveHasDLM ? "#E45318" : "#00B356"} strokeWidth="1.5" />
             
-            {/* Medidor e TCs */}
+            {/* Medidor e Disjuntor Geral */}
             <rect x="15" y="12" width="150" height="72" rx="10" fill="#1e293b" stroke="#475569" strokeWidth="1" />
             <text x="90" y="30" textAnchor="middle" fill="#f8fafc" fontSize="11" fontWeight="bold">PADRÃO DE ENTRADA</text>
-            <text x="90" y="46" textAnchor="middle" fill="#cbd5e1" fontSize="9" fontFamily="monospace">Disjuntor Geral: 200A</text>
+            <text x="90" y="46" textAnchor="middle" fill="#cbd5e1" fontSize="9" fontFamily="monospace">
+              Disjuntor Geral: {standardBreakerA}A
+            </text>
             
-            {/* TCs Sensores (Transformadores de Corrente) */}
-            <g transform="translate(18, 54)">
-              <rect x="0" y="0" width="44" height="20" rx="4" fill="#f59e0b" fillOpacity="0.2" stroke="#f59e0b" strokeWidth="1" />
-              <text x="22" y="13" textAnchor="middle" fill="#fbbf24" fontSize="8" fontWeight="bold">TC Fase R</text>
+            {effectiveHasDLM ? (
+              <>
+                {/* TCs Sensores (Transformadores de Corrente) para DLM */}
+                <g transform="translate(18, 54)">
+                  <rect x="0" y="0" width="44" height="20" rx="4" fill="#f59e0b" fillOpacity="0.2" stroke="#f59e0b" strokeWidth="1" />
+                  <text x="22" y="13" textAnchor="middle" fill="#fbbf24" fontSize="8" fontWeight="bold">TC Fase R</text>
 
-              <rect x="50" y="0" width="44" height="20" rx="4" fill="#f59e0b" fillOpacity="0.2" stroke="#f59e0b" strokeWidth="1" />
-              <text x="72" y="13" textAnchor="middle" fill="#fbbf24" fontSize="8" fontWeight="bold">TC Fase S</text>
+                  <rect x="50" y="0" width="44" height="20" rx="4" fill="#f59e0b" fillOpacity="0.2" stroke="#f59e0b" strokeWidth="1" />
+                  <text x="72" y="13" textAnchor="middle" fill="#fbbf24" fontSize="8" fontWeight="bold">TC Fase S</text>
 
-              <rect x="100" y="0" width="44" height="20" rx="4" fill="#f59e0b" fillOpacity="0.2" stroke="#f59e0b" strokeWidth="1" />
-              <text x="122" y="13" textAnchor="middle" fill="#fbbf24" fontSize="8" fontWeight="bold">TC Fase T</text>
-            </g>
+                  <rect x="100" y="0" width="44" height="20" rx="4" fill="#f59e0b" fillOpacity="0.2" stroke="#f59e0b" strokeWidth="1" />
+                  <text x="122" y="13" textAnchor="middle" fill="#fbbf24" fontSize="8" fontWeight="bold">TC Fase T</text>
+                </g>
 
-            {/* Descrição do Sensor */}
-            <rect x="15" y="93" width="150" height="38" rx="8" fill="#182234" />
-            <text x="90" y="109" textAnchor="middle" fill="#38bdf8" fontSize="9" fontWeight="bold">Medição em Tempo Real</text>
-            <text x="90" y="123" textAnchor="middle" fill="#94a3b8" fontSize="8">Leitura a cada 100ms</text>
+                {/* Descrição do Sensor */}
+                <rect x="15" y="93" width="150" height="38" rx="8" fill="#182234" />
+                <text x="90" y="109" textAnchor="middle" fill="#38bdf8" fontSize="9" fontWeight="bold">Medição em Tempo Real</text>
+                <text x="90" y="123" textAnchor="middle" fill="#94a3b8" fontSize="8">Leitura a cada 100ms</text>
 
-            <rect x="15" y="139" width="150" height="24" rx="6" fill="#f59e0b" fillOpacity="0.1" stroke="#f59e0b" strokeWidth="1" />
-            <text x="90" y="155" textAnchor="middle" fill="#f59e0b" fontSize="9" fontWeight="bold">TCs Bipartidos de Alta Precisão</text>
+                <rect x="15" y="139" width="150" height="24" rx="6" fill="#f59e0b" fillOpacity="0.1" stroke="#f59e0b" strokeWidth="1" />
+                <text x="90" y="155" textAnchor="middle" fill="#f59e0b" fontSize="9" fontWeight="bold">TCs Bipartidos de Alta Precisão</text>
+              </>
+            ) : (
+              <>
+                {/* Modo Direto (Sem DLM): Barramento e Medição Homologada */}
+                <g transform="translate(18, 54)">
+                  <rect x="0" y="0" width="144" height="20" rx="4" fill="#00B356" fillOpacity="0.15" stroke="#00B356" strokeWidth="1" />
+                  <text x="72" y="13" textAnchor="middle" fill="#10b981" fontSize="8" fontWeight="bold">
+                    Barramento Trifásico R-S-T
+                  </text>
+                </g>
+
+                <rect x="15" y="93" width="150" height="38" rx="8" fill="#182234" />
+                <text x="90" y="109" textAnchor="middle" fill="#38bdf8" fontSize="9" fontWeight="bold">Medição Homologada</text>
+                <text x="90" y="123" textAnchor="middle" fill="#94a3b8" fontSize="8">Conexão Direta ao QDC-VE</text>
+
+                <rect x="15" y="139" width="150" height="24" rx="6" fill="#00B356" fillOpacity="0.1" stroke="#00B356" strokeWidth="1" />
+                <text x="90" y="155" textAnchor="middle" fill="#00B356" fontSize="9" fontWeight="bold">100% Carga Plena Homologada</text>
+              </>
+            )}
           </g>
 
           {/* ─── 3. CARGAS DO IMÓVEL (PRIORIDADE TOTAL) ─── */}
@@ -255,7 +445,6 @@ export default function DLMSystemVisualizer({
             <text x="50" y="40" fill="#94a3b8" fontSize="8">Prioridade Absoluta</text>
 
             <rect x="12" y="50" width="160" height="68" rx="8" fill="#1e293b" />
-            {/* Texto com quebra garantida via tspan, 100% contido no card sem vazar */}
             <text x="20" y="68" fill="#cbd5e1" fontSize="9" fontFamily="sans-serif">
               <tspan x="20" dy="0">Ar condicionado, iluminação</tspan>
               <tspan x="20" dy="13">e computadores do imóvel</tspan>
@@ -265,71 +454,129 @@ export default function DLMSystemVisualizer({
             </text>
           </g>
 
-          {/* Linha de Energia: Padrão -> Imóvel (com margem limpa) */}
+          {/* Linha de Energia: Padrão -> Imóvel */}
           <path d="M 405 75 L 461 75" stroke="#38bdf8" strokeWidth="2.5" markerEnd="url(#arrowBlueRight)" />
           <g transform="translate(410, 52)">
             <rect x="0" y="0" width="48" height="15" rx="3" fill="#0f172a" stroke="#1e293b" strokeWidth="1" />
             <text x="24" y="10.5" textAnchor="middle" fill="#38bdf8" fontSize="7.5" fontWeight="bold">Prioridade</text>
           </g>
 
-          {/* ─── 4. CONTROLADOR CENTRAL DLM (O CÉREBRO) ─── */}
-          <g transform="translate(465, 175)">
-            <rect x="0" y="0" width="185" height="155" rx="16" fill="#182234" stroke="#E45318" strokeWidth="2" filter="drop-shadow(0 4px 6px rgba(0,0,0,0.3))" />
-            
-            {/* Header da Gaveta DLM */}
-            <rect x="0" y="0" width="185" height="32" rx="16" fill="url(#dlmGrad)" />
-            <text x="92.5" y="21" textAnchor="middle" fill="#ffffff" fontSize="10.5" fontWeight="bold" letterSpacing="0.5">
-              CENTRAL DLM INTELIGENTE
-            </text>
+          {/* ─── 4. BLOCO CENTRAL: CENTRAL DLM (SE ATIVO) OU QUADRO QDC-VE (SE DIRETO) ─── */}
+          {effectiveHasDLM ? (
+            <>
+              {/* CONTROLADOR CENTRAL DLM (O CÉREBRO) */}
+              <g transform="translate(465, 175)">
+                <rect x="0" y="0" width="185" height="155" rx="16" fill="#182234" stroke="#E45318" strokeWidth="2" filter="drop-shadow(0 4px 6px rgba(0,0,0,0.3))" />
+                
+                {/* Header da Gaveta DLM */}
+                <rect x="0" y="0" width="185" height="32" rx="16" fill="url(#dlmGrad)" />
+                <text x="92.5" y="21" textAnchor="middle" fill="#ffffff" fontSize="10.5" fontWeight="bold" letterSpacing="0.5">
+                  CENTRAL DLM INTELIGENTE
+                </text>
 
-            <text x="92.5" y="52" textAnchor="middle" fill="#fbbf24" fontSize="9.5" fontWeight="bold" fontFamily="sans-serif">
-              {systemInfo.controller}
-            </text>
+                <text x="92.5" y="52" textAnchor="middle" fill="#fbbf24" fontSize="9.5" fontWeight="bold" fontFamily="sans-serif">
+                  {systemInfo.controller}
+                </text>
 
-            <rect x="12" y="65" width="161" height="48" rx="8" fill="#0f172a" stroke="#334155" strokeWidth="1" />
-            <text x="20" y="80" fill="#94a3b8" fontSize="8" fontFamily="sans-serif">Algoritmo de Cálculo Dinâmico:</text>
-            <text x="20" y="93" fill="#38bdf8" fontSize="9" fontWeight="bold" fontFamily="monospace">
-              P_ve = Limite - P_imóvel
-            </text>
-            <text x="20" y="105" fill="#10b981" fontSize="8" fontWeight="bold" fontFamily="monospace">
-              Folga Segura: {availableMarginKW} kW
-            </text>
+                <rect x="12" y="65" width="161" height="48" rx="8" fill="#0f172a" stroke="#334155" strokeWidth="1" />
+                <text x="20" y="80" fill="#94a3b8" fontSize="8" fontFamily="sans-serif">Algoritmo de Cálculo Dinâmico:</text>
+                <text x="20" y="93" fill="#38bdf8" fontSize="9" fontWeight="bold" fontFamily="monospace">
+                  P_ve = Limite - P_imóvel
+                </text>
+                <text x="20" y="105" fill="#10b981" fontSize="8" fontWeight="bold" fontFamily="monospace">
+                  Folga Segura: {availableMarginKW} kW
+                </text>
 
-            <rect x="12" y="121" width="161" height="22" rx="5" fill="#f59e0b" fillOpacity="0.15" />
-            <text x="92.5" y="135" textAnchor="middle" fill="#f59e0b" fontSize="8" fontWeight="bold">
-              {isThrottled ? "⚠️ MODULAÇÃO ATIVA: Evita desarme" : "✓ OPERAÇÃO NORMAL: Carga plena"}
-            </text>
-          </g>
+                <rect x="12" y="121" width="161" height="22" rx="5" fill="#f59e0b" fillOpacity="0.15" />
+                <text x="92.5" y="135" textAnchor="middle" fill="#f59e0b" fontSize="8" fontWeight="bold">
+                  {isThrottled ? "⚠️ MODULAÇÃO ATIVA: Evita desarme" : "✓ OPERAÇÃO NORMAL: Carga plena"}
+                </text>
+              </g>
 
-          {/* Linha de Dados de Medição: TCs do Padrão -> Central DLM (Badge sólido sem sobrepor texto) */}
-          <path d="M 315 210 L 315 250 L 461 250" stroke="#f59e0b" strokeWidth="2" strokeDasharray="4 4" markerEnd="url(#arrowOrangeRight)" />
-          <g transform="translate(332, 239)">
-            <rect x="0" y="0" width="112" height="18" rx="4" fill="#0f172a" stroke="#f59e0b" strokeWidth="1" />
-            <text x="56" y="12" textAnchor="middle" fill="#fbbf24" fontSize="8" fontWeight="bold">Sinal dos TCs (100ms)</text>
-          </g>
+              {/* Linha de Dados de Medição: TCs do Padrão -> Central DLM */}
+              {/* ROTA LIMPA: sai de x=335 no Padrão, desce até y=250 e entra na Central DLM em x=461 */}
+              <path d="M 335 210 L 335 250 L 461 250" stroke="#f59e0b" strokeWidth="2" strokeDasharray="4 4" markerEnd="url(#arrowOrangeRight)" />
+              <g transform="translate(345, 239)">
+                <rect x="0" y="0" width="112" height="18" rx="4" fill="#0f172a" stroke="#f59e0b" strokeWidth="1" />
+                <text x="56" y="12" textAnchor="middle" fill="#fbbf24" fontSize="8" fontWeight="bold">Sinal dos TCs (100ms)</text>
+              </g>
 
-          {/* ─── 5. ESTAÇÕES DE RECARGA DE VEÍCULOS (MODULADAS EM TEMPO REAL) ─── */}
+              {/* Linhas de Comunicação DLM: Central DLM -> Carregadores */}
+              <path d="M 650 240 L 705 240 L 705 85 L 766 85" stroke="#E45318" strokeWidth="2" strokeDasharray="3 3" markerEnd="url(#arrowDlmRight)" />
+              <path d="M 650 260 L 705 260 L 705 270 L 766 270" stroke="#E45318" strokeWidth="2" strokeDasharray="3 3" markerEnd="url(#arrowDlmRight)" />
+
+              {/* Badge de Comunicação Modbus */}
+              <g transform="translate(668, 158)">
+                <rect x="0" y="0" width="76" height="26" rx="6" fill="#182234" stroke="#E45318" strokeWidth="1" />
+                <text x="38" y="11" textAnchor="middle" fill="#f59e0b" fontSize="8" fontWeight="bold">RS485 / Modbus</text>
+                <text x="38" y="21" textAnchor="middle" fill="#cbd5e1" fontSize="7">Comando DLM</text>
+              </g>
+            </>
+          ) : (
+            <>
+              {/* QUADRO DEDICADO DE RECARGA (QDC-VE) - MODO DIRETO SEM DLM */}
+              <g transform="translate(465, 175)">
+                <rect x="0" y="0" width="185" height="145" rx="16" fill="#0f172a" stroke="#00B356" strokeWidth="2" filter="drop-shadow(0 4px 6px rgba(0,0,0,0.3))" />
+                
+                {/* Header QDC-VE */}
+                <rect x="0" y="0" width="185" height="30" rx="16" fill="url(#chargerGrad)" />
+                <text x="92.5" y="20" textAnchor="middle" fill="#ffffff" fontSize="10.5" fontWeight="bold" letterSpacing="0.5">
+                  QUADRO GERAL QDC-VE
+                </text>
+
+                <text x="92.5" y="48" textAnchor="middle" fill="#10b981" fontSize="9.5" fontWeight="bold" fontFamily="sans-serif">
+                  Alimentação Direta Contínua
+                </text>
+
+                <rect x="12" y="58" width="161" height="46" rx="8" fill="#182234" stroke="#334155" strokeWidth="1" />
+                <text x="20" y="73" fill="#94a3b8" fontSize="8" fontFamily="sans-serif">Regime de Operação:</text>
+                <text x="20" y="86" fill="#38bdf8" fontSize="9" fontWeight="bold" fontFamily="monospace">
+                  100% Carga Plena (Sem DLM)
+                </text>
+                <text x="20" y="97" fill="#10b981" fontSize="8" fontWeight="bold" fontFamily="monospace">
+                  Folga no Padrão: {availableMarginKW} kW
+                </text>
+
+                <rect x="12" y="112" width="161" height="22" rx="5" fill="#00B356" fillOpacity="0.15" />
+                <text x="92.5" y="126" textAnchor="middle" fill="#00B356" fontSize="8" fontWeight="bold">
+                  ✓ OPERAÇÃO NOMINAL: Padrão Atende
+                </text>
+              </g>
+            </>
+          )}
+
+          {/* ─── 5. ESTAÇÕES DE RECARGA DE VEÍCULOS (DINÂMICAS DA SIMULAÇÃO) ─── */}
           
           {/* Carregador 1 */}
           <g transform="translate(770, 20)">
             <rect x="0" y="0" width="210" height="160" rx="14" fill="#0f172a" stroke="#00B356" strokeWidth="1.5" />
             <rect x="0" y="0" width="210" height="28" rx="14" fill="url(#chargerGrad)" />
-            <text x="105" y="18" textAnchor="middle" fill="#ffffff" fontSize="10" fontWeight="bold">CARREGADOR VE 1 (Vaga A)</text>
+            <text x="105" y="18" textAnchor="middle" fill="#ffffff" fontSize="10" fontWeight="bold">
+              {displayChargers[0].title}
+            </text>
             
             <circle cx="30" cy="54" r="12" fill="#00B356" fillOpacity="0.2" />
             <path d="M 27 49 L 33 54 L 27 59" stroke="#10b981" strokeWidth="1.5" fill="none" />
-            <text x="50" y="51" fill="#ffffff" fontSize="10" fontWeight="bold">BENY BCP / WEG</text>
-            <text x="50" y="63" fill="#94a3b8" fontSize="8">Conector Tipo 2 / CCS2</text>
+            <text x="50" y="51" fill="#ffffff" fontSize="9.5" fontWeight="bold">
+              {displayChargers[0].name.length > 24 ? displayChargers[0].name.slice(0, 22) + '...' : displayChargers[0].name}
+            </text>
+            <text x="50" y="63" fill="#94a3b8" fontSize="8">
+              {displayChargers[0].connector}
+            </text>
 
             <rect x="15" y="74" width="180" height="46" rx="8" fill="#1e293b" />
-            <text x="25" y="91" fill="#94a3b8" fontSize="8">Comando Recebido:</text>
+            <text x="25" y="91" fill="#94a3b8" fontSize="8">
+              {effectiveHasDLM ? "Comando Recebido:" : "Potência Homologada:"}
+            </text>
             <text x="25" y="108" fill="#10b981" fontSize="11" fontWeight="bold" fontFamily="monospace">
-              {(evLoadKW / Math.max(1, evCount)).toFixed(1)} kW ({isThrottled ? "Modulado" : "Pleno"})
+              {displayChargers[0].powerKW} kW ({effectiveHasDLM && isThrottled ? "Modulado" : "Pleno"})
             </text>
 
             <rect x="15" y="128" width="180" height="20" rx="4" fill="#00B356" fillOpacity="0.15" />
             <text x="105" y="141" textAnchor="middle" fill="#10b981" fontSize="8" fontWeight="bold">
-              {isThrottled ? "Corrente Limitada pela Central" : "Corrente Nominal (32A)"}
+              {effectiveHasDLM && isThrottled 
+                ? "Corrente Limitada pela Central" 
+                : `Corrente Nominal (${displayChargers[0].currentA}A)`}
             </text>
           </g>
 
@@ -337,43 +584,45 @@ export default function DLMSystemVisualizer({
           <g transform="translate(770, 205)">
             <rect x="0" y="0" width="210" height="160" rx="14" fill="#0f172a" stroke="#00B356" strokeWidth="1.5" />
             <rect x="0" y="0" width="210" height="28" rx="14" fill="url(#chargerGrad)" />
-            <text x="105" y="18" textAnchor="middle" fill="#ffffff" fontSize="10" fontWeight="bold">CARREGADOR VE 2 (Vaga B)</text>
+            <text x="105" y="18" textAnchor="middle" fill="#ffffff" fontSize="10" fontWeight="bold">
+              {displayChargers[1].title}
+            </text>
             
-            <circle cx="30" cy="54" r="12" fill="#00B356" fillOpacity="0.2" />
-            <path d="M 27 49 L 33 54 L 27 59" stroke="#10b981" strokeWidth="1.5" fill="none" />
-            <text x="50" y="51" fill="#ffffff" fontSize="10" fontWeight="bold">BENY / ABB Fast</text>
-            <text x="50" y="63" fill="#94a3b8" fontSize="8">Pistola 2 / Dual Gun</text>
+            <circle cx="30" cy="54" r="12" fill={displayChargers[1].isExpansion ? "#64748b" : "#00B356"} fillOpacity="0.2" />
+            <path d="M 27 49 L 33 54 L 27 59" stroke={displayChargers[1].isExpansion ? "#94a3b8" : "#10b981"} strokeWidth="1.5" fill="none" />
+            <text x="50" y="51" fill="#ffffff" fontSize="9.5" fontWeight="bold">
+              {displayChargers[1].name.length > 24 ? displayChargers[1].name.slice(0, 22) + '...' : displayChargers[1].name}
+            </text>
+            <text x="50" y="63" fill="#94a3b8" fontSize="8">
+              {displayChargers[1].connector}
+            </text>
 
             <rect x="15" y="74" width="180" height="46" rx="8" fill="#1e293b" />
-            <text x="25" y="91" fill="#94a3b8" fontSize="8">Comando Recebido:</text>
-            <text x="25" y="108" fill="#10b981" fontSize="11" fontWeight="bold" fontFamily="monospace">
-              {(evLoadKW / Math.max(1, evCount)).toFixed(1)} kW ({isThrottled ? "Modulado" : "Pleno"})
+            <text x="25" y="91" fill="#94a3b8" fontSize="8">
+              {displayChargers[1].isExpansion 
+                ? "Capacidade Reservada:" 
+                : effectiveHasDLM ? "Comando Recebido:" : "Potência Homologada:"}
+            </text>
+            <text x="25" y="108" fill={displayChargers[1].isExpansion ? "#94a3b8" : "#10b981"} fontSize="11" fontWeight="bold" fontFamily="monospace">
+              {displayChargers[1].isExpansion 
+                ? "Reserva Técnica" 
+                : `${displayChargers[1].powerKW} kW (${effectiveHasDLM && isThrottled ? "Modulado" : "Pleno"})`}
             </text>
 
             <rect x="15" y="128" width="180" height="20" rx="4" fill="#00B356" fillOpacity="0.15" />
-            <text x="105" y="141" textAnchor="middle" fill="#10b981" fontSize="8" fontWeight="bold">
-              {isThrottled ? "Divisão Dinâmica Ativa" : "Corrente Nominal (32A)"}
+            <text x="105" y="141" textAnchor="middle" fill={displayChargers[1].isExpansion ? "#94a3b8" : "#10b981"} fontSize="8" fontWeight="bold">
+              {displayChargers[1].isExpansion
+                ? "Infraestrutura Seca Disponível"
+                : effectiveHasDLM && isThrottled 
+                ? "Divisão Dinâmica Ativa" 
+                : `Corrente Nominal (${displayChargers[1].currentA}A)`}
             </text>
           </g>
 
-          {/* ─── LINHAS DE COMUNICAÇÃO DLM: CENTRAL DLM -> CARREGADORES (LATERAL ESQUERDA) ─── */}
-          {/* Ramal para Carregador 1: sai de DLM (x=650), sobe pelo canal de sinal em x=705 e entra na lateral de Carregador 1 (x=766) */}
-          <path d="M 650 240 L 705 240 L 705 85 L 766 85" stroke="#E45318" strokeWidth="2" strokeDasharray="3 3" markerEnd="url(#arrowDlmRight)" />
-          {/* Ramal para Carregador 2: entra na lateral de Carregador 2 (x=766) */}
-          <path d="M 650 260 L 705 260 L 705 270 L 766 270" stroke="#E45318" strokeWidth="2" strokeDasharray="3 3" markerEnd="url(#arrowDlmRight)" />
-
-          {/* Badge Horizontal de Comunicação (Elimina texto vertical rotacionado sobre a linha) */}
-          <g transform="translate(668, 158)">
-            <rect x="0" y="0" width="76" height="26" rx="6" fill="#182234" stroke="#E45318" strokeWidth="1" />
-            <text x="38" y="11" textAnchor="middle" fill="#f59e0b" fontSize="8" fontWeight="bold">RS485 / Modbus</text>
-            <text x="38" y="21" textAnchor="middle" fill="#cbd5e1" fontSize="7">Comando DLM</text>
-          </g>
-
-          {/* ─── LINHA DE POTÊNCIA ELÉTRICA: PADRÃO -> CARREGADORES (CANALETA INFERIOR DEDICADA) ─── */}
-          {/* Sai do fundo do Padrão em x=365, desce até canaleta inferior y=395, corre até a prumada x=875 dos carregadores */}
-          {/* Alimentação sobe na base inferior de Carregador 2 (y=369, sem entrar no card) */}
-          <path d="M 365 210 L 365 395 L 875 395 L 875 369" stroke="#38bdf8" strokeWidth="2.5" markerEnd="url(#arrowBlueUp)" />
-          {/* Alimentação sobe na base inferior de Carregador 1 (y=184, sem entrar no card) */}
+          {/* ─── LINHA DE POTÊNCIA ELÉTRICA: PADRÃO -> CARREGADORES (ZERO SOBREPOSIÇÃO) ─── */}
+          {/* Sai do Padrão em x=255 (extrema esquerda), desce até canaleta y=395 sem cruzar a medição em x=335 */}
+          <path d="M 255 210 L 255 395 L 875 395 L 875 369" stroke="#38bdf8" strokeWidth="2.5" markerEnd="url(#arrowBlueUp)" />
+          {/* Ramal ascendente para o Carregador 1 */}
           <path d="M 875 205 L 875 184" stroke="#38bdf8" strokeWidth="2.5" markerEnd="url(#arrowBlueUp)" />
 
           {/* Badge Informativo da Alimentação Principal */}
@@ -408,25 +657,55 @@ export default function DLMSystemVisualizer({
         <div className="mt-3 pt-3 border-t border-slate-800/80 grid grid-cols-1 sm:grid-cols-3 gap-2 text-[10px] text-slate-300">
           <div className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded-full bg-[#38bdf8] shrink-0" />
-            <span><strong>Linha de Potência (Azul):</strong> Fluxo de energia bruta dos condutores de cobre/alumínio.</span>
+            <span><strong>Linha de Potência (Azul):</strong> Fluxo de energia bruta dos condutores elétricos (QGBT ➔ QDC-VE).</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-full bg-[#f59e0b] shrink-0" />
-            <span><strong>Linha de Medição (Amarela):</strong> Sinal dos TCs para leitura de corrente em cada fase.</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-full bg-[#E45318] shrink-0" />
-            <span><strong>Linha de Controle (Laranja):</strong> Comandos dinâmicos Modbus RS485 / OCPP em tempo real.</span>
-          </div>
+          {effectiveHasDLM ? (
+            <>
+              <div className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded-full bg-[#f59e0b] shrink-0" />
+                <span><strong>Linha de Medição (Amarela):</strong> Sinal dos TCs para leitura de corrente em cada fase.</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded-full bg-[#E45318] shrink-0" />
+                <span><strong>Linha de Controle (Laranja):</strong> Comandos dinâmicos Modbus RS485 / OCPP em tempo real.</span>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded-full bg-[#00B356] shrink-0" />
+                <span><strong>Regime Operacional (Verde):</strong> 100% Carga Plena garantida sem modulação ativa por DLM.</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded-full bg-blue-400 shrink-0" />
+                <span><strong>Proteções Dedicadas:</strong> Disjuntores termomagnéticos e IDR Tipo B dedicados por vaga.</span>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
       {/* Tabela de Benchmark dos Sistemas Prontos de Mercado */}
       <div className="bg-slate-900/80 p-4 rounded-2xl border border-slate-800 space-y-2">
-        <h4 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
-          <Sliders className="w-4 h-4 text-[#00B356]" />
-          Compatibilidade com Sistemas Prontos de Mercado (Plug & Play)
+        <h4 className="text-xs font-bold text-white uppercase tracking-wider flex items-center justify-between">
+          <span className="flex items-center gap-1.5">
+            <Sliders className="w-4 h-4 text-[#00B356]" />
+            {effectiveHasDLM 
+              ? "Compatibilidade com Sistemas Prontos de Mercado (Plug & Play)" 
+              : "Compatibilidade Futura com Módulos DLM de Mercado (DLM-Ready)"}
+          </span>
+          {!effectiveHasDLM && (
+            <span className="text-[10px] text-emerald-400 font-mono bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded">
+              Dispensável na Fase Atual
+            </span>
+          )}
         </h4>
+
+        {!effectiveHasDLM && (
+          <p className="text-[11px] text-slate-400">
+            Caso no futuro ocorra aumento expressivo da carga do imóvel ou expansão do número de estações de recarga excedendo os {gridLimitKW} kW do padrão, o sistema suporta integração imediata com as seguintes centrais de mercado:
+          </p>
+        )}
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-[11px] font-sans">
@@ -441,7 +720,7 @@ export default function DLMSystemVisualizer({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60 text-slate-300">
-              <tr className={systemType === 'beny' ? 'bg-amber-500/10 text-white font-bold' : ''}>
+              <tr className={effectiveHasDLM && systemType === 'beny' ? 'bg-amber-500/10 text-white font-bold' : ''}>
                 <td className="py-2 pr-3 font-semibold text-amber-400">BENY DLB Box</td>
                 <td className="py-2 px-3">TCs bipartidos no Padrão (100A/250A/600A)</td>
                 <td className="py-2 px-3">RS485 Modbus / Wi-Fi</td>
@@ -449,7 +728,7 @@ export default function DLMSystemVisualizer({
                 <td className="py-2 px-3">1 a 10 Carregadores</td>
                 <td className="py-2 pl-3 text-right text-slate-400">Residencial & Comercial Leve</td>
               </tr>
-              <tr className={systemType === 'weg' ? 'bg-amber-500/10 text-white font-bold' : ''}>
+              <tr className={effectiveHasDLM && systemType === 'weg' ? 'bg-amber-500/10 text-white font-bold' : ''}>
                 <td className="py-2 pr-3 font-semibold text-blue-400">WEG WEMOB Smart DLM</td>
                 <td className="py-2 px-3">Multimedidor no QGBT + TCs</td>
                 <td className="py-2 px-3">Ethernet / Modbus TCP / 4G</td>
@@ -457,7 +736,7 @@ export default function DLMSystemVisualizer({
                 <td className="py-2 px-3">Até 30 Carregadores</td>
                 <td className="py-2 pl-3 text-right text-slate-400">Condomínios & Frotas</td>
               </tr>
-              <tr className={systemType === 'schneider' ? 'bg-amber-500/10 text-white font-bold' : ''}>
+              <tr className={effectiveHasDLM && systemType === 'schneider' ? 'bg-amber-500/10 text-white font-bold' : ''}>
                 <td className="py-2 pr-3 font-semibold text-emerald-400">Schneider EcoStruxure LMS</td>
                 <td className="py-2 px-3">Medidores PowerLogic iEM3000 / PM5000</td>
                 <td className="py-2 px-3">Modbus / BACnet / IP</td>
@@ -465,7 +744,7 @@ export default function DLMSystemVisualizer({
                 <td className="py-2 px-3">Até 1.000 Carregadores</td>
                 <td className="py-2 pl-3 text-right text-slate-400">Shopping Centers & Hubs</td>
               </tr>
-              <tr className={systemType === 'abb' ? 'bg-amber-500/10 text-white font-bold' : ''}>
+              <tr className={effectiveHasDLM && systemType === 'abb' ? 'bg-amber-500/10 text-white font-bold' : ''}>
                 <td className="py-2 pr-3 font-semibold text-rose-400">ABB Dynamic Load Balancing</td>
                 <td className="py-2 px-3">Medidor ABB B23/B24 trilho DIN</td>
                 <td className="py-2 px-3">Modbus RTU / OCPP</td>

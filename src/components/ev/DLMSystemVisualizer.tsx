@@ -2,7 +2,7 @@
 
 import React from "react";
 import { 
-  Zap, ShieldCheck, CheckCircle2, Sliders, Activity, Info
+  Zap, ShieldCheck, Sliders, Activity
 } from "lucide-react";
 
 export interface ConfiguredChargerVisualItem {
@@ -44,8 +44,8 @@ function calculateNominalCurrentA(powerKW: number, voltageV: number = 380, phase
 export default function DLMSystemVisualizer({
   systemType = 'beny',
   gridLimitKW = 75,
-  buildingLoadKW = 35,
-  evLoadKW = 32.5,
+  buildingLoadKW = 7.9,
+  evLoadKW = 48.4,
   isThrottled = false,
   evCount = 2,
   enableSolarSurplus = false,
@@ -61,7 +61,14 @@ export default function DLMSystemVisualizer({
   const availableMarginKW = Number(Math.max(0, gridLimitKW - totalDemandKW).toFixed(1));
   const usagePercent = Math.min(100, Math.round((totalDemandKW / Math.max(1, gridLimitKW)) * 100));
 
-  // Determina se o DLM é necessário na instalação
+  // ─── CÁLCULO DA CARGA RESTANTE (MÁXIMO DO PADRÃO MENOS CARGA DO CLIENTE) ───
+  // P_restante = P_max_padrao - P_imovel_cliente
+  const remainingGridCapacityKW = Math.max(0, Number((gridLimitKW - buildingLoadKW).toFixed(1)));
+  // Metade da carga restante por plugue (caso haja 2 plugues em recarga simultânea)
+  const halfRemainingPerPlugKW = Number((remainingGridCapacityKW / 2).toFixed(1));
+
+  // Determina se o DLM é efetivamente ativo/necessário na visualização
+  // Se hasDLM foi passado explicitamente como false (ou enableDLM=false), DLM NÃO aparece!
   const effectiveHasDLM = typeof hasDLM === 'boolean'
     ? hasDLM
     : Boolean(isThrottled || (deficitKW !== undefined && deficitKW > 0) || (gridLimitKW > 0 && totalDemandKW > gridLimitKW));
@@ -119,7 +126,7 @@ export default function DLMSystemVisualizer({
 
   const systemInfo = SYSTEM_CONFIGS[systemType] || SYSTEM_CONFIGS.beny;
 
-  // ─── RESOLUÇÃO DINÂMICA DOS CARREGADORES BASEADO NA SIMULAÇÃO ──────────────
+  // ─── RESOLUÇÃO DINÂMICA DA POTÊNCIA POR PLUGUE (METADE DA CARGA RESTANTE) ────
   interface DisplayChargerCard {
     title: string;
     name: string;
@@ -128,109 +135,135 @@ export default function DLMSystemVisualizer({
     currentA: number;
     type: 'AC' | 'DC';
     isExpansion?: boolean;
+    statusLabel: string;
   }
 
   const displayChargers: [DisplayChargerCard, DisplayChargerCard] = React.useMemo(() => {
+    let p1Nominal = 24.2;
+    let p2Nominal = 24.2;
+    let name1 = "Estação de Recarga 1";
+    let name2 = "Estação de Recarga 2";
+    let conn1 = "CCS2 (Pistola 1)";
+    let conn2 = "CCS2 (Pistola 2)";
+    let volt1 = 380;
+    let volt2 = 380;
+    let phases1 = 3;
+    let phases2 = 3;
+    let type1: 'AC' | 'DC' = 'DC';
+    let type2: 'AC' | 'DC' = 'DC';
+    let isExpansion2 = false;
+
     if (chargers && chargers.length > 0) {
       if (chargers.length === 1) {
         const single = chargers[0];
-        const isDualGun = (single.powerKW >= 40 && single.type === 'DC') || 
-                          (single.connector && single.connector.toLowerCase().includes('2x'));
-        
-        if (isDualGun) {
-          const halfPower = Number((single.powerKW / 2).toFixed(1));
-          const current = calculateNominalCurrentA(halfPower, single.voltage || 380, 3);
+        const isDual = (single.powerKW >= 30) || (single.connector && single.connector.toLowerCase().includes('2x'));
+        if (isDual) {
+          const halfP = Number((single.powerKW / 2).toFixed(1));
+          p1Nominal = halfP;
+          p2Nominal = halfP;
+          name1 = single.name;
+          name2 = single.name;
           const baseConn = single.connector ? single.connector.replace(/2x/gi, '').trim() : 'CCS2';
-          return [
-            {
-              title: "CARREGADOR VE 1 (Vaga A)",
-              name: single.name,
-              connector: `${baseConn} (Pistola 1)`,
-              powerKW: halfPower,
-              currentA: current,
-              type: 'DC'
-            },
-            {
-              title: "CARREGADOR VE 2 (Vaga B)",
-              name: single.name,
-              connector: `${baseConn} (Pistola 2)`,
-              powerKW: halfPower,
-              currentA: current,
-              type: 'DC'
-            }
-          ];
+          conn1 = `${baseConn} (Pistola 1)`;
+          conn2 = `${baseConn} (Pistola 2)`;
+          volt1 = single.voltage || 380;
+          volt2 = single.voltage || 380;
+          phases1 = single.phases || 3;
+          phases2 = single.phases || 3;
+          type1 = (single.type as any) || 'DC';
+          type2 = (single.type as any) || 'DC';
         } else {
-          const current = calculateNominalCurrentA(single.powerKW, single.voltage || voltageV, single.phases || 1);
-          return [
-            {
-              title: "CARREGADOR VE 1 (Vaga A)",
-              name: single.name,
-              connector: single.connector || (single.powerKW >= 30 ? 'Conector CCS2' : 'Conector Tipo 2'),
-              powerKW: single.powerKW,
-              currentA: current,
-              type: (single.type as any) || (single.powerKW >= 30 ? 'DC' : 'AC')
-            },
-            {
-              title: "VAGA FUTURA (Expansão)",
-              name: "Ponto de Recarga Reserva",
-              connector: "Infraestrutura Seca Tubulada",
-              powerKW: 0,
-              currentA: 0,
-              type: 'AC',
-              isExpansion: true
-            }
-          ];
+          p1Nominal = single.powerKW;
+          p2Nominal = 0;
+          name1 = single.name;
+          name2 = "Ponto de Recarga Reserva";
+          conn1 = single.connector || 'Tipo 2';
+          conn2 = "Infraestrutura Seca Tubulada";
+          volt1 = single.voltage || 220;
+          volt2 = single.voltage || 220;
+          phases1 = single.phases || 1;
+          phases2 = single.phases || 1;
+          type1 = (single.type as any) || (single.powerKW >= 30 ? 'DC' : 'AC');
+          type2 = 'AC';
+          isExpansion2 = true;
         }
+      } else {
+        const c1 = chargers[0];
+        const c2 = chargers[1];
+        p1Nominal = c1.powerKW;
+        p2Nominal = c2.powerKW;
+        name1 = c1.name;
+        name2 = c2.name;
+        conn1 = c1.connector || (c1.powerKW >= 30 ? 'CCS2' : 'Tipo 2');
+        conn2 = c2.connector || (c2.powerKW >= 30 ? 'CCS2' : 'Tipo 2');
+        volt1 = c1.voltage || (c1.powerKW >= 22 ? 380 : 220);
+        volt2 = c2.voltage || (c2.powerKW >= 22 ? 380 : 220);
+        phases1 = c1.phases || (c1.powerKW >= 22 ? 3 : 1);
+        phases2 = c2.phases || (c2.powerKW >= 22 ? 3 : 1);
+        type1 = (c1.type as any) || (c1.powerKW >= 30 ? 'DC' : 'AC');
+        type2 = (c2.type as any) || (c2.powerKW >= 30 ? 'DC' : 'AC');
       }
-
-      // 2 ou mais carregadores configurados
-      const c1 = chargers[0];
-      const c2 = chargers[1];
-      const curr1 = calculateNominalCurrentA(c1.powerKW, c1.voltage || 380, c1.phases || 3);
-      const curr2 = calculateNominalCurrentA(c2.powerKW, c2.voltage || 380, c2.phases || 3);
-
-      return [
-        {
-          title: "CARREGADOR VE 1 (Vaga A)",
-          name: c1.name,
-          connector: c1.connector || (c1.powerKW >= 30 ? 'CCS2 / DC Rápido' : 'Tipo 2 / AC'),
-          powerKW: c1.powerKW,
-          currentA: curr1,
-          type: (c1.type as any) || (c1.powerKW >= 30 ? 'DC' : 'AC')
-        },
-        {
-          title: "CARREGADOR VE 2 (Vaga B)",
-          name: c2.name,
-          connector: c2.connector || (c2.powerKW >= 30 ? 'CCS2 / DC Rápido' : 'Tipo 2 / AC'),
-          powerKW: c2.powerKW,
-          currentA: curr2,
-          type: (c2.type as any) || (c2.powerKW >= 30 ? 'DC' : 'AC')
-        }
-      ];
+    } else {
+      // Fallback sem lista: se evLoadKW for 48.4, metade é 24.2 kW por plugue
+      const halfP = Number((evLoadKW / 2).toFixed(1));
+      p1Nominal = halfP > 0 ? halfP : 24.2;
+      p2Nominal = halfP > 0 ? halfP : 24.2;
     }
 
-    // Fallback padrão se não houver carregadores definidos na lista
-    const splitPower = Number((evLoadKW / Math.max(1, evCount)).toFixed(1));
-    const current = calculateNominalCurrentA(splitPower, voltageV, 3);
+    // REGRA DE GESTÃO: Cada plugue recebe metade da carga restante (máximo do padrão - carga do cliente)
+    // Caso a carga restante seja abundante (folga > potência instalada), opera a 100% da potência nominal
+    let p1Effective = p1Nominal;
+    let p2Effective = p2Nominal;
+    let status1 = "Pleno";
+    let status2 = "Pleno";
+
+    if (effectiveHasDLM) {
+      if (isThrottled || (remainingGridCapacityKW < (p1Nominal + p2Nominal))) {
+        // Modulação ativa: cada plugue recebe exatamente metade da sobra disponível do padrão
+        p1Effective = Math.min(p1Nominal, halfRemainingPerPlugKW);
+        p2Effective = isExpansion2 ? 0 : Math.min(p2Nominal, halfRemainingPerPlugKW);
+        status1 = "Modulado DLM";
+        status2 = "Modulado DLM";
+      } else {
+        // Folga abundante do padrão: carga plena autorizada
+        p1Effective = p1Nominal;
+        p2Effective = p2Nominal;
+        status1 = "Pleno";
+        status2 = "Pleno";
+      }
+    } else {
+      // DLM Desligado: opera diretamente a 100% da potência nominal
+      p1Effective = p1Nominal;
+      p2Effective = p2Nominal;
+      status1 = "100% Pleno";
+      status2 = "100% Pleno";
+    }
+
+    const cur1 = calculateNominalCurrentA(p1Effective, volt1, phases1);
+    const cur2 = calculateNominalCurrentA(p2Effective, volt2, phases2);
+
     return [
       {
         title: "CARREGADOR VE 1 (Vaga A)",
-        name: "Estação de Recarga 1",
-        connector: "Conector Tipo 2 / CCS2",
-        powerKW: splitPower,
-        currentA: current,
-        type: splitPower >= 30 ? 'DC' : 'AC'
+        name: name1,
+        connector: conn1,
+        powerKW: p1Effective,
+        currentA: cur1,
+        type: type1,
+        statusLabel: status1
       },
       {
-        title: "CARREGADOR VE 2 (Vaga B)",
-        name: "Estação de Recarga 2",
-        connector: "Pistola 2 / Dual Gun",
-        powerKW: splitPower,
-        currentA: current,
-        type: splitPower >= 30 ? 'DC' : 'AC'
+        title: isExpansion2 ? "VAGA FUTURA (Expansão)" : "CARREGADOR VE 2 (Vaga B)",
+        name: name2,
+        connector: conn2,
+        powerKW: p2Effective,
+        currentA: cur2,
+        type: type2,
+        isExpansion: isExpansion2,
+        statusLabel: status2
       }
     ];
-  }, [chargers, evLoadKW, evCount, voltageV]);
+  }, [chargers, evLoadKW, remainingGridCapacityKW, halfRemainingPerPlugKW, effectiveHasDLM, isThrottled, voltageV]);
 
   return (
     <div className="bg-[#0A192F] text-white p-5 rounded-3xl border border-slate-800 space-y-5 shadow-2xl">
@@ -303,7 +336,7 @@ export default function DLMSystemVisualizer({
                 <strong className={`text-sm ${usagePercent > 95 ? 'text-amber-400' : 'text-emerald-400'}`}>
                   {totalDemandKW} kW ({usagePercent}%)
                 </strong>
-                {isThrottled ? (
+                {effectiveHasDLM && isThrottled ? (
                   <span className="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-1.5 py-0.5 rounded font-bold">
                     MODULADO DLM
                   </span>
@@ -396,7 +429,7 @@ export default function DLMSystemVisualizer({
             
             {effectiveHasDLM ? (
               <>
-                {/* TCs Sensores (Transformadores de Corrente) para DLM */}
+                {/* TCs Sensores para DLM */}
                 <g transform="translate(18, 54)">
                   <rect x="0" y="0" width="44" height="20" rx="4" fill="#f59e0b" fillOpacity="0.2" stroke="#f59e0b" strokeWidth="1" />
                   <text x="22" y="13" textAnchor="middle" fill="#fbbf24" fontSize="8" fontWeight="bold">TC Fase R</text>
@@ -408,7 +441,6 @@ export default function DLMSystemVisualizer({
                   <text x="122" y="13" textAnchor="middle" fill="#fbbf24" fontSize="8" fontWeight="bold">TC Fase T</text>
                 </g>
 
-                {/* Descrição do Sensor */}
                 <rect x="15" y="93" width="150" height="38" rx="8" fill="#182234" />
                 <text x="90" y="109" textAnchor="middle" fill="#38bdf8" fontSize="9" fontWeight="bold">Medição em Tempo Real</text>
                 <text x="90" y="123" textAnchor="middle" fill="#94a3b8" fontSize="8">Leitura a cada 100ms</text>
@@ -481,10 +513,10 @@ export default function DLMSystemVisualizer({
                 <rect x="12" y="65" width="161" height="48" rx="8" fill="#0f172a" stroke="#334155" strokeWidth="1" />
                 <text x="20" y="80" fill="#94a3b8" fontSize="8" fontFamily="sans-serif">Algoritmo de Cálculo Dinâmico:</text>
                 <text x="20" y="93" fill="#38bdf8" fontSize="9" fontWeight="bold" fontFamily="monospace">
-                  P_ve = Limite - P_imóvel
+                  P_restante = Limite - P_imóvel
                 </text>
                 <text x="20" y="105" fill="#10b981" fontSize="8" fontWeight="bold" fontFamily="monospace">
-                  Folga Segura: {availableMarginKW} kW
+                  Carga Restante: {remainingGridCapacityKW} kW
                 </text>
 
                 <rect x="12" y="121" width="161" height="22" rx="5" fill="#f59e0b" fillOpacity="0.15" />
@@ -569,13 +601,13 @@ export default function DLMSystemVisualizer({
               {effectiveHasDLM ? "Comando Recebido:" : "Potência Homologada:"}
             </text>
             <text x="25" y="108" fill="#10b981" fontSize="11" fontWeight="bold" fontFamily="monospace">
-              {displayChargers[0].powerKW} kW ({effectiveHasDLM && isThrottled ? "Modulado" : "Pleno"})
+              {displayChargers[0].powerKW} kW ({displayChargers[0].statusLabel})
             </text>
 
             <rect x="15" y="128" width="180" height="20" rx="4" fill="#00B356" fillOpacity="0.15" />
             <text x="105" y="141" textAnchor="middle" fill="#10b981" fontSize="8" fontWeight="bold">
               {effectiveHasDLM && isThrottled 
-                ? "Corrente Limitada pela Central" 
+                ? `Corrente Limitada (${displayChargers[0].currentA}A)` 
                 : `Corrente Nominal (${displayChargers[0].currentA}A)`}
             </text>
           </g>
@@ -606,7 +638,7 @@ export default function DLMSystemVisualizer({
             <text x="25" y="108" fill={displayChargers[1].isExpansion ? "#94a3b8" : "#10b981"} fontSize="11" fontWeight="bold" fontFamily="monospace">
               {displayChargers[1].isExpansion 
                 ? "Reserva Técnica" 
-                : `${displayChargers[1].powerKW} kW (${effectiveHasDLM && isThrottled ? "Modulado" : "Pleno"})`}
+                : `${displayChargers[1].powerKW} kW (${displayChargers[1].statusLabel})`}
             </text>
 
             <rect x="15" y="128" width="180" height="20" rx="4" fill="#00B356" fillOpacity="0.15" />
@@ -614,7 +646,7 @@ export default function DLMSystemVisualizer({
               {displayChargers[1].isExpansion
                 ? "Infraestrutura Seca Disponível"
                 : effectiveHasDLM && isThrottled 
-                ? "Divisão Dinâmica Ativa" 
+                ? `Corrente Limitada (${displayChargers[1].currentA}A)` 
                 : `Corrente Nominal (${displayChargers[1].currentA}A)`}
             </text>
           </g>

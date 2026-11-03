@@ -4701,8 +4701,22 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
           <div className="pt-4 border-t border-slate-800">
             <DLMMarketSimulator
               initialGridLimitKW={dlmResult.gridEffectiveLimitKW || 75}
-              initialBuildingLoadKW={effectiveExistingLoadKW || 35}
-              initialChargersPowerKW={totalChargersInstalledKW || 44}
+              initialBuildingLoadKW={effectiveExistingLoadKW !== undefined ? effectiveExistingLoadKW : 7.9}
+              initialChargersPowerKW={totalChargersInstalledKW || 48.4}
+              enableDLM={dlmEnableDLM}
+              chargers={configuredChargers.map(c => ({
+                id: c.id,
+                name: c.name,
+                powerKW: c.powerKW,
+                phases: c.phases,
+                voltage: c.voltage,
+                type: c.type,
+                connector: c.connector,
+                quantity: c.quantity
+              }))}
+              standardBreakerA={effectiveBreakerAmpsForSizing || 200}
+              voltageV={220}
+              utilityName={selectedUtility || 'CEMIG Distribuição'}
               onApplyPresetToProject={(_systemId, _safePowerKW) => {
                 setDlmEnableDLM(true);
               }}

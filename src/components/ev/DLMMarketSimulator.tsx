@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { 
   Sliders, Cpu, Zap, ShieldCheck, AlertTriangle, 
   BatteryCharging, Clock, DollarSign, CheckCircle2, 
   Layers, RefreshCw, Info, ShoppingCart, HelpCircle, Activity, SunMedium
 } from "lucide-react";
-import DLMSystemVisualizer from "./DLMSystemVisualizer";
+import DLMSystemVisualizer, { ConfiguredChargerVisualItem } from "./DLMSystemVisualizer";
 
 export type MarketSystemId = 'beny' | 'weg' | 'schneider' | 'abb' | 'generic';
 
@@ -25,16 +25,27 @@ interface DLMMarketSimulatorProps {
   initialBuildingLoadKW?: number;
   initialChargersPowerKW?: number;
   onApplyPresetToProject?: (systemId: MarketSystemId, safePowerKW: number) => void;
+  enableDLM?: boolean;
+  chargers?: ConfiguredChargerVisualItem[];
+  standardBreakerA?: number;
+  voltageV?: number;
+  utilityName?: string;
 }
 
 export default function DLMMarketSimulator({
   initialGridLimitKW = 75,
   initialBuildingLoadKW = 35,
   initialChargersPowerKW = 44,
-  onApplyPresetToProject
+  onApplyPresetToProject,
+  enableDLM = false,
+  chargers = [],
+  standardBreakerA = 200,
+  voltageV = 220,
+  utilityName = 'CEMIG Distribuição'
 }: DLMMarketSimulatorProps) {
   // ─── ESTADOS DA SIMULAÇÃO ────────────────────────────────────────────────
   const [selectedSystem, setSelectedSystem] = useState<MarketSystemId>('beny');
+  const [isDLMActive, setIsDLMActive] = useState<boolean>(enableDLM);
   const [gridLimitKW, setGridLimitKW] = useState<number>(initialGridLimitKW);
   const [safetyMarginPercent, setSafetyMarginPercent] = useState<number>(10); // 10% margem de segurança
   const [buildingLoadKW, setBuildingLoadKW] = useState<number>(initialBuildingLoadKW);
@@ -42,12 +53,63 @@ export default function DLMMarketSimulator({
   const [isPeakHour, setIsPeakHour] = useState<boolean>(false); // Horário de Ponta (17h30 - 20h30)
   const [peakPolicy, setPeakPolicy] = useState<'block' | 'throttle_6A' | 'allow_surplus'>('throttle_6A');
 
-  // Frota de Veículos Conectados Simultaneamente
+  // Sincroniza estado de ativação do DLM com a prop vinda do projeto
+  useEffect(() => {
+    if (enableDLM !== undefined) {
+      setIsDLMActive(enableDLM);
+    }
+  }, [enableDLM]);
+
+  // Sincroniza limites de carga do imóvel e padrão caso mudem no projeto
+  useEffect(() => {
+    if (initialGridLimitKW) setGridLimitKW(initialGridLimitKW);
+  }, [initialGridLimitKW]);
+
+  useEffect(() => {
+    if (initialBuildingLoadKW !== undefined) setBuildingLoadKW(initialBuildingLoadKW);
+  }, [initialBuildingLoadKW]);
+
+  // Frota de Veículos Conectados Simultaneamente sincronizada com os carregadores reais
   const [vehicles, setVehicles] = useState<SimulatedVehicle[]>([
-    { id: 'v1', name: 'Veículo 1 (BYD Dolphin / AC)', nominalKW: 7.4, phases: 1, voltageV: 220, priority: 'normal', socPercent: 35 },
-    { id: 'v2', name: 'Veículo 2 (GWM Ora 03 / AC)', nominalKW: 11.0, phases: 3, voltageV: 380, priority: 'normal', socPercent: 50 },
-    { id: 'v3', name: 'Veículo 3 (Volvo EX30 / Fast DC)', nominalKW: 30.0, phases: 3, voltageV: 380, priority: 'alta', socPercent: 20 }
+    { id: 'v1', name: 'Carregador Plugue 1 (DC CCS2)', nominalKW: 24.2, phases: 3, voltageV: 380, priority: 'alta', socPercent: 35 },
+    { id: 'v2', name: 'Carregador Plugue 2 (DC CCS2)', nominalKW: 24.2, phases: 3, voltageV: 380, priority: 'normal', socPercent: 50 }
   ]);
+
+  useEffect(() => {
+    if (chargers && chargers.length > 0) {
+      const generatedVehicles: SimulatedVehicle[] = [];
+      let idx = 1;
+      chargers.forEach((c) => {
+        const isDual = (c.powerKW >= 30) || (c.connector && c.connector.toLowerCase().includes('2x'));
+        const guns = isDual ? 2 : 1;
+        const powerPerGun = Number((c.powerKW / guns).toFixed(1));
+        const qty = c.quantity || 1;
+        for (let q = 0; q < qty; q++) {
+          for (let g = 0; g < guns; g++) {
+            generatedVehicles.push({
+              id: `v${idx}`,
+              name: guns > 1 ? `${c.name || 'Carregador'} (Plugue ${g + 1})` : `${c.name || 'Carregador'}`,
+              nominalKW: powerPerGun,
+              phases: (c.phases as 1 | 3) || (c.powerKW >= 22 ? 3 : 1),
+              voltageV: c.voltage || (c.powerKW >= 22 ? 380 : 220),
+              priority: idx === 1 ? 'alta' : 'normal',
+              socPercent: 20 + ((idx * 15) % 60)
+            });
+            idx++;
+          }
+        }
+      });
+      if (generatedVehicles.length > 0) {
+        setVehicles(generatedVehicles);
+      }
+    } else if (initialChargersPowerKW && initialChargersPowerKW > 0) {
+      const halfP = Number((initialChargersPowerKW / 2).toFixed(1));
+      setVehicles([
+        { id: 'v1', name: 'Carregador Plugue 1 (CCS2)', nominalKW: halfP, phases: 3, voltageV: 380, priority: 'alta', socPercent: 30 },
+        { id: 'v2', name: 'Carregador Plugue 2 (CCS2)', nominalKW: halfP, phases: 3, voltageV: 380, priority: 'normal', socPercent: 45 }
+      ]);
+    }
+  }, [chargers, initialChargersPowerKW]);
 
   // Limite efetivo de segurança da instalação
   const effectiveGridLimitKW = useMemo(() => {
@@ -76,6 +138,28 @@ export default function DLMMarketSimulator({
 
   // ─── ALGORITMO DINÂMICO DE ALOCAÇÃO DO SISTEMA DE MERCADO ────────────────
   const simulationResults = useMemo(() => {
+    // Se o DLM estiver desligado, os carregadores operam na carga nominal plena (sem restrição ou modulação)
+    if (!isDLMActive) {
+      const allocated = vehicles.map(v => {
+        const curA = v.phases === 3 
+          ? (v.nominalKW * 1000) / (Math.sqrt(3) * v.voltageV * 0.98)
+          : (v.nominalKW * 1000) / (v.voltageV * 0.98);
+        return {
+          ...v,
+          allocatedKW: v.nominalKW,
+          allocatedA: Number(curA.toFixed(1)),
+          percentOfNominal: 100,
+          status: 'plena' as const
+        };
+      });
+      return {
+        allocatedVehicles: allocated,
+        totalControlledEVKW: totalUncontrolledEVKW,
+        isThrottled: false,
+        totalControlledDemandKW: Number((netBuildingLoadKW + totalUncontrolledEVKW).toFixed(1))
+      };
+    }
+
     let availablePowerForEV = rawAvailableKW;
 
     // Regra Tarifária de Horário de Ponta
@@ -169,7 +253,7 @@ export default function DLMMarketSimulator({
       isThrottled: true,
       totalControlledDemandKW: Number((netBuildingLoadKW + totalControlledEV).toFixed(1))
     };
-  }, [vehicles, rawAvailableKW, totalUncontrolledEVKW, isPeakHour, peakPolicy, solarGenerationKW, buildingLoadKW, netBuildingLoadKW]);
+  }, [vehicles, rawAvailableKW, totalUncontrolledEVKW, isPeakHour, peakPolicy, solarGenerationKW, buildingLoadKW, netBuildingLoadKW, isDLMActive]);
 
   // Lista de Materiais do Sistema Selecionado (BOM)
   const systemBOM = {
@@ -221,28 +305,53 @@ export default function DLMMarketSimulator({
           </p>
         </div>
 
-        {/* Seletor do Sistema de Mercado */}
-        <div className="flex items-center gap-2 bg-slate-950 p-1.5 rounded-2xl border border-slate-800">
-          {[
-            { id: 'beny', label: 'BENY DLB Box', desc: 'TCs + Modbus' },
-            { id: 'weg', label: 'WEG WEMOB', desc: 'Central DLM' },
-            { id: 'schneider', label: 'Schneider', desc: 'LMS Expert' },
-            { id: 'abb', label: 'ABB Terra', desc: 'MID B23' }
-          ].map(sys => (
-            <button
-              key={sys.id}
-              type="button"
-              onClick={() => setSelectedSystem(sys.id as MarketSystemId)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                selectedSystem === sys.id
-                  ? 'bg-[#E45318] text-white shadow-md'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800'
-              }`}
-            >
-              <div>{sys.label}</div>
-              <div className="text-[9px] font-normal opacity-80">{sys.desc}</div>
-            </button>
-          ))}
+        {/* Controles de Topo: Toggle DLM e Seletor do Sistema */}
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* Botão de Alternância DLM Ativo / DLM Desligado */}
+          <button
+            type="button"
+            onClick={() => {
+              const nextVal = !isDLMActive;
+              setIsDLMActive(nextVal);
+              if (nextVal && onApplyPresetToProject) {
+                onApplyPresetToProject(selectedSystem, simulationResults.totalControlledEVKW);
+              }
+            }}
+            className={`px-3.5 py-2 rounded-2xl text-xs font-bold transition-all border flex items-center gap-2 cursor-pointer shadow-sm ${
+              isDLMActive
+                ? 'bg-emerald-500/20 border-emerald-500 text-emerald-300 ring-1 ring-emerald-500/30'
+                : 'bg-slate-900 border-slate-700 text-slate-400 hover:text-white hover:bg-slate-800'
+            }`}
+          >
+            <ShieldCheck className={`w-4 h-4 ${isDLMActive ? 'text-emerald-400' : 'text-slate-500'}`} />
+            <span>DLM: {isDLMActive ? 'ATIVADO (Modulação Dinâmica)' : 'DESLIGADO (Alimentação Direta)'}</span>
+          </button>
+
+          {/* Seletor do Sistema de Mercado (Exibido apenas quando DLM está ativo) */}
+          {isDLMActive && (
+            <div className="flex items-center gap-1.5 bg-slate-950 p-1.5 rounded-2xl border border-slate-800 animate-in fade-in duration-200">
+              {[
+                { id: 'beny', label: 'BENY DLB Box', desc: 'TCs + Modbus' },
+                { id: 'weg', label: 'WEG WEMOB', desc: 'Central DLM' },
+                { id: 'schneider', label: 'Schneider', desc: 'LMS Expert' },
+                { id: 'abb', label: 'ABB Terra', desc: 'MID B23' }
+              ].map(sys => (
+                <button
+                  key={sys.id}
+                  type="button"
+                  onClick={() => setSelectedSystem(sys.id as MarketSystemId)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    selectedSystem === sys.id
+                      ? 'bg-[#E45318] text-white shadow-md'
+                      : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                  }`}
+                >
+                  <div>{sys.label}</div>
+                  <div className="text-[9px] font-normal opacity-80">{sys.desc}</div>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -351,7 +460,7 @@ export default function DLMMarketSimulator({
         </div>
       </div>
 
-      {/* ─── DESENHO ILUSTRATIVO DE ARQUITETURA DLM (POSICIONADO ADJACENTE AOS CONTROLES) ─── */}
+      {/* ─── DESENHO ILUSTRATIVO DE ARQUITETURA DLM / ALIMENTAÇÃO DIRETA (POSICIONADO ADJACENTE AOS CONTROLES) ─── */}
       <DLMSystemVisualizer 
         systemType={selectedSystem}
         gridLimitKW={gridLimitKW}
@@ -361,7 +470,11 @@ export default function DLMMarketSimulator({
         evCount={vehicles.length}
         enableSolarSurplus={solarGenerationKW > 0}
         solarKW={solarGenerationKW}
-        hasDLM={true}
+        hasDLM={isDLMActive}
+        chargers={chargers}
+        standardBreakerA={standardBreakerA}
+        voltageV={voltageV}
+        utilityName={utilityName}
       />
 
       {/* ─── COMPARATIVO DE SEGURANÇA: SEM DLM VS COM DLM ─── */}
@@ -507,39 +620,48 @@ export default function DLMMarketSimulator({
         </div>
       </div>
 
-      {/* ─── LISTA DE MATERIAIS DE INSTALAÇÃO DO SISTEMA DLM (BOM) ─── */}
-      <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3">
-        <div className="flex items-center justify-between">
-          <h4 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
-            <ShoppingCart className="w-4 h-4 text-amber-400" />
-            Lista de Materiais de Campo (BOM) — Kit {selectedSystem.toUpperCase()}
-          </h4>
-          <span className="text-[10px] text-slate-400 font-mono">Pronto para Requisição de Compras</span>
-        </div>
+      {/* ─── LISTA DE MATERIAIS DE INSTALAÇÃO DO SISTEMA DLM (BOM) OU AVISO DE ALIMENTAÇÃO DIRETA ─── */}
+      {isDLMActive ? (
+        <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3">
+          <div className="flex items-center justify-between">
+            <h4 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+              <ShoppingCart className="w-4 h-4 text-amber-400" />
+              Lista de Materiais de Campo (BOM) — Kit {selectedSystem.toUpperCase()}
+            </h4>
+            <span className="text-[10px] text-slate-400 font-mono">Pronto para Requisição de Compras</span>
+          </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs font-sans">
-            <thead>
-              <tr className="border-b border-slate-800 text-slate-400 font-mono text-[10px] uppercase">
-                <th className="py-2 pr-3">Código</th>
-                <th className="py-2 px-3">Item / Especificação Técnica</th>
-                <th className="py-2 px-3 text-center">Quantidade</th>
-                <th className="py-2 pl-3">Aplicação no Projeto</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800/60 text-slate-300 text-[11px]">
-              {systemBOM.map((item, idx) => (
-                <tr key={idx}>
-                  <td className="py-2 pr-3 font-mono text-amber-400 font-bold">{item.code}</td>
-                  <td className="py-2 px-3 font-semibold text-white">{item.name}</td>
-                  <td className="py-2 px-3 text-center font-bold font-mono text-emerald-400">{item.qtd}</td>
-                  <td className="py-2 pl-3 text-slate-400">{item.desc}</td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs font-sans">
+              <thead>
+                <tr className="border-b border-slate-800 text-slate-400 font-mono text-[10px] uppercase">
+                  <th className="py-2 pr-3">Código</th>
+                  <th className="py-2 px-3">Item / Especificação Técnica</th>
+                  <th className="py-2 px-3 text-center">Quantidade</th>
+                  <th className="py-2 pl-3">Aplicação no Projeto</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-800/60 text-slate-300 text-[11px]">
+                {systemBOM.map((item, idx) => (
+                  <tr key={idx}>
+                    <td className="py-2 pr-3 font-mono text-amber-400 font-bold">{item.code}</td>
+                    <td className="py-2 px-3 font-semibold text-white">{item.name}</td>
+                    <td className="py-2 px-3 text-center font-bold font-mono text-emerald-400">{item.qtd}</td>
+                    <td className="py-2 pl-3 text-slate-400">{item.desc}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="p-4 rounded-2xl border border-slate-800 bg-slate-950/60 flex items-center gap-3 text-xs text-slate-400">
+          <Info className="w-4 h-4 text-slate-500 shrink-0" />
+          <span>
+            <strong>Topologia de Alimentação Direta:</strong> Como a gestão dinâmica DLM está desativada, não é necessário adquirir controladora central, TCs nem cabos de comunicação Modbus para este circuito. A alimentação segue direta do QDC-VE aos carregadores.
+          </span>
+        </div>
+      )}
     </div>
   );
 }

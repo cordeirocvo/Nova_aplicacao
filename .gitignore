@@ -50,7 +50,10 @@ next-env.d.ts
 # arquivos sensíveis e temporários
 .huawei-session*.json
 sync_log*.txt
+api_leads_debug.log
+*.log
 *.csv
+!src/data/aneel-tariffs.csv
 manual_ev.pdf
 lista_ids_usinas.md
 implementation_plan.md

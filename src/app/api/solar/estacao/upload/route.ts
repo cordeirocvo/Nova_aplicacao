@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import * as ExcelJS from 'exceljs';
+import * as XLSX from 'xlsx';
 
 export const runtime = 'nodejs';
 
@@ -90,80 +90,84 @@ export async function POST(req: NextRequest) {
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
-    const workbook = new ExcelJS.Workbook();
-    await workbook.xlsx.load(buffer as any);
-
-    const worksheet = workbook.worksheets[0];
-    if (!worksheet || worksheet.rowCount < 2) {
+    const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true });
+    const sheetName = workbook.SheetNames[0];
+    if (!sheetName) {
+      return NextResponse.json({ error: 'Planilha sem abas encontradas' }, { status: 400 });
+    }
+    const worksheet = workbook.Sheets[sheetName];
+    const rawRows: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: null });
+    if (!rawRows || rawRows.length < 2) {
       return NextResponse.json({ error: 'Planilha vazia ou sem linhas de dados' }, { status: 400 });
     }
 
     // Mapear cabeçalhos
-    const headerRow = worksheet.getRow(1);
+    const headerRow = rawRows[0] || [];
     const colMap: Record<string, number> = {};
 
-    headerRow.eachCell((cell, colNumber) => {
-      const norm = normalizeHeader(String(cell.value || ''));
+    headerRow.forEach((val: any, colIndex: number) => {
+      const norm = normalizeHeader(String(val || ''));
       if (norm.includes('data') || norm.includes('time') || norm.includes('hora')) {
-        if (!colMap['timestamp']) colMap['timestamp'] = colNumber;
+        if (colMap['timestamp'] === undefined) colMap['timestamp'] = colIndex;
       }
       if (norm.includes('ghi') || norm.includes('global') || (norm.includes('rad') && !norm.includes('poa'))) {
-        colMap['ghi'] = colNumber;
+        colMap['ghi'] = colIndex;
       }
       if (norm.includes('poa') || norm.includes('plano') || norm.includes('modulo')) {
-        colMap['poa'] = colNumber;
+        colMap['poa'] = colIndex;
       }
       if (norm.includes('temp_amb') || norm.includes('temperatura_amb') || norm === 'ta' || norm === 'tamb') {
-        colMap['tempAmbiente'] = colNumber;
+        colMap['tempAmbiente'] = colIndex;
       }
       if (norm.includes('temp_mod') || norm.includes('temp_painel') || norm === 'tmod') {
-        colMap['tempModulos'] = colNumber;
+        colMap['tempModulos'] = colIndex;
       }
       if (norm.includes('vento') || norm.includes('wind') || norm === 'ws') {
         if (norm.includes('dir')) {
-          colMap['direcaoVento'] = colNumber;
+          colMap['direcaoVento'] = colIndex;
         } else {
-          colMap['velocidadeVento'] = colNumber;
+          colMap['velocidadeVento'] = colIndex;
         }
       }
       if (norm.includes('umidade') || norm.includes('rh') || norm.includes('humidity')) {
-        colMap['umidadeRelativa'] = colNumber;
+        colMap['umidadeRelativa'] = colIndex;
       }
       if (norm.includes('pressao') || norm.includes('baro') || norm.includes('pressure')) {
-        colMap['pressao'] = colNumber;
+        colMap['pressao'] = colIndex;
       }
       if (norm.includes('chuva') || norm.includes('rain') || norm.includes('precipitacao')) {
-        colMap['chuvaAcumulada'] = colNumber;
+        colMap['chuvaAcumulada'] = colIndex;
       }
       if (norm.includes('sujidade') || norm.includes('soiling')) {
-        colMap['indiceSujidade'] = colNumber;
+        colMap['indiceSujidade'] = colIndex;
       }
     });
 
-    if (!colMap['timestamp']) {
-      // Fallback: se coluna 1 tem data
-      colMap['timestamp'] = 1;
+    if (colMap['timestamp'] === undefined) {
+      // Fallback: se coluna 0 tem data
+      colMap['timestamp'] = 0;
     }
 
     const recordsToInsert: any[] = [];
 
-    worksheet.eachRow((row, rowNumber) => {
-      if (rowNumber === 1) return; // ignora cabeçalho
+    for (let r = 1; r < rawRows.length; r++) {
+      const row = rawRows[r];
+      if (!row || row.length === 0) continue;
 
-      const tsVal = row.getCell(colMap['timestamp']).value;
+      const tsVal = row[colMap['timestamp']];
       const ts = parseDateCell(tsVal);
-      if (!ts) return;
+      if (!ts) continue;
 
-      const ghi = colMap['ghi'] ? parseNumberCell(row.getCell(colMap['ghi']).value) : null;
-      const poa = colMap['poa'] ? parseNumberCell(row.getCell(colMap['poa']).value) : null;
-      const tempAmb = colMap['tempAmbiente'] ? parseNumberCell(row.getCell(colMap['tempAmbiente']).value) : null;
-      const tempMod = colMap['tempModulos'] ? parseNumberCell(row.getCell(colMap['tempModulos']).value) : null;
-      const velVento = colMap['velocidadeVento'] ? parseNumberCell(row.getCell(colMap['velocidadeVento']).value) : null;
-      const dirVento = colMap['direcaoVento'] ? parseNumberCell(row.getCell(colMap['direcaoVento']).value) : null;
-      const umidade = colMap['umidadeRelativa'] ? parseNumberCell(row.getCell(colMap['umidadeRelativa']).value) : null;
-      const pressao = colMap['pressao'] ? parseNumberCell(row.getCell(colMap['pressao']).value) : null;
-      const chuva = colMap['chuvaAcumulada'] ? parseNumberCell(row.getCell(colMap['chuvaAcumulada']).value) : null;
-      const soiling = colMap['indiceSujidade'] ? parseNumberCell(row.getCell(colMap['indiceSujidade']).value) : null;
+      const ghi = colMap['ghi'] !== undefined ? parseNumberCell(row[colMap['ghi']]) : null;
+      const poa = colMap['poa'] !== undefined ? parseNumberCell(row[colMap['poa']]) : null;
+      const tempAmb = colMap['tempAmbiente'] !== undefined ? parseNumberCell(row[colMap['tempAmbiente']]) : null;
+      const tempMod = colMap['tempModulos'] !== undefined ? parseNumberCell(row[colMap['tempModulos']]) : null;
+      const velVento = colMap['velocidadeVento'] !== undefined ? parseNumberCell(row[colMap['velocidadeVento']]) : null;
+      const dirVento = colMap['direcaoVento'] !== undefined ? parseNumberCell(row[colMap['direcaoVento']]) : null;
+      const umidade = colMap['umidadeRelativa'] !== undefined ? parseNumberCell(row[colMap['umidadeRelativa']]) : null;
+      const pressao = colMap['pressao'] !== undefined ? parseNumberCell(row[colMap['pressao']]) : null;
+      const chuva = colMap['chuvaAcumulada'] !== undefined ? parseNumberCell(row[colMap['chuvaAcumulada']]) : null;
+      const soiling = colMap['indiceSujidade'] !== undefined ? parseNumberCell(row[colMap['indiceSujidade']]) : null;
 
       recordsToInsert.push({
         estacaoId,
@@ -179,7 +183,7 @@ export async function POST(req: NextRequest) {
         chuvaAcumulada: chuva,
         indiceSujidade: soiling,
       });
-    });
+    }
 
     if (recordsToInsert.length === 0) {
       return NextResponse.json({ error: 'Nenhum registro válido de data/hora encontrado' }, { status: 400 });

@@ -8,6 +8,9 @@ if (process.env.NODE_ENV !== 'production') {
 // Touch to force restart of Next.js dev server for new Prisma client types - version 2
 const nextConfig: NextConfig = {
   serverExternalPackages: ["pdf-parse"],
+  experimental: {
+    optimizePackageImports: ["lucide-react", "date-fns", "recharts"],
+  },
 };
 
 export default nextConfig;

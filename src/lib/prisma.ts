@@ -15,7 +15,7 @@ export const getOrCreatePool = () => {
   const pool = new Pool({
     connectionString,
     ssl: isLocal ? false : { rejectUnauthorized: false },
-    max: 10,
+    max: process.env.PG_POOL_MAX ? parseInt(process.env.PG_POOL_MAX, 10) : (process.env.VERCEL || process.env.NODE_ENV === 'production' ? 2 : 10),
     idleTimeoutMillis: 10000,
     connectionTimeoutMillis: 30000,
     keepAlive: true,

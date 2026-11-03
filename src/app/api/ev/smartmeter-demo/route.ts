@@ -6,9 +6,9 @@ import { parseUniversalLoadFile } from '@/lib/coenergygo';
 export async function GET() {
   try {
     const possiblePaths = [
-      'C:/Users/BRUNO CORDEIRO/Downloads/SmartMeter.xlsx',
-      'C:\\Users\\BRUNO CORDEIRO\\Downloads\\SmartMeter.xlsx',
-      path.join(process.cwd(), 'SmartMeter.xlsx')
+      path.join(process.cwd(), 'SmartMeter.xlsx'),
+      path.join(process.cwd(), 'public', 'demo', 'SmartMeter.xlsx'),
+      path.join(process.cwd(), 'src', 'data', 'SmartMeter.xlsx'),
     ];
 
     let filePath = '';
@@ -21,7 +21,7 @@ export async function GET() {
 
     if (!filePath) {
       return NextResponse.json(
-        { error: 'Arquivo SmartMeter.xlsx não encontrado no diretório Downloads.' },
+        { error: 'Arquivo SmartMeter.xlsx não encontrado no diretório do projeto.' },
         { status: 404 }
       );
     }

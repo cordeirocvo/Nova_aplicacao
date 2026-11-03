@@ -51,17 +51,39 @@ import { dimensionarPadraoCemig } from "@/lib/cemig/padraoEngine";
 import LoadCurveChart from "@/components/ev/LoadCurveChart";
 import DLMControlPanel from "@/components/ev/DLMControlPanel";
 import LoadFeasibilityReport from "@/components/ev/LoadFeasibilityReport";
-import ImportedDataViewer from "@/components/ev/ImportedDataViewer";
-import { EVTopologyChainViewer } from "@/components/ev/EVTopologyChainViewer";
+import dynamic from "next/dynamic";
+import { EVTabLoadingSkeleton } from "@/components/ev/EVTabLoadingSkeleton";
 import ClientProjectForm from "@/components/ev/ClientProjectForm";
-import { EVEngineeringReportsHub } from "@/components/ev/EVEngineeringReportsHub";
-import DLMMarketSimulator from "@/components/ev/DLMMarketSimulator";
 import DLMSystemVisualizer from "@/components/ev/DLMSystemVisualizer";
 import InstallationEnvironmentSelector from "@/components/ev/InstallationEnvironmentSelector";
 import ChargerCatalogSelector from "@/components/ev/ChargerCatalogSelector";
 import EVStickySummary from "@/components/ev/EVStickySummary";
-import EVLocationScoringCockpit from "@/components/ev/EVLocationScoringCockpit";
-import { EVFinancialModelingBLEV } from "@/components/ev/EVFinancialModelingBLEV";
+
+// Lazy-loaded dynamic chunks para redução drástica do bundle inicial
+const ImportedDataViewer = dynamic(
+  () => import("@/components/ev/ImportedDataViewer"),
+  { ssr: false, loading: () => <EVTabLoadingSkeleton label="Carregando Dados de Medição..." /> }
+);
+const EVTopologyChainViewer = dynamic(
+  () => import("@/components/ev/EVTopologyChainViewer").then(mod => mod.EVTopologyChainViewer),
+  { ssr: false, loading: () => <EVTabLoadingSkeleton label="Carregando Topologia Elétrica e Roteamento..." /> }
+);
+const EVEngineeringReportsHub = dynamic(
+  () => import("@/components/ev/EVEngineeringReportsHub").then(mod => mod.EVEngineeringReportsHub),
+  { ssr: false, loading: () => <EVTabLoadingSkeleton label="Carregando Hub de Relatórios..." /> }
+);
+const DLMMarketSimulator = dynamic(
+  () => import("@/components/ev/DLMMarketSimulator"),
+  { ssr: false, loading: () => <EVTabLoadingSkeleton label="Carregando Simulador de Gestão DLM..." /> }
+);
+const EVLocationScoringCockpit = dynamic(
+  () => import("@/components/ev/EVLocationScoringCockpit"),
+  { ssr: false, loading: () => <EVTabLoadingSkeleton label="Carregando Cockpit de Inteligência Locacional & Mapa..." /> }
+);
+const EVFinancialModelingBLEV = dynamic(
+  () => import("@/components/ev/EVFinancialModelingBLEV").then(mod => mod.EVFinancialModelingBLEV),
+  { ssr: false, loading: () => <EVTabLoadingSkeleton label="Carregando Modelagem Financeira & Viabilidade..." /> }
+);
 import { ModularBOMOutput } from "@/lib/coenergygo/engines/modularBomEngine";
 import { calculateUnifiedEVSizing } from "@/lib/ev/unifiedCalculationEngine";
 import { 

@@ -5085,8 +5085,14 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
             { category: 'Emergência', name: 'Botão de Emergência Cogumelo com Trava Giratória + Bobina MX', quantity: 1, unit: 'kit', unitPrice: 320 },
             { category: 'Quadros', name: 'Quadro Metálico de Sobrepor Cemar / Strahl IP65 com Barramentos', quantity: 2, unit: 'un', unitPrice: 1250 }
           ],
-          totalInvestmentBRL: Number((totalChargersInstalledKW * 1450 + 12000).toFixed(2)),
-          capexSavingsBRL: 18500,
+          totalInvestmentBRL: projectModularBOM?.totalProjectInvestmentBRL || unifiedCalculation.totalEstimatedCapexBRL || 35000,
+          capexSavingsBRL: unifiedCalculation.dlmEstimatedSavingsBRL || (dlmEnableDLM ? 18500 : 0),
+          existingLoadKW: effectiveExistingLoadKW,
+          gridLimitKW: effectiveBreakerCapacityKW,
+          headroomKW: Math.max(0, Number((effectiveBreakerCapacityKW - effectiveExistingLoadKW).toFixed(1))),
+          competitorStationsList: (clientProjectData.ahpCustomCompetitors && clientProjectData.ahpCustomCompetitors.length > 0)
+            ? clientProjectData.ahpCustomCompetitors
+            : (clientProjectData.locationDiagnostic?.concorrencia?.concorrentesMapeados || []),
           evBaysCount: totalEvBaysCount,
           chargingPointsCount: totalChargingPointsCount,
           parkingLocation: clientProjectData.parkingLocation || 'aberto',

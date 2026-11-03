@@ -84,6 +84,10 @@ interface EVEngineeringReportsHubProps {
     dlmSystemType?: 'beny' | 'weg' | 'schneider' | 'abb' | 'generic';
     deficitKW?: number;
     locationDiagnostic?: any;
+    existingLoadKW?: number;
+    gridLimitKW?: number;
+    headroomKW?: number;
+    competitorStationsList?: any[];
   };
 }
 
@@ -358,70 +362,294 @@ export function EVEngineeringReportsHub({
 
                 {/* CONTEÚDO ESPECÍFICO DE CADA UM DOS 5 RELATÓRIOS */}
                 
-                {/* 1. RELATÓRIO EXECUTIVO */}
+                {/* 1. RELATÓRIO EXECUTIVO — PADRÃO BUSINESS PLAN AV. AMAZONAS */}
                 {selectedReport === 'executivo' && (
                   <div className="space-y-6 text-xs text-slate-700">
-                    <div className="bg-gradient-to-br from-[#0A192F] to-slate-900 text-white p-5 rounded-2xl space-y-2">
-                      <span className="text-[10px] uppercase font-bold text-[#00B356] tracking-wider">Sumário Executivo</span>
-                      <h3 className="text-lg font-bold text-white">Viabilidade e Retorno da Infraestrutura de Recarga</h3>
+                    {/* 1. SUMÁRIO EXECUTIVO & IDENTIFICAÇÃO DO ATIVO */}
+                    <div className="bg-gradient-to-br from-[#0A192F] to-slate-900 text-white p-5 rounded-2xl space-y-3 shadow-md">
+                      <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] uppercase font-black text-[#00B356] tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                            Sumário Executivo & Negócios
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-mono">
+                            Referência: Metodologia BLEV Educação & Padrão Av. Amazonas
+                          </span>
+                        </div>
+                        <span className="text-[10px] text-slate-400 font-bold">
+                          {projectData.locationDiagnostic?.cidade || 'Sete Lagoas'} - {projectData.locationDiagnostic?.uf || 'MG'}
+                        </span>
+                      </div>
+
+                      <h3 className="text-base sm:text-lg font-bold text-white tracking-tight">
+                        Hub Comercial de Recarga de Alta Performance: Viabilidade Técnica, Demográfica e Econômica
+                      </h3>
+
                       <p className="text-slate-300 text-xs leading-relaxed">
-                        Este estudo contempla a implantação de {chargersCount} estação(ões) física(s) atendendo {evBaysCount} vaga(s) de recarga simultânea ({chargingPointsCount} pontos/pistolas ativas) com potência agregada de {totalPower.toFixed(1)} kW. 
-                        A solução foi desenhada para garantir máxima segurança patrimonial, otimização da demanda com proteção contra desarmes de disjuntores e total conformidade com a CEMIG e o Corpo de Bombeiros.
-                        {projectData.realLoadCurveMode && (
-                          <span className="block mt-1 text-[#00B356] font-semibold">
-                            ✓ Dimensionado com base em Medição Real de Campo (SmartMeter — {projectData.realLoadCurveMode === 'worst_case_envelope' ? 'Envoltória de Piores Picos NBR 5410' : 'Dia do Pico Crítico'}).
+                        Este estudo estratégico e eletrotécnico contempla a implantação de{' '}
+                        <strong className="text-white font-semibold">{chargersCount} estação(ões) física(s)</strong> atendendo{' '}
+                        <strong className="text-[#00B356] font-semibold">{evBaysCount} vaga(s) simultânea(s)</strong> ({chargingPointsCount} pontos/pistolas de carregamento) com potência agregada de{' '}
+                        <strong className="text-white font-semibold">{totalPower.toFixed(1)} kW</strong> no imóvel de propriedade do{' '}
+                        <strong className="text-white font-semibold">{projectData.propertyOwner || 'Sr. Saint Clair'}</strong>, ancorado em{' '}
+                        <strong className="text-white font-semibold">{projectData.commercialAnchorType || 'Galeria Comercial 24 Horas'}</strong> com acesso frontal imediato e sem manobras de ré.
+                      </p>
+
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-[11px]">
+                        <div className="bg-white/5 p-2 rounded-xl border border-white/5">
+                          <span className="text-slate-400 block text-[9px] uppercase font-bold">Cliente Proponente</span>
+                          <strong className="text-white truncate block">{projectData.clientName}</strong>
+                        </div>
+                        <div className="bg-white/5 p-2 rounded-xl border border-white/5">
+                          <span className="text-slate-400 block text-[9px] uppercase font-bold">Proprietário / Cedente</span>
+                          <strong className="text-white truncate block">{projectData.propertyOwner || 'Sr. Saint Clair'}</strong>
+                        </div>
+                        <div className="bg-white/5 p-2 rounded-xl border border-white/5">
+                          <span className="text-slate-400 block text-[9px] uppercase font-bold">Âncora Comercial</span>
+                          <strong className="text-[#00B356] truncate block">{projectData.commercialAnchorType || 'Galeria 24 Horas'}</strong>
+                        </div>
+                        <div className="bg-white/5 p-2 rounded-xl border border-white/5">
+                          <span className="text-slate-400 block text-[9px] uppercase font-bold">Concessionária</span>
+                          <strong className="text-white truncate block">{projectData.utility || 'CEMIG Distribuição'}</strong>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 2. MACRO-DIAGNÓSTICO DEMOGRÁFICO & PERFIL VIÁRIO */}
+                    {projectData.locationDiagnostic && (
+                      <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
+                        <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                          <h4 className="font-bold text-slate-900 uppercase text-[11px] flex items-center gap-1.5">
+                            <Store className="w-3.5 h-3.5 text-[#00B356]" />
+                            2. Macro-Diagnóstico Demográfico & Frota de Veículos Elétricos (IBGE 2026)
+                          </h4>
+                          <span className="text-[10px] font-black text-[#00B356] bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                            Score AHP: {projectData.locationDiagnostic.scoreAHP} / 10 ({projectData.locationDiagnostic.vereditoGeral})
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
+                          <div className="bg-white p-2.5 rounded-xl border border-slate-200">
+                            <span className="text-slate-500 block text-[9px] uppercase font-semibold">População Municipal</span>
+                            <strong className="text-slate-800 text-sm font-black">
+                              {projectData.locationDiagnostic.ibge?.populacaoEstimada?.toLocaleString('pt-BR')} hab.
+                            </strong>
+                            <span className="text-[8px] text-slate-400 block">Base IBGE Censo</span>
+                          </div>
+                          <div className="bg-white p-2.5 rounded-xl border border-slate-200">
+                            <span className="text-slate-500 block text-[9px] uppercase font-semibold">Frota VE Projetada 2026</span>
+                            <strong className="text-amber-600 text-sm font-black">
+                              {projectData.locationDiagnostic.ibge?.frotaEletricaEstimada?.toLocaleString('pt-BR')} VEs
+                            </strong>
+                            <span className="text-[8px] text-amber-700/80 block">BEV + PHEV em circulação</span>
+                          </div>
+                          <div className="bg-white p-2.5 rounded-xl border border-slate-200">
+                            <span className="text-slate-500 block text-[9px] uppercase font-semibold">Classificação Viária</span>
+                            <strong className="text-blue-600 text-sm font-black uppercase">
+                              {projectData.locationDiagnostic.via?.tipoVia || 'Arterial'}
+                            </strong>
+                            <span className="text-[8px] text-slate-400 block">{projectData.locationDiagnostic.via?.velocidadeEstimadaKmh || 60} km/h regulamentar</span>
+                          </div>
+                          <div className="bg-white p-2.5 rounded-xl border border-slate-200">
+                            <span className="text-slate-500 block text-[9px] uppercase font-semibold">Comércios em 500m</span>
+                            <strong className="text-[#00B356] text-sm font-black">
+                              {projectData.locationDiagnostic.via?.totalComercios500m || 4} Pontos
+                            </strong>
+                            <span className="text-[8px] text-slate-400 block">Sinergia com conveniência</span>
+                          </div>
+                        </div>
+
+                        <p className="text-slate-600 text-[11px] leading-relaxed bg-white p-3 rounded-xl border border-slate-200/80">
+                          {projectData.locationDiagnostic.resumoExecutivoTexto || `O ponto comercial apresenta alta atratividade para motoristas de aplicativos e frotistas em trânsito, com tempo de parada alinhado à janela ideal de 35 a 45 minutos.`}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* 3. ENGENHARIA ELÉTRICA & BALANÇO DE CARGAS REAL (CEMIG ND-5.1) */}
+                    <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
+                      <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                        <h4 className="font-bold text-slate-900 uppercase text-[11px] flex items-center gap-1.5">
+                          <Zap className="w-3.5 h-3.5 text-[#E45318]" />
+                          3. Engenharia Elétrica, Demanda CEMIG & Gestão de Carga
+                        </h4>
+                        <span className="text-[10px] font-mono text-slate-500">
+                          ABNT NBR 17019 / CEMIG ND-5.1
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                        <div className="bg-white p-2.5 rounded-xl border border-slate-200">
+                          <span className="text-slate-500 block text-[9px] uppercase font-semibold">Padrão de Entrada</span>
+                          <strong className="text-slate-900 text-sm font-black">
+                            {projectData.standardCategory || 'Trifásico'} ({projectData.standardBreakerA || 100}A)
+                          </strong>
+                          <span className="text-[8px] text-slate-400 block">{projectData.voltageV || 380}V Trifásico</span>
+                        </div>
+                        <div className="bg-white p-2.5 rounded-xl border border-slate-200">
+                          <span className="text-slate-500 block text-[9px] uppercase font-semibold">Capacidade da Entrada</span>
+                          <strong className="text-slate-900 text-sm font-black">
+                            {(projectData.gridLimitKW || 66.0).toFixed(1)} kW
+                          </strong>
+                          <span className="text-[8px] text-slate-400 block">Limite contratual/físico</span>
+                        </div>
+                        <div className="bg-white p-2.5 rounded-xl border border-slate-200">
+                          <span className="text-slate-500 block text-[9px] uppercase font-semibold">Carga Atual do Imóvel</span>
+                          <strong className="text-slate-900 text-sm font-black">
+                            {(projectData.existingLoadKW || projectData.realPeakKW || 0).toFixed(1)} kW
+                          </strong>
+                          <span className="text-[8px] text-slate-400 block">
+                            {projectData.realLoadCurveMode ? 'SmartMeter (Pico NBR 5410)' : 'Medição / Fatura'}
+                          </span>
+                        </div>
+                        <div className="bg-white p-2.5 rounded-xl border border-slate-200">
+                          <span className="text-slate-500 block text-[9px] uppercase font-semibold">Folga Disponível</span>
+                          <strong className="text-[#00B356] text-sm font-black">
+                            {(projectData.headroomKW !== undefined ? projectData.headroomKW : Math.max(0, (projectData.gridLimitKW || 66) - (projectData.existingLoadKW || 0))).toFixed(1)} kW
+                          </strong>
+                          <span className="text-[8px] text-emerald-700 block">Headroom para recarga</span>
+                        </div>
+                      </div>
+
+                      <div className="bg-white p-3 rounded-xl border border-slate-200 text-[11px] leading-relaxed">
+                        <strong className="text-slate-900 block font-semibold mb-0.5">Regime Eletrotécnico Operacional:</strong>
+                        {projectData.enableDLM || projectData.hasDLM ? (
+                          <span className="text-slate-700">
+                            ✓ <strong>Gestão Dinâmica de Carga (DLM) Ativa com fail-safe &lt; 5s:</strong> O sistema monitora a corrente do disjuntor geral em tempo real e modula a potência dispensada aos veículos durante picos simultâneos do estabelecimento,{' '}
+                            <span className="text-[#00B356] font-bold">eliminando o custo imediato de aumento de padrão CEMIG</span> e poupando cerca de{' '}
+                            <strong>R$ {(projectData.capexSavingsBRL || 18500).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong> em obras de rede.
+                          </span>
+                        ) : (
+                          <span className="text-slate-700">
+                            ✓ <strong>Alimentação Direta em Carga Plena:</strong> A folga de potência identificada no padrão existente ({(projectData.headroomKW !== undefined ? projectData.headroomKW : Math.max(0, (projectData.gridLimitKW || 66) - (projectData.existingLoadKW || 0))).toFixed(1)} kW) suporta integralmente as estações instaladas ({totalPower.toFixed(1)} kW) em operação contínua sem risco de sobrecarga.
                           </span>
                         )}
-                      </p>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-center">
-                        <span className="text-[10px] uppercase font-bold text-emerald-800">Investimento Total Estimado</span>
-                        <p className="text-xl font-black text-[#00B356] mt-1">
-                          R$ {(projectData.totalInvestmentBRL || 35000).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                        </p>
-                        <span className="text-[10px] text-emerald-700">Equipamentos + Montagem</span>
-                      </div>
-                      <div className="p-4 bg-orange-50 border border-orange-200 rounded-2xl text-center">
-                        <span className="text-[10px] uppercase font-bold text-orange-800">Economia com Gestão DLM</span>
-                        <p className="text-xl font-black text-[#E45318] mt-1">
-                          R$ {(projectData.capexSavingsBRL || 18500).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                        </p>
-                        <span className="text-[10px] text-orange-700">Evitou aumento de padrão imediato</span>
-                      </div>
-                      <div className="p-4 bg-blue-50 border border-blue-200 rounded-2xl text-center">
-                        <span className="text-[10px] uppercase font-bold text-blue-800">Mitigação de CO₂ Estimada</span>
-                        <p className="text-xl font-black text-blue-700 mt-1">~{(evBaysCount * 6.2).toFixed(1)} ton/ano</p>
-                        <span className="text-[10px] text-blue-600">Sustentabilidade ESG ({evBaysCount} vagas)</span>
                       </div>
                     </div>
 
-                    <div className="border border-slate-200 rounded-2xl p-4 space-y-3">
-                      <h4 className="font-bold text-slate-900 uppercase text-[11px] border-b pb-2">Relação de Estações de Recarga Previstas</h4>
+                    {/* 4. RELAÇÃO DE ESTAÇÕES EFETIVAMENTE CONFIGURADAS */}
+                    <div className="border border-slate-200 rounded-2xl p-4 space-y-3 bg-white">
+                      <div className="flex items-center justify-between border-b pb-2">
+                        <h4 className="font-bold text-slate-900 uppercase text-[11px] flex items-center gap-1.5">
+                          <Zap className="w-3.5 h-3.5 text-[#00B356]" />
+                          4. Especificação Técnica das Estações de Recarga
+                        </h4>
+                        <span className="text-[10px] text-slate-500 font-bold">
+                          Total: {chargersCount} est. ({totalPower.toFixed(1)} kW | {evBaysCount} vagas)
+                        </span>
+                      </div>
+
                       <div className="space-y-2">
                         {projectData.chargers?.map((ch, idx) => {
                           const isDual = (ch.powerKW >= 60 && ch.type === 'DC') || (ch.connector && ch.connector.includes('2x'));
+                          const isFastDC = ch.type === 'DC' || ch.powerKW >= 30;
                           return (
-                            <div key={ch.id} className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl">
-                              <div className="flex items-center gap-2">
-                                <span className="w-5 h-5 rounded-full bg-[#E45318] text-white flex items-center justify-center font-bold text-[10px]">
+                            <div key={ch.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200/80">
+                              <div className="flex items-center gap-2.5">
+                                <span className="w-6 h-6 rounded-full bg-[#E45318] text-white flex items-center justify-center font-black text-[10px]">
                                   {idx + 1}
                                 </span>
                                 <div>
-                                  <strong className="text-slate-800 block">{ch.name}</strong>
+                                  <strong className="text-slate-900 text-xs block">{ch.name}</strong>
                                   <span className="text-slate-500 text-[10px]">
-                                    {ch.brand || 'WEG'} • Conector {ch.connector || 'Tipo 2'} • {isDual ? '2 Vagas Simultâneas (Dual-Gun)' : '1 Vaga'}
+                                    {ch.brand || 'WEG'} • Conector: <strong>{ch.connector || (isFastDC ? 'CCS2' : 'Tipo 2')}</strong> • {isDual ? '2 Vagas Simultâneas (Dual-Gun)' : '1 Vaga'}
                                   </span>
                                 </div>
                               </div>
                               <div className="text-right">
-                                <strong className="text-slate-900 block">{ch.powerKW} kW</strong>
-                                <span className="text-slate-500 text-[10px]">{ch.phases === 3 ? 'Trifásico 380V' : 'Monofásico 220V'}</span>
+                                <strong className="text-slate-900 text-sm font-black block">{ch.powerKW} kW</strong>
+                                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${isFastDC ? 'bg-orange-100 text-[#E45318]' : 'bg-blue-100 text-blue-700'}`}>
+                                  {isFastDC ? 'DC Rápido' : 'AC Semi-rápido'} • {ch.phases === 3 ? 'Trifásico' : 'Monofásico'}
+                                </span>
                               </div>
                             </div>
                           );
                         })}
+                      </div>
+                    </div>
+
+                    {/* 5. ANÁLISE CRITERIOSA DA CONCORRÊNCIA DC/AC & OBSERVAÇÕES (PASSOS 1B) */}
+                    <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
+                      <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                        <h4 className="font-bold text-slate-900 uppercase text-[11px] flex items-center gap-1.5">
+                          <Users className="w-3.5 h-3.5 text-blue-600" />
+                          5. Varredura Criteriosa de Concorrência no Raio de 5 km
+                        </h4>
+                        <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
+                          projectData.locationDiagnostic?.concorrencia?.monopolioNaturalDC !== false
+                            ? 'bg-emerald-100 text-[#00B356] border border-emerald-300'
+                            : 'bg-orange-100 text-[#E45318] border border-orange-300'
+                        }`}>
+                          {projectData.locationDiagnostic?.concorrencia?.monopolioNaturalDC !== false
+                            ? '✓ Monopólio Natural DC Comprovado'
+                            : 'Atenção Competitiva DC'}
+                        </span>
+                      </div>
+
+                      <p className="text-slate-700 text-[11px] leading-relaxed bg-white p-3 rounded-xl border border-slate-200/80">
+                        {projectData.locationDiagnostic?.concorrencia?.vereditoConcorrencia || 
+                          `Monopólio Natural de Recarga Rápida DC comprovado no raio de 5 km. Os postos concorrentes mapeados operam exclusivamente com recarga lenta AC (7.4 kW a 22 kW), garantindo atratividade soberana ao Hub da CoenergyGO.`}
+                      </p>
+
+                      {/* Tabela Meticulosa de Eletropostos Mapeados */}
+                      {Array.isArray(projectData.competitorStationsList) && projectData.competitorStationsList.length > 0 && (
+                        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                          <div className="bg-slate-100 px-3 py-1.5 text-[9px] font-bold uppercase text-slate-600 grid grid-cols-12 gap-1 border-b">
+                            <span className="col-span-4">Estabelecimento / Nome</span>
+                            <span className="col-span-2 text-center">Distância</span>
+                            <span className="col-span-2 text-center">Potência</span>
+                            <span className="col-span-4">Observações de Campo / Acesso</span>
+                          </div>
+                          <div className="divide-y divide-slate-100 text-[10px]">
+                            {projectData.competitorStationsList.map((st: any, idx: number) => {
+                              const nome = st.nome || st.name || `Eletroposto ${idx + 1}`;
+                              const dist = typeof st.distancia_km === 'number' ? st.distancia_km : (st.distanciaKm || 0);
+                              const pot = st.potencia_kw || st.potenciaKW || (st.is_dc || st.isDC ? 60 : 7.4);
+                              const isDC = st.is_dc !== undefined ? st.is_dc : (st.isDC !== undefined ? st.isDC : pot >= 30);
+                              const obs = st.observacao || st.observation || (st.origem === 'MANUAL_PLUGSHARE' || st.origem === 'manual' ? 'Carregador inserido manualmente' : 'Mapeado via base aberta');
+
+                              return (
+                                <div key={st.id || idx} className="px-3 py-2 grid grid-cols-12 gap-1 items-center hover:bg-slate-50">
+                                  <div className="col-span-4 font-semibold text-slate-800 truncate">
+                                    {nome}
+                                  </div>
+                                  <div className="col-span-2 text-center text-slate-500 font-mono">
+                                    {dist.toFixed(1)} km
+                                  </div>
+                                  <div className="col-span-2 text-center">
+                                    <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded ${isDC ? 'bg-orange-100 text-[#E45318]' : 'bg-blue-100 text-blue-700'}`}>
+                                      {pot} kW {isDC ? 'DC' : 'AC'}
+                                    </span>
+                                  </div>
+                                  <div className="col-span-4 text-slate-500 text-[9px] italic truncate" title={obs}>
+                                    {obs}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 6. INDICADORES ECONÔMICOS CONSOLIDADOS (SSOT: BOM MODULAR & BLEV) */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-center">
+                        <span className="text-[10px] uppercase font-bold text-emerald-800">Investimento Total Consolidado</span>
+                        <p className="text-xl font-black text-[#00B356] mt-1">
+                          R$ {(projectData.totalInvestmentBRL || 35000).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </p>
+                        <span className="text-[10px] text-emerald-700">Orçamento Modular BOM (Equip. + Obra)</span>
+                      </div>
+                      <div className="p-4 bg-orange-50 border border-orange-200 rounded-2xl text-center">
+                        <span className="text-[10px] uppercase font-bold text-orange-800">Sobretaxa de Ociosidade (Idle Fee)</span>
+                        <p className="text-xl font-black text-[#E45318] mt-1">
+                          R$ {(projectData.idleFeePerMinute || 1.50).toFixed(2)} / min
+                        </p>
+                        <span className="text-[10px] text-orange-700">Após {projectData.idleFeeGraceMinutes || 15} min de tolerância (giro de vagas)</span>
+                      </div>
+                      <div className="p-4 bg-blue-50 border border-blue-200 rounded-2xl text-center">
+                        <span className="text-[10px] uppercase font-bold text-blue-800">Mitigação de CO₂ Estimada</span>
+                        <p className="text-xl font-black text-blue-700 mt-1">~{(evBaysCount * 6.2).toFixed(1)} ton/ano</p>
+                        <span className="text-[10px] text-blue-600">Sustentabilidade ESG ({evBaysCount} vagas ativas)</span>
                       </div>
                     </div>
                   </div>

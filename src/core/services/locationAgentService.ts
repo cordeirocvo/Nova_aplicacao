@@ -149,8 +149,8 @@ export async function getCityDemographicData(cityName: string, uf: string = 'MG'
  * 2. Analisa a concorrência de recarga DC vs AC, destacando monopólio e mesclando carregadores manuais
  */
 export function analyzeCompetition(
-  apiStations: Array<{ id: string; name: string; lat: number; lon: number; powerKW?: number; isDC?: boolean; distanceKm: number }>,
-  manualStations: Array<{ name: string; powerKW: number; isDC: boolean; distanceKm: number }> = [],
+  apiStations: Array<{ id: string; name: string; lat: number; lon: number; powerKW?: number; isDC?: boolean; distanceKm: number; conector?: string; observacao?: string }>,
+  manualStations: Array<{ name: string; powerKW: number; isDC: boolean; distanceKm: number; conector?: string; observacao?: string; observation?: string }> = [],
   radiusLimitKm: number = 5.0
 ): CompetitionAnalysis {
   const merged: CompetitorStation[] = [];
@@ -170,23 +170,28 @@ export function analyzeCompetition(
       distanciaKm: Number(st.distanceKm.toFixed(2)),
       potenciaKW: power,
       isDC: isFastDC,
-      origem: 'openchargemap'
+      conector: st.conector || (isFastDC ? 'CCS2' : 'Tipo 2'),
+      origem: 'openchargemap',
+      observacao: st.observacao || ''
     });
   }
 
-  // 2. Processar carregadores inseridos manualmente pelo usuário
+  // 2. Processar carregadores inseridos manualmente pelo usuário (Passo 1B)
   for (let i = 0; i < manualStations.length; i++) {
     const manual = manualStations[i];
     if (manual.distanceKm > radiusLimitKm) continue;
 
-    const isFastDC = manual.isDC !== undefined ? manual.isDC : manual.powerKW >= 30;
+    const isFastDC = manual.isDC !== undefined ? manual.isDC : (manual.powerKW >= 30);
+    const obs = manual.observacao || manual.observation || '';
     merged.push({
       id: `manual_${i + 1}`,
       nome: manual.name || `Carregador Manual ${i + 1}`,
       distanciaKm: Number(manual.distanceKm.toFixed(2)),
       potenciaKW: manual.powerKW || (isFastDC ? 60 : 7.4),
       isDC: isFastDC,
-      origem: 'manual'
+      conector: manual.conector || (isFastDC ? 'CCS2' : 'Tipo 2'),
+      origem: 'manual',
+      observacao: obs
     });
   }
 
@@ -202,9 +207,24 @@ export function analyzeCompetition(
 
   let vereditoConcorrencia = '';
   if (monopolioNaturalDC) {
-    vereditoConcorrencia = `Monopólio Natural de Recarga Rápida DC comprovado no raio de ${radiusLimitKm} km. Os concorrentes mapeados (${acStations.length} pontos) operam exclusivamente com recarga lenta AC (7.4 kW a 22 kW), garantindo atratividade soberana para motoristas com urgência de tempo de recarga (35 a 45 minutos).`;
+    if (acStations.length === 0) {
+      vereditoConcorrencia = `Monopólio Natural de Recarga Rápida DC comprovado no raio de ${radiusLimitKm} km: não há nenhum eletroposto público concorrente mapeado (nem AC nem DC). A CoenergyGO deterá pioneirismo absoluto de infraestrutura na micro-região.`;
+    } else {
+      const uniquePowers = Array.from(new Set(acStations.map(s => `${s.potenciaKW} kW`))).join(' e ');
+      const detalhesAc = acStations.map(s => {
+        const obsPart = s.observacao ? ` [obs: ${s.observacao}]` : '';
+        return `${s.nome}: ${s.potenciaKW} kW AC a ${s.distanciaKm} km${obsPart}`;
+      }).join('; ');
+
+      vereditoConcorrencia = `Monopólio Natural de Recarga Rápida DC comprovado no raio de ${radiusLimitKm} km. Os concorrentes mapeados (${acStations.length} ponto${acStations.length > 1 ? 's' : ''}: ${detalhesAc}) operam exclusivamente com recarga lenta AC (${uniquePowers}), exigindo de 3 a 8 horas de plugue. A instalação de Recarga Rápida DC garante atratividade soberana para motoristas com urgência de tempo de recarga (35 a 45 minutos).`;
+    }
   } else {
-    vereditoConcorrencia = `Identificado(s) ${dcStations.length} carregador(es) rápido(s) DC no raio de ${radiusLimitKm} km. O concorrente DC mais próximo situa-se a ${closestDC?.distanciaKm} km (${closestDC?.nome} - ${closestDC?.potenciaKW} kW).`;
+    const detalhesDc = dcStations.map(s => {
+      const obsPart = s.observacao ? ` [obs: ${s.observacao}]` : '';
+      return `${s.nome} (${s.potenciaKW} kW DC a ${s.distanciaKm} km${obsPart})`;
+    }).join('; ');
+
+    vereditoConcorrencia = `Identificado(s) ${dcStations.length} carregador(es) rápido(s) DC no raio de ${radiusLimitKm} km: ${detalhesDc}. O concorrente DC mais próximo situa-se a ${closestDC?.distanciaKm} km (${closestDC?.nome} - ${closestDC?.potenciaKW} kW${closestDC?.observacao ? `, obs: ${closestDC?.observacao}` : ''}).`;
   }
 
   return {

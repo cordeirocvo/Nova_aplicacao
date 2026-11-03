@@ -261,8 +261,24 @@ export async function POST(req: NextRequest) {
 
     const apiStations = stationsResult.status === 'fulfilled' ? stationsResult.value : [];
 
+    // ─── NORMALIZAÇÃO ROBUSTA DE CARREGADORES MANUAIS / PASSO 1B ────────────
+    const normalizedManualStations = Array.isArray(manualStations)
+      ? manualStations.map((m: any) => {
+          const power = Number(m.powerKW || m.potencia_kw || (m.isDC || m.is_dc ? 60 : 7.4));
+          const isFastDC = m.isDC !== undefined ? Boolean(m.isDC) : (m.is_dc !== undefined ? Boolean(m.is_dc) : power >= 30);
+          return {
+            name: m.name || m.nome || 'Carregador Concorrente',
+            powerKW: power,
+            isDC: isFastDC,
+            distanceKm: Number(m.distanceKm !== undefined ? m.distanceKm : (m.distancia_km !== undefined ? m.distancia_km : 1.0)),
+            conector: m.conector || (Array.isArray(m.conectores) ? m.conectores.join(', ') : (isFastDC ? 'CCS2' : 'Tipo 2')),
+            observacao: m.observacao || m.observation || ''
+          };
+        })
+      : [];
+
     // ─── ANÁLISE DE CONCORRÊNCIA DC COM CARREGADORES MANUAIS ─────────────────
-    const competition = analyzeCompetition(apiStations, manualStations, 5.0);
+    const competition = analyzeCompetition(apiStations, normalizedManualStations, 5.0);
 
     // ─── MODELAGEM DE IDLE FEE COM PARÂMETROS DO USUÁRIO ─────────────────────
     const idleFee = calculateIdleFeeProjection(20, {

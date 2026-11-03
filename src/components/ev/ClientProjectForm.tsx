@@ -66,7 +66,16 @@ export default function ClientProjectForm({
           clientName: data.clientName || 'Coenergy',
           idleFeePerMinute: data.idleFeePerMinute !== undefined ? data.idleFeePerMinute : 1.50,
           idleFeeGraceMinutes: data.idleFeeGraceMinutes !== undefined ? data.idleFeeGraceMinutes : 15,
-          manualStations: data.manualCompetitorStations || []
+          manualStations: (data.ahpCustomCompetitors && data.ahpCustomCompetitors.length > 0)
+            ? data.ahpCustomCompetitors.map((c: any) => ({
+                name: c.nome || c.name,
+                powerKW: c.potencia_kw || c.powerKW || (c.is_dc ? 60 : 7.4),
+                isDC: c.is_dc ?? (c.potencia_kw >= 30),
+                distanceKm: c.distancia_km ?? c.distanceKm ?? 0,
+                conector: c.conectores ? c.conectores.join(', ') : (c.potencia_kw >= 30 ? 'CCS2' : 'Tipo 2'),
+                observacao: c.observacao || c.observation || ''
+              }))
+            : (data.manualCompetitorStations || [])
         })
       });
 
@@ -760,6 +769,36 @@ export default function ClientProjectForm({
                     <p className="text-[10px] text-slate-300 leading-relaxed pt-1 border-t border-slate-800">
                       {data.locationDiagnostic.concorrencia?.vereditoConcorrencia}
                     </p>
+
+                    {Array.isArray(data.locationDiagnostic.concorrencia?.concorrentesMapeados) && data.locationDiagnostic.concorrencia.concorrentesMapeados.length > 0 && (
+                      <div className="pt-2 border-t border-slate-800 space-y-1.5">
+                        <div className="flex items-center justify-between text-[9px] text-slate-400 font-bold uppercase tracking-wider">
+                          <span>Eletropostos Mapeados no Raio ({data.locationDiagnostic.concorrencia.concorrentesMapeados.length} pontos)</span>
+                          <span className="text-[#00B356]">Critério: Potência & Observação</span>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-36 overflow-y-auto pr-1">
+                          {data.locationDiagnostic.concorrencia.concorrentesMapeados.map((st: any, idx: number) => (
+                            <div key={st.id || idx} className="bg-white/5 border border-slate-800/80 rounded-lg p-2 text-[9px] space-y-1">
+                              <div className="flex items-center justify-between gap-1">
+                                <span className="font-bold text-slate-200 truncate">{st.nome}</span>
+                                <span className={`text-[8px] font-black px-1.5 py-0.5 rounded ${st.isDC ? 'bg-orange-500/20 text-[#E45318] border border-orange-500/30' : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'}`}>
+                                  {st.potenciaKW} kW {st.isDC ? 'DC Rápido' : 'AC Lento'}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between text-slate-400 text-[8px]">
+                                <span>Distância: {st.distanciaKm} km</span>
+                                <span className="text-slate-300 font-mono">{st.conector || (st.isDC ? 'CCS2' : 'Tipo 2')}</span>
+                              </div>
+                              {st.observacao && (
+                                <p className="text-[8px] text-amber-300/90 italic bg-amber-500/10 border border-amber-500/20 rounded px-1.5 py-0.5">
+                                  Nota: {st.observacao}
+                                </p>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

@@ -2501,7 +2501,9 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto font-['Montserrat',sans-serif]">
-      {/* ─── HEADER INSTITUCIONAL CORDEIRO ENERGIA & COENERGYGO ─── */}
+      {/* Container Principal do Dashboard (Oculto na impressão quando o modal de relatórios estiver ativo) */}
+      <div id="coenergygo-dashboard-content" className={`space-y-6 ${showEngineeringReportsHubModal ? 'print:hidden' : ''}`}>
+        {/* ─── HEADER INSTITUCIONAL CORDEIRO ENERGIA & COENERGYGO ─── */}
       <div className="bg-[#0A192F] text-white rounded-3xl p-6 md:p-8 shadow-2xl border border-slate-800 relative overflow-hidden">
         {/* Glows sutis da paleta Cordeiro */}
         <div className="absolute -right-10 -bottom-10 w-72 h-72 bg-[#E45318]/15 rounded-full blur-3xl pointer-events-none" />
@@ -5014,6 +5016,7 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
           />
         </div>
       )}
+      </div>
 
       {/* ─── MODAL CENTRAL DA SUÍTE DE 5 RELATÓRIOS OFICIAIS (PILAR 4) ─────────── */}
       <EVEngineeringReportsHub

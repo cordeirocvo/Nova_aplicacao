@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   FileText, Printer, Download, CheckCircle2, Shield, AlertTriangle, 
   Zap, Wrench, ClipboardCheck, Sparkles, Building2, User, Calendar, 
@@ -99,6 +99,19 @@ export function EVEngineeringReportsHub({
   projectData
 }: EVEngineeringReportsHubProps) {
   const [selectedReport, setSelectedReport] = useState<ReportType>('executivo');
+
+  // Isolamento estrito de impressão A4 (evita vazamento de estilos de tela e sobreposição de páginas)
+  useEffect(() => {
+    const handleBefore = () => document.body.classList.add('printing-ev-report');
+    const handleAfter = () => document.body.classList.remove('printing-ev-report');
+    window.addEventListener('beforeprint', handleBefore);
+    window.addEventListener('afterprint', handleAfter);
+    return () => {
+      document.body.classList.remove('printing-ev-report');
+      window.removeEventListener('beforeprint', handleBefore);
+      window.removeEventListener('afterprint', handleAfter);
+    };
+  }, []);
 
   if (!isOpen) return null;
 
@@ -217,11 +230,11 @@ export function EVEngineeringReportsHub({
   };
 
   return (
-    <div id="coenergygo-reports-hub-modal" className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-2 sm:p-4 transition-all">
-      <div className="w-full max-w-6xl bg-white text-slate-800 rounded-3xl shadow-2xl flex flex-col max-h-[95vh] overflow-hidden border border-slate-200">
+    <div id="coenergygo-reports-hub-modal" className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-2 sm:p-4 transition-all print:static print:bg-white print:p-0 print:m-0 print:block print:overflow-visible print:inset-auto">
+      <div className="w-full max-w-6xl bg-white text-slate-800 rounded-3xl shadow-2xl flex flex-col max-h-[95vh] overflow-hidden border border-slate-200 print:max-w-none print:w-full print:rounded-none print:shadow-none print:border-none print:max-h-none print:overflow-visible print:block print:p-0 print:m-0">
         
         {/* ─── TOPO DE AÇÕES & IDENTIDADE VISUAL CORDEIRO ENERGIA ─── */}
-        <div id="coenergygo-reports-header" className="bg-[#0A192F] text-white p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4 border-b border-slate-800">
+        <div id="coenergygo-reports-header" className="bg-[#0A192F] text-white p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 print:hidden">
           <div className="flex items-center gap-3">
             <div className="bg-white p-1.5 rounded-xl">
               <img src="/logo.png" alt="Cordeiro Energia" className="h-7 object-contain" />
@@ -260,10 +273,10 @@ export function EVEngineeringReportsHub({
         </div>
 
         {/* ─── CORPO: SELETOR DE RELATÓRIO + PAINEL DE VISUALIZAÇÃO A4 ─── */}
-        <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
+        <div className="flex flex-col md:flex-row flex-1 overflow-hidden print:block print:overflow-visible print:w-full print:p-0 print:m-0">
           
           {/* Menu Lateral de Seleção dos 5 Relatórios */}
-          <div id="coenergygo-reports-sidebar" className="w-full md:w-80 bg-slate-50 border-r border-slate-200 p-4 overflow-y-auto space-y-2">
+          <div id="coenergygo-reports-sidebar" className="w-full md:w-80 bg-slate-50 border-r border-slate-200 p-4 overflow-y-auto space-y-2 print:hidden">
             <div className="text-[11px] font-black uppercase tracking-wider text-slate-400 mb-3 px-1">
               Selecione o Relatório Desejado:
             </div>
@@ -313,12 +326,12 @@ export function EVEngineeringReportsHub({
           </div>
 
           {/* Área de Visualização do Documento (Simulação A4 Limpa e Pronta para Impressão) */}
-          <div className="flex-1 bg-slate-200 p-4 sm:p-6 overflow-y-auto print:p-0 print:bg-white">
-            <div id="printable-report-sheet" className="max-w-[210mm] mx-auto bg-white p-8 sm:p-12 shadow-xl print:shadow-none border border-slate-200 print:border-none min-h-[297mm] flex flex-col justify-between font-['Montserrat',sans-serif] print:p-0 print:m-0 print:border-none print:shadow-none">
+          <div className="flex-1 bg-slate-200 p-4 sm:p-6 overflow-y-auto print:p-0 print:m-0 print:bg-white print:block print:overflow-visible print:w-full">
+            <div id="printable-report-sheet" className="max-w-[210mm] mx-auto bg-white p-8 sm:p-12 shadow-xl print:shadow-none border border-slate-200 print:border-none min-h-[297mm] flex flex-col justify-between font-['Montserrat',sans-serif] print:p-0 print:m-0 print:border-none print:shadow-none print:block print:min-h-0 print:h-auto print:max-w-none print:w-full print:overflow-visible">
               
               {/* CABEÇALHO DO LAUDO (IDENTIDADE CORDEIRO ENERGIA) */}
               <div>
-                <div className="flex items-start justify-between border-b-2 border-[#0A192F] pb-4 mb-6">
+                <div className="flex items-start justify-between border-b-2 border-[#0A192F] pb-4 mb-6 break-inside-avoid print:break-inside-avoid">
                   <div>
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-[10px] font-black uppercase text-[#E45318] tracking-widest">
@@ -347,7 +360,7 @@ export function EVEngineeringReportsHub({
                 </div>
 
                 {/* METADADOS GERAIS DO PROJETO */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 p-3.5 rounded-2xl border border-slate-200 text-xs mb-6">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 p-3.5 rounded-2xl border border-slate-200 text-xs mb-6 break-inside-avoid print:break-inside-avoid">
                   <div>
                     <span className="text-[9px] font-bold text-slate-400 uppercase block">Concessionária</span>
                     <strong className="text-slate-800">{projectData.utility || 'CEMIG Distribuição'}</strong>
@@ -374,7 +387,7 @@ export function EVEngineeringReportsHub({
                 {selectedReport === 'executivo' && (
                   <div className="space-y-6 text-xs text-slate-700">
                     {/* 1. SUMÁRIO EXECUTIVO & IDENTIFICAÇÃO DO ATIVO */}
-                    <div className="bg-gradient-to-br from-[#0A192F] to-slate-900 text-white p-5 rounded-2xl space-y-3 shadow-md">
+                    <div className="bg-gradient-to-br from-[#0A192F] to-slate-900 text-white p-5 rounded-2xl space-y-3 shadow-md break-inside-avoid print:break-inside-avoid">
                       <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
                         <div className="flex items-center gap-2">
                           <span className="text-[10px] uppercase font-black text-[#00B356] tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
@@ -424,7 +437,7 @@ export function EVEngineeringReportsHub({
 
                     {/* 2. MACRO-DIAGNÓSTICO DEMOGRÁFICO & PERFIL VIÁRIO */}
                     {projectData.locationDiagnostic && (
-                      <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
+                      <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3 break-inside-avoid print:break-inside-avoid">
                         <div className="flex items-center justify-between border-b border-slate-200 pb-2">
                           <h4 className="font-bold text-slate-900 uppercase text-[11px] flex items-center gap-1.5">
                             <Store className="w-3.5 h-3.5 text-[#00B356]" />
@@ -1721,7 +1734,7 @@ export function EVEngineeringReportsHub({
               </div>
 
               {/* RODAPÉ E ASSINATURAS DO ENGENHEIRO E CLIENTE */}
-              <div className="mt-12 pt-6 border-t-2 border-slate-100 flex flex-col sm:flex-row items-end justify-between gap-6 text-xs text-slate-500">
+              <div className="mt-12 pt-6 border-t-2 border-slate-100 flex flex-col sm:flex-row items-end justify-between gap-6 text-xs text-slate-500 break-inside-avoid print:break-inside-avoid">
                 <div className="text-center sm:text-left">
                   <div className="h-10 border-b border-slate-300 w-52 mb-1" />
                   <strong className="text-slate-800 block">{projectData.technicalResponsible || 'Eng. Responsável Técnico'}</strong>

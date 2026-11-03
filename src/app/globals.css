@@ -48,7 +48,7 @@ body:has([data-tv="true"]),
 @media print {
   @page {
     size: A4 portrait;
-    margin: 6mm 8mm;
+    margin: 8mm 10mm;
   }
 
   html, body {
@@ -65,49 +65,113 @@ body:has([data-tv="true"]),
     print-color-adjust: exact !important;
   }
 
-  /* Oculta todo o conteúdo fora da folha A4 oficial */
-  body * {
-    visibility: hidden;
+  /* Oculta barras, menus, botões e elementos no-print */
+  .no-print,
+  .print-hidden,
+  .print\:hidden,
+  #coenergygo-reports-header,
+  #coenergygo-reports-sidebar,
+  button {
+    display: none !important;
   }
 
-  /* Torna estritamente visível a folha A4 e seus elementos filhos */
-  #printable-report-sheet,
-  #printable-report-sheet * {
-    visibility: visible !important;
+  /* Quando o modal de relatórios estiver ativo, oculta todo o dashboard de fundo */
+  body:has(#coenergygo-reports-hub-modal) #coenergygo-dashboard-content,
+  body.printing-ev-report #coenergygo-dashboard-content,
+  body:has(#coenergygo-reports-hub-modal) header,
+  body.printing-ev-report header,
+  body:has(#coenergygo-reports-hub-modal) nav,
+  body.printing-ev-report nav,
+  body:has(#coenergygo-reports-hub-modal) aside,
+  body.printing-ev-report aside {
+    display: none !important;
   }
 
-  /* Posiciona a folha no topo exato da página A4 impressa sem margens pretas */
-  #printable-report-sheet {
-    position: absolute !important;
-    left: 0 !important;
-    top: 0 !important;
+  /* Modal de relatórios em fluxo normal estático (sem fixed, sem repetição de páginas) */
+  #coenergygo-reports-hub-modal {
+    position: static !important;
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: auto !important;
+    max-height: none !important;
+    inset: auto !important;
+    z-index: auto !important;
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    backdrop-filter: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+
+  #coenergygo-reports-hub-modal > div {
+    position: static !important;
+    display: block !important;
     width: 100% !important;
     max-width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
+    border-radius: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: transparent !important;
+  }
+
+  #coenergygo-reports-hub-modal .flex-1,
+  #coenergygo-reports-hub-modal .overflow-y-auto,
+  #coenergygo-reports-hub-modal .overflow-hidden {
+    overflow: visible !important;
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: transparent !important;
+  }
+
+  /* Folha A4 Oficial do Relatório - FLUXO ESTÁTICO NORMAL (NUNCA ABSOLUTO) */
+  #printable-report-sheet {
+    position: static !important;
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 0 !important;
+    height: auto !important;
     margin: 0 !important;
     padding: 0 !important;
     border: none !important;
     box-shadow: none !important;
     background: #ffffff !important;
     overflow: visible !important;
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+  }
+
+  /* Regras de quebra de página inteligente para blocos de relatório */
+  .report-break-avoid,
+  .print-break-avoid,
+  .print\:break-inside-avoid,
+  .break-inside-avoid,
+  #printable-report-sheet .rounded-2xl,
+  #printable-report-sheet .rounded-xl {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Evita que tabelas e linhas sejam cortadas ao meio */
+  table, tr, td, th {
     page-break-inside: avoid !important;
     break-inside: avoid !important;
   }
 
-  /* Oculta modais, cabeçalhos de controle, sidebars e botões de navegação */
-  #coenergygo-reports-hub-modal,
-  #coenergygo-reports-hub-modal > div {
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    max-height: none !important;
-    overflow: visible !important;
-  }
-
-  #coenergygo-reports-header,
-  #coenergygo-reports-sidebar,
-  .no-print,
-  button {
-    display: none !important;
-    visibility: hidden !important;
+  /* Força fidelidade total de cores em impressão */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 }

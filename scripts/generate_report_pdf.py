@@ -8,21 +8,29 @@ Desenvolvido para: Cordeiro Energia / Suíte CoenergyGO
 Projeto: Hub de Recarga Rápida DC (BENY 60 kW SiC) • Galeria 24h • Sete Lagoas / MG
 Padrão Normativo: ABNT NBR 5410, NBR 17019, CEMIG ND-5.1 e ND-5.3
 
-Este script gera o DOSSIÊ INTEGRAL E COMPLETO contendo TODAS as informações,
-cálculos, memoriais, normas, tabelas de concorrência, CAPEX, DRE financeira,
-caderno de obras e comissionamento produzidos pela aplicação, sem cortes ou
-resumos, permitindo fluxo livre de páginas em cada uma das seções.
+Este script gera o DOSSIÊ INTEGRAL E COMPLETO contendo TODAS as 6 partes oficiais
+do relatório executivo dimensionado e levantado no projeto de Sete Lagoas:
+  • Parte 1: Sumário Executivo & Identificação do Ativo (Passo 1A)
+  • Parte 2: Macro-Diagnóstico Demográfico IBGE & Varredura de Concorrência DC (Passo 1B)
+  • Parte 3: Engenharia Elétrica CEMIG & Normas Técnicas NBR 17019 / CBMMG (Passo 2A/2B)
+  • Parte 4: Especificação Técnica BENY 60 kW SiC & CAPEX Modular BOM R$ 133.844 (Passo 3/4B)
+  • Parte 5: Modelagem Financeira CoenergyGO & Análise de Viabilidade (Passo 5)
+  • Parte 6: Cronograma de Implantação Física (12 Semanas) & Termo de Encerramento (Passo 6)
+
+Permite gerar o documento inteiro (todas as 6 partes) ou qualquer subconjunto
+selecionado via argumento de linha de comando (--parts 1,2,5 ou --all).
 =============================================================================
 """
 
 import os
 import sys
 import shutil
+import argparse
 import subprocess
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
-# Tentativa de importação da biblioteca de manipulação de PDF (pypdf moderna v5/v6 com PdfWriter)
+# Manipulação de PDF com pypdf moderna (PdfWriter)
 try:
     from pypdf import PdfWriter, PdfReader
     PDF_MERGER_CLASS = PdfWriter
@@ -37,7 +45,7 @@ except ImportError:
             print("Execute: pip install pypdf")
             sys.exit(1)
 
-# Tentativa de importação do WeasyPrint (opcional com fallback Chromium headless)
+# Suporte ao WeasyPrint com fallback automático para Chromium/Edge Headless
 WEASYPRINT_AVAILABLE = False
 try:
     import weasyprint
@@ -99,101 +107,150 @@ p {
 .report-header .title {
     font-size: 14px;
     font-weight: 800;
+    letter-spacing: -0.02em;
     color: #ffffff;
-    letter-spacing: -0.2px;
 }
 
 .report-header .subtitle {
     font-size: 9.5px;
     color: #94a3b8;
     margin-top: 3px;
+}
+
+.card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 16px 18px;
+    margin-bottom: 14px;
+    page-break-inside: avoid;
+    break-inside: avoid;
+}
+
+.card-dark {
+    background: linear-gradient(135deg, #0A192F 0%, #0d213f 100%);
+    color: #ffffff;
+    border: 1px solid #1e3a5f;
+}
+
+.card-dark p {
+    color: #cbd5e1;
+}
+
+.card-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 8px;
+    margin-bottom: 12px;
+    font-size: 11px;
+    font-weight: 800;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.05em;
+    color: #0f172a;
+}
+
+.card-dark .card-title {
+    border-bottom-color: #1e3a5f;
+    color: #ffffff;
 }
 
 .badge {
     display: inline-block;
-    padding: 3px 9px;
+    padding: 3px 8px;
     border-radius: 9999px;
     font-size: 8.5px;
     font-weight: 800;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.badge-orange {
-    background-color: rgba(228, 83, 24, 0.15);
-    color: #E45318;
-    border: 1px solid rgba(228, 83, 24, 0.3);
+    letter-spacing: 0.05em;
 }
 
 .badge-green {
-    background-color: rgba(0, 179, 86, 0.15);
+    background-color: #ecfdf5;
     color: #00B356;
-    border: 1px solid rgba(0, 179, 86, 0.3);
+    border: 1px solid #a7f3d0;
+}
+
+.badge-orange {
+    background-color: #fff7ed;
+    color: #E45318;
+    border: 1px solid #ffedd5;
 }
 
 .badge-blue {
-    background-color: rgba(10, 25, 47, 0.1);
-    color: #0A192F;
-    border: 1px solid rgba(10, 25, 47, 0.2);
+    background-color: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
 }
 
-.card {
-    background-color: #ffffff;
+.grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+.grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.grid-4 {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+}
+
+.kpi-box {
+    background-color: #f8fafc;
     border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    padding: 16px 18px;
-    margin-bottom: 16px;
-    page-break-inside: avoid;
-    break-inside: avoid;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
 }
 
-.card-dark {
-    background-color: #0A192F;
-    color: #ffffff;
-    border: 1px solid #1e293b;
+.kpi-lbl {
+    font-size: 8.5px;
+    color: #64748b;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin-bottom: 3px;
 }
 
-.card-title {
-    font-size: 11.5px;
-    font-weight: 800;
-    color: #0A192F;
-    border-bottom: 1.5px solid #f1f5f9;
-    padding-bottom: 8px;
-    margin-bottom: 12px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+.kpi-num {
+    font-size: 13px;
+    font-weight: 900;
+    color: #0f172a;
 }
 
-.card-dark .card-title {
-    color: #ffffff;
-    border-bottom: 1.5px solid #1e293b;
+.kpi-sub {
+    font-size: 8px;
+    color: #94a3b8;
+    margin-top: 3px;
 }
 
 table {
     width: 100%;
     border-collapse: collapse;
-    margin: 10px 0 12px 0;
+    margin: 8px 0;
     font-size: 10px;
 }
 
 th {
     background-color: #0A192F;
     color: #ffffff;
-    padding: 7px 9px;
-    text-align: left;
     font-weight: 700;
+    text-align: left;
+    padding: 7px 10px;
     font-size: 9px;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.04em;
 }
 
 td {
-    padding: 6.5px 9px;
-    border-bottom: 1px solid #e2e8f0;
+    padding: 7px 10px;
+    border-bottom: 1px solid #f1f5f9;
 }
 
 tr:nth-child(even) td {
@@ -203,77 +260,45 @@ tr:nth-child(even) td {
 .highlight-val {
     font-weight: 800;
     color: #E45318;
+    font-family: monospace;
 }
 
-.grid-2 {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-}
-
-.grid-3 {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 10px;
-}
-
-.grid-4 {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr 1fr;
-    gap: 10px;
-}
-
-.kpi-box {
-    background-color: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    padding: 10px;
-    text-align: center;
-}
-
-.kpi-num {
-    font-size: 14.5px;
-    font-weight: 900;
-    color: #0A192F;
-    margin-top: 3px;
-}
-
-.kpi-lbl {
-    font-size: 8px;
-    text-transform: uppercase;
-    font-weight: 700;
-    color: #64748b;
-}
-
-ul {
-    margin: 6px 0 10px 0;
-    padding-left: 20px;
-}
-
-li {
-    margin-bottom: 4px;
-    text-align: justify;
+.green-val {
+    font-weight: 800;
+    color: #00B356;
+    font-family: monospace;
 }
 
 .signature-box {
-    margin-top: 24px;
-    padding-top: 15px;
-    border-top: 2px solid #e2e8f0;
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 36px;
+    gap: 30px;
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 2px solid #e2e8f0;
+    page-break-inside: avoid;
+    break-inside: avoid;
 }
 
 .sig-line {
     border-bottom: 1px solid #94a3b8;
-    height: 32px;
+    height: 36px;
     margin-bottom: 6px;
+}
+
+ul {
+    margin: 4px 0 10px 0;
+    padding-left: 18px;
+}
+
+li {
+    margin-bottom: 4px;
 }
 """
 
 
 # =============================================================================
-# MAPEAMENTO INTEGRAL DE TODAS AS SEÇÕES DO DOSSIÊ TÉCNICO OFICIAL
+# DEFINIÇÃO DAS 6 PARTES OFICIAIS DO RELATÓRIO EXECUTIVO (SETE LAGOAS)
 # =============================================================================
 def get_report_parts_mapping() -> List[Dict[str, Any]]:
     return [
@@ -282,18 +307,18 @@ def get_report_parts_mapping() -> List[Dict[str, Any]]:
         # ─────────────────────────────────────────────────────────────────────
         {
             "id": 1,
-            "filename": "parte_01_sumario_ativo.pdf",
-            "title": "Passo 1A - Sumário Executivo & Identificação do Ativo",
+            "filename": "parte_01_sumario_executivo_ativo.pdf",
+            "title": "Parte 1: Sumário Executivo & Identificação do Ativo (Passo 1A)",
             "html": """
             <div class="report-header">
                 <div>
-                    <span class="badge badge-orange">CoenergyGO Intelligence</span>
-                    <div class="title" style="margin-top: 4px;">Cordeiro Energia • Sumário Executivo Oficial</div>
-                    <div class="subtitle">Hub de Recarga Rápida DC • Galeria Comercial 24h • Sete Lagoas / MG</div>
+                    <span class="badge badge-green">Parte 1 • Passo 1A • Sumário Executivo</span>
+                    <div class="title" style="margin-top: 4px;">Hub Comercial de Recarga Rápida DC — Sete Lagoas / MG</div>
+                    <div class="subtitle">Metodologia CoenergyGO Intelligence • Padrão de Engenharia Cordeiro Energia</div>
                 </div>
                 <div style="text-align: right;">
-                    <span class="badge badge-green">Pilar 4 • Documento Homologado</span>
-                    <div style="font-size: 8.5px; color: #94a3b8; margin-top: 3px;">Emissão Oficial: 04/11/2026</div>
+                    <span class="badge badge-orange">Ativo Homologado</span>
+                    <div style="font-size: 8.5px; color: #94a3b8; margin-top: 3px;">BENY DC 60 kW SiC Dual-Gun</div>
                 </div>
             </div>
 
@@ -335,7 +360,7 @@ def get_report_parts_mapping() -> List[Dict[str, Any]]:
                 </div>
                 <p>
                     A localização estratégica do Hub na galeria comercial oferece a sinergia perfeita entre o tempo de recarga 
-                    rápida de baterias (entre 25 e 45 minutos) e o tempo médio de permanência dos usuários nos estabelecimentos do entorno. 
+                    rápida de baterias (entre 35 e 45 minutos) e o tempo médio de permanência dos usuários nos estabelecimentos do entorno. 
                     No raio de 500 metros, mapeou-se um ecossistema completo de conveniência que agrega atratividade direta:
                 </p>
                 <ul>
@@ -349,16 +374,28 @@ def get_report_parts_mapping() -> List[Dict[str, Any]]:
         },
 
         # ─────────────────────────────────────────────────────────────────────
-        # PARTE 2: DIAGNÓSTICO DEMOGRÁFICO IBGE & CONCORRÊNCIA DC (PASSO 1B)
+        # PARTE 2: MACRO-DIAGNÓSTICO DEMOGRÁFICO IBGE & CONCORRÊNCIA DC (PASSO 1B)
         # ─────────────────────────────────────────────────────────────────────
         {
             "id": 2,
             "filename": "parte_02_diagnostico_ibge_concorrencia.pdf",
-            "title": "Passo 1B - Diagnóstico Demográfico IBGE & Varredura de Concorrência DC",
+            "title": "Parte 2: Demografia IBGE & Concorrência DC (Passo 1B)",
             "html": """
+            <div class="report-header">
+                <div>
+                    <span class="badge badge-green">Parte 2 • Passo 1B • Demografia & Concorrência</span>
+                    <div class="title" style="margin-top: 4px;">Diagnóstico Demográfico IBGE & Varredura de Concorrência DC</div>
+                    <div class="subtitle">Sete Lagoas / MG • Score AHP 66,5 / 100 • Varredura no Raio de 5 km</div>
+                </div>
+                <div style="text-align: right;">
+                    <span class="badge badge-blue">Score AHP: 66,5 / 100</span>
+                    <div style="font-size: 8.5px; color: #94a3b8; margin-top: 3px;">Grau A — Muito Bom</div>
+                </div>
+            </div>
+
             <div class="card">
                 <div class="card-title">
-                    <span>3. DIAGNÓSTICO DEMOGRÁFICO IBGE & INTELIGÊNCIA LOCACIONAL AHP</span>
+                    <span>1. DIAGNÓSTICO DEMOGRÁFICO IBGE & INTELIGÊNCIA LOCACIONAL AHP</span>
                     <span class="badge badge-green">Score Calculado: 66,5 / 100 • Muito Bom</span>
                 </div>
                 <p>
@@ -370,18 +407,22 @@ def get_report_parts_mapping() -> List[Dict[str, Any]]:
                     <div class="kpi-box">
                         <div class="kpi-lbl">População IBGE</div>
                         <div class="kpi-num">241.835 hab.</div>
+                        <div class="kpi-sub">Censo IBGE</div>
                     </div>
                     <div class="kpi-box">
-                        <div class="kpi-lbl">PIB per Capita</div>
-                        <div class="kpi-num highlight-val">R$ 48.712,00</div>
+                        <div class="kpi-lbl">Frota VE Projetada 2026</div>
+                        <div class="kpi-num highlight-val">780 VEs</div>
+                        <div class="kpi-sub">BEV + PHEV</div>
                     </div>
                     <div class="kpi-box">
                         <div class="kpi-lbl">Score Ponderado AHP</div>
-                        <div class="kpi-num" style="color: #00B356;">66,5 / 100</div>
+                        <div class="kpi-num green-val">66,5 / 100</div>
+                        <div class="kpi-sub">Grau A - Muito Bom</div>
                     </div>
                     <div class="kpi-box">
-                        <div class="kpi-lbl">Veredito Locacional</div>
-                        <div class="kpi-num" style="color: #00B356; font-size: 11px;">Grau A - Muito Bom</div>
+                        <div class="kpi-lbl">Comércios em 500m</div>
+                        <div class="kpi-num green-val">4 Pontos</div>
+                        <div class="kpi-sub">Sinergia Comercial</div>
                     </div>
                 </div>
                 <p style="font-size: 10px; color: #475569;">
@@ -392,165 +433,179 @@ def get_report_parts_mapping() -> List[Dict[str, Any]]:
 
             <div class="card">
                 <div class="card-title">
-                    <span>4. VARREDURA CRITERIOSA DA CONCORRÊNCIA DC NO RAIO DE 5 KM</span>
-                    <span class="badge badge-orange">Oportunidade Estratégica Identificada</span>
+                    <span>2. VARREDURA CRITERIOSA DA CONCORRÊNCIA DC NO RAIO DE 5 KM</span>
+                    <span class="badge badge-orange">Ambiente Competitivo DC Mapeado</span>
                 </div>
                 <p>
-                    Foi executada uma varredura rigorosa de estações de carregamento público em operação em um raio geodésico de até 5 km. 
-                    Embora existam 3 carregadores rápidos DC mapeados na região, a galeria comercial 24h posiciona-se com vantagens competitivas singulares:
+                    A varredura de concorrência mapeou as estações de recarga rápida DC no raio de 3 a 5 km: Posto Graal (60 kW DC a 1,8 km), 
+                    Mart Minas (60 kW DC a 2,4 km) e Shopping Sete Lagoas (40 kW DC a 3,8 km). Diante desse cenário competitivo, a implantação 
+                    do Hub CoenergyGO se consolida estrategicamente com dispensador BENY DC de 60 kW com dois conectores CCS2 simultâneos, 
+                    diferenciando-se pela ancoragem comercial contínua de 24 horas, recarga em 35 a 45 minutos e alta segurança patrimonial.
                 </p>
                 <table>
                     <thead>
                         <tr>
-                            <th>Estabelecimento / Ponto</th>
-                            <th>Distância</th>
-                            <th>Potência / Padrão</th>
-                            <th>Plugues</th>
-                            <th>Observação Estratégica & Análise Criteriosa</th>
+                            <th>Estabelecimento / Nome</th>
+                            <th style="text-align: center;">Distância</th>
+                            <th style="text-align: center;">Potência / Tipo</th>
+                            <th>Conectores</th>
+                            <th>Observações de Campo / Acesso</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <td><strong>Posto Graal Sete Lagoas (Rodovia BR-040)</strong></td>
-                            <td>1,8 km</td>
-                            <td>60 kW DC</td>
+                            <td><strong>Posto Graal Sete Lagoas</strong></td>
+                            <td style="text-align: center; font-family: monospace;">1,8 km</td>
+                            <td style="text-align: center;"><span class="badge badge-orange">60 kW DC</span></td>
                             <td>2x CCS2</td>
-                            <td>Voltado primordialmente ao tráfego rodoviário de longa distância; apresenta filas severas nos horários de pico e fins de semana.</td>
+                            <td>Fila nos horários de pico; voltado prioritariamente para tráfego rodoviário.</td>
                         </tr>
                         <tr>
-                            <td><strong>Supermercado Mart Minas</strong></td>
-                            <td>2,4 km</td>
-                            <td>60 kW DC</td>
+                            <td><strong>Mart Minas Atacado</strong></td>
+                            <td style="text-align: center; font-family: monospace;">2,4 km</td>
+                            <td style="text-align: center;"><span class="badge badge-orange">60 kW DC</span></td>
                             <td>2x CCS2</td>
-                            <td>Horário de funcionamento restrito ao expediente comercial do hipermercado (encerra impreterivelmente às 22h; inacessível de madrugada).</td>
+                            <td>Acesso restrito ao horário de funcionamento da loja (fecha às 22h).</td>
                         </tr>
                         <tr>
                             <td><strong>Shopping Sete Lagoas</strong></td>
-                            <td>3,8 km</td>
-                            <td>40 kW DC</td>
+                            <td style="text-align: center; font-family: monospace;">3,8 km</td>
+                            <td style="text-align: center;"><span class="badge badge-orange">40 kW DC</span></td>
                             <td>1x CCS2</td>
-                            <td>Exige pagamento de tarifa de estacionamento avulso; velocidade moderada de recarga (40 kW), limitando a rotatividade de motoristas de app.</td>
+                            <td>Cobrança de estacionamento avulso; potência reduzida de 40 kW.</td>
                         </tr>
                     </tbody>
                 </table>
-                <p style="font-size: 10.5px; color: #0A192F; font-weight: 600; margin-top: 8px;">
-                    <strong>Veredito Competitivo:</strong> O Hub da Galeria 24h preenche com exclusividade a demanda urbana noturna e dos motoristas de aplicativo 
-                    locais, além de dispensar desvios de rota para a rodovia interestadual e taxas de estacionamento privado.
-                </p>
             </div>
             """
         },
 
         # ─────────────────────────────────────────────────────────────────────
-        # PARTE 3: ENGENHARIA ELÉTRICA CEMIG & CONFORMIDADE NORMATIVA (PASSO 2A & 2B)
+        # PARTE 3: ENGENHARIA ELÉTRICA CEMIG & NORMAS TÉCNICAS (PASSO 2A & 2B)
         # ─────────────────────────────────────────────────────────────────────
         {
             "id": 3,
             "filename": "parte_03_engenharia_eletrica_cemig_normas.pdf",
-            "title": "Passo 2A & 2B - Engenharia Elétrica CEMIG & Normas NBR 17019 / CBMMG",
+            "title": "Parte 3: Engenharia Elétrica CEMIG & Normas Técnicas (Passo 2A/2B)",
             "html": """
+            <div class="report-header">
+                <div>
+                    <span class="badge badge-green">Parte 3 • Passo 2A & 2B • Engenharia Eletrotécnica</span>
+                    <div class="title" style="margin-top: 4px;">Demanda CEMIG, Balanço de Cargas & Conformidade Normativa</div>
+                    <div class="subtitle">ABNT NBR 5410, ABNT NBR 17019 & CEMIG ND-5.1 • CBMMG IT-41</div>
+                </div>
+                <div style="text-align: right;">
+                    <span class="badge badge-green">Padrão C6 200A</span>
+                    <div style="font-size: 8.5px; color: #94a3b8; margin-top: 3px;">Folga de 67,1 kW</div>
+                </div>
+            </div>
+
             <div class="card">
                 <div class="card-title">
-                    <span>5. ENGENHARIA ELÉTRICA, PADRÃO CEMIG ND-5.1 & GESTÃO DINÂMICA DE CARGA</span>
-                    <span class="badge badge-blue">Conformidade Plena</span>
+                    <span>1. ANÁLISE DE CAPACIDADE DE ENTRADA CEMIG & FOLGA DISPONÍVEL</span>
+                    <span class="badge badge-green">Sem Custo de Aumento de Demanda</span>
                 </div>
                 <p>
-                    A unidade consumidora dispõe de um padrão de entrada de energia homologado junto à CEMIG Distribuição na 
-                    <strong>Categoria C6 (Trifásico 200A, 75 kW em 380/220V)</strong>, segundo a especificação técnica CEMIG ND-5.1. 
-                    A análise do perfil de consumo histórico e das medições em campo revela:
+                    A vistoria técnica e a análise das faturas de energia do imóvel constataram que o padrão de entrada existente 
+                    é classificado como <strong>C6 Trifásico (Disjuntor Geral de 200A)</strong> em 380/220V, com limite de fornecimento 
+                    de <strong>75,0 kW</strong> conforme a norma CEMIG ND-5.1.
                 </p>
-                <div class="grid-3" style="margin: 12px 0;">
+                <div class="grid-4" style="margin: 12px 0;">
                     <div class="kpi-box">
-                        <div class="kpi-lbl">Capacidade Contratada CEMIG</div>
-                        <div class="kpi-num">75,0 kW (200A)</div>
+                        <div class="kpi-lbl">Padrão de Entrada</div>
+                        <div class="kpi-num">C6 (200A)</div>
+                        <div class="kpi-sub">380/220V Trifásico</div>
                     </div>
                     <div class="kpi-box">
-                        <div class="kpi-lbl">Demanda Máxima Registrada</div>
-                        <div class="kpi-num" style="color: #64748b;">7,9 kW (10,5%)</div>
+                        <div class="kpi-lbl">Capacidade Contratada</div>
+                        <div class="kpi-num">75,0 kW</div>
+                        <div class="kpi-sub">Limite CEMIG ND-5.1</div>
                     </div>
                     <div class="kpi-box">
-                        <div class="kpi-lbl">Folga Elétrica Disponível</div>
-                        <div class="kpi-num highlight-val">67,1 kW (89,5%)</div>
+                        <div class="kpi-lbl">Carga Atual Medida</div>
+                        <div class="kpi-num highlight-val">7,9 kW</div>
+                        <div class="kpi-sub">Pico Registrado NBR 5410</div>
+                    </div>
+                    <div class="kpi-box">
+                        <div class="kpi-lbl">Folga Eletrotécnica</div>
+                        <div class="kpi-num green-val">67,1 kW</div>
+                        <div class="kpi-sub">Headroom para Recarga</div>
                     </div>
                 </div>
                 <p>
-                    A folga estática contínua de 67,1 kW absorve com folga de segurança de 11,8% a potência máxima nominal de 60 kW 
-                    do carregador BENY DC. Essa característica de engenharia representa uma economia de investimento crucial: 
-                    <strong>elimina a necessidade de aumento de padrão para média tensão (subestação particular CEMIG ND-5.3)</strong>, 
-                    reduzindo o tempo de implantação em até 6 meses e economizando mais de R$ 90.000,00 em obras de entrada.
+                    <strong>Regime de Carga Plena:</strong> Como a folga disponível é de <strong>67,1 kW</strong> e a estação rápida BENY 
+                    demanda <strong>60,0 kW</strong> a plena carga, a instalação opera em regime de alimentação direta em carga plena sem risco 
+                    de desarme do disjuntor geral de 200A e sem necessidade de solicitação onerosa de aumento de carga à concessionária.
                 </p>
             </div>
 
             <div class="card">
                 <div class="card-title">
-                    <span>6. CONFORMIDADE COM ABNT NBR 17019, NBR 5410 & CORPO DE BOMBEIROS CBMMG IT-41</span>
-                    <span class="badge badge-green">Segurança Máxima Homologada</span>
+                    <span>2. REQUISITOS MANDATÓRIOS DE SEGURANÇA (ABNT NBR 17019 & CBMMG IT-41)</span>
+                    <span class="badge badge-blue">100% Homologado</span>
                 </div>
-                <p>
-                    O projeto elétrico cumpre com rigor estrito as diretrizes de segurança aplicáveis a estações de recarga condutiva:
-                </p>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Item Normativo</th>
-                            <th>Norma de Referência</th>
-                            <th>Solução Técnica Especificada no Projeto</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><strong>Aterramento Elétrico</strong></td>
-                            <td>ABNT NBR 17019 / NBR 5410</td>
-                            <td>Esquema TN-S estrito, com condutor de proteção exclusivo (PE de cobre 35 mm²) conectado ao BEP e resistência &lt; 10 Ω.</td>
-                            <td><span class="badge badge-green">Conforme</span></td>
-                        </tr>
-                        <tr>
-                            <td><strong>Proteção Diferencial Residual</strong></td>
-                            <td>ABNT NBR 17019 (Seção 722.531)</td>
-                            <td>Disjuntor Residual (IDR) Classe B Tetrapolar de 125A com sensibilidade de 30 mA CA e detecção de corrente contínua pura &gt; 6 mA.</td>
-                            <td><span class="badge badge-green">Conforme</span></td>
-                        </tr>
-                        <tr>
-                            <td><strong>Proteção Contra Sobretensões</strong></td>
-                            <td>ABNT NBR 5410 (Seção 5.4)</td>
-                            <td>Quadro equipado com DPS Classe II, corrente máxima Imax = 45 kA, nível de proteção Up ≤ 1,5 kV em modos comum e diferencial.</td>
-                            <td><span class="badge badge-green">Conforme</span></td>
-                        </tr>
-                        <tr>
-                            <td><strong>Desenergização de Emergência</strong></td>
-                            <td>CBMMG IT-41 / NBR 17019</td>
-                            <td>Botoeira tipo cogumelo com trava rotativa e rearme manual, interligada à bobina de disparo MX do disjuntor de entrada em &lt; 50 ms.</td>
-                            <td><span class="badge badge-green">Conforme</span></td>
-                        </tr>
-                        <tr>
-                            <td><strong>Segurança Contra Incêndios</strong></td>
-                            <td>CBMMG Instrução Técnica 41</td>
-                            <td>Instalação de extintor de pó químico ABC 6 kg a 3 metros do ponto de recarga, com sinalização fotoluminescente e balizadores de solo.</td>
-                            <td><span class="badge badge-green">Conforme</span></td>
-                        </tr>
-                    </tbody>
-                </table>
+                <div class="grid-2">
+                    <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px;">
+                        <strong style="color: #E45318; font-size: 11px;">1. Aterramento TN-S Mandatório:</strong>
+                        <p style="margin-top: 4px; font-size: 10px;">
+                            Condutor de proteção (PE) exclusivo interligado diretamente ao Barramento de Equipotencialização Principal (BEP), 
+                            com malha de aterramento de resistividade inferior a 10 ohms, impedindo tensões perigosas de toque.
+                        </p>
+                    </div>
+                    <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px;">
+                        <strong style="color: #00B356; font-size: 11px;">2. Dispositivo IDR Tipo B (30 mA):</strong>
+                        <p style="margin-top: 4px; font-size: 10px;">
+                            Proteção diferencial-residual Tipo B específica para VE, sensível a correntes de fuga contínuas (DC) 
+                            geradas por retificadores veiculares e transitórios de chaveamento.
+                        </p>
+                    </div>
+                    <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px;">
+                        <strong style="color: #1d4ed8; font-size: 11px;">3. Proteção contra Surtos (DPS Classe I+II):</strong>
+                        <p style="margin-top: 4px; font-size: 10px;">
+                            DPS coordenado nos modos fase-terra e neutro-terra (Up &lt; 1,5 kV), protegendo os semicondutores de Carbeto de Silício (SiC) 
+                            do carregador e o inversor de bordo dos veículos.
+                        </p>
+                    </div>
+                    <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px;">
+                        <strong style="color: #b91c1c; font-size: 11px;">4. Botoeira de Emergência & Combate a Incêndio:</strong>
+                        <p style="margin-top: 4px; font-size: 10px;">
+                            Comando de parada de emergência tipo cogumelo atuando na bobina de abertura (MX) em tempo inferior a 50 ms, 
+                            extintor de pó químico ABC adjacente e sinalização viária conforme NBR 9050.
+                        </p>
+                    </div>
+                </div>
             </div>
             """
         },
 
         # ─────────────────────────────────────────────────────────────────────
-        # PARTE 4: ESPECIFICAÇÃO DO CARREGADOR & ORÇAMENTO DE CAPEX (PASSO 3 & 4B)
+        # PARTE 4: ESPECIFICAÇÃO BENY 60 kW SiC & CAPEX MODULAR BOM (PASSO 3/4B)
         # ─────────────────────────────────────────────────────────────────────
         {
             "id": 4,
-            "filename": "parte_04_equipamentos_orcamento_bom.pdf",
-            "title": "Passo 3 & 4B - Especificação Técnica do Carregador & Orçamento de CAPEX",
+            "filename": "parte_04_especificacao_beny_capex_bom.pdf",
+            "title": "Parte 4: Carregador BENY 60 kW SiC & Orçamento CAPEX R$ 133.844 (Passo 3/4B)",
             "html": """
+            <div class="report-header">
+                <div>
+                    <span class="badge badge-green">Parte 4 • Passo 3 & 4B • Equipamentos & Orçamento</span>
+                    <div class="title" style="margin-top: 4px;">Especificação Técnica BENY 60 kW & Composição de CAPEX</div>
+                    <div class="subtitle">Tecnologia SiC Dual-Gun CCS2 • Orçamento Consolidado R$ 133.844,00</div>
+                </div>
+                <div style="text-align: right;">
+                    <span class="badge badge-orange">CAPEX Total</span>
+                    <div style="font-size: 8.5px; color: #94a3b8; margin-top: 3px;">R$ 133.844,00</div>
+                </div>
+            </div>
+
             <div class="card">
                 <div class="card-title">
-                    <span>7. ESPECIFICAÇÃO TÉCNICA DO SISTEMA DE RECARGA RÁPIDA DC (BENY 60 KW)</span>
-                    <span class="badge badge-orange">Dual-Gun CCS2 SiC</span>
+                    <span>1. ESPECIFICAÇÃO DO CARREGADOR BENY DC 60 KW SiC (DUAL-GUN CCS2)</span>
+                    <span class="badge badge-green">Alta Eficiência Energética</span>
                 </div>
                 <p>
                     A estação selecionada é a <strong>BENY BDC-60 kW</strong>, incorporando semicondutores de Carbeto de Silício (SiC) 
-                    de última geração, proporcionando eficiência energética superior a 95,5% e redução significativa de perdas térmicas.
+                    de última geração, proporcionando eficiência energética superior a 96% e redução significativa de perdas térmicas.
                 </p>
                 <div class="grid-4" style="margin: 12px 0;">
                     <div class="kpi-box">
@@ -563,7 +618,7 @@ def get_report_parts_mapping() -> List[Dict[str, Any]]:
                     </div>
                     <div class="kpi-box">
                         <div class="kpi-lbl">Eficiência SiC</div>
-                        <div class="kpi-num highlight-val">> 95,5%</div>
+                        <div class="kpi-num green-val">> 96,0%</div>
                     </div>
                     <div class="kpi-box">
                         <div class="kpi-lbl">Grau de Proteção</div>
@@ -573,168 +628,274 @@ def get_report_parts_mapping() -> List[Dict[str, Any]]:
                 <p>
                     <strong>Balanceamento Dinâmico de Carga:</strong> O carregador opera de forma inteligente: quando um único veículo está conectado, 
                     entrega até 60 kW de potência contínua; quando dois veículos carregam simultaneamente, o sistema divide a potência em 30 kW + 30 kW, 
-                    garantindo atendimento sem interrupções. Inclui modem 4G integrado, leitor RFID e protocolo OCPP 1.6J JSON para bilhetagem em nuvem.
+                    garantindo atendimento sem interrupções. Inclui modem 4G integrado, leitor RFID e protocolo OCPP 1.6J/2.0.1 JSON para bilhetagem em nuvem.
                 </p>
             </div>
 
             <div class="card">
                 <div class="card-title">
-                    <span>8. ORÇAMENTO MODULAR DE CAPEX & BILL OF MATERIALS (BOM)</span>
-                    <span class="badge badge-green">Investimento Consolidado: R$ 106.498,88</span>
+                    <span>2. ORÇAMENTO MODULAR DE CAPEX & BILL OF MATERIALS (BOM)</span>
+                    <span class="badge badge-green">Investimento Consolidado: R$ 133.844,00</span>
                 </div>
                 <table>
                     <thead>
                         <tr>
-                            <th>Módulo de Fornecimento</th>
-                            <th>Descrição Detalhada dos Itens e Serviços</th>
-                            <th>Garantia</th>
-                            <th>Valor Total (R$)</th>
+                            <th>Item</th>
+                            <th>Descrição Detalhada dos Equipamentos, Materiais & Serviços</th>
+                            <th style="text-align: center;">Qtd</th>
+                            <th style="text-align: right;">Valor Total (R$)</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <td><strong>Módulo 1: Equipamento Principal</strong></td>
-                            <td>Estação BENY DC 60 kW SiC Dual-Gun CCS2 (5m), modem 4G, leitor RFID, tela touch colorida e OCPP 1.6J.</td>
-                            <td>24 Meses</td>
-                            <td class="highlight-val">R$ 68.900,00</td>
+                            <td style="font-weight: 700;">01</td>
+                            <td><strong>Estação de Recarga BENY DC 60 kW Dual Gun CCS2</strong> (Módulos SiC, OCPP 1.6J/2.0.1, RFID, Tela 7", Gestão Dinâmica)</td>
+                            <td style="text-align: center; font-family: monospace;">1 un</td>
+                            <td style="text-align: right;" class="highlight-val">R$ 85.000,00</td>
                         </tr>
                         <tr>
-                            <td><strong>Módulo 2: Painel de Proteção NBR 17019</strong></td>
-                            <td>Quadro metálico IP65 com Disjuntor Caixa Moldada 125A 36kA, IDR Classe B Tetrapolar, DPS Classe II 45kA e bobina MX.</td>
-                            <td>12 Meses</td>
-                            <td>R$ 11.848,88</td>
+                            <td style="font-weight: 700;">02</td>
+                            <td><strong>Quadro Geral QDC-VE 380V & Proteções NBR 17019</strong> (Disjuntor Caixa Moldada 125A 36kA, IDR Tipo B 30mA, DPS Classe I+II e Bobina MX)</td>
+                            <td style="text-align: center; font-family: monospace;">1 cj</td>
+                            <td style="text-align: right; font-family: monospace; font-weight: 700;">R$ 15.000,00</td>
                         </tr>
                         <tr>
-                            <td><strong>Módulo 3: Cabeamento & Infraestrutura</strong></td>
-                            <td>Cabos de cobre 70 mm² isolação HEPR 90°C 0,6/1 kV (25m), eletrodutos galvanizados 3", caixas de passagem e aterramento TN-S.</td>
-                            <td>60 Meses</td>
-                            <td>R$ 9.450,00</td>
+                            <td style="font-weight: 700;">03</td>
+                            <td><strong>Infraestrutura Eletrotécnica & Cabeamento Sintenax 35mm² Cu</strong> (Cabos 0,6/1kV HEPR, Eletrodutos Galvanizados e Aterramento TN-S)</td>
+                            <td style="text-align: center; font-family: monospace;">1 cj</td>
+                            <td style="text-align: right; font-family: monospace; font-weight: 700;">R$ 10.000,00</td>
                         </tr>
                         <tr>
-                            <td><strong>Módulo 4: Obras Civis & Sinalização</strong></td>
-                            <td>Base de concreto armado fck ≥ 25 MPa com chumbadores inox, balizadores metálicos anti-impacto e pintura de solo verde NBR 17019.</td>
-                            <td>12 Meses</td>
-                            <td>R$ 6.800,00</td>
+                            <td style="font-weight: 700;">04</td>
+                            <td><strong>Obras Civis, Base Estrutural, 4 Balizadores e Pintura Epóxi</strong> (Base de Concreto Armado fck 25 MPa, Vagas NBR 9050 e Sinalização)</td>
+                            <td style="text-align: center; font-family: monospace;">1 gl</td>
+                            <td style="text-align: right; font-family: monospace; font-weight: 700;">R$ 10.000,00</td>
                         </tr>
                         <tr>
-                            <td><strong>Módulo 5: Engenharia & Comissionamento</strong></td>
-                            <td>Projeto executivo de engenharia, integração à plataforma de bilhetagem OCPP, ensaios elétricos NBR 17019 e emissão de ART CREA-MG.</td>
-                            <td>Integral</td>
-                            <td>R$ 9.500,00</td>
+                            <td style="font-weight: 700;">05</td>
+                            <td><strong>Engenharia, Comissionamento NBR 17019 & ART CREA-MG</strong> (Projeto Executivo e Ensaios Eletrotécnicos Eng. Bruno Cordeiro)</td>
+                            <td style="text-align: center; font-family: monospace;">1 gl</td>
+                            <td style="text-align: right; font-family: monospace; font-weight: 700;">R$ 5.000,00</td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight: 700;">06</td>
+                            <td><strong>Marketing, Comunicação Visual, Totem Indicativo & Reserva Técnica</strong> (Sinalização Noturna e Contingência)</td>
+                            <td style="text-align: center; font-family: monospace;">1 gl</td>
+                            <td style="text-align: right; font-family: monospace; font-weight: 700;">R$ 8.844,00</td>
                         </tr>
                     </tbody>
                     <tfoot>
                         <tr style="background-color: #0A192F; color: #ffffff; font-weight: 800;">
-                            <td colspan="3" style="text-align: right; text-transform: uppercase;">Investimento Total de Implantação (CAPEX):</td>
-                            <td style="color: #00B356; font-size: 13px;">R$ 106.498,88</td>
+                            <td colspan="3" style="text-align: right; text-transform: uppercase;">Investimento Total de Implantação (CAPEX Total):</td>
+                            <td style="text-align: right; color: #00B356; font-size: 13px; font-family: monospace;">R$ 133.844,00</td>
                         </tr>
                     </tfoot>
+                </table>
+                <div class="grid-2" style="margin-top: 8px;">
+                    <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; font-size: 9.5px;">
+                        ✓ <strong>Equipamentos Principais:</strong> R$ 85.000,00 (Estação BENY 60 kW com 24 meses de garantia de fábrica).
+                    </div>
+                    <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; font-size: 9.5px;">
+                        ✓ <strong>Infra Civil & Elétrica:</strong> R$ 48.844,00 (Quadro QDC-VE, cabos 35mm², base civil, marketing e engenharia).
+                    </div>
+                </div>
+            </div>
+            """
+        },
+
+        # ─────────────────────────────────────────────────────────────────────
+        # PARTE 5: MODELAGEM FINANCEIRA COENERGYGO & INDICADORES (PASSO 5)
+        # ─────────────────────────────────────────────────────────────────────
+        {
+            "id": 5,
+            "filename": "parte_05_modelagem_financeira_coenergygo.pdf",
+            "title": "Parte 5: Modelagem Financeira CoenergyGO & Retorno (Passo 5)",
+            "html": """
+            <div class="report-header">
+                <div>
+                    <span class="badge badge-green">Parte 5 • Passo 5 • Viabilidade Econômica</span>
+                    <div class="title" style="margin-top: 4px;">Modelagem Financeira CoenergyGO & Análise de Retorno</div>
+                    <div class="subtitle">Hub Comercial Sete Lagoas • Venda: R$ 2,00/kWh • Custo Solar: R$ 0,76/kWh</div>
+                </div>
+                <div style="text-align: right;">
+                    <span class="badge badge-green">Payback: 20.9 Meses</span>
+                    <div style="font-size: 8.5px; color: #94a3b8; margin-top: 3px;">TIR Solar: 50.5% a.a.</div>
+                </div>
+            </div>
+
+            <!-- OS 4 CARDS FUNDAMENTAIS DE VIABILIDADE FINANCEIRA DO PROJETO DE SETE LAGOAS -->
+            <div class="grid-4" style="margin-bottom: 14px;">
+                <div class="kpi-box" style="border-left: 4px solid #0A192F; text-align: left;">
+                    <div class="kpi-lbl">CAPEX TOTAL ESTIMADO</div>
+                    <div class="kpi-num" style="font-size: 15px;">R$ 133.844,00</div>
+                    <div class="kpi-sub">Equipamentos: R$ 85k + Infra Civil/Elétrica: R$ 48.8k</div>
+                </div>
+                <div class="kpi-box" style="border-left: 4px solid #00B356; background-color: #f0fdf4; text-align: left;">
+                    <div class="kpi-lbl" style="color: #166534;">PAYBACK DESCONTADO</div>
+                    <div class="kpi-num green-val" style="font-size: 15px;">20.9 meses</div>
+                    <div class="kpi-sub" style="color: #15803d;">Com Usina Solar (vs 47.3m na Rede CEMIG) • 2.3x mais rápido</div>
+                </div>
+                <div class="kpi-box" style="border-left: 4px solid #1d4ed8; background-color: #eff6ff; text-align: left;">
+                    <div class="kpi-lbl" style="color: #1e40af;">TAXA INTERNA RETORNO (TIR)</div>
+                    <div class="kpi-num" style="color: #1d4ed8; font-size: 15px;">50.5% a.a.</div>
+                    <div class="kpi-sub" style="color: #1e40af;">Fase Solar (vs 21.6% Rede CEMIG) • Spread +38.5% acima CDI</div>
+                </div>
+                <div class="kpi-box" style="border-left: 4px solid #E45318; background-color: #fff7ed; text-align: left;">
+                    <div class="kpi-lbl" style="color: #9a3412;">MARGEM LÍQUIDA</div>
+                    <div class="kpi-num highlight-val" style="font-size: 15px;">62.1%</div>
+                    <div class="kpi-sub" style="color: #9a3412;">Cenário Base 4h/dia (R$ 6.395,78/mês) • Venda: R$ 2,00/kWh</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">
+                    <span>1. DEMONSTRATIVO DE RESULTADOS (DRE) NOS 3 CENÁRIOS OPERACIONAIS</span>
+                    <span class="badge badge-green">Motor Financeiro CoenergyGO</span>
+                </div>
+                <p>
+                    A modelagem financeira foi elaborada com premissas de mercado auditadas: tarifa de venda na recarga 
+                    de <strong>R$ 2,00/kWh</strong>, custo de energia na Usina Solar de <strong>R$ 0,76/kWh</strong> (com compensação de créditos) 
+                    e na Rede CEMIG de <strong>R$ 0,85/kWh</strong>, com despesas de manutenção e bilhetagem OCPP:
+                </p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Métrica Financeira & Operacional</th>
+                            <th style="text-align: center;">Conservador (Base 4h/dia)</th>
+                            <th style="text-align: center;">Moderado (6h/dia)</th>
+                            <th style="text-align: center;">Otimista (8h/dia)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Utilização Média Diária</strong></td>
+                            <td style="text-align: center; font-family: monospace;">4 horas / dia</td>
+                            <td style="text-align: center; font-family: monospace;">6 horas / dia</td>
+                            <td style="text-align: center; font-family: monospace;">8 horas / dia</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Volume Mensal de Energia Vendida</strong></td>
+                            <td style="text-align: center; font-family: monospace;">6.480 kWh / mês</td>
+                            <td style="text-align: center; font-family: monospace;">9.720 kWh / mês</td>
+                            <td style="text-align: center; font-family: monospace;">12.960 kWh / mês</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Receita Bruta Mensal de Recarga</strong></td>
+                            <td style="text-align: center; font-family: monospace; font-weight: 700;">R$ 12.960,00</td>
+                            <td style="text-align: center; font-family: monospace; font-weight: 700;">R$ 19.440,00</td>
+                            <td style="text-align: center; font-family: monospace; font-weight: 700;">R$ 25.920,00</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Custos Operacionais & O&M Mensal</strong></td>
+                            <td style="text-align: center; font-family: monospace; color: #64748b;">- R$ 6.564,22</td>
+                            <td style="text-align: center; font-family: monospace; color: #64748b;">- R$ 9.648,33</td>
+                            <td style="text-align: center; font-family: monospace; color: #64748b;">- R$ 12.732,44</td>
+                        </tr>
+                        <tr style="background-color: #f0fdf4;">
+                            <td><strong>Lucro Líquido Mensal (Usina Solar)</strong></td>
+                            <td style="text-align: center; font-family: monospace;" class="green-val">R$ 6.395,78</td>
+                            <td style="text-align: center; font-family: monospace;" class="green-val">R$ 9.791,67</td>
+                            <td style="text-align: center; font-family: monospace;" class="green-val">R$ 13.187,56</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Lucro Líquido Mensal (Rede CEMIG)</strong></td>
+                            <td style="text-align: center; font-family: monospace; color: #475569;">R$ 2.827,80</td>
+                            <td style="text-align: center; font-family: monospace; color: #475569;">R$ 4.439,70</td>
+                            <td style="text-align: center; font-family: monospace; color: #475569;">R$ 6.051,60</td>
+                        </tr>
+                        <tr style="background-color: #ecfdf5;">
+                            <td><strong>Payback Descontado (Usina Solar)</strong></td>
+                            <td style="text-align: center; font-family: monospace; font-weight: 900; color: #00B356;">20,9 Meses</td>
+                            <td style="text-align: center; font-family: monospace; font-weight: 900; color: #00B356;">13,7 Meses</td>
+                            <td style="text-align: center; font-family: monospace; font-weight: 900; color: #00B356;">10,1 Meses</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Payback Descontado (Rede CEMIG)</strong></td>
+                            <td style="text-align: center; font-family: monospace; color: #64748b;">47,3 Meses</td>
+                            <td style="text-align: center; font-family: monospace; color: #64748b;">30,1 Meses</td>
+                            <td style="text-align: center; font-family: monospace; color: #64748b;">22,1 Meses</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Taxa Interna de Retorno (TIR Solar)</strong></td>
+                            <td style="text-align: center; font-family: monospace; font-weight: 800; color: #1d4ed8;">50,5% a.a.</td>
+                            <td style="text-align: center; font-family: monospace; font-weight: 800; color: #1d4ed8;">81,2% a.a.</td>
+                            <td style="text-align: center; font-family: monospace; font-weight: 800; color: #1d4ed8;">112,4% a.a.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Mitigação de CO₂ Evitada (ESG)</strong></td>
+                            <td style="text-align: center; font-family: monospace; color: #00B356; font-weight: 700;">~32,6 ton CO₂/ano</td>
+                            <td style="text-align: center; font-family: monospace; color: #00B356; font-weight: 700;">~48,9 ton CO₂/ano</td>
+                            <td style="text-align: center; font-family: monospace; color: #00B356; font-weight: 700;">~65,2 ton CO₂/ano</td>
+                        </tr>
+                    </tbody>
                 </table>
             </div>
             """
         },
 
         # ─────────────────────────────────────────────────────────────────────
-        # PARTE 5: MODELAGEM FINANCEIRA & CRONOGRAMA DE ENCERRAMENTO (PASSO 5 & 6)
+        # PARTE 6: CRONOGRAMA DE IMPLANTAÇÃO FÍSICA & ENCERRAMENTO (PASSO 6)
         # ─────────────────────────────────────────────────────────────────────
         {
-            "id": 5,
-            "filename": "parte_05_financeiro_cronograma_encerramento.pdf",
-            "title": "Passo 5 & 6 - Modelagem Financeira CoenergyGO & Termo de Encerramento",
+            "id": 6,
+            "filename": "parte_06_cronograma_encerramento_formal.pdf",
+            "title": "Parte 6: Cronograma de 12 Semanas & Termo de Encerramento (Passo 6)",
             "html": """
-            <div class="card">
-                <div class="card-title">
-                    <span>9. MODELAGEM FINANCEIRA COENERGYGO (3 CENÁRIOS OPERACIONAIS)</span>
-                    <span class="badge badge-green">Payback Médio: 13,8 Meses (Cenário Moderado)</span>
+            <div class="report-header">
+                <div>
+                    <span class="badge badge-green">Parte 6 • Passo 6 • Execução & Encerramento</span>
+                    <div class="title" style="margin-top: 4px;">Cronograma de Implantação Física & Termo de Encerramento</div>
+                    <div class="subtitle">Prazo de 12 Semanas (90 Dias Corridos) • Responsabilidade Técnica CREA-MG</div>
                 </div>
-                <p>
-                    A modelagem financeira foi elaborada com base em premissas conservadoras de mercado: tarifa média cobrada na recarga 
-                    de <strong>R$ 2,10/kWh</strong>, custo da energia elétrica adquirida de <strong>R$ 0,82/kWh</strong> e despesas operacionais 
-                    (OPEX mensal fixo de R$ 980,00 englobando conectividade 4G dedicada, taxa de software OCPP e manutenção preventiva periódica):
-                </p>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Métrica Financeira & Operacional</th>
-                            <th>Cenário Conservador (4h/dia)</th>
-                            <th>Cenário Moderado (6h/dia)</th>
-                            <th>Cenário Agressivo (9h/dia)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><strong>Utilização Média Diária</strong></td>
-                            <td>4 horas / dia</td>
-                            <td>6 horas / dia</td>
-                            <td>9 horas / dia</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Volume Mensal de Energia Vendida</strong></td>
-                            <td>7.200 kWh / mês</td>
-                            <td>10.800 kWh / mês</td>
-                            <td>16.200 kWh / mês</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Receita Bruta Mensal de Recarga</strong></td>
-                            <td>R$ 15.120,00</td>
-                            <td>R$ 22.680,00</td>
-                            <td>R$ 34.020,00</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Custo Mensal da Energia Elétrica (CPV)</strong></td>
-                            <td>- R$ 5.904,00</td>
-                            <td>- R$ 8.856,00</td>
-                            <td>- R$ 13.284,00</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Custo Operacional Mensal (OPEX)</strong></td>
-                            <td>- R$ 980,00</td>
-                            <td>- R$ 980,00</td>
-                            <td>- R$ 980,00</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Tributos Estimados (Simples / ISS / PIS / Cofins)</strong></td>
-                            <td>- R$ 3.440,00</td>
-                            <td>- R$ 5.110,00</td>
-                            <td>- R$ 7.615,00</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Lucro Líquido Operacional Mensal</strong></td>
-                            <td><strong>R$ 4.796,00</strong></td>
-                            <td><strong>R$ 7.734,00</strong></td>
-                            <td><strong>R$ 12.141,00</strong></td>
-                        </tr>
-                        <tr>
-                            <td><strong>Retorno do Investimento (Payback Simples)</strong></td>
-                            <td class="highlight-val">22,2 Meses</td>
-                            <td class="highlight-val">13,8 Meses</td>
-                            <td class="highlight-val">8,8 Meses</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Impacto ESG — Descarbonização Evitada</strong></td>
-                            <td style="color: #00B356; font-weight: 700;">8,2 ton CO₂ / ano</td>
-                            <td style="color: #00B356; font-weight: 700;">12,4 ton CO₂ / ano</td>
-                            <td style="color: #00B356; font-weight: 700;">18,5 ton CO₂ / ano</td>
-                        </tr>
-                    </tbody>
-                </table>
+                <div style="text-align: right;">
+                    <span class="badge badge-blue">90 Dias Corridos</span>
+                    <div style="font-size: 8.5px; color: #94a3b8; margin-top: 3px;">3 Fases Construtivas</div>
+                </div>
             </div>
 
             <div class="card">
                 <div class="card-title">
-                    <span>10. CRONOGRAMA DE IMPLANTAÇÃO FÍSICA (12 SEMANAS) & ENCERRAMENTO FORMAL</span>
+                    <span>1. CRONOGRAMA FÍSICO-FINANCEIRO DE EXECUÇÃO (12 SEMANAS / 90 DIAS)</span>
                     <span class="badge badge-blue">Roadmap Executivo</span>
                 </div>
                 <p>
-                    O plano de implantação física está organizado em 12 semanas contínuas com entregáveis e marcos de aprovação:
+                    O plano de implantação física está organizado em 3 fases construtivas sequenciais com marcos formais de aprovação:
                 </p>
-                <ul>
-                    <li><strong>Semanas 1 a 3:</strong> Emissão dos projetos executivos, aprovação de padrão CEMIG e compra do carregador BENY 60 kW.</li>
-                    <li><strong>Semanas 4 a 7:</strong> Obras civis, abertura de valas subterrâneas, envelopamento de tubulações e base de concreto usinado.</li>
-                    <li><strong>Semanas 8 a 9:</strong> Passagem dos cabos de cobre 70 mm², montagem do quadro elétrico NBR 17019 e aterramento TN-S.</li>
-                    <li><strong>Semanas 10 a 11:</strong> Instalação física do carregador BENY, conexões elétricas, energização preliminar e testes a vazio.</li>
-                    <li><strong>Semana 12:</strong> Comissionamento com simulador de VE, parametrização da plataforma OCPP 1.6J, ART CREA-MG e inauguração.</li>
-                </ul>
+                <div class="grid-3" style="margin-top: 10px;">
+                    <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-top: 3px solid #0A192F; border-radius: 8px; padding: 10px;">
+                        <span style="font-size: 8px; font-weight: 800; color: #0A192F; text-transform: uppercase;">Fase 1 • Semanas 1 a 4</span>
+                        <strong style="display: block; font-size: 11px; margin: 2px 0 4px 0;">Suprimentos & Mobilização</strong>
+                        <p style="font-size: 9.5px; color: #475569; margin: 0;">
+                            Aquisição da estação BENY DC 60 kW SiC, fabricação do painel QDC-VE e entrega técnica de documentação à CEMIG.
+                        </p>
+                    </div>
+                    <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-top: 3px solid #E45318; border-radius: 8px; padding: 10px;">
+                        <span style="font-size: 8px; font-weight: 800; color: #E45318; text-transform: uppercase;">Fase 2 • Semanas 5 a 9</span>
+                        <strong style="display: block; font-size: 11px; margin: 2px 0 4px 0;">Obras Civis & Elétricas</strong>
+                        <p style="font-size: 9.5px; color: #475569; margin: 0;">
+                            Concretagem da base estrutural do totem, passagem de cabos Sintenax 35 mm², balizadores e pintura epóxi NBR 9050.
+                        </p>
+                    </div>
+                    <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-top: 3px solid #00B356; border-radius: 8px; padding: 10px;">
+                        <span style="font-size: 8px; font-weight: 800; color: #00B356; text-transform: uppercase;">Fase 3 • Semanas 10 a 12</span>
+                        <strong style="display: block; font-size: 11px; margin: 2px 0 4px 0;">Comissionamento & Go-Live</strong>
+                        <p style="font-size: 9.5px; color: #475569; margin: 0;">
+                            Ensaios NBR 17019, testes de disparo de emergência em &lt; 50 ms, integração OCPP e inauguração comercial.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">
+                    <span>2. TERMO DE ENCERRAMENTO & ASSINATURAS FORMAIS</span>
+                    <span class="badge badge-green">Validação Técnica e Comercial</span>
+                </div>
+                <p>
+                    O presente relatório executivo consolida todas as premissas técnicas, elétricas, demográficas e financeiras 
+                    para a implantação do Hub de Recarga Rápida CoenergyGO em Sete Lagoas / MG, atestando a viabilidade integral 
+                    do empreendimento sob responsabilidade técnica da Cordeiro Energia O&M.
+                </p>
                 <div class="signature-box">
                     <div>
                         <div class="sig-line"></div>
@@ -751,418 +912,98 @@ def get_report_parts_mapping() -> List[Dict[str, Any]]:
                 </div>
             </div>
             """
-        },
-
-        # ─────────────────────────────────────────────────────────────────────
-        # PARTE 6: MEMORIAL DESCRITIVO OFICIAL DA INSTALAÇÃO (PILAR 4)
-        # ─────────────────────────────────────────────────────────────────────
-        {
-            "id": 6,
-            "filename": "parte_06_memorial_descritivo.pdf",
-            "title": "Memorial Descritivo Oficial da Instalação Eletrotécnica",
-            "html": """
-            <div class="report-header">
-                <div>
-                    <span class="badge badge-blue">Engenharia de Instalações</span>
-                    <div class="title" style="margin-top: 4px;">Memorial Descritivo da Instalação Eletrotécnica</div>
-                    <div class="subtitle">Infraestrutura para Recarga de Veículos Elétricos • ABNT NBR 17019</div>
-                </div>
-                <div style="text-align: right;">
-                    <span class="badge badge-green">Emissão Técnica</span>
-                    <div style="font-size: 8.5px; color: #94a3b8; margin-top: 3px;">Pilar 4 • Memorial 01</div>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-title">
-                    <span>1. OBJETIVO E ESCOPO DA ENGENHARIA</span>
-                    <span class="badge badge-blue">NBR 17019:2022</span>
-                </div>
-                <p>
-                    Este Memorial Descritivo estabelece os requisitos técnicos, diretrizes de segurança e critérios de execução 
-                    para as instalações elétricas destinadas à infraestrutura de recarga de Veículos Elétricos (VE) do Hub CoenergyGO 
-                    Sete Lagoas. O projeto abrange desde o ponto de derivação do padrão de entrada de baixa tensão da concessionária 
-                    CEMIG Distribuição até os quadros de distribuição exclusivos e as estações terminais de recarga.
-                </p>
-            </div>
-
-            <div class="card">
-                <div class="card-title">
-                    <span>2. NORMAS TÉCNICAS E REGULAMENTAÇÕES MANDATÓRIAS</span>
-                    <span class="badge badge-green">Conformidade Integral</span>
-                </div>
-                <ul>
-                    <li><strong>ABNT NBR 17019:2022:</strong> Instalações elétricas de baixa tensão — Requisitos particulares para locais de recarga de veículos elétricos.</li>
-                    <li><strong>ABNT NBR 5410:2004:</strong> Instalações elétricas de baixa tensão — Regras gerais de dimensionamento e proteção.</li>
-                    <li><strong>IEC 61851-1:</strong> Electric vehicle conductive charging system — Requisitos gerais de sistemas de recarga condutiva.</li>
-                    <li><strong>CEMIG ND-5.1:</strong> Fornecimento de Energia Elétrica em Tensão Secundária de Edificações Individuais.</li>
-                    <li><strong>Instrução Técnica CBMMG IT-41:</strong> Segurança contra incêndio em estações de recarga de veículos elétricos.</li>
-                    <li><strong>Norma Regulamentadora NR-10:</strong> Segurança em instalações e serviços em eletricidade.</li>
-                    <li><strong>ABNT NBR 9050:</strong> Acessibilidade a edificações, mobiliário, espaços e equipamentos urbanos.</li>
-                </ul>
-            </div>
-
-            <div class="card">
-                <div class="card-title">
-                    <span>3. CARACTERÍSTICAS DO PÁTIO & VAGAS DE RECARGA</span>
-                    <span class="badge badge-orange">2 Vagas Exclusivas</span>
-                </div>
-                <div class="grid-4" style="margin-bottom: 12px;">
-                    <div class="kpi-box">
-                        <div class="kpi-lbl">Vagas VE Atendidas</div>
-                        <div class="kpi-num">2 Vagas</div>
-                    </div>
-                    <div class="kpi-box">
-                        <div class="kpi-lbl">Potência Instalada</div>
-                        <div class="kpi-num highlight-val">60,0 kW</div>
-                    </div>
-                    <div class="kpi-box">
-                        <div class="kpi-lbl">Tensão de Operação</div>
-                        <div class="kpi-num">380/220V Trifásico</div>
-                    </div>
-                    <div class="kpi-box">
-                        <div class="kpi-lbl">Piso & Pintura</div>
-                        <div class="kpi-num" style="color: #00B356; font-size: 11px;">Verde Epóxi NBR</div>
-                    </div>
-                </div>
-                <p>
-                    As duas vagas exclusivas para carregamento são dimensionadas com largura de 2,50 metros por 5,00 metros de comprimento, 
-                    contando com faixa de circulação acessível lateral de 1,20 metro. O solo recebe pintura epóxi na cor verde com o pictograma 
-                    internacional de veículo elétrico e balizadores metálicos para proteção contra impactos acidentais no totem do carregador.
-                </p>
-            </div>
-            """
-        },
-
-        # ─────────────────────────────────────────────────────────────────────
-        # PARTE 7: MEMORIAL DE CÁLCULO ELETROTÉCNICO PASSO A PASSO
-        # ─────────────────────────────────────────────────────────────────────
-        {
-            "id": 7,
-            "filename": "parte_07_memorial_calculo.pdf",
-            "title": "Memorial de Cálculo Eletrotécnico & Dimensionamento Passo a Passo",
-            "html": """
-            <div class="report-header">
-                <div>
-                    <span class="badge badge-orange">Cálculos Eletrotécnicos</span>
-                    <div class="title" style="margin-top: 4px;">Memorial de Cálculo Eletrotécnico Passo a Passo</div>
-                    <div class="subtitle">Dimensionamento de Condutores, Quedas de Tensão e Disjuntores • NBR 5410</div>
-                </div>
-                <div style="text-align: right;">
-                    <span class="badge badge-green">Pilar 4 • Memorial 02</span>
-                    <div style="font-size: 8.5px; color: #94a3b8; margin-top: 3px;">Fórmulas & Tabelas</div>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-title">
-                    <span>1. CRITÉRIOS DE DIMENSIONAMENTO ELETROTÉCNICO</span>
-                    <span class="badge badge-blue">Iz ≥ Ib & ΔV ≤ 2,0%</span>
-                </div>
-                <p>
-                    Os condutores foram dimensionados simultaneamente pelo critério da <strong>Capacidade de Condução de Corrente (Iz ≥ Ib)</strong>, 
-                    respeitando os fatores de correção de temperatura (FCT) e agrupamento (FCA) da NBR 5410, e pelo critério da 
-                    <strong>Queda de Tensão Máxima Admissível (ΔV ≤ 2,0% nos circuitos terminais e ≤ 4,0% global)</strong>.
-                </p>
-                <div class="grid-2" style="margin: 12px 0;">
-                    <div class="kpi-box" style="text-align: left; font-family: monospace; font-size: 10px;">
-                        <strong style="color: #E45318; display: block; margin-bottom: 4px;">Fórmula Trifásica (Ib):</strong>
-                        Ib = P / (√3 × V × cosφ)<br>
-                        Ib = 60.000 / (1,732 × 380 × 0,98)<br>
-                        <strong>Ib = 93,0 A</strong>
-                    </div>
-                    <div class="kpi-box" style="text-align: left; font-family: monospace; font-size: 10px;">
-                        <strong style="color: #00B356; display: block; margin-bottom: 4px;">Fórmula de Queda de Tensão (ΔV):</strong>
-                        ΔV(%) = (√3 × ρ × L × Ib × cosφ) / (S × V) × 100<br>
-                        ρ = 0,0231 Ω·mm²/m (cobre a 90°C)<br>
-                        <strong>ΔV Calculado = 0,88% (&lt; 2,0% Admissível)</strong>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-title">
-                    <span>2. RESUMO DE CONDUTORES E QUEDAS DE TENSÃO TRECHO A TRECHO</span>
-                    <span class="badge badge-green">Dimensionamento Aprovado</span>
-                </div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Trecho Elétrico</th>
-                            <th>Distância</th>
-                            <th>Corrente Ib</th>
-                            <th>Disjuntor</th>
-                            <th>Condutores (Fase + Neutro + PE)</th>
-                            <th>Eletroduto</th>
-                            <th>Queda ΔV</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><strong>Trecho 1: Medição CEMIG ➔ QGBT</strong></td>
-                            <td>25 metros</td>
-                            <td>185 A</td>
-                            <td>200A CM (36 kA)</td>
-                            <td>4x 95 mm² Cu HEPR + PE 50 mm²</td>
-                            <td>PVC Rígido 3" (85 mm)</td>
-                            <td class="highlight-val">1,12%</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Trecho 2: QGBT ➔ Totem BENY 60 kW</strong></td>
-                            <td>15 metros</td>
-                            <td>93 A</td>
-                            <td>125A Termomagnético</td>
-                            <td>4x 70 mm² Cu HEPR + PE 35 mm²</td>
-                            <td>Eletroduto Galvanizado 2.1/2"</td>
-                            <td class="highlight-val">0,88%</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Trecho 3: QGBT ➔ Tomada Auxiliar / Iluminação</strong></td>
-                            <td>10 metros</td>
-                            <td>16 A</td>
-                            <td>20A Monopolar</td>
-                            <td>3x 4,0 mm² Cu PVC + PE 4,0 mm²</td>
-                            <td>Eletroduto Rígido 3/4"</td>
-                            <td class="highlight-val">0,45%</td>
-                        </tr>
-                    </tbody>
-                    <tfoot>
-                        <tr style="background-color: #0A192F; color: #ffffff; font-weight: 700;">
-                            <td colspan="6" style="text-align: right;">QUEDA DE TENSÃO TOTAL ACUMULADA NO PONTO MAIS CRÍTICO:</td>
-                            <td style="color: #00B356; font-size: 11px;">2,00% (Conforme)</td>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
-            """
-        },
-
-        # ─────────────────────────────────────────────────────────────────────
-        # PARTE 8: CADERNO DE ENCARGOS & OBRAS CIVIS / ELETROMECÂNICAS
-        # ─────────────────────────────────────────────────────────────────────
-        {
-            "id": 8,
-            "filename": "parte_08_caderno_obra.pdf",
-            "title": "Caderno de Encargos e Obras Civis / Infraestrutura Eletromecânica",
-            "html": """
-            <div class="report-header">
-                <div>
-                    <span class="badge badge-orange">Execução & Canteiro</span>
-                    <div class="title" style="margin-top: 4px;">Caderno de Encargos e Obras Civis</div>
-                    <div class="subtitle">Diretrizes de Infraestrutura Eletromecânica e Campo • ABNT NBR 17019</div>
-                </div>
-                <div style="text-align: right;">
-                    <span class="badge badge-green">Pilar 4 • Memorial 03</span>
-                    <div style="font-size: 8.5px; color: #94a3b8; margin-top: 3px;">Instruções de Montagem</div>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-title">
-                    <span>1. MÉTODOS DE INSTALAÇÃO DE ELETRODUTOS & CONDUTORES</span>
-                    <span class="badge badge-blue">Taxa de Ocupação ≤ 40%</span>
-                </div>
-                <ul>
-                    <li><strong>Trechos Subterrâneos em Solo:</strong> Abertura de vala com profundidade mínima de 70 cm, leito de areia lavada de 10 cm, envelopamento de tubulações em concreto magro e fita plástica de advertência ("PERIGO - CABO ENERGIZADO") a 30 cm do solo.</li>
-                    <li><strong>Trechos Aparentes em Alvenaria / Estrutura:</strong> Fixação de eletrodutos de aço carbono galvanizado a quente com abraçadeiras tipo D a cada 1,20 metro e curvas pré-fabricadas de raio longo para não danificar a isolação dos cabos 70 mm².</li>
-                    <li><strong>Taxa de Ocupação dos Dutos:</strong> A relação entre a área total dos cabos e a seção interna dos eletrodutos é mantida rigorosamente abaixo de 40%, facilitando a dissipação térmica e futuras manutenções.</li>
-                </ul>
-            </div>
-
-            <div class="card">
-                <div class="card-title">
-                    <span>2. INFRAESTRUTURA CIVIL: BASE DO CARREGADOR & PROTEÇÕES MECÂNICAS</span>
-                    <span class="badge badge-green">Segurança Física</span>
-                </div>
-                <p>
-                    A base para fixação do totem BENY DC de 60 kW é executada em concreto armado com resistência característica 
-                    <strong>fck ≥ 25 MPa</strong>, nas dimensões mínimas de 80 cm x 80 cm com 40 cm de profundidade (sendo 15 cm elevados do nível do piso). 
-                    A ancoragem mecânica utiliza 4 chumbadores parabolt em aço inoxidável AISI 304 com porcas autotravantes.
-                </p>
-                <p>
-                    <strong>Balizadores Anti-Impacto:</strong> Instalação de dois tubos de aço carbono galvanizado de 4 polegadas preenchidos com concreto, 
-                    com altura de 90 cm acima do solo e pintura em faixas amarelas e pretas refletivas, impedindo colisões de veículos em manobra.
-                </p>
-            </div>
-            """
-        },
-
-        # ─────────────────────────────────────────────────────────────────────
-        # PARTE 9: PROTOCOLO DE COMISSIONAMENTO, ENSAIOS & TESTES EM CAMPO
-        # ─────────────────────────────────────────────────────────────────────
-        {
-            "id": 9,
-            "filename": "parte_09_comissionamento.pdf",
-            "title": "Protocolo de Comissionamento e Ensaios em Campo NBR 17019",
-            "html": """
-            <div class="report-header">
-                <div>
-                    <span class="badge badge-green">Qualidade & Testes</span>
-                    <div class="title" style="margin-top: 4px;">Protocolo de Comissionamento e Ensaios em Campo</div>
-                    <div class="subtitle">Checklist de Ensaios Pré-Energização e Testes Funcionais • NBR 17019</div>
-                </div>
-                <div style="text-align: right;">
-                    <span class="badge badge-green">Pilar 4 • Memorial 04</span>
-                    <div style="font-size: 8.5px; color: #94a3b8; margin-top: 3px;">Homologação Final</div>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-title">
-                    <span>1. CHECKLIST DE ENSAIOS TÉCNICOS PRÉ-ENERGIZAÇÃO</span>
-                    <span class="badge badge-green">100% dos Itens Testados e Aprovados</span>
-                </div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Ensaio / Verificação Técnica</th>
-                            <th>Critério de Aceitação Normativo</th>
-                            <th>Resultado Obtido</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><strong>1. Continuidade dos Condutores de Proteção (PE)</strong></td>
-                            <td>Resistência ôhmica R ≤ 0,2 Ω entre o BEP e a carcaça metálica do totem.</td>
-                            <td>0,08 Ω</td>
-                            <td><span class="badge badge-green">Aprovado</span></td>
-                        </tr>
-                        <tr>
-                            <td><strong>2. Resistência de Isolamento dos Circuitos</strong></td>
-                            <td>Resistência Riso ≥ 1,0 MΩ aplicada tensão de ensaio de 500 Vcc (NBR 5410).</td>
-                            <td>> 100 MΩ</td>
-                            <td><span class="badge badge-green">Aprovado</span></td>
-                        </tr>
-                        <tr>
-                            <td><strong>3. Ensaio de Atuação do IDR Classe B</strong></td>
-                            <td>Disparo em corrente contínua pura IΔn ≤ 6 mA e corrente alternada ≤ 30 mA.</td>
-                            <td>4,2 mA CC / 24 mA CA</td>
-                            <td><span class="badge badge-green">Aprovado</span></td>
-                        </tr>
-                        <tr>
-                            <td><strong>4. Ensaio da Botoeira de Desenergização de Emergência</strong></td>
-                            <td>Abertura mecânica do disjuntor principal via bobina de disparo MX em t &lt; 50 ms.</td>
-                            <td>28 ms</td>
-                            <td><span class="badge badge-green">Aprovado</span></td>
-                        </tr>
-                        <tr>
-                            <td><strong>5. Comunicação OCPP 1.6J e Teste de Bilhetagem</strong></td>
-                            <td>Transmissão contínua de status, autenticação RFID e início de sessão via 4G.</td>
-                            <td>Latência &lt; 250 ms</td>
-                            <td><span class="badge badge-green">Aprovado</span></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="card">
-                <div class="card-title">
-                    <span>2. TERMO DE LIBERAÇÃO OPERACIONAL</span>
-                    <span class="badge badge-green">Sistema Apto para Operação Comercial</span>
-                </div>
-                <p>
-                    Atestamos que todas as verificações visuais, medições instrumentais e testes funcionais com veículo elétrico 
-                    de teste foram conduzidos com êxito pleno. A infraestrutura atende com 100% de conformidade às normas ABNT NBR 17019:2022, 
-                    ABNT NBR 5410:2004 e à regulamentação do Corpo de Bombeiros Militar de Minas Gerais (CBMMG IT-41).
-                </p>
-                <div class="signature-box">
-                    <div>
-                        <div class="sig-line"></div>
-                        <strong style="color: #0A192F; display: block; font-size: 11px;">Eng. Bruno Cordeiro</strong>
-                        <span style="font-size: 9.5px; color: #64748b;">Responsável Técnico • CREA-MG 148293/D</span>
-                        <span style="font-size: 9px; color: #E45318; font-weight: 700; display: block;">Cordeiro Energia O&M</span>
-                    </div>
-                    <div>
-                        <div class="sig-line"></div>
-                        <strong style="color: #0A192F; display: block; font-size: 11px;">CoenergyGO / Operações</strong>
-                        <span style="font-size: 9.5px; color: #64748b;">Comitê de Operações e Redes de Recarga</span>
-                        <span style="font-size: 9px; color: #00B356; font-weight: 700; display: block;">Homologação Comercial</span>
-                    </div>
-                </div>
-            </div>
-            """
         }
     ]
 
 
 # =============================================================================
-# GERAÇÃO DOS ARQUIVOS PDF INDIVIDUAIS (POR SEÇÃO)
+# ENGENHARIA DE RENDERIZAÇÃO HTML -> PDF
 # =============================================================================
 def render_html_to_pdf(html_content: str, output_pdf_path: Path) -> bool:
     full_html = f"""<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="utf-8">
-    <title>Relatório Cordeiro Energia</title>
-    <style>{COMMON_CSS}</style>
+    <meta charset="UTF-8">
+    <title>Relatório Técnico Oficial • Cordeiro Energia</title>
+    <style>
+        {COMMON_CSS}
+    </style>
 </head>
-<body>{html_content}</body>
-</html>"""
-
-    # 1. WeasyPrint
+<body>
+    {html_content}
+</body>
+</html>
+"""
+    # 1. Tentativa via WeasyPrint
     if WEASYPRINT_AVAILABLE:
         try:
-            weasyprint.HTML(string=full_html).write_pdf(str(output_pdf_path))
+            doc = weasyprint.HTML(string=full_html)
+            doc.write_pdf(target=str(output_pdf_path))
             return True
-        except Exception:
-            pass
+        except Exception as weasy_err:
+            print(f"    [AVISO] WeasyPrint falhou ({weasy_err}). Acionando motor Chromium...")
 
-    # 2. Chromium/Edge Headless (Nativo Windows)
-    temp_html_path = output_pdf_path.with_suffix(".temp.html")
-    try:
-        temp_html_path.write_text(full_html, encoding="utf-8")
-        possible_browsers = [
-            r"C:\Program Files\Google\Chrome\Application\chrome.exe",
-            r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
-            r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
-            r"C:\Program Files\Microsoft\Edge\Application\msedge.exe",
-        ]
-        browser_exe = next((b for b in possible_browsers if os.path.exists(b)), None)
-        if not browser_exe:
-            raise FileNotFoundError("Navegador Chromium não localizado.")
+    # 2. Fallback via Edge / Chrome Headless (Nativo Windows)
+    temp_html_path = output_pdf_path.with_suffix(".html")
+    with open(temp_html_path, "w", encoding="utf-8") as f:
+        f.write(full_html)
 
-        cmd = [
-            browser_exe,
-            "--headless=new",
-            "--disable-gpu",
-            "--no-pdf-header-footer",
-            f"--print-to-pdf={output_pdf_path.resolve()}",
-            str(temp_html_path.resolve())
-        ]
-        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=30)
-        return result.returncode == 0 and output_pdf_path.exists()
-    except Exception as err:
-        print(f"    [ERRO] Falha ao renderizar {output_pdf_path.name}: {err}")
+    browser_candidates = [
+        r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
+        r"C:\Program Files\Microsoft\Edge\Application\msedge.exe",
+        r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+        r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+    ]
+
+    selected_browser = next((b for b in browser_candidates if os.path.exists(b)), None)
+    if not selected_browser:
+        print("    [ERRO CRÍTICO] Nenhum navegador Chromium/Edge encontrado para impressão headless.")
         return False
-    finally:
+
+    cmd = [
+        selected_browser,
+        "--headless=new",
+        "--disable-gpu",
+        "--no-sandbox",
+        "--run-all-compositor-stages-before-draw",
+        f"--print-to-pdf={output_pdf_path.resolve()}",
+        "--no-pdf-header-footer",
+        str(temp_html_path.resolve()),
+    ]
+
+    try:
+        res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=30)
         if temp_html_path.exists():
-            try:
-                temp_html_path.unlink()
-            except Exception:
-                pass
+            temp_html_path.unlink()
+        return res.returncode == 0 and output_pdf_path.exists()
+    except Exception as cmd_err:
+        print(f"    [ERRO] Falha ao executar Chromium headless: {cmd_err}")
+        return False
 
 
+# =============================================================================
+# GERAÇÃO INDIVIDUAL DAS PARTES SELECIONADAS
+# =============================================================================
 def generate_individual_pdfs(parts: List[Dict[str, Any]], temp_dir: Path) -> List[Path]:
-    generated_files: List[Path] = []
+    generated_files = []
     print("\n" + "="*70)
-    print("ETAPA 1: GERAÇÃO DOS ARQUIVOS PDF INDIVIDUAIS (POR SEÇÃO INTEGRAL)")
+    print("ETAPA 1: GERAÇÃO INDIVIDUAL DAS PARTES DO RELATÓRIO")
     print("="*70)
 
     for part in parts:
         part_id = part["id"]
         filename = part["filename"]
         target_path = temp_dir / filename
-        print(f"  • Processando Seção {part_id:02d}: '{part['title']}'...")
+        print(f"  • Processando Parte {part_id:02d}: '{part['title']}'...")
         try:
             if render_html_to_pdf(part["html"], target_path) and target_path.exists():
                 file_size_kb = target_path.stat().st_size / 1024
                 print(f"    [SUCESSO] Gerado '{filename}' ({file_size_kb:.1f} KB)")
                 generated_files.append(target_path)
             else:
-                print(f"    [AVISO] Seção {part_id:02d} não pôde ser gerada.")
+                print(f"    [AVISO] Parte {part_id:02d} não pôde ser gerada.")
         except Exception as ex:
-            print(f"    [ERRO] Exceção na Seção {part_id:02d}: {ex}")
+            print(f"    [ERRO] Exceção na Parte {part_id:02d}: {ex}")
 
     return generated_files
 
@@ -1197,7 +1038,7 @@ def merge_pdf_files(pdf_paths: List[Path], final_output_path: Path) -> bool:
 
         merger.close()
         final_size_kb = final_output_path.stat().st_size / 1024
-        print(f"\n  [SUCESSO] Dossiê Técnico Integral Gerado com Êxito!")
+        print(f"\n  [SUCESSO] Relatório Técnico Oficial Gerado com Êxito!")
         print(f"  Arquivo: {final_output_path.resolve()}")
         print(f"  Tamanho Total: {final_size_kb:.1f} KB | Total de Páginas: {total_pages}")
         return True
@@ -1225,6 +1066,15 @@ def cleanup_temp_files(temp_dir: Path):
 # EXECUÇÃO PRINCIPAL DO PIPELINE
 # =============================================================================
 def main():
+    parser = argparse.ArgumentParser(description="Gerador de PDF de Relatórios Técnicos CoenergyGO")
+    parser.add_argument(
+        "--parts",
+        type=str,
+        default="all",
+        help="Partes do relatório a gerar: 'all' ou lista separada por vírgulas (ex: '1,2,5' ou '1-6')"
+    )
+    args = parser.parse_args()
+
     print("""
     =================================================================
        CORDEIRO ENERGIA • AUTOMAÇÃO DE RELATÓRIOS TÉCNICOS EM PDF
@@ -1235,33 +1085,53 @@ def main():
     base_dir = Path(__file__).resolve().parent.parent
     temp_dir = base_dir / "output" / "temp_parts"
     output_dir = base_dir / "output"
-    final_pdf_path = output_dir / "Cordeiro_Energia_Sumario_Executivo_Carregador_Sete_Lagoas_Coenergy.pdf"
 
     temp_dir.mkdir(parents=True, exist_ok=True)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    parts = get_report_parts_mapping()
-    individual_pdfs = generate_individual_pdfs(parts, temp_dir)
+    all_parts = get_report_parts_mapping()
+
+    # Filtro de partes selecionadas
+    if args.parts.lower() in ("all", "todas", "6", "1-6", "1,2,3,4,5,6"):
+        selected_ids = [1, 2, 3, 4, 5, 6]
+        output_filename = "Cordeiro_Energia_Sumario_Executivo_Carregador_Sete_Lagoas_Coenergy.pdf"
+    else:
+        try:
+            selected_ids = [int(p.strip()) for p in args.parts.split(",") if p.strip()]
+            parts_str = "_".join(map(str, sorted(selected_ids)))
+            output_filename = f"Cordeiro_Energia_Sumario_Executivo_Partes_{parts_str}_Sete_Lagoas_Coenergy.pdf"
+        except Exception:
+            selected_ids = [1, 2, 3, 4, 5, 6]
+            output_filename = "Cordeiro_Energia_Sumario_Executivo_Carregador_Sete_Lagoas_Coenergy.pdf"
+
+    selected_parts = [p for p in all_parts if p["id"] in selected_ids]
+    if not selected_parts:
+        print(f"[ERRO] Nenhuma parte válida selecionada a partir de '{args.parts}'.")
+        sys.exit(1)
+
+    print(f"• Partes Selecionadas para Geração: {[p['id'] for p in selected_parts]} de 6")
+    print(f"• Nome do Arquivo de Saída: {output_filename}")
+
+    final_pdf_path = output_dir / output_filename
+    individual_pdfs = generate_individual_pdfs(selected_parts, temp_dir)
 
     if individual_pdfs and merge_pdf_files(individual_pdfs, final_pdf_path):
         cleanup_temp_files(temp_dir)
-        
-        # Copia também para a pasta Downloads do usuário
+
+        # Copia para Downloads com tratamento de arquivo em uso
         user_downloads = Path("C:/Users/BRUNO CORDEIRO/Downloads")
         if user_downloads.exists():
-            dest_download = user_downloads / final_pdf_path.name
+            dest_download = user_downloads / output_filename
             try:
                 shutil.copy2(final_pdf_path, dest_download)
                 print(f"  [CÓPIA] Arquivo copiado para Downloads:\n  {dest_download.resolve()}")
             except Exception as copy_err:
-                print(f"  [AVISO] Falha ao copiar para Downloads: {copy_err}")
-
-        # Copia para relatorio_completo_final.pdf
-        dest_relatorio_final = output_dir / "relatorio_completo_final.pdf"
-        try:
-            shutil.copy2(final_pdf_path, dest_relatorio_final)
-        except Exception:
-            pass
+                alt_download = user_downloads / f"Cordeiro_Energia_Sumario_Executivo_Sete_Lagoas_Novo_{os.getpid()}.pdf"
+                try:
+                    shutil.copy2(final_pdf_path, alt_download)
+                    print(f"  [CÓPIA ALTERNATIVA] Arquivo anterior estava em uso. Salvo como:\n  {alt_download.resolve()}")
+                except Exception:
+                    print(f"  [AVISO] Falha ao copiar para Downloads: {copy_err}")
 
         print("\n" + "#"*70)
         print("PIPELINE CONCLUÍDO COM SUCESSO ABSOLUTO!")

@@ -38,6 +38,7 @@ yarn-error.log*
 
 # scratch / dev temporários
 /scratch/
+/output/
 /public/uploads/
 
 # typescript

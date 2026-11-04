@@ -99,6 +99,7 @@ export function EVEngineeringReportsHub({
   projectData
 }: EVEngineeringReportsHubProps) {
   const [selectedReport, setSelectedReport] = useState<ReportType>('executivo');
+  const [selectedParts, setSelectedParts] = useState<number[]>([1, 2, 3, 4, 5, 6]);
 
   // Isolamento estrito de impressão A4 (evita vazamento de estilos de tela e sobreposição de páginas)
   useEffect(() => {
@@ -216,7 +217,11 @@ export function EVEngineeringReportsHub({
       viabilidade_negocios: 'Cordeiro_Energia_Estudo_Viabilidade_Financeira_Carregador_Sete_Lagoas_Coenergy',
     };
 
-    const docTitle = reportTitles[selectedReport] || 'Cordeiro_Energia_Memorial_Calculo_Sete_Lagoas_Coenergy';
+    const docTitle = selectedReport === 'executivo'
+      ? (selectedParts.length === 6
+          ? 'Cordeiro_Energia_Sumario_Executivo_Completo_Sete_Lagoas_Coenergy'
+          : `Cordeiro_Energia_Sumario_Executivo_Partes_${selectedParts.join('_')}_Sete_Lagoas_Coenergy`)
+      : (reportTitles[selectedReport] || 'Cordeiro_Energia_Memorial_Calculo_Sete_Lagoas_Coenergy');
 
     if (!reportElem) {
       const originalTitle = document.title;
@@ -397,10 +402,15 @@ export function EVEngineeringReportsHub({
             <button
               type="button"
               onClick={handlePrint}
-              className="bg-[#E45318] hover:bg-[#c24210] text-white px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-lg shadow-[#E45318]/30 cursor-pointer"
+              disabled={selectedReport === 'executivo' && selectedParts.length === 0}
+              className="bg-[#E45318] hover:bg-[#c24210] disabled:opacity-40 disabled:cursor-not-allowed text-white px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-lg shadow-[#E45318]/30 cursor-pointer"
             >
               <Printer className="w-4 h-4" />
-              <span>Imprimir / Gerar PDF</span>
+              <span>
+                {selectedReport === 'executivo'
+                  ? (selectedParts.length === 6 ? 'Imprimir Documento Completo' : `Imprimir (${selectedParts.length} Partes)`)
+                  : 'Imprimir / Gerar PDF'}
+              </span>
             </button>
             <button
               type="button"
@@ -412,6 +422,71 @@ export function EVEngineeringReportsHub({
             </button>
           </div>
         </div>
+
+        {/* ─── FORMULÁRIO DE SELEÇÃO DE PARTES DO RELATÓRIO EXECUTIVO (1 A 6) ─── */}
+        {selectedReport === 'executivo' && (
+          <div className="bg-slate-900 text-white px-4 py-3 border-b border-slate-800 print:hidden">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2.5 border-b border-slate-800/80">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black uppercase text-[#00B356] bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
+                  Formulário de Seleção de Partes para Impressão
+                </span>
+                <span className="text-xs text-slate-300 font-semibold">
+                  {selectedParts.length === 6 ? '✓ Documento Inteiro Selecionado (6 de 6 partes)' : `${selectedParts.length} de 6 partes selecionadas`}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSelectedParts(selectedParts.length === 6 ? [] : [1, 2, 3, 4, 5, 6])}
+                  className="text-[11px] font-bold text-slate-300 hover:text-white px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 transition-colors border border-slate-700 cursor-pointer"
+                >
+                  {selectedParts.length === 6 ? 'Desmarcar Todas' : 'Selecionar Documento Inteiro'}
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 pt-2.5 text-[11px]">
+              {[
+                { id: 1, label: 'Parte 1: Sumário Executivo & Ativo', desc: 'Passo 1A • Localização, Galeria 24h & Conveniência' },
+                { id: 2, label: 'Parte 2: Demografia IBGE & Concorrência DC', desc: 'Passo 1B • Score 66,5/100 & Varredura 5 km' },
+                { id: 3, label: 'Parte 3: Engenharia Elétrica CEMIG & Normas', desc: 'Passo 2A/2B • Padrão C6 200A & ABNT NBR 17019' },
+                { id: 4, label: 'Parte 4: Carregador BENY & CAPEX R$ 133.844', desc: 'Passo 3/4B • BENY 60 kW SiC Dual-Gun & Orçamento' },
+                { id: 5, label: 'Parte 5: Modelagem Financeira CoenergyGO', desc: 'Passo 5 • Payback 20,9m Solar / 47,3m Rede & TIR 50,5%' },
+                { id: 6, label: 'Parte 6: Cronograma & Termo de Encerramento', desc: 'Passo 6 • 12 Semanas & Assinaturas Formais' }
+              ].map((p) => {
+                const isChecked = selectedParts.includes(p.id);
+                return (
+                  <label
+                    key={p.id}
+                    className={`flex items-start gap-2.5 p-2 rounded-xl border cursor-pointer transition-all ${
+                      isChecked
+                        ? 'bg-slate-800/95 border-[#E45318]/60 text-white shadow-sm ring-1 ring-[#E45318]/30'
+                        : 'bg-slate-950/40 border-slate-800 text-slate-400 hover:border-slate-700'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={() => {
+                        if (isChecked) {
+                          setSelectedParts(selectedParts.filter(x => x !== p.id));
+                        } else {
+                          setSelectedParts([...selectedParts, p.id].sort((a, b) => a - b));
+                        }
+                      }}
+                      className="mt-0.5 rounded text-[#E45318] focus:ring-[#E45318] bg-slate-800 border-slate-700 accent-[#E45318] cursor-pointer"
+                    />
+                    <div className="flex-1 leading-tight">
+                      <strong className={`block text-[11px] ${isChecked ? 'text-white' : 'text-slate-300'}`}>{p.label}</strong>
+                      <span className="text-[9.5px] text-slate-400 block mt-0.5">{p.desc}</span>
+                    </div>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* ─── CORPO: SELETOR DE RELATÓRIO + PAINEL DE VISUALIZAÇÃO A4 ─── */}
         <div className="flex flex-col md:flex-row flex-1 overflow-hidden print:block print:overflow-visible print:w-full print:p-0 print:m-0">
@@ -524,585 +599,658 @@ export function EVEngineeringReportsHub({
 
                 {/* CONTEÚDO ESPECÍFICO DE CADA UM DOS 5 RELATÓRIOS */}
                 
-                {/* 1. RELATÓRIO EXECUTIVO — PADRÃO BUSINESS PLAN AV. AMAZONAS */}
-                                {/* 1. RELATÓRIO EXECUTIVO — PLANO INTEGRAL DE ENGENHARIA & NEGÓCIOS (6 PASSOS) */}
-                                {/* 1. RELATÓRIO EXECUTIVO — PLANO INTEGRAL DE ENGENHARIA & NEGÓCIOS (6 PASSOS) */}
+                {/* 1. RELATÓRIO EXECUTIVO — PLANO INTEGRAL DE ENGENHARIA & NEGÓCIOS (6 PARTES OFICIAIS) */}
                 {selectedReport === 'executivo' && (
                   <div className="text-xs text-slate-700">
                     
-                    {/* 1. SUMÁRIO EXECUTIVO & IDENTIFICAÇÃO DO ATIVO (Passo 1A) */}
-                    <div className="report-card bg-gradient-to-br from-[#0A192F] to-slate-900 text-white p-5 rounded-2xl space-y-3 shadow-md break-inside-avoid print:break-inside-avoid border border-slate-800 mb-5">
-                      <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] uppercase font-black text-[#00B356] tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
-                            Passo 1A • Sumário Executivo & Negócios
-                          </span>
-                          <span className="text-[10px] text-slate-400 font-mono">
-                            Metodologia CoenergyGO Intelligence • Padrão Cordeiro Energia
-                          </span>
-                        </div>
-                        <span className="text-[10px] text-slate-400 font-bold">
-                          {projectData.locationDiagnostic?.cidade || 'Sete Lagoas'} - {projectData.locationDiagnostic?.uf || 'MG'}
-                        </span>
+                    {/* AVISO QUANDO NENHUMA PARTE ESTIVER SELECIONADA */}
+                    {selectedParts.length === 0 && (
+                      <div className="p-8 text-center bg-slate-100 rounded-2xl border-2 border-dashed border-slate-300 my-6">
+                        <p className="text-slate-600 font-bold text-sm">Nenhuma parte do relatório selecionada para visualização/impressão.</p>
+                        <p className="text-slate-400 text-xs mt-1">Utilize o formulário de seleção acima para marcar as partes desejadas ou clique em &quot;Selecionar Documento Inteiro&quot;.</p>
                       </div>
+                    )}
 
-                      <h3 className="text-base sm:text-lg font-bold text-white tracking-tight">
-                        Hub Comercial de Recarga de Alta Performance: Viabilidade Técnica, Demográfica e Econômica
-                      </h3>
-
-                      <p className="text-slate-300 text-xs leading-relaxed text-justify">
-                        Este estudo estratégico e eletrotécnico contempla a implantação de{' '}
-                        <strong className="text-white font-semibold">{chargersCount} estação física</strong> de alta potência atendendo{' '}
-                        <strong className="text-[#00B356] font-semibold">{evBaysCount} vagas comerciais simultâneas</strong> ({chargingPointsCount} conectores rápidos CCS2) com potência agregada de{' '}
-                        <strong className="text-white font-semibold">{totalPower.toFixed(1)} kW</strong> no imóvel cedido pelo{' '}
-                        <strong className="text-white font-semibold">{projectData.propertyOwner || 'Sr. Saint Clair'}</strong>. O empreendimento está ancorado em{' '}
-                        <strong className="text-white font-semibold">{projectData.commercialAnchorType || 'Galeria de lojas aberta 24 horas'}</strong>, oferecendo conveniência permanente, iluminação de segurança, sanitários e acesso frontal imediato sem necessidade de manobras de ré.
-                      </p>
-
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-[11px]">
-                        <div className="bg-white/5 p-2 rounded-xl border border-white/5">
-                          <span className="text-slate-400 block text-[9px] uppercase font-bold">Cliente Proponente</span>
-                          <strong className="text-white truncate block">{projectData.clientName}</strong>
-                        </div>
-                        <div className="bg-white/5 p-2 rounded-xl border border-white/5">
-                          <span className="text-slate-400 block text-[9px] uppercase font-bold">Proprietário / Cedente</span>
-                          <strong className="text-white truncate block">{projectData.propertyOwner || 'Sr. Saint Clair'}</strong>
-                        </div>
-                        <div className="bg-white/5 p-2 rounded-xl border border-white/5">
-                          <span className="text-slate-400 block text-[9px] uppercase font-bold">Âncora Comercial</span>
-                          <strong className="text-[#00B356] truncate block">{projectData.commercialAnchorType || 'Galeria 24 Horas'}</strong>
-                        </div>
-                        <div className="bg-white/5 p-2 rounded-xl border border-white/5">
-                          <span className="text-slate-400 block text-[9px] uppercase font-bold">Concessionária</span>
-                          <strong className="text-white truncate block">{projectData.utility || 'CEMIG Distribuição'}</strong>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* 2. MACRO-DIAGNÓSTICO DEMOGRÁFICO & INTELIGÊNCIA LOCACIONAL AHP (Passo 1B) */}
-                    {projectData.locationDiagnostic && (
-                      <div className="report-card p-5 bg-slate-50 border border-slate-200 rounded-2xl space-y-3 break-inside-avoid print:break-inside-avoid mb-5">
-                        <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-                          <h4 className="font-bold text-slate-900 uppercase text-[11px] flex items-center gap-1.5">
-                            <Store className="w-3.5 h-3.5 text-[#00B356]" />
-                            Passo 1B • Macro-Diagnóstico Demográfico & Frota de Veículos Elétricos (IBGE 2026)
-                          </h4>
-                          <span className="text-[10px] font-black text-[#00B356] bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
-                            Score AHP: {effectiveAhpScore.toFixed(1)} / 100 ({effectiveAhpRating})
+                    {/* ─── PARTE 1: SUMÁRIO EXECUTIVO & IDENTIFICAÇÃO DO ATIVO (Passo 1A) ─── */}
+                    {selectedParts.includes(1) && (
+                      <div className="report-card bg-gradient-to-br from-[#0A192F] to-slate-900 text-white p-5 rounded-2xl space-y-3 shadow-md break-inside-avoid print:break-inside-avoid border border-slate-800 mb-5">
+                        <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] uppercase font-black text-[#00B356] tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                              Parte 1 • Passo 1A • Sumário Executivo & Negócios
+                            </span>
+                            <span className="text-[10px] text-slate-400 font-mono">
+                              Metodologia CoenergyGO Intelligence • Padrão Cordeiro Energia
+                            </span>
+                          </div>
+                          <span className="text-[10px] text-slate-400 font-bold">
+                            {projectData.locationDiagnostic?.cidade || 'Sete Lagoas'} - {projectData.locationDiagnostic?.uf || 'MG'}
                           </span>
                         </div>
 
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
-                          <div className="bg-white p-2.5 rounded-xl border border-slate-200">
-                            <span className="text-slate-500 block text-[9px] uppercase font-semibold">População Municipal</span>
-                            <strong className="text-slate-800 text-sm font-black">
-                              {projectData.locationDiagnostic.ibge?.populacaoEstimada?.toLocaleString('pt-BR') || '241.835'} hab.
-                            </strong>
-                            <span className="text-[8px] text-slate-400 block">Base IBGE Censo</span>
-                          </div>
-                          <div className="bg-white p-2.5 rounded-xl border border-slate-200">
-                            <span className="text-slate-500 block text-[9px] uppercase font-semibold">Frota VE Projetada 2026</span>
-                            <strong className="text-amber-600 text-sm font-black">
-                              {projectData.locationDiagnostic.ibge?.frotaEletricaEstimada?.toLocaleString('pt-BR') || '780'} VEs
-                            </strong>
-                            <span className="text-[8px] text-amber-700/80 block">BEV + PHEV em circulação</span>
-                          </div>
-                          <div className="bg-white p-2.5 rounded-xl border border-slate-200">
-                            <span className="text-slate-500 block text-[9px] uppercase font-semibold">Classificação Viária</span>
-                            <strong className="text-blue-600 text-sm font-black uppercase">
-                              {projectData.locationDiagnostic.via?.tipoVia || 'Arterial'}
-                            </strong>
-                            <span className="text-[8px] text-slate-400 block">{projectData.locationDiagnostic.via?.velocidadeEstimadaKmh || 60} km/h regulamentar</span>
-                          </div>
-                          <div className="bg-white p-2.5 rounded-xl border border-slate-200">
-                            <span className="text-slate-500 block text-[9px] uppercase font-semibold">Comércios em 500m</span>
-                            <strong className="text-[#00B356] text-sm font-black">
-                              {projectData.locationDiagnostic.via?.totalComercios500m || 4} Pontos
-                            </strong>
-                            <span className="text-[8px] text-slate-400 block">Sinergia com conveniência</span>
-                          </div>
-                        </div>
+                        <h3 className="text-base sm:text-lg font-bold text-white tracking-tight">
+                          Hub Comercial de Recarga de Alta Performance: Viabilidade Técnica, Demográfica e Econômica
+                        </h3>
 
-                        <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 space-y-2 text-justify leading-relaxed text-[11px] text-slate-700">
-                          {(() => {
-                            const fastComps = (projectData.competitorStationsList || []).filter((s: any) => (s.potencia_kw || s.potenciaKW || 0) >= 30 || s.is_dc || s.isDC);
-                            let paras: string[] = projectData.locationDiagnostic.resumoExecutivoParagrafos 
-                              ? [...projectData.locationDiagnostic.resumoExecutivoParagrafos]
-                              : (projectData.locationDiagnostic.resumoExecutivoTexto || '').split('\n\n');
+                        <p className="text-slate-300 text-xs leading-relaxed text-justify">
+                          Este estudo estratégico e eletrotécnico contempla a implantação de{' '}
+                          <strong className="text-white font-semibold">{chargersCount} estação física</strong> de alta potência atendendo{' '}
+                          <strong className="text-[#00B356] font-semibold">{evBaysCount} vagas comerciais simultâneas</strong> ({chargingPointsCount} conectores rápidos CCS2) com potência agregada de{' '}
+                          <strong className="text-white font-semibold">{totalPower.toFixed(1)} kW</strong> no imóvel cedido pelo{' '}
+                          <strong className="text-white font-semibold">{projectData.propertyOwner || 'Sr. Saint Clair'}</strong>. O empreendimento está ancorado em{' '}
+                          <strong className="text-white font-semibold">{projectData.commercialAnchorType || 'Galeria de lojas aberta 24 horas'}</strong>, oferecendo conveniência permanente, iluminação de segurança, sanitários e acesso frontal imediato sem necessidade de manobras de ré.
+                        </p>
 
-                            paras = paras.filter((p: string) => !p.toLowerCase().includes('ociosidade') && !p.toLowerCase().includes('idle fee'));
-
-                            if (fastComps.length > 0) {
-                              const listaDC = fastComps.map((s: any) => `${s.nome || s.name} (${s.potencia_kw || s.potenciaKW || 60} kW a ${(s.distancia_km || s.distanciaKm || 0).toFixed(1)} km)`).join(', ');
-                              paras = paras.map((p: string) => {
-                                if (p.toLowerCase().includes('monopólio natural') || p.toLowerCase().includes('0 pontos') || p.toLowerCase().includes('exclusivamente com recarga lenta')) {
-                                  return `A varredura de concorrência identifica ${fastComps.length} postos com recarga rápida DC no raio de 3 a 5 km: ${listaDC}. Diante desse cenário competitivo, a implantação do Hub CoenergyGO se consolida estrategicamente com dispensador BENY DC de 60 kW com dois conectores CCS2 simultâneos, diferenciando-se pela ancoragem comercial contínua de 24 horas, recarga em 35 a 45 minutos e alta segurança patrimonial.`;
-                                }
-                                return p;
-                              });
-                            }
-
-                            return paras.map((p: string, pIdx: number) => (
-                              <p key={pIdx}>{p}</p>
-                            ));
-                          })()}
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-[11px]">
+                          <div className="bg-white/5 p-2 rounded-xl border border-white/5">
+                            <span className="text-slate-400 block text-[9px] uppercase font-bold">Cliente Proponente</span>
+                            <strong className="text-white truncate block">{projectData.clientName}</strong>
+                          </div>
+                          <div className="bg-white/5 p-2 rounded-xl border border-white/5">
+                            <span className="text-slate-400 block text-[9px] uppercase font-bold">Proprietário / Cedente</span>
+                            <strong className="text-white truncate block">{projectData.propertyOwner || 'Sr. Saint Clair'}</strong>
+                          </div>
+                          <div className="bg-white/5 p-2 rounded-xl border border-white/5">
+                            <span className="text-slate-400 block text-[9px] uppercase font-bold">Âncora Comercial</span>
+                            <strong className="text-[#00B356] truncate block">{projectData.commercialAnchorType || 'Galeria 24 Horas'}</strong>
+                          </div>
+                          <div className="bg-white/5 p-2 rounded-xl border border-white/5">
+                            <span className="text-slate-400 block text-[9px] uppercase font-bold">Concessionária</span>
+                            <strong className="text-white truncate block">{projectData.utility || 'CEMIG Distribuição'}</strong>
+                          </div>
                         </div>
                       </div>
                     )}
 
-                    {/* 3. VARREDURA CRITERIOSA DA CONCORRÊNCIA NO RAIO DE 5 KM (Passo 1B Cont.) */}
-                    <div className="report-card p-5 bg-slate-50 border border-slate-200 rounded-2xl space-y-3 break-inside-avoid print:break-inside-avoid mb-5">
-                      <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-                        <h4 className="font-bold text-slate-900 uppercase text-[11px] flex items-center gap-1.5">
-                          <Users className="w-3.5 h-3.5 text-blue-600" />
-                          Passo 1B (Cont.) • Varredura Criteriosa de Concorrência no Raio de 5 km
-                        </h4>
-                        <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-emerald-100 text-[#00B356] border border-emerald-300">
-                          ⚡ Ambiente Competitivo DC Mapeado
-                        </span>
-                      </div>
-
-                      <p className="text-slate-700 text-justify text-[11px] leading-relaxed bg-white p-3.5 rounded-xl border border-slate-200/80">
-                        {(() => {
-                          const fastCompetitors = (projectData.competitorStationsList || []).filter((s: any) => (s.potencia_kw || s.potenciaKW || 0) >= 30 || s.is_dc || s.isDC);
-                          if (fastCompetitors.length > 0) {
-                            const nomes = fastCompetitors.map((s: any) => `${s.nome || s.name} (${s.potencia_kw || s.potenciaKW || 60} kW DC a ${(s.distancia_km || s.distanciaKm || 0).toFixed(1)} km)`).join(', ');
-                            return `A varredura de concorrência mapeou ${fastCompetitors.length} estação(ões) de recarga rápida DC no raio de 3 a 5 km: ${nomes}. O ponto alvo do Hub CoenergyGO se posiciona de forma soberana com dispensador BENY DC de 60 kW com 2 pistolas CCS2 simultâneas, ancoragem comercial contínua de 24 horas na galeria, recarga em 35 a 45 minutos e alta segurança patrimonial.`;
-                          }
-                          return projectData.locationDiagnostic?.concorrencia?.vereditoConcorrencia || 'A varredura de concorrência mapeou as estações de recarga no raio de 5 km, avaliando potências nominais e operadores locais para posicionamento estratégico do Hub CoenergyGO.';
-                        })()}
-                      </p>
-
-                      {/* Tabela de Eletropostos Mapeados */}
-                      {Array.isArray(projectData.competitorStationsList) && projectData.competitorStationsList.length > 0 && (
-                        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-                          <div className="bg-slate-100 px-3 py-2 text-[9px] font-bold uppercase text-slate-600 grid grid-cols-12 gap-1 border-b">
-                            <span className="col-span-4">Estabelecimento / Nome</span>
-                            <span className="col-span-2 text-center">Distância</span>
-                            <span className="col-span-2 text-center">Potência</span>
-                            <span className="col-span-4">Observações de Campo / Acesso</span>
-                          </div>
-                          <div className="divide-y divide-slate-100 text-[10px]">
-                            {projectData.competitorStationsList.map((st: any, idx: number) => {
-                              const nome = st.nome || st.name || `Eletroposto ${idx + 1}`;
-                              const dist = typeof st.distancia_km === 'number' ? st.distancia_km : (st.distanciaKm || 0);
-                              const pot = st.potencia_kw || st.potenciaKW || (st.is_dc || st.isDC ? 60 : 7.4);
-                              const isDC = st.is_dc !== undefined ? st.is_dc : (st.isDC !== undefined ? st.isDC : pot >= 30);
-                              const obs = st.observacao || st.observation || 'Mapeado em vistoria técnica';
-
-                              return (
-                                <div key={st.id || idx} className="px-3 py-2 grid grid-cols-12 gap-1 items-center hover:bg-slate-50">
-                                  <div className="col-span-4 font-semibold text-slate-800 truncate">
-                                    {nome}
-                                  </div>
-                                  <div className="col-span-2 text-center text-slate-500 font-mono">
-                                    {dist.toFixed(1)} km
-                                  </div>
-                                  <div className="col-span-2 text-center">
-                                    <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded ${isDC ? 'bg-orange-100 text-[#E45318]' : 'bg-blue-100 text-blue-700'}`}>
-                                      {pot} kW {isDC ? 'DC' : 'AC'}
-                                    </span>
-                                  </div>
-                                  <div className="col-span-4 text-slate-500 text-[9px] italic truncate" title={obs}>
-                                    {obs}
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* 4. ENGENHARIA ELÉTRICA & BALANÇO DE CARGAS (Passo 2A) */}
-                    <div className="report-card p-5 bg-slate-50 border border-slate-200 rounded-2xl space-y-3 break-inside-avoid print:break-inside-avoid mb-5">
-                      <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-                        <h4 className="font-bold text-slate-900 uppercase text-[11px] flex items-center gap-1.5">
-                          <Zap className="w-3.5 h-3.5 text-[#E45318]" />
-                          Passo 2A • Engenharia Elétrica, Demanda CEMIG & Gestão de Carga
-                        </h4>
-                        <span className="text-[10px] font-mono text-slate-500">
-                          ABNT NBR 17019 / CEMIG ND-5.1
-                        </span>
-                      </div>
-
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-                        <div className="bg-white p-2.5 rounded-xl border border-slate-200">
-                          <span className="text-slate-500 block text-[9px] uppercase font-semibold">Padrão de Entrada</span>
-                          <strong className="text-slate-900 text-sm font-black">
-                            {projectData.standardCategory || 'C6'} ({projectData.standardBreakerA || 200}A)
-                          </strong>
-                          <span className="text-[8px] text-slate-400 block">{projectData.voltageV || 220}V Trifásico</span>
-                        </div>
-                        <div className="bg-white p-2.5 rounded-xl border border-slate-200">
-                          <span className="text-slate-500 block text-[9px] uppercase font-semibold">Capacidade da Entrada</span>
-                          <strong className="text-slate-900 text-sm font-black">
-                            {(projectData.gridLimitKW || 75.0).toFixed(1)} kW
-                          </strong>
-                          <span className="text-[8px] text-slate-400 block">Limite contratual/físico</span>
-                        </div>
-                        <div className="bg-white p-2.5 rounded-xl border border-slate-200">
-                          <span className="text-slate-500 block text-[9px] uppercase font-semibold">Carga Atual do Imóvel</span>
-                          <strong className="text-slate-900 text-sm font-black">
-                            {(projectData.existingLoadKW || projectData.realPeakKW || 7.9).toFixed(1)} kW
-                          </strong>
-                          <span className="text-[8px] text-slate-400 block">SmartMeter (Pico NBR 5410)</span>
-                        </div>
-                        <div className="bg-white p-2.5 rounded-xl border border-slate-200">
-                          <span className="text-slate-500 block text-[9px] uppercase font-semibold">Folga Disponível</span>
-                          <strong className="text-[#00B356] text-sm font-black">
-                            {(projectData.headroomKW !== undefined ? projectData.headroomKW : Math.max(0, (projectData.gridLimitKW || 75.0) - (projectData.existingLoadKW || 7.9))).toFixed(1)} kW
-                          </strong>
-                          <span className="text-[8px] text-emerald-700 block">Headroom para recarga</span>
-                        </div>
-                      </div>
-
-                      <div className="bg-white p-3.5 rounded-xl border border-slate-200 text-[11px] leading-relaxed text-justify">
-                        <strong className="text-slate-900 block font-semibold mb-0.5">Regime Eletrotécnico Operacional:</strong>
-                        <span className="text-slate-700">
-                          ✓ <strong>Alimentação Direta em Carga Plena:</strong> A folga de potência identificada no padrão existente ({(projectData.headroomKW !== undefined ? projectData.headroomKW : 67.1).toFixed(1)} kW) suporta integralmente as estações instaladas ({totalPower.toFixed(1)} kW) em operação contínua sem risco de sobrecarga e sem a necessidade de aumento oneroso de demanda contratada junto à CEMIG.
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* 5. CONFORMIDADE ELETROTÉCNICA & BOMBEIROS NBR 17019 (Passo 2B) */}
-                    <div className="report-card p-5 bg-slate-50 border border-slate-200 rounded-2xl space-y-3 break-inside-avoid print:break-inside-avoid mb-5">
-                      <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-                        <h4 className="font-bold text-slate-900 uppercase text-[11px] flex items-center gap-1.5">
-                          <Shield className="w-3.5 h-3.5 text-blue-600" />
-                          Passo 2B • Conformidade com ABNT NBR 17019 & Corpo de Bombeiros (CBMMG IT-41)
-                        </h4>
-                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded border border-emerald-200">
-                          100% Homologado
-                        </span>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-[11px]">
-                        <div className="p-3 bg-white rounded-xl border border-slate-200/80 space-y-1">
-                          <strong className="text-slate-900 block text-[10px] uppercase font-bold text-[#E45318]">
-                            1. Aterramento TN-S Mandatório (NBR 5410):
-                          </strong>
-                          <p className="text-slate-600 text-justify leading-relaxed">
-                            Condutor de proteção (PE) exclusivo interligado diretamente ao Barramento de Equipotencialização Principal (BEP), com resistividade de terra auditada inferior a 10 ohms.
-                          </p>
-                        </div>
-                        <div className="p-3 bg-white rounded-xl border border-slate-200/80 space-y-1">
-                          <strong className="text-slate-900 block text-[10px] uppercase font-bold text-[#00B356]">
-                            2. Dispositivo IDR Tipo B Dedicado (30mA):
-                          </strong>
-                          <p className="text-slate-600 text-justify leading-relaxed">
-                            Proteção diferencial-residual Tipo B específica para VE, imune a correntes CC de fuga transitórias e permanentes originadas nos retificadores veiculares de alta potência.
-                          </p>
-                        </div>
-                        <div className="p-3 bg-white rounded-xl border border-slate-200/80 space-y-1">
-                          <strong className="text-slate-900 block text-[10px] uppercase font-bold text-blue-700">
-                            3. Proteção contra Surtos (DPS Classe I+II):
-                          </strong>
-                          <p className="text-slate-600 text-justify leading-relaxed">
-                            Dispositivos protetores de surtos coordenados instalados no QDC-VE (Up &lt; 1,5 kV), protegendo os circuitos eletrônicos e os veículos contra descargas atmosféricas.
-                          </p>
-                        </div>
-                        <div className="p-3 bg-white rounded-xl border border-slate-200/80 space-y-1">
-                          <strong className="text-slate-900 block text-[10px] uppercase font-bold text-red-700">
-                            4. Seccionamento de Emergência & Combate a Incêndio:
-                          </strong>
-                          <p className="text-slate-600 text-justify leading-relaxed">
-                            Botoeira de emergência tipo cogumelo com disparo de bobina de mínima tensão em &lt; 50ms, extintor de pó químico/CO₂ (5 kg) adjacente e sinalização viária NBR 9050.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* 6. ESPECIFICAÇÃO TÉCNICA DAS ESTAÇÕES DE RECARGA (Passo 1A / 3) */}
-                    <div className="report-card border border-slate-200 rounded-2xl p-5 space-y-3 bg-white break-inside-avoid print:break-inside-avoid mb-5">
-                      <div className="flex items-center justify-between border-b pb-2">
-                        <h4 className="font-bold text-slate-900 uppercase text-[11px] flex items-center gap-1.5">
-                          <Zap className="w-3.5 h-3.5 text-[#00B356]" />
-                          Passo 3 • Especificação Técnica das Estações de Recarga Homologadas
-                        </h4>
-                        <span className="text-[10px] text-slate-500 font-bold">
-                          Total: {chargersCount} est. ({totalPower.toFixed(1)} kW | {evBaysCount} vagas)
-                        </span>
-                      </div>
-
-                      {/* Card Detalhado do Carregador BENY DC 60 kW */}
-                      <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <span className="w-7 h-7 rounded-full bg-[#E45318] text-white flex items-center justify-center font-black text-xs shadow-sm">
-                              01
-                            </span>
-                            <div>
-                              <strong className="text-slate-900 text-xs block font-bold">
-                                BENY BDC-60 kW DC Comercial Rápido (Dual-Gun CCS2)
-                              </strong>
-                              <span className="text-slate-500 text-[10px]">
-                                Fabricante: <strong>BENY New Energy</strong> • Modelo: <strong>BDC-60KW-2G</strong> • Tecnologia SiC
+                    {/* ─── PARTE 2: MACRO-DIAGNÓSTICO DEMOGRÁFICO IBGE & CONCORRÊNCIA DC (Passo 1B) ─── */}
+                    {selectedParts.includes(2) && (
+                      <>
+                        {/* Card Demográfico IBGE */}
+                        {projectData.locationDiagnostic && (
+                          <div className="report-card p-5 bg-slate-50 border border-slate-200 rounded-2xl space-y-3 break-inside-avoid print:break-inside-avoid mb-5">
+                            <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                              <h4 className="font-bold text-slate-900 uppercase text-[11px] flex items-center gap-1.5">
+                                <Store className="w-3.5 h-3.5 text-[#00B356]" />
+                                Parte 2 • Passo 1B • Macro-Diagnóstico Demográfico & Frota de Veículos Elétricos (IBGE 2026)
+                              </h4>
+                              <span className="text-[10px] font-black text-[#00B356] bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
+                                Score AHP: {effectiveAhpScore.toFixed(1)} / 100 ({effectiveAhpRating})
                               </span>
                             </div>
+
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
+                              <div className="bg-white p-2.5 rounded-xl border border-slate-200">
+                                <span className="text-slate-500 block text-[9px] uppercase font-semibold">População Municipal</span>
+                                <strong className="text-slate-800 text-sm font-black">
+                                  {projectData.locationDiagnostic.ibge?.populacaoEstimada?.toLocaleString('pt-BR') || '241.835'} hab.
+                                </strong>
+                                <span className="text-[8px] text-slate-400 block">Base IBGE Censo</span>
+                              </div>
+                              <div className="bg-white p-2.5 rounded-xl border border-slate-200">
+                                <span className="text-slate-500 block text-[9px] uppercase font-semibold">Frota VE Projetada 2026</span>
+                                <strong className="text-amber-600 text-sm font-black">
+                                  {projectData.locationDiagnostic.ibge?.frotaEletricaEstimada?.toLocaleString('pt-BR') || '780'} VEs
+                                </strong>
+                                <span className="text-[8px] text-amber-700/80 block">BEV + PHEV em circulação</span>
+                              </div>
+                              <div className="bg-white p-2.5 rounded-xl border border-slate-200">
+                                <span className="text-slate-500 block text-[9px] uppercase font-semibold">Classificação Viária</span>
+                                <strong className="text-blue-600 text-sm font-black uppercase">
+                                  {projectData.locationDiagnostic.via?.tipoVia || 'Arterial'}
+                                </strong>
+                                <span className="text-[8px] text-slate-400 block">{projectData.locationDiagnostic.via?.velocidadeEstimadaKmh || 60} km/h regulamentar</span>
+                              </div>
+                              <div className="bg-white p-2.5 rounded-xl border border-slate-200">
+                                <span className="text-slate-500 block text-[9px] uppercase font-semibold">Comércios em 500m</span>
+                                <strong className="text-[#00B356] text-sm font-black">
+                                  {projectData.locationDiagnostic.via?.totalComercios500m || 4} Pontos
+                                </strong>
+                                <span className="text-[8px] text-slate-400 block">Sinergia com conveniência</span>
+                              </div>
+                            </div>
+
+                            <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 space-y-2 text-justify leading-relaxed text-[11px] text-slate-700">
+                              {(() => {
+                                const fastComps = (projectData.competitorStationsList || []).filter((s: any) => (s.potencia_kw || s.potenciaKW || 0) >= 30 || s.is_dc || s.isDC);
+                                let paras: string[] = projectData.locationDiagnostic.resumoExecutivoParagrafos 
+                                  ? [...projectData.locationDiagnostic.resumoExecutivoParagrafos]
+                                  : (projectData.locationDiagnostic.resumoExecutivoTexto || '').split('\n\n');
+
+                                paras = paras.filter((p: string) => !p.toLowerCase().includes('ociosidade') && !p.toLowerCase().includes('idle fee'));
+
+                                if (fastComps.length > 0) {
+                                  const listaDC = fastComps.map((s: any) => `${s.nome || s.name} (${s.potencia_kw || s.potenciaKW || 60} kW a ${(s.distancia_km || s.distanciaKm || 0).toFixed(1)} km)`).join(', ');
+                                  paras = paras.map((p: string) => {
+                                    if (p.toLowerCase().includes('monopólio natural') || p.toLowerCase().includes('0 pontos') || p.toLowerCase().includes('exclusivamente com recarga lenta')) {
+                                      return `A varredura de concorrência identifica ${fastComps.length} postos com recarga rápida DC no raio de 3 a 5 km: ${listaDC}. Diante desse cenário competitivo, a implantação do Hub CoenergyGO se consolida estrategicamente com dispensador BENY DC de 60 kW com dois conectores CCS2 simultâneos, diferenciando-se pela ancoragem comercial contínua de 24 horas, recarga em 35 a 45 minutos e alta segurança patrimonial.`;
+                                    }
+                                    return p;
+                                  });
+                                }
+
+                                return paras.map((p: string, pIdx: number) => (
+                                  <p key={pIdx}>{p}</p>
+                                ));
+                              })()}
+                            </div>
                           </div>
-                          <div className="text-right">
-                            <strong className="text-[#E45318] text-base font-black block">60.0 kW</strong>
-                            <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-orange-100 text-[#E45318]">
-                              DC Rápido • Trifásico
+                        )}
+
+                        {/* Card de Varredura de Concorrência */}
+                        <div className="report-card p-5 bg-slate-50 border border-slate-200 rounded-2xl space-y-3 break-inside-avoid print:break-inside-avoid mb-5">
+                          <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                            <h4 className="font-bold text-slate-900 uppercase text-[11px] flex items-center gap-1.5">
+                              <Users className="w-3.5 h-3.5 text-blue-600" />
+                              Parte 2 (Cont.) • Passo 1B • Varredura Criteriosa de Concorrência no Raio de 5 km
+                            </h4>
+                            <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-emerald-100 text-[#00B356] border border-emerald-300">
+                              ⚡ Ambiente Competitivo DC Mapeado
+                            </span>
+                          </div>
+
+                          <p className="text-slate-700 text-justify text-[11px] leading-relaxed bg-white p-3.5 rounded-xl border border-slate-200/80">
+                            {(() => {
+                              const fastCompetitors = (projectData.competitorStationsList || []).filter((s: any) => (s.potencia_kw || s.potenciaKW || 0) >= 30 || s.is_dc || s.isDC);
+                              if (fastCompetitors.length > 0) {
+                                const nomes = fastCompetitors.map((s: any) => `${s.nome || s.name} (${s.potencia_kw || s.potenciaKW || 60} kW DC a ${(s.distancia_km || s.distanciaKm || 0).toFixed(1)} km)`).join(', ');
+                                return `A varredura de concorrência mapeou ${fastCompetitors.length} estação(ões) de recarga rápida DC no raio de 3 a 5 km: ${nomes}. O ponto alvo do Hub CoenergyGO se posiciona de forma soberana com dispensador BENY DC de 60 kW com 2 pistolas CCS2 simultâneas, ancoragem comercial contínua de 24 horas na galeria, recarga em 35 a 45 minutos e alta segurança patrimonial.`;
+                              }
+                              return projectData.locationDiagnostic?.concorrencia?.vereditoConcorrencia || 'A varredura de concorrência mapeou as estações de recarga no raio de 5 km, avaliando potências nominais e operadores locais para posicionamento estratégico do Hub CoenergyGO.';
+                            })()}
+                          </p>
+
+                          {/* Tabela de Eletropostos Mapeados */}
+                          {Array.isArray(projectData.competitorStationsList) && projectData.competitorStationsList.length > 0 && (
+                            <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                              <div className="bg-slate-100 px-3 py-2 text-[9px] font-bold uppercase text-slate-600 grid grid-cols-12 gap-1 border-b">
+                                <span className="col-span-4">Estabelecimento / Nome</span>
+                                <span className="col-span-2 text-center">Distância</span>
+                                <span className="col-span-2 text-center">Potência</span>
+                                <span className="col-span-4">Observações de Campo / Acesso</span>
+                              </div>
+                              <div className="divide-y divide-slate-100 text-[10px]">
+                                {projectData.competitorStationsList.map((st: any, idx: number) => {
+                                  const nome = st.nome || st.name || `Eletroposto ${idx + 1}`;
+                                  const dist = typeof st.distancia_km === 'number' ? st.distancia_km : (st.distanciaKm || 0);
+                                  const pot = st.potencia_kw || st.potenciaKW || (st.is_dc || st.isDC ? 60 : 7.4);
+                                  const isDC = st.is_dc !== undefined ? st.is_dc : (st.isDC !== undefined ? st.isDC : pot >= 30);
+                                  const obs = st.observacao || st.observation || 'Mapeado em vistoria técnica';
+
+                                  return (
+                                    <div key={st.id || idx} className="px-3 py-2 grid grid-cols-12 gap-1 items-center hover:bg-slate-50">
+                                      <div className="col-span-4 font-semibold text-slate-800 truncate">
+                                        {nome}
+                                      </div>
+                                      <div className="col-span-2 text-center text-slate-500 font-mono">
+                                        {dist.toFixed(1)} km
+                                      </div>
+                                      <div className="col-span-2 text-center">
+                                        <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded ${isDC ? 'bg-orange-100 text-[#E45318]' : 'bg-blue-100 text-blue-700'}`}>
+                                          {pot} kW {isDC ? 'DC' : 'AC'}
+                                        </span>
+                                      </div>
+                                      <div className="col-span-4 text-slate-500 text-[9px] italic truncate" title={obs}>
+                                        {obs}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    )}
+
+                    {/* ─── PARTE 3: ENGENHARIA ELÉTRICA CEMIG & NORMAS TÉCNICAS (Passo 2A & 2B) ─── */}
+                    {selectedParts.includes(3) && (
+                      <>
+                        {/* Card Engenharia Elétrica CEMIG */}
+                        <div className="report-card p-5 bg-slate-50 border border-slate-200 rounded-2xl space-y-3 break-inside-avoid print:break-inside-avoid mb-5">
+                          <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                            <h4 className="font-bold text-slate-900 uppercase text-[11px] flex items-center gap-1.5">
+                              <Zap className="w-3.5 h-3.5 text-[#E45318]" />
+                              Parte 3 • Passo 2A • Engenharia Elétrica, Demanda CEMIG & Gestão de Carga
+                            </h4>
+                            <span className="text-[10px] font-mono text-slate-500">
+                              ABNT NBR 17019 / CEMIG ND-5.1
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                            <div className="bg-white p-2.5 rounded-xl border border-slate-200">
+                              <span className="text-slate-500 block text-[9px] uppercase font-semibold">Padrão de Entrada</span>
+                              <strong className="text-slate-900 text-sm font-black">
+                                {projectData.standardCategory || 'C6'} ({projectData.standardBreakerA || 200}A)
+                              </strong>
+                              <span className="text-[8px] text-slate-400 block">{projectData.voltageV || 220}V Trifásico</span>
+                            </div>
+                            <div className="bg-white p-2.5 rounded-xl border border-slate-200">
+                              <span className="text-slate-500 block text-[9px] uppercase font-semibold">Capacidade da Entrada</span>
+                              <strong className="text-slate-900 text-sm font-black">
+                                {(projectData.gridLimitKW || 75.0).toFixed(1)} kW
+                              </strong>
+                              <span className="text-[8px] text-slate-400 block">Limite contratual/físico</span>
+                            </div>
+                            <div className="bg-white p-2.5 rounded-xl border border-slate-200">
+                              <span className="text-slate-500 block text-[9px] uppercase font-semibold">Carga Atual do Imóvel</span>
+                              <strong className="text-slate-900 text-sm font-black">
+                                {(projectData.existingLoadKW || projectData.realPeakKW || 7.9).toFixed(1)} kW
+                              </strong>
+                              <span className="text-[8px] text-slate-400 block">SmartMeter (Pico NBR 5410)</span>
+                            </div>
+                            <div className="bg-white p-2.5 rounded-xl border border-slate-200">
+                              <span className="text-slate-500 block text-[9px] uppercase font-semibold">Folga Disponível</span>
+                              <strong className="text-[#00B356] text-sm font-black">
+                                {(projectData.headroomKW !== undefined ? projectData.headroomKW : Math.max(0, (projectData.gridLimitKW || 75.0) - (projectData.existingLoadKW || 7.9))).toFixed(1)} kW
+                              </strong>
+                              <span className="text-[8px] text-emerald-700 block">Headroom para recarga</span>
+                            </div>
+                          </div>
+
+                          <div className="bg-white p-3.5 rounded-xl border border-slate-200 text-[11px] leading-relaxed text-justify">
+                            <strong className="text-slate-900 block font-semibold mb-0.5">Regime Eletrotécnico Operacional:</strong>
+                            <span className="text-slate-700">
+                              ✓ <strong>Alimentação Direta em Carga Plena:</strong> A folga de potência identificada no padrão existente ({(projectData.headroomKW !== undefined ? projectData.headroomKW : 67.1).toFixed(1)} kW) suporta integralmente as estações instaladas ({totalPower.toFixed(1)} kW) em operação contínua sem risco de sobrecarga e sem a necessidade de aumento oneroso de demanda contratada junto à CEMIG.
                             </span>
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-[10px]">
-                          <div className="bg-white p-2.5 rounded-lg border border-slate-200">
-                            <span className="text-slate-400 block font-semibold uppercase text-[8px]">Conectores</span>
-                            <strong className="text-slate-800">2x CCS2 (Dual-Gun)</strong>
+                        {/* Card Conformidade NBR 17019 & CBMMG */}
+                        <div className="report-card p-5 bg-slate-50 border border-slate-200 rounded-2xl space-y-3 break-inside-avoid print:break-inside-avoid mb-5">
+                          <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                            <h4 className="font-bold text-slate-900 uppercase text-[11px] flex items-center gap-1.5">
+                              <Shield className="w-3.5 h-3.5 text-blue-600" />
+                              Parte 3 • Passo 2B • Conformidade com ABNT NBR 17019 & Corpo de Bombeiros (CBMMG IT-41)
+                            </h4>
+                            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded border border-emerald-200">
+                              100% Homologado
+                            </span>
                           </div>
-                          <div className="bg-white p-2.5 rounded-lg border border-slate-200">
-                            <span className="text-slate-400 block font-semibold uppercase text-[8px]">Divisão de Potência</span>
-                            <strong className="text-slate-800">2x 30 kW ou 1x 60 kW</strong>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-[11px]">
+                            <div className="p-3 bg-white rounded-xl border border-slate-200/80 space-y-1">
+                              <strong className="text-slate-900 block text-[10px] uppercase font-bold text-[#E45318]">
+                                1. Aterramento TN-S Mandatório (NBR 5410):
+                              </strong>
+                              <p className="text-slate-600 text-justify leading-relaxed">
+                                Condutor de proteção (PE) exclusivo interligado diretamente ao Barramento de Equipotencialização Principal (BEP), com resistividade de terra auditada inferior a 10 ohms.
+                              </p>
+                            </div>
+                            <div className="p-3 bg-white rounded-xl border border-slate-200/80 space-y-1">
+                              <strong className="text-slate-900 block text-[10px] uppercase font-bold text-[#00B356]">
+                                2. Dispositivo IDR Tipo B Dedicado (30mA):
+                              </strong>
+                              <p className="text-slate-600 text-justify leading-relaxed">
+                                Proteção diferencial-residual Tipo B específica para VE, imune a correntes CC de fuga transitórias e permanentes originadas nos retificadores veiculares de alta potência.
+                              </p>
+                            </div>
+                            <div className="p-3 bg-white rounded-xl border border-slate-200/80 space-y-1">
+                              <strong className="text-slate-900 block text-[10px] uppercase font-bold text-blue-700">
+                                3. Proteção contra Surtos (DPS Classe I+II):
+                              </strong>
+                              <p className="text-slate-600 text-justify leading-relaxed">
+                                Dispositivos protetores de surtos coordenados instalados no QDC-VE (Up &lt; 1,5 kV), protegendo os circuitos eletrônicos e os veículos contra descargas atmosféricas.
+                              </p>
+                            </div>
+                            <div className="p-3 bg-white rounded-xl border border-slate-200/80 space-y-1">
+                              <strong className="text-slate-900 block text-[10px] uppercase font-bold text-red-700">
+                                4. Seccionamento de Emergência & Combate a Incêndio:
+                              </strong>
+                              <p className="text-slate-600 text-justify leading-relaxed">
+                                Botoeira de emergência tipo cogumelo com disparo de bobina de mínima tensão em &lt; 50ms, extintor de pó químico/CO₂ (5 kg) adjacente e sinalização viária NBR 9050.
+                              </p>
+                            </div>
                           </div>
-                          <div className="bg-white p-2.5 rounded-lg border border-slate-200">
-                            <span className="text-slate-400 block font-semibold uppercase text-[8px]">Protocolo OCPP</span>
-                            <strong className="text-slate-800">OCPP 1.6J / 2.0.1 JSON</strong>
+                        </div>
+                      </>
+                    )}
+
+                    {/* ─── PARTE 4: ESPECIFICAÇÃO BENY 60 kW & ORÇAMENTO CAPEX (BOM) (Passo 3 & 4B) ─── */}
+                    {selectedParts.includes(4) && (
+                      <>
+                        {/* Card Especificação BENY */}
+                        <div className="report-card border border-slate-200 rounded-2xl p-5 space-y-3 bg-white break-inside-avoid print:break-inside-avoid mb-5">
+                          <div className="flex items-center justify-between border-b pb-2">
+                            <h4 className="font-bold text-slate-900 uppercase text-[11px] flex items-center gap-1.5">
+                              <Zap className="w-3.5 h-3.5 text-[#00B356]" />
+                              Parte 4 • Passo 3 • Especificação Técnica das Estações de Recarga Homologadas
+                            </h4>
+                            <span className="text-[10px] text-slate-500 font-bold">
+                              Total: {chargersCount} est. ({totalPower.toFixed(1)} kW | {evBaysCount} vagas)
+                            </span>
                           </div>
-                          <div className="bg-white p-2.5 rounded-lg border border-slate-200">
-                            <span className="text-slate-400 block font-semibold uppercase text-[8px]">Tempo Médio Recarga</span>
-                            <strong className="text-[#00B356]">35 a 45 minutos</strong>
+
+                          {/* Card Detalhado do Carregador BENY DC 60 kW */}
+                          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <span className="w-7 h-7 rounded-full bg-[#E45318] text-white flex items-center justify-center font-black text-xs shadow-sm">
+                                  01
+                                </span>
+                                <div>
+                                  <strong className="text-slate-900 text-xs block font-bold">
+                                    BENY BDC-60 kW DC Comercial Rápido (Dual-Gun CCS2)
+                                  </strong>
+                                  <span className="text-slate-500 text-[10px]">
+                                    Fabricante: <strong>BENY New Energy</strong> • Modelo: <strong>BDC-60KW-2G</strong> • Tecnologia SiC
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <strong className="text-[#E45318] text-base font-black block">60.0 kW</strong>
+                                <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-orange-100 text-[#E45318]">
+                                  DC Rápido • Trifásico
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-[10px]">
+                              <div className="bg-white p-2.5 rounded-lg border border-slate-200">
+                                <span className="text-slate-400 block font-semibold uppercase text-[8px]">Conectores</span>
+                                <strong className="text-slate-800">2x CCS2 (Dual-Gun)</strong>
+                              </div>
+                              <div className="bg-white p-2.5 rounded-lg border border-slate-200">
+                                <span className="text-slate-400 block font-semibold uppercase text-[8px]">Divisão de Potência</span>
+                                <strong className="text-slate-800">2x 30 kW ou 1x 60 kW</strong>
+                              </div>
+                              <div className="bg-white p-2.5 rounded-lg border border-slate-200">
+                                <span className="text-slate-400 block font-semibold uppercase text-[8px]">Protocolo OCPP</span>
+                                <strong className="text-slate-800">OCPP 1.6J / 2.0.1 JSON</strong>
+                              </div>
+                              <div className="bg-white p-2.5 rounded-lg border border-slate-200">
+                                <span className="text-slate-400 block font-semibold uppercase text-[8px]">Tempo Médio Recarga</span>
+                                <strong className="text-[#00B356]">35 a 45 minutos</strong>
+                              </div>
+                            </div>
+
+                            <p className="text-[10px] text-slate-600 leading-relaxed text-justify bg-white p-3 rounded-lg border border-slate-200/80">
+                              A estação BENY DC 60 kW utiliza módulos de potência com semicondutores de Carboneto de Silício (SiC), garantindo eficiência de conversão CA/CC superior a 96% e baixo aquecimento operacional. O equipamento dispõe de leitor RFID integrado, display touch de 7 polegadas com interface em português e leitor QR Code dinâmico para integração autônoma com aplicativos de bilhetagem.
+                            </p>
                           </div>
                         </div>
 
-                        <p className="text-[10px] text-slate-600 leading-relaxed text-justify bg-white p-3 rounded-lg border border-slate-200/80">
-                          A estação BENY DC 60 kW utiliza módulos de potência com semicondutores de Carboneto de Silício (SiC), garantindo eficiência de conversão CA/CC superior a 96% e baixo aquecimento operacional. O equipamento dispõe de leitor RFID integrado, display touch de 7 polegadas com interface em português e leitor QR Code dinâmico para integração autônoma com aplicativos de bilhetagem.
-                        </p>
-                      </div>
-                    </div>
+                        {/* Card Orçamento CAPEX (BOM) — R$ 133.844,00 */}
+                        <div className="report-card p-5 bg-slate-50 border border-slate-200 rounded-2xl space-y-3 break-inside-avoid print:break-inside-avoid mb-5">
+                          <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                            <h4 className="font-bold text-slate-900 uppercase text-[11px] flex items-center gap-1.5">
+                              <DollarSign className="w-3.5 h-3.5 text-emerald-600" />
+                              Parte 4 • Passo 4B • Orçamento Modular de CAPEX & Lista de Materiais (BOM Consolidado)
+                            </h4>
+                            <span className="text-[10px] text-slate-500 font-bold">
+                              BDI Global: <strong>18,5%</strong> • Base Fornecedores / SINAPI
+                            </span>
+                          </div>
 
-                    {/* 7. ORÇAMENTO DETALHADO (BOM/CAPEX) & LISTA DE MATERIAIS (Passo 4B) */}
-                    <div className="report-card p-5 bg-slate-50 border border-slate-200 rounded-2xl space-y-3 break-inside-avoid print:break-inside-avoid mb-5">
-                      <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-                        <h4 className="font-bold text-slate-900 uppercase text-[11px] flex items-center gap-1.5">
-                          <DollarSign className="w-3.5 h-3.5 text-emerald-600" />
-                          Passo 4B • Orçamento Modular de CAPEX & Lista de Materiais (BOM Consolidado)
-                        </h4>
-                        <span className="text-[10px] text-slate-500 font-bold">
-                          BDI Global: <strong>18,5%</strong> • Base SINAPI / Fornecedores
-                        </span>
-                      </div>
+                          {/* Tabela de Composição do CAPEX — R$ 133.844,00 */}
+                          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                            <table className="w-full text-left border-collapse text-[11px]">
+                              <thead className="bg-[#0A192F] text-white text-[9px] uppercase">
+                                <tr>
+                                  <th className="p-2.5">Item</th>
+                                  <th className="p-2.5">Descrição dos Equipamentos, Materiais & Serviços</th>
+                                  <th className="p-2.5 text-center">Qtd</th>
+                                  <th className="p-2.5 text-right">Valor Total (R$)</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-200 text-[10px]">
+                                <tr>
+                                  <td className="p-2.5 font-bold text-slate-900">01</td>
+                                  <td className="p-2.5 text-slate-800">
+                                    <strong>Estação de Recarga BENY DC 60 kW Dual Gun CCS2</strong> (Módulos SiC, OCPP 1.6J/2.0.1, RFID, Tela 7&quot;, Gestão Dinâmica)
+                                  </td>
+                                  <td className="p-2.5 text-center font-mono">1 un</td>
+                                  <td className="p-2.5 text-right font-mono font-bold text-slate-900">R$ 85.000,00</td>
+                                </tr>
+                                <tr className="bg-slate-50/50">
+                                  <td className="p-2.5 font-bold text-slate-900">02</td>
+                                  <td className="p-2.5 text-slate-800">
+                                    <strong>Quadro Geral QDC-VE 380V & Proteções NBR 17019</strong> (Disjuntor Caixa Moldada 125A 36kA, IDR Tipo B 30mA, DPS Classe I+II e Bobina MX)
+                                  </td>
+                                  <td className="p-2.5 text-center font-mono">1 cj</td>
+                                  <td className="p-2.5 text-right font-mono font-bold text-slate-900">R$ 15.000,00</td>
+                                </tr>
+                                <tr>
+                                  <td className="p-2.5 font-bold text-slate-900">03</td>
+                                  <td className="p-2.5 text-slate-800">
+                                    <strong>Infraestrutura Eletrotécnica & Cabeamento Sintenax 35mm² Cu</strong> (Cabos 0,6/1kV HEPR, Eletrodutos Galvanizados e Aterramento TN-S)
+                                  </td>
+                                  <td className="p-2.5 text-center font-mono">1 cj</td>
+                                  <td className="p-2.5 text-right font-mono font-bold text-slate-900">R$ 10.000,00</td>
+                                </tr>
+                                <tr className="bg-slate-50/50">
+                                  <td className="p-2.5 font-bold text-slate-900">04</td>
+                                  <td className="p-2.5 text-slate-800">
+                                    <strong>Obras Civis, Base Estrutural, 4 Balizadores e Pintura Epóxi</strong> (Base de Concreto Armado fck 25 MPa, Vagas NBR 9050 e Sinalização)
+                                  </td>
+                                  <td className="p-2.5 text-center font-mono">1 gl</td>
+                                  <td className="p-2.5 text-right font-mono font-bold text-slate-900">R$ 10.000,00</td>
+                                </tr>
+                                <tr>
+                                  <td className="p-2.5 font-bold text-slate-900">05</td>
+                                  <td className="p-2.5 text-slate-800">
+                                    <strong>Engenharia, Comissionamento NBR 17019 & ART CREA-MG</strong> (Projeto Executivo e Ensaios Eletrotécnicos Eng. Bruno Cordeiro)
+                                  </td>
+                                  <td className="p-2.5 text-center font-mono">1 gl</td>
+                                  <td className="p-2.5 text-right font-mono font-bold text-slate-900">R$ 5.000,00</td>
+                                </tr>
+                                <tr className="bg-slate-50/50">
+                                  <td className="p-2.5 font-bold text-slate-900">06</td>
+                                  <td className="p-2.5 text-slate-800">
+                                    <strong>Marketing, Comunicação Visual, Totem Indicativo & Reserva Técnica</strong> (Sinalização Noturna e Contingência)
+                                  </td>
+                                  <td className="p-2.5 text-center font-mono">1 gl</td>
+                                  <td className="p-2.5 text-right font-mono font-bold text-slate-900">R$ 8.844,00</td>
+                                </tr>
+                                <tr className="bg-emerald-50 border-t-2 border-emerald-300 font-bold">
+                                  <td className="p-2.5 text-emerald-900 uppercase" colSpan={3}>
+                                    Investimento Total Consolidado do Hub Comercial (CAPEX Total):
+                                  </td>
+                                  <td className="p-2.5 text-right font-mono text-sm text-[#00B356] font-black">
+                                    R$ 133.844,00
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </div>
 
-                      {/* Tabela de Composição do CAPEX */}
-                      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-                        <table className="w-full text-left border-collapse text-[11px]">
-                          <thead className="bg-[#0A192F] text-white text-[9px] uppercase">
-                            <tr>
-                              <th className="p-2.5">Item</th>
-                              <th className="p-2.5">Descrição dos Equipamentos, Materiais & Serviços</th>
-                              <th className="p-2.5 text-center">Qtd</th>
-                              <th className="p-2.5 text-right">Valor Total (R$)</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-200 text-[10px]">
-                            <tr>
-                              <td className="p-2.5 font-bold text-slate-900">01</td>
-                              <td className="p-2.5 text-slate-800">
-                                <strong>Estação de Recarga BENY DC 60 kW Dual Gun CCS2</strong> (Módulos SiC, OCPP 1.6J, RFID, Tela 7")
-                              </td>
-                              <td className="p-2.5 text-center font-mono">1 un</td>
-                              <td className="p-2.5 text-right font-mono font-bold text-slate-900">R$ 58.000,00</td>
-                            </tr>
-                            <tr className="bg-slate-50/50">
-                              <td className="p-2.5 font-bold text-slate-900">02</td>
-                              <td className="p-2.5 text-slate-800">
-                                <strong>Quadro Geral QDC-VE 380V</strong> (Disjuntor Caixa Moldada 125A, Dispositivo IDR Tipo B 30mA, DPS Classe I+II)
-                              </td>
-                              <td className="p-2.5 text-center font-mono">1 cj</td>
-                              <td className="p-2.5 text-right font-mono font-bold text-slate-900">R$ 14.500,00</td>
-                            </tr>
-                            <tr>
-                              <td className="p-2.5 font-bold text-slate-900">03</td>
-                              <td className="p-2.5 text-slate-800">
-                                <strong>Infraestrutura Eletrotécnica & Cabos Sintenax 0,6/1kV</strong> (Cabos 35mm² Cu, Eletrodutos Galvanizados e Conexões)
-                              </td>
-                              <td className="p-2.5 text-center font-mono">1 cj</td>
-                              <td className="p-2.5 text-right font-mono font-bold text-slate-900">R$ 13.998,88</td>
-                            </tr>
-                            <tr className="bg-slate-50/50">
-                              <td className="p-2.5 font-bold text-slate-900">04</td>
-                              <td className="p-2.5 text-slate-800">
-                                <strong>Obras Civis, Base Estrutural, 4 Bollards e Pintura Viária Epóxi</strong> (Concretagem, 2 Vagas NBR 9050 e Sinalização)
-                              </td>
-                              <td className="p-2.5 text-center font-mono">1 gl</td>
-                              <td className="p-2.5 text-right font-mono font-bold text-slate-900">R$ 10.000,00</td>
-                            </tr>
-                            <tr>
-                              <td className="p-2.5 font-bold text-slate-900">05</td>
-                              <td className="p-2.5 text-slate-800">
-                                <strong>Engenharia, Comissionamento NBR 17019, Ensaios Megômetro & ART</strong> (Responsabilidade Técnica Bruno Cordeiro)
-                              </td>
-                              <td className="p-2.5 text-center font-mono">1 gl</td>
-                              <td className="p-2.5 text-right font-mono font-bold text-slate-900">R$ 10.000,00</td>
-                            </tr>
-                            <tr className="bg-emerald-50 border-t-2 border-emerald-300 font-bold">
-                              <td className="p-2.5 text-emerald-900 uppercase" colSpan={3}>
-                                Investimento Total Consolidado do Hub Comercial (CAPEX Total):
-                              </td>
-                              <td className="p-2.5 text-right font-mono text-sm text-[#00B356] font-black">
-                                R$ 106.498,88
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-2 text-[10px] text-slate-600 pt-0.5">
-                        <div className="p-2.5 bg-white rounded-lg border border-slate-200">
-                          ✓ <strong>Garantia do Equipamento:</strong> 24 meses direto do fabricante BENY com suporte nacional.
+                          <div className="grid grid-cols-2 gap-2 text-[10px] text-slate-600 pt-0.5">
+                            <div className="p-2.5 bg-white rounded-lg border border-slate-200">
+                              ✓ <strong>Equipamentos Principais:</strong> R$ 85.000,00 (Estação BENY 60 kW com 24 meses de garantia de fábrica).
+                            </div>
+                            <div className="p-2.5 bg-white rounded-lg border border-slate-200">
+                              ✓ <strong>Infra Civil & Elétrica:</strong> R$ 48.844,00 (Quadro QDC-VE, cabos 35mm², base civil, marketing e engenharia).
+                            </div>
+                          </div>
                         </div>
-                        <div className="p-2.5 bg-white rounded-lg border border-slate-200">
-                          ✓ <strong>Garantia de Instalação:</strong> 36 meses na infraestrutura executada pela Cordeiro Energia O&M.
+                      </>
+                    )}
+
+                    {/* ─── PARTE 5: MODELAGEM FINANCEIRA COENERGYGO & INDICADORES (Passo 5) ─── */}
+                    {selectedParts.includes(5) && (
+                      <div className="report-card p-5 bg-slate-50 border border-slate-200 rounded-2xl space-y-3 break-inside-avoid print:break-inside-avoid mb-5">
+                        <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                          <h4 className="font-bold text-slate-900 uppercase text-[11px] flex items-center gap-1.5">
+                            <TrendingUp className="w-3.5 h-3.5 text-[#00B356]" />
+                            Parte 5 • Passo 5 • Modelagem Financeira & Análise de Viabilidade (CoenergyGO Intelligence)
+                          </h4>
+                          <span className="text-[10px] text-slate-500 font-mono">
+                            Tarifa Venda: R$ 2,00/kWh • Custo Solar: R$ 0,76/kWh
+                          </span>
+                        </div>
+
+                        {/* OS 4 CARDS FUNDAMENTAIS DE VIABILIDADE FINANCEIRA (EXATOS DO PROJETO DE SETE LAGOAS) */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 text-left">
+                          <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+                            <span className="text-slate-500 block text-[9px] uppercase font-bold tracking-wider">CAPEX Total Estimado</span>
+                            <strong className="text-slate-900 text-base font-black font-mono block mt-0.5">R$ 133.844,00</strong>
+                            <span className="text-[8.5px] text-slate-500 block mt-1 leading-tight">
+                              Equipamentos: R$ 85.000 + Infra Civil/Elétrica: R$ 48.844
+                            </span>
+                          </div>
+
+                          <div className="bg-white p-3 rounded-xl border border-emerald-200 shadow-sm bg-gradient-to-b from-white to-emerald-50/30">
+                            <span className="text-emerald-700 block text-[9px] uppercase font-bold tracking-wider">Payback Descontado</span>
+                            <strong className="text-[#00B356] text-base font-black font-mono block mt-0.5">20.9 meses</strong>
+                            <span className="text-[8.5px] text-emerald-800 block mt-1 leading-tight">
+                              Com Usina Solar (vs 47.3 meses na Rede CEMIG) • Retorno 2.3x mais rápido
+                            </span>
+                          </div>
+
+                          <div className="bg-white p-3 rounded-xl border border-blue-200 shadow-sm bg-gradient-to-b from-white to-blue-50/30">
+                            <span className="text-blue-700 block text-[9px] uppercase font-bold tracking-wider">Taxa Interna Retorno (TIR)</span>
+                            <strong className="text-blue-700 text-base font-black font-mono block mt-0.5">50.5% a.a.</strong>
+                            <span className="text-[8.5px] text-blue-800 block mt-1 leading-tight">
+                              Fase Solar (vs 21.6% a.a. Rede CEMIG) • Spread +38.5% acima do CDI (12.0%)
+                            </span>
+                          </div>
+
+                          <div className="bg-white p-3 rounded-xl border border-orange-200 shadow-sm bg-gradient-to-b from-white to-orange-50/30">
+                            <span className="text-[#E45318] block text-[9px] uppercase font-bold tracking-wider">Margem Líquida</span>
+                            <strong className="text-[#E45318] text-base font-black font-mono block mt-0.5">62.1%</strong>
+                            <span className="text-[8.5px] text-orange-800 block mt-1 leading-tight">
+                              Cenário Base 4h/dia (R$ 6.395,78/mês líquido) • Venda: R$ 2,00/kWh
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Tabela Comparativa dos 3 Cenários de Recarga do Motor Financeiro CoenergyGO */}
+                        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                          <table className="w-full text-left border-collapse text-[10px]">
+                            <thead className="bg-[#0A192F] text-white text-[9px] uppercase">
+                              <tr>
+                                <th className="p-2.5">Cenário Operacional</th>
+                                <th className="p-2.5 text-center">Uso / Dia</th>
+                                <th className="p-2.5 text-right">Energia / Mês</th>
+                                <th className="p-2.5 text-right">Faturamento Bruto</th>
+                                <th className="p-2.5 text-right">Custos & O&M</th>
+                                <th className="p-2.5 text-right font-black text-emerald-400">Lucro Líq. Solar</th>
+                                <th className="p-2.5 text-center font-bold text-amber-300">Payback Solar</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-200">
+                              <tr className="bg-emerald-50/30 font-semibold">
+                                <td className="p-2.5 text-slate-900">
+                                  <span className="w-2 h-2 rounded-full bg-[#00B356] inline-block mr-1.5" />
+                                  Conservador (Base)
+                                </td>
+                                <td className="p-2.5 text-center font-mono">4 h / dia</td>
+                                <td className="p-2.5 text-right font-mono">6.480 kWh</td>
+                                <td className="p-2.5 text-right font-mono">R$ 12.960,00</td>
+                                <td className="p-2.5 text-right font-mono text-slate-500">R$ 6.564,22</td>
+                                <td className="p-2.5 text-right font-mono font-bold text-[#00B356]">R$ 6.395,78</td>
+                                <td className="p-2.5 text-center font-mono font-black text-[#00B356] bg-emerald-100">20,9 meses</td>
+                              </tr>
+                              <tr>
+                                <td className="p-2.5 font-bold text-slate-800">
+                                  <span className="w-2 h-2 rounded-full bg-blue-500 inline-block mr-1.5" />
+                                  Moderado
+                                </td>
+                                <td className="p-2.5 text-center font-mono font-bold">6 h / dia</td>
+                                <td className="p-2.5 text-right font-mono font-bold">9.720 kWh</td>
+                                <td className="p-2.5 text-right font-mono font-bold">R$ 19.440,00</td>
+                                <td className="p-2.5 text-right font-mono text-slate-500">R$ 9.648,33</td>
+                                <td className="p-2.5 text-right font-mono font-bold text-blue-700">R$ 9.791,67</td>
+                                <td className="p-2.5 text-center font-mono font-black text-slate-900 bg-blue-50">13,7 meses</td>
+                              </tr>
+                              <tr>
+                                <td className="p-2.5 font-bold text-slate-800">
+                                  <span className="w-2 h-2 rounded-full bg-orange-500 inline-block mr-1.5" />
+                                  Otimista
+                                </td>
+                                <td className="p-2.5 text-center font-mono">8 h / dia</td>
+                                <td className="p-2.5 text-right font-mono">12.960 kWh</td>
+                                <td className="p-2.5 text-right font-mono">R$ 25.920,00</td>
+                                <td className="p-2.5 text-right font-mono text-slate-500">R$ 12.732,44</td>
+                                <td className="p-2.5 text-right font-mono font-bold text-[#E45318]">R$ 13.187,56</td>
+                                <td className="p-2.5 text-center font-mono font-black text-slate-900 bg-amber-50">10,1 meses</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+
+                        {/* Indicadores ESG e Sustentabilidade */}
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-0.5">
+                          <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-center">
+                            <span className="text-[9px] uppercase font-bold text-emerald-800 block">Investimento Total Consolidado</span>
+                            <strong className="text-sm font-black text-[#00B356] font-mono">R$ 133.844,00</strong>
+                            <span className="text-[8px] text-emerald-700 block mt-0.5">Equipamentos (85k) + Infra Civil/Elétrica (48.8k)</span>
+                          </div>
+                          <div className="p-3 bg-orange-50 rounded-xl border border-orange-200 text-center">
+                            <span className="text-[9px] uppercase font-bold text-orange-800 block">Capacidade do Hub Comercial</span>
+                            <strong className="text-sm font-black text-[#E45318] font-mono">60.0 kW DC Rápido</strong>
+                            <span className="text-[8px] text-orange-700 block mt-0.5">2 Vagas Simultâneas (Dual-Gun CCS2)</span>
+                          </div>
+                          <div className="p-3 bg-blue-50 rounded-xl border border-blue-200 text-center">
+                            <span className="text-[9px] uppercase font-bold text-blue-800 block">Mitigação de CO₂ Estimada</span>
+                            <strong className="text-sm font-black text-blue-700 font-mono">~32.6 ton/ano</strong>
+                            <span className="text-[8px] text-blue-600 block mt-0.5">~0,42 kg CO₂/kWh evitado vs veículos a combustão</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    )}
 
-                    {/* 8. MODELAGEM ECONÔMICO-FINANCEIRA EM 3 CENÁRIOS OPERACIONAIS (Passo 5) */}
-                    <div className="report-card p-5 bg-slate-50 border border-slate-200 rounded-2xl space-y-3 break-inside-avoid print:break-inside-avoid mb-5">
-                      <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-                        <h4 className="font-bold text-slate-900 uppercase text-[11px] flex items-center gap-1.5">
-                          <TrendingUp className="w-3.5 h-3.5 text-[#00B356]" />
-                          Passo 5 • Modelagem Financeira & Análise de Sensibilidade (CoenergyGO Intelligence)
-                        </h4>
-                        <span className="text-[10px] text-slate-500 font-mono">
-                          Tarifa Venda: R$ 2,20/kWh • Custo Energia: R$ 0,85/kWh (Margem 61,4%)
-                        </span>
-                      </div>
+                    {/* ─── PARTE 6: CRONOGRAMA DE IMPLANTAÇÃO (12 SEMANAS) & ENCERRAMENTO (Passo 6) ─── */}
+                    {selectedParts.includes(6) && (
+                      <>
+                        {/* Card Cronograma 12 Semanas */}
+                        <div className="report-card p-5 bg-slate-50 border border-slate-200 rounded-2xl space-y-2.5 break-inside-avoid print:break-inside-avoid mb-5">
+                          <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                            <h4 className="font-bold text-slate-900 uppercase text-[11px] flex items-center gap-1.5">
+                              <Calendar className="w-3.5 h-3.5 text-slate-600" />
+                              Parte 6 • Passo 6 • Cronograma de Implantação Física & Diretrizes de Entrega (12 Semanas)
+                            </h4>
+                            <span className="text-[10px] font-bold text-slate-500">
+                              Prazo Total: <strong>90 Dias Corridos</strong>
+                            </span>
+                          </div>
 
-                      {/* Tabela Comparativa dos 3 Cenários de Recarga */}
-                      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-                        <table className="w-full text-left border-collapse text-[10px]">
-                          <thead className="bg-[#0A192F] text-white text-[9px] uppercase">
-                            <tr>
-                              <th className="p-2.5">Cenário Operacional</th>
-                              <th className="p-2.5 text-center">Uso / Dia</th>
-                              <th className="p-2.5 text-right">Energia / Mês</th>
-                              <th className="p-2.5 text-right">Faturamento Bruto</th>
-                              <th className="p-2.5 text-right">Custos Totais</th>
-                              <th className="p-2.5 text-right font-black text-emerald-400">Lucro Líquido / Mês</th>
-                              <th className="p-2.5 text-center font-bold text-amber-300">Payback</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-200">
-                            <tr>
-                              <td className="p-2.5 font-bold text-slate-800">
-                                <span className="w-2 h-2 rounded-full bg-blue-500 inline-block mr-1.5" />
-                                Conservador
-                              </td>
-                              <td className="p-2.5 text-center font-mono">4 h / dia</td>
-                              <td className="p-2.5 text-right font-mono">7.200 kWh</td>
-                              <td className="p-2.5 text-right font-mono">R$ 15.840,00</td>
-                              <td className="p-2.5 text-right font-mono text-slate-500">R$ 7.620,00</td>
-                              <td className="p-2.5 text-right font-mono font-bold text-[#00B356]">R$ 8.220,00</td>
-                              <td className="p-2.5 text-center font-mono font-black text-slate-900 bg-amber-50">13,0 meses</td>
-                            </tr>
-                            <tr className="bg-emerald-50/40">
-                              <td className="p-2.5 font-bold text-slate-900">
-                                <span className="w-2 h-2 rounded-full bg-[#00B356] inline-block mr-1.5" />
-                                Moderado (Base)
-                              </td>
-                              <td className="p-2.5 text-center font-mono font-bold">6 h / dia</td>
-                              <td className="p-2.5 text-right font-mono font-bold">10.800 kWh</td>
-                              <td className="p-2.5 text-right font-mono font-bold">R$ 23.760,00</td>
-                              <td className="p-2.5 text-right font-mono text-slate-500">R$ 10.680,00</td>
-                              <td className="p-2.5 text-right font-mono font-bold text-[#00B356]">R$ 13.080,00</td>
-                              <td className="p-2.5 text-center font-mono font-black text-[#00B356] bg-emerald-100">8,1 meses</td>
-                            </tr>
-                            <tr>
-                              <td className="p-2.5 font-bold text-slate-800">
-                                <span className="w-2 h-2 rounded-full bg-orange-500 inline-block mr-1.5" />
-                                Otimista
-                              </td>
-                              <td className="p-2.5 text-center font-mono">9 h / dia</td>
-                              <td className="p-2.5 text-right font-mono">16.200 kWh</td>
-                              <td className="p-2.5 text-right font-mono">R$ 35.640,00</td>
-                              <td className="p-2.5 text-right font-mono text-slate-500">R$ 15.270,00</td>
-                              <td className="p-2.5 text-right font-mono font-bold text-[#00B356]">R$ 20.370,00</td>
-                              <td className="p-2.5 text-center font-mono font-black text-slate-900 bg-amber-50">5,2 meses</td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
-
-                      {/* Indicadores ESG e Sustentabilidade */}
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-0.5">
-                        <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-center">
-                          <span className="text-[9px] uppercase font-bold text-emerald-800 block">Investimento Consolidado</span>
-                          <strong className="text-sm font-black text-[#00B356] font-mono">R$ 106.498,88</strong>
-                          <span className="text-[8px] text-emerald-700 block mt-0.5">Equipamentos + Obra Civil</span>
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-[10px]">
+                            <div className="p-3 bg-white border border-slate-200 rounded-xl space-y-1 relative overflow-hidden">
+                              <div className="absolute top-0 left-0 w-1.5 h-full bg-[#0A192F]" />
+                              <span className="text-[8px] font-black uppercase text-[#0A192F] block tracking-wider">Fase 1 • Semanas 1 a 4</span>
+                              <strong className="text-slate-900 block text-xs">Suprimentos & Mobilização</strong>
+                              <p className="text-slate-600 leading-snug">
+                                Aquisição da estação BENY DC 60 kW, montagem do quadro QDC-VE e entrega técnica de documentação à CEMIG.
+                              </p>
+                            </div>
+                            <div className="p-3 bg-white border border-slate-200 rounded-xl space-y-1 relative overflow-hidden">
+                              <div className="absolute top-0 left-0 w-1.5 h-full bg-[#E45318]" />
+                              <span className="text-[8px] font-black uppercase text-[#E45318] block tracking-wider">Fase 2 • Semanas 5 a 9</span>
+                              <strong className="text-slate-900 block text-xs">Obra Civil & Eletrotécnica</strong>
+                              <p className="text-slate-600 leading-snug">
+                                Concretagem da base do totem, passagem dos cabos Sintenax 35mm², fixação dos balizadores e pintura epóxi NBR 9050.
+                              </p>
+                            </div>
+                            <div className="p-3 bg-white border border-slate-200 rounded-xl space-y-1 relative overflow-hidden">
+                              <div className="absolute top-0 left-0 w-1.5 h-full bg-[#00B356]" />
+                              <span className="text-[8px] font-black uppercase text-[#00B356] block tracking-wider">Fase 3 • Semanas 10 a 12</span>
+                              <strong className="text-slate-900 block text-xs">Comissionamento & Go-Live</strong>
+                              <p className="text-slate-600 leading-snug">
+                                Ensaios NBR 17019, testes de disparo de emergência em &lt; 50ms, integração do software OCPP e inauguração comercial.
+                              </p>
+                            </div>
+                          </div>
                         </div>
-                        <div className="p-3 bg-orange-50 rounded-xl border border-orange-200 text-center">
-                          <span className="text-[9px] uppercase font-bold text-orange-800 block">Capacidade do Hub</span>
-                          <strong className="text-sm font-black text-[#E45318] font-mono">60.0 kW DC Rápido</strong>
-                          <span className="text-[8px] text-orange-700 block mt-0.5">2 Vagas Simultâneas (Dual-Gun)</span>
-                        </div>
-                        <div className="p-3 bg-blue-50 rounded-xl border border-blue-200 text-center">
-                          <span className="text-[9px] uppercase font-bold text-blue-800 block">Mitigação de CO₂ Estimada</span>
-                          <strong className="text-sm font-black text-blue-700 font-mono">~12.4 ton/ano</strong>
-                          <span className="text-[8px] text-blue-600 block mt-0.5">~0,42 kg CO₂/kWh evitado vs fóssil</span>
-                        </div>
-                      </div>
-                    </div>
 
-                    {/* 9. PLANO DE IMPLANTAÇÃO FÍSICA (CRONOGRAMA DE 12 SEMANAS) */}
-                    <div className="report-card p-5 bg-slate-50 border border-slate-200 rounded-2xl space-y-2.5 break-inside-avoid print:break-inside-avoid mb-5">
-                      <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-                        <h4 className="font-bold text-slate-900 uppercase text-[11px] flex items-center gap-1.5">
-                          <Calendar className="w-3.5 h-3.5 text-slate-600" />
-                          Passo 6 • Cronograma de Implantação Física & Diretrizes de Entrega (12 Semanas)
-                        </h4>
-                        <span className="text-[10px] font-bold text-slate-500">
-                          Prazo Total: <strong>90 Dias Corridos</strong>
-                        </span>
-                      </div>
+                        {/* Card Termo de Encerramento & Assinaturas Formais */}
+                        <div className="report-card mt-6 pt-4 border-t-2 border-slate-200 flex flex-col sm:flex-row items-end justify-between gap-6 text-xs text-slate-500 break-inside-avoid print:break-inside-avoid">
+                          <div className="text-center sm:text-left">
+                            <div className="h-9 border-b border-slate-400 w-56 mb-1" />
+                            <strong className="text-slate-900 block text-xs">{projectData.technicalResponsible || 'Bruno Cordeiro'}</strong>
+                            <span className="text-[10px] text-slate-500">Eng. Eletricista • {projectData.creaCft || 'CREA-MG 148293/D'}</span>
+                            <span className="text-[9px] text-[#E45318] font-bold block">Cordeiro Energia O&M</span>
+                          </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-[10px]">
-                        <div className="p-3 bg-white border border-slate-200 rounded-xl space-y-1 relative overflow-hidden">
-                          <div className="absolute top-0 left-0 w-1.5 h-full bg-[#0A192F]" />
-                          <span className="text-[8px] font-black uppercase text-[#0A192F] block tracking-wider">Fase 1 • Semanas 1 a 4</span>
-                          <strong className="text-slate-900 block text-xs">Suprimentos & Mobilização</strong>
-                          <p className="text-slate-600 leading-snug">
-                            Aquisição da estação BENY DC 60 kW, montagem do quadro QDC-VE e entrega técnica de documentação à CEMIG.
-                          </p>
+                          <div className="text-center sm:text-right">
+                            <div className="h-9 border-b border-slate-400 w-56 ml-auto mb-1" />
+                            <strong className="text-slate-900 block text-xs">{projectData.propertyOwner || projectData.clientName || 'Saint Clair'}</strong>
+                            <span className="text-[10px] text-slate-500">Proprietário / Cedente do Imóvel</span>
+                            <span className="text-[9px] text-[#00B356] font-bold block">Aceite Formal do Projeto Comercial</span>
+                          </div>
                         </div>
-                        <div className="p-3 bg-white border border-slate-200 rounded-xl space-y-1 relative overflow-hidden">
-                          <div className="absolute top-0 left-0 w-1.5 h-full bg-[#E45318]" />
-                          <span className="text-[8px] font-black uppercase text-[#E45318] block tracking-wider">Fase 2 • Semanas 5 a 9</span>
-                          <strong className="text-slate-900 block text-xs">Obra Civil & Eletrotécnica</strong>
-                          <p className="text-slate-600 leading-snug">
-                            Concretagem da base do totem, passagem dos cabos Sintenax 35mm², fixação dos bollards e pintura epóxi NBR 9050.
-                          </p>
-                        </div>
-                        <div className="p-3 bg-white border border-slate-200 rounded-xl space-y-1 relative overflow-hidden">
-                          <div className="absolute top-0 left-0 w-1.5 h-full bg-[#00B356]" />
-                          <span className="text-[8px] font-black uppercase text-[#00B356] block tracking-wider">Fase 3 • Semanas 10 a 12</span>
-                          <strong className="text-slate-900 block text-xs">Comissionamento & Go-Live</strong>
-                          <p className="text-slate-600 leading-snug">
-                            Ensaios NBR 17019, testes de disparo de emergência em &lt; 50ms, integração do software OCPP e inauguração comercial.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* 10. TERMO DE ENCERRAMENTO & ASSINATURAS FORMAIS */}
-                    <div className="report-card mt-6 pt-4 border-t-2 border-slate-200 flex flex-col sm:flex-row items-end justify-between gap-6 text-xs text-slate-500 break-inside-avoid print:break-inside-avoid">
-                      <div className="text-center sm:text-left">
-                        <div className="h-9 border-b border-slate-400 w-56 mb-1" />
-                        <strong className="text-slate-900 block text-xs">{projectData.technicalResponsible || 'Bruno Cordeiro'}</strong>
-                        <span className="text-[10px] text-slate-500">Eng. Eletricista • {projectData.creaCft || 'CREA-MG 102835-D'}</span>
-                        <span className="text-[9px] text-[#E45318] font-bold block">Cordeiro Energia O&M</span>
-                      </div>
-
-                      <div className="text-center sm:text-right">
-                        <div className="h-9 border-b border-slate-400 w-56 ml-auto mb-1" />
-                        <strong className="text-slate-900 block text-xs">{projectData.propertyOwner || projectData.clientName || 'Saint Clair'}</strong>
-                        <span className="text-[10px] text-slate-500">Proprietário / Cedente do Imóvel</span>
-                        <span className="text-[9px] text-[#00B356] font-bold block">Aceite Formal do Projeto Comercial</span>
-                      </div>
-                    </div>
+                      </>
+                    )}
 
                   </div>
                 )}

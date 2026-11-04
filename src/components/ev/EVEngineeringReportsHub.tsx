@@ -99,6 +99,14 @@ export function EVEngineeringReportsHub({
   projectData
 }: EVEngineeringReportsHubProps) {
   const [selectedReport, setSelectedReport] = useState<ReportType>('executivo');
+  const [selectedReportsForPrint, setSelectedReportsForPrint] = useState<ReportType[]>([
+    'executivo',
+    'memorial_descritivo',
+    'memorial_calculo',
+    'caderno_obra',
+    'comissionamento',
+    'viabilidade_negocios'
+  ]);
   const [selectedParts, setSelectedParts] = useState<number[]>([1, 2, 3, 4, 5, 6]);
 
   // Isolamento estrito de impressão A4 (evita vazamento de estilos de tela e sobreposição de páginas)
@@ -207,21 +215,28 @@ export function EVEngineeringReportsHub({
   ];
 
   const handlePrint = () => {
-    const reportElem = document.getElementById('printable-report-sheet');
     const reportTitles: Record<ReportType, string> = {
-      executivo: 'Cordeiro_Energia_Sumario_Executivo_Carregador_Sete_Lagoas_Coenergy',
-      memorial_descritivo: 'Cordeiro_Energia_Memorial_Descritivo_Carregador_Sete_Lagoas_Coenergy',
-      memorial_calculo: 'Cordeiro_Energia_Memorial_Calculo_Eletrotecnico_Carregador_Sete_Lagoas_Coenergy',
-      caderno_obra: 'Cordeiro_Energia_Caderno_Encargos_Obra_Carregador_Sete_Lagoas_Coenergy',
-      comissionamento: 'Cordeiro_Energia_Protocolo_Comissionamento_Carregador_Sete_Lagoas_Coenergy',
-      viabilidade_negocios: 'Cordeiro_Energia_Estudo_Viabilidade_Financeira_Carregador_Sete_Lagoas_Coenergy',
+      executivo: 'Cordeiro_Energia_Relatorio_Executivo_Comercial_Sete_Lagoas_Coenergy',
+      memorial_descritivo: 'Cordeiro_Energia_Memorial_Descritivo_Instalacao_Sete_Lagoas_Coenergy',
+      memorial_calculo: 'Cordeiro_Energia_Memorial_Calculo_Eletrotecnico_Sete_Lagoas_Coenergy',
+      caderno_obra: 'Cordeiro_Energia_Caderno_Obra_Instrucoes_Campo_Sete_Lagoas_Coenergy',
+      comissionamento: 'Cordeiro_Energia_Relatorio_Comissionamento_Checklist_Sete_Lagoas_Coenergy',
+      viabilidade_negocios: 'Cordeiro_Energia_Dossie_Viabilidade_Negocios_Sete_Lagoas_Coenergy',
     };
 
-    const docTitle = selectedReport === 'executivo'
-      ? (selectedParts.length === 6
-          ? 'Cordeiro_Energia_Sumario_Executivo_Completo_Sete_Lagoas_Coenergy'
-          : `Cordeiro_Energia_Sumario_Executivo_Partes_${selectedParts.join('_')}_Sete_Lagoas_Coenergy`)
-      : (reportTitles[selectedReport] || 'Cordeiro_Energia_Memorial_Calculo_Sete_Lagoas_Coenergy');
+    let docTitle = 'Cordeiro_Energia_Dossie_Tecnico_Completo_Sete_Lagoas_Coenergy';
+    if (selectedReportsForPrint.length === 6) {
+      docTitle = 'Cordeiro_Energia_Dossie_Tecnico_Completo_Sete_Lagoas_Coenergy';
+    } else if (selectedReportsForPrint.length === 1) {
+      docTitle = reportTitles[selectedReportsForPrint[0]] || 'Cordeiro_Energia_Relatorio_Tecnico_Sete_Lagoas_Coenergy';
+    } else if (selectedReportsForPrint.length > 1) {
+      docTitle = `Cordeiro_Energia_Relatorios_Selecionados_${selectedReportsForPrint.length}_Docs_Sete_Lagoas_Coenergy`;
+    }
+
+    const multiElem = document.getElementById('all-printable-reports-container');
+    const singleElem = document.getElementById('printable-report-sheet');
+    const isMulti = selectedReportsForPrint.length > 1 || (selectedReportsForPrint.length === 1 && selectedReportsForPrint[0] !== selectedReport);
+    const reportElem = isMulti ? (multiElem || singleElem) : singleElem;
 
     if (!reportElem) {
       const originalTitle = document.title;
@@ -232,7 +247,6 @@ export function EVEngineeringReportsHub({
     }
 
     try {
-      // Cria um iframe invisível isolado estritamente para impressão sem interferência do DOM pai (livre de flex e fixed)
       const existingFrame = document.getElementById('report-print-frame');
       if (existingFrame) {
         existingFrame.remove();
@@ -255,7 +269,6 @@ export function EVEngineeringReportsHub({
         return;
       }
 
-      // Copia todas as folhas de estilo e links CSS ativos na página
       let stylesMarkup = '';
       const styleNodes = document.querySelectorAll('link[rel="stylesheet"], style');
       styleNodes.forEach((node) => {
@@ -285,7 +298,7 @@ export function EVEngineeringReportsHub({
             overflow: visible !important;
             width: 100% !important;
           }
-          #printable-report-sheet {
+          #printable-report-sheet, #all-printable-reports-container {
             width: 100% !important;
             max-width: 100% !important;
             margin: 0 !important;
@@ -296,6 +309,16 @@ export function EVEngineeringReportsHub({
             min-height: 0 !important;
             height: auto !important;
             overflow: visible !important;
+          }
+          .single-report-wrapper {
+            page-break-after: always !important;
+            break-after: page !important;
+            display: block !important;
+            margin-bottom: 25px !important;
+          }
+          .single-report-wrapper:last-child {
+            page-break-after: auto !important;
+            break-after: auto !important;
           }
           .report-card, .print-card, [class*="report-card"] {
             break-inside: avoid-page !important;
@@ -375,175 +398,9 @@ export function EVEngineeringReportsHub({
     }
   };
 
-  return (
-    <div id="coenergygo-reports-hub-modal" className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-2 sm:p-4 transition-all print:static print:bg-white print:p-0 print:m-0 print:block print:overflow-visible print:inset-auto">
-      <div className="w-full max-w-6xl bg-white text-slate-800 rounded-3xl shadow-2xl flex flex-col max-h-[95vh] overflow-hidden border border-slate-200 print:max-w-none print:w-full print:rounded-none print:shadow-none print:border-none print:max-h-none print:overflow-visible print:block print:p-0 print:m-0">
-        
-        {/* ─── TOPO DE AÇÕES & IDENTIDADE VISUAL CORDEIRO ENERGIA ─── */}
-        <div id="coenergygo-reports-header" className="bg-[#0A192F] text-white p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 print:hidden">
-          <div className="flex items-center gap-3">
-            <div className="bg-white p-1.5 rounded-xl">
-              <img src="/logo.png" alt="Cordeiro Energia" className="h-7 object-contain" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-black uppercase text-[#E45318] tracking-widest bg-[#E45318]/20 px-2 py-0.5 rounded-full">
-                  Suíte de Engenharia CoenergyGO
-                </span>
-                <span className="text-xs text-slate-400 font-mono">Pilar 4 • NBR 17019 / NBR 5410</span>
-              </div>
-              <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2 mt-0.5">
-                Central de Emissão de Relatórios Técnicos Oficiais
-              </h2>
-            </div>
-          </div>
+  const renderReportDocument = (repId: ReportType) => (
+    <div key={repId} className="single-report-wrapper w-full flex flex-col justify-between font-['Montserrat',sans-serif]">
 
-          <div className="flex items-center gap-2.5">
-            <button
-              type="button"
-              onClick={handlePrint}
-              disabled={selectedReport === 'executivo' && selectedParts.length === 0}
-              className="bg-[#E45318] hover:bg-[#c24210] disabled:opacity-40 disabled:cursor-not-allowed text-white px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-lg shadow-[#E45318]/30 cursor-pointer"
-            >
-              <Printer className="w-4 h-4" />
-              <span>
-                {selectedReport === 'executivo'
-                  ? (selectedParts.length === 6 ? 'Imprimir Documento Completo' : `Imprimir (${selectedParts.length} Partes)`)
-                  : 'Imprimir / Gerar PDF'}
-              </span>
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 rounded-xl transition-all cursor-pointer"
-              title="Fechar"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-
-        {/* ─── FORMULÁRIO DE SELEÇÃO DE PARTES DO RELATÓRIO EXECUTIVO (1 A 6) ─── */}
-        {selectedReport === 'executivo' && (
-          <div className="bg-slate-900 text-white px-4 py-3 border-b border-slate-800 print:hidden">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2.5 border-b border-slate-800/80">
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-black uppercase text-[#00B356] bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
-                  Formulário de Seleção de Partes para Impressão
-                </span>
-                <span className="text-xs text-slate-300 font-semibold">
-                  {selectedParts.length === 6 ? '✓ Documento Inteiro Selecionado (6 de 6 partes)' : `${selectedParts.length} de 6 partes selecionadas`}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setSelectedParts(selectedParts.length === 6 ? [] : [1, 2, 3, 4, 5, 6])}
-                  className="text-[11px] font-bold text-slate-300 hover:text-white px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 transition-colors border border-slate-700 cursor-pointer"
-                >
-                  {selectedParts.length === 6 ? 'Desmarcar Todas' : 'Selecionar Documento Inteiro'}
-                </button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 pt-2.5 text-[11px]">
-              {[
-                { id: 1, label: 'Parte 1: Sumário Executivo & Ativo', desc: 'Passo 1A • Localização, Galeria 24h & Conveniência' },
-                { id: 2, label: 'Parte 2: Demografia IBGE & Concorrência DC', desc: 'Passo 1B • Score 66,5/100 & Varredura 5 km' },
-                { id: 3, label: 'Parte 3: Engenharia Elétrica CEMIG & Normas', desc: 'Passo 2A/2B • Padrão C6 200A & ABNT NBR 17019' },
-                { id: 4, label: 'Parte 4: Carregador BENY & CAPEX R$ 133.844', desc: 'Passo 3/4B • BENY 60 kW SiC Dual-Gun & Orçamento' },
-                { id: 5, label: 'Parte 5: Modelagem Financeira CoenergyGO', desc: 'Passo 5 • Payback 20,9m Solar / 47,3m Rede & TIR 50,5%' },
-                { id: 6, label: 'Parte 6: Cronograma & Termo de Encerramento', desc: 'Passo 6 • 12 Semanas & Assinaturas Formais' }
-              ].map((p) => {
-                const isChecked = selectedParts.includes(p.id);
-                return (
-                  <label
-                    key={p.id}
-                    className={`flex items-start gap-2.5 p-2 rounded-xl border cursor-pointer transition-all ${
-                      isChecked
-                        ? 'bg-slate-800/95 border-[#E45318]/60 text-white shadow-sm ring-1 ring-[#E45318]/30'
-                        : 'bg-slate-950/40 border-slate-800 text-slate-400 hover:border-slate-700'
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={isChecked}
-                      onChange={() => {
-                        if (isChecked) {
-                          setSelectedParts(selectedParts.filter(x => x !== p.id));
-                        } else {
-                          setSelectedParts([...selectedParts, p.id].sort((a, b) => a - b));
-                        }
-                      }}
-                      className="mt-0.5 rounded text-[#E45318] focus:ring-[#E45318] bg-slate-800 border-slate-700 accent-[#E45318] cursor-pointer"
-                    />
-                    <div className="flex-1 leading-tight">
-                      <strong className={`block text-[11px] ${isChecked ? 'text-white' : 'text-slate-300'}`}>{p.label}</strong>
-                      <span className="text-[9.5px] text-slate-400 block mt-0.5">{p.desc}</span>
-                    </div>
-                  </label>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* ─── CORPO: SELETOR DE RELATÓRIO + PAINEL DE VISUALIZAÇÃO A4 ─── */}
-        <div className="flex flex-col md:flex-row flex-1 overflow-hidden print:block print:overflow-visible print:w-full print:p-0 print:m-0">
-          
-          {/* Menu Lateral de Seleção dos 5 Relatórios */}
-          <div id="coenergygo-reports-sidebar" className="w-full md:w-80 bg-slate-50 border-r border-slate-200 p-4 overflow-y-auto space-y-2 print:hidden">
-            <div className="text-[11px] font-black uppercase tracking-wider text-slate-400 mb-3 px-1">
-              Selecione o Relatório Desejado:
-            </div>
-            {reportsNav.map((rep) => {
-              const Icon = rep.icon;
-              const isSelected = selectedReport === rep.id;
-              return (
-                <button
-                  key={rep.id}
-                  type="button"
-                  onClick={() => setSelectedReport(rep.id)}
-                  className={`w-full text-left p-3.5 rounded-2xl transition-all cursor-pointer border flex flex-col gap-1.5 ${
-                    isSelected
-                      ? 'bg-[#0A192F] text-white border-[#0A192F] shadow-md scale-[1.01]'
-                      : 'bg-white text-slate-700 border-slate-200 hover:border-[#E45318]/50 hover:bg-slate-100/60'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Icon className={`w-4 h-4 ${isSelected ? 'text-[#E45318]' : 'text-slate-500'}`} />
-                      <span className="text-xs font-bold">{rep.title}</span>
-                    </div>
-                    <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${
-                      isSelected ? 'bg-white/10 text-emerald-400' : 'bg-slate-100 text-slate-500'
-                    }`}>
-                      {rep.tag}
-                    </span>
-                  </div>
-                  <p className={`text-[11px] leading-relaxed pl-6 ${isSelected ? 'text-slate-300' : 'text-slate-500'}`}>
-                    {rep.subtitle}
-                  </p>
-                </button>
-              );
-            })}
-
-            {/* Banner de Links Úteis da Cordeiro Energia */}
-            <div className="mt-6 p-3.5 bg-emerald-50 rounded-2xl border border-emerald-200 text-emerald-950 text-xs space-y-1.5">
-              <span className="font-bold text-[10px] uppercase text-[#00B356] block">Atendimento & Engenharia</span>
-              <p className="text-[11px] leading-snug">
-                Projetos e laudos emitidos com responsabilidade técnica e conformidade integral Cemig e ABNT.
-              </p>
-              <div className="pt-1 flex items-center justify-between text-[10px] font-bold text-emerald-800">
-                <span>cordeiroenergia.com.br</span>
-                <span>@cordeiroenergia</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Área de Visualização do Documento (Simulação A4 Limpa e Pronta para Impressão) */}
-          <div className="flex-1 bg-slate-200 p-4 sm:p-6 overflow-y-auto print:p-0 print:m-0 print:bg-white print:block print:overflow-visible print:w-full">
-            <div id="printable-report-sheet" className="max-w-[210mm] mx-auto bg-white p-8 sm:p-12 shadow-xl print:shadow-none border border-slate-200 print:border-none min-h-[297mm] flex flex-col justify-between font-['Montserrat',sans-serif] print:p-0 print:m-0 print:border-none print:shadow-none print:block print:min-h-0 print:h-auto print:max-w-none print:w-full print:overflow-visible">
               
               {/* CABEÇALHO DO LAUDO (IDENTIDADE CORDEIRO ENERGIA) */}
               <div>
@@ -555,7 +412,7 @@ export function EVEngineeringReportsHub({
                       </span>
                     </div>
                     <h1 className="text-xl sm:text-2xl font-black text-[#0A192F] uppercase tracking-tight">
-                      {reportsNav.find(r => r.id === selectedReport)?.title}
+                      {reportsNav.find(r => r.id === repId)?.title}
                     </h1>
                     <p className="text-xs text-slate-500 font-medium mt-0.5">
                       Projeto: <strong>{projectData.projectName}</strong> • Cliente: <strong>{projectData.clientName}</strong>
@@ -600,7 +457,7 @@ export function EVEngineeringReportsHub({
                 {/* CONTEÚDO ESPECÍFICO DE CADA UM DOS 5 RELATÓRIOS */}
                 
                 {/* 1. RELATÓRIO EXECUTIVO — PLANO INTEGRAL DE ENGENHARIA & NEGÓCIOS (6 PARTES OFICIAIS) */}
-                {selectedReport === 'executivo' && (
+                {repId === 'executivo' && (
                   <div className="text-xs text-slate-700">
                     
                     {/* AVISO QUANDO NENHUMA PARTE ESTIVER SELECIONADA */}
@@ -1256,7 +1113,7 @@ export function EVEngineeringReportsHub({
                 )}
 
                 {/* 2. MEMORIAL DESCRITIVO */}
-                {selectedReport === 'memorial_descritivo' && (
+                {repId === 'memorial_descritivo' && (
                   <div className="space-y-4 text-xs text-slate-700 leading-relaxed">
                     <div className="space-y-2">
                       <h3 className="font-bold text-slate-900 uppercase text-xs border-b pb-1">1. Objetivo e Escopo</h3>
@@ -1330,7 +1187,7 @@ export function EVEngineeringReportsHub({
                 )}
 
                 {/* 3. MEMORIAL DE CÁLCULO ELETROTÉCNICO */}
-                {selectedReport === 'memorial_calculo' && (
+                {repId === 'memorial_calculo' && (
                   <div className="space-y-4 text-xs text-slate-700">
                     <div>
                       <h3 className="font-bold text-slate-900 uppercase text-xs border-b pb-1 mb-2">1. Critérios de Dimensionamento Passo a Passo</h3>
@@ -1458,7 +1315,7 @@ export function EVEngineeringReportsHub({
                 )}
 
                 {/* 4. CADERNO DE OBRA & EXECUÇÃO */}
-                {selectedReport === 'caderno_obra' && (
+                {repId === 'caderno_obra' && (
                   <div className="space-y-4 text-xs text-slate-700">
                     <div>
                       <h3 className="font-bold text-slate-900 uppercase text-xs border-b pb-1 mb-2">Instruções de Campo para Eletricistas e Montadores</h3>
@@ -1528,7 +1385,7 @@ export function EVEngineeringReportsHub({
                 )}
 
                 {/* 5. COMISSIONAMENTO E CHECKLIST */}
-                {selectedReport === 'comissionamento' && (
+                {repId === 'comissionamento' && (
                   <div className="space-y-4 text-xs text-slate-700">
                     <div>
                       <h3 className="font-bold text-slate-900 uppercase text-xs border-b pb-1 mb-2">Checklist Pré-Energização e Testes de Aceite</h3>
@@ -1608,7 +1465,7 @@ export function EVEngineeringReportsHub({
                 )}
 
                 {/* 6. DOSSIÊ DE VIABILIDADE TÉCNICA, ECONÔMICO-FINANCEIRA & NEGÓCIOS (5 CAPÍTULOS OFICIAIS CoenergyGO) */}
-                {selectedReport === 'viabilidade_negocios' && (
+                {repId === 'viabilidade_negocios' && (
                   <div className="space-y-6 text-xs text-slate-700">
                     
                     {/* ══════════════════════════════════════════════════════════════════
@@ -2279,7 +2136,7 @@ export function EVEngineeringReportsHub({
               </div>
 
               {/* RODAPÉ E ASSINATURAS DO ENGENHEIRO E CLIENTE (Apenas para memoriais que não possuem assinaturas internas) */}
-              {selectedReport !== 'executivo' && (
+              {repId !== 'executivo' && (
                 <div className="mt-12 pt-6 border-t-2 border-slate-100 flex flex-col sm:flex-row items-end justify-between gap-6 text-xs text-slate-500 break-inside-avoid print:break-inside-avoid">
                 <div className="text-center sm:text-left">
                   <div className="h-10 border-b border-slate-300 w-52 mb-1" />
@@ -2295,6 +2152,210 @@ export function EVEngineeringReportsHub({
               </div>
               )}
 
+
+    </div>
+  );
+
+  return (
+    <div id="coenergygo-reports-hub-modal" className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-2 sm:p-4 transition-all print:static print:bg-white print:p-0 print:m-0 print:block print:overflow-visible print:inset-auto">
+      <div className="w-full max-w-6xl bg-white text-slate-800 rounded-3xl shadow-2xl flex flex-col max-h-[95vh] overflow-hidden border border-slate-200 print:max-w-none print:w-full print:rounded-none print:shadow-none print:border-none print:max-h-none print:overflow-visible print:block print:p-0 print:m-0">
+        
+        {/* ─── TOPO DE AÇÕES & IDENTIDADE VISUAL CORDEIRO ENERGIA ─── */}
+        <div id="coenergygo-reports-header" className="bg-[#0A192F] text-white p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 print:hidden">
+          <div className="flex items-center gap-3">
+            <div className="bg-white p-1.5 rounded-xl">
+              <img src="/logo.png" alt="Cordeiro Energia" className="h-7 object-contain" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black uppercase text-[#E45318] tracking-widest bg-[#E45318]/20 px-2 py-0.5 rounded-full">
+                  Suíte de Engenharia CoenergyGO
+                </span>
+                <span className="text-xs text-slate-400 font-mono">Pilar 4 • NBR 17019 / NBR 5410</span>
+              </div>
+              <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2 mt-0.5">
+                Central de Emissão de Relatórios Técnicos Oficiais
+              </h2>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2.5">
+            <button
+              type="button"
+              onClick={handlePrint}
+              disabled={selectedReportsForPrint.length === 0}
+              className="bg-[#E45318] hover:bg-[#c24210] disabled:opacity-40 disabled:cursor-not-allowed text-white px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-lg shadow-[#E45318]/30 cursor-pointer"
+            >
+              <Printer className="w-4 h-4" />
+              <span>
+                {selectedReportsForPrint.length === 6
+                  ? 'Imprimir Dossiê Completo (6 Relatórios)'
+                  : selectedReportsForPrint.length === 1
+                    ? 'Imprimir 1 Relatório Selecionado'
+                    : `Imprimir (${selectedReportsForPrint.length} Relatórios Selecionados)`}
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 rounded-xl transition-all cursor-pointer"
+              title="Fechar"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* ─── FORMULÁRIO DE SELEÇÃO DOS 6 RELATÓRIOS OFICIAIS (INDIVIDUAL OU AGRUPADO) ─── */}
+        <div className="bg-slate-900 text-white px-4 py-3 border-b border-slate-800 print:hidden">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2.5 border-b border-slate-800/80">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[10px] font-black uppercase text-[#00B356] bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
+                Seleção de Relatórios Oficiais (1 a 6) para Impressão / PDF
+              </span>
+              <span className="text-xs text-slate-300 font-semibold">
+                {selectedReportsForPrint.length === 6
+                  ? '✓ Dossiê Completo Selecionado (6 de 6 Relatórios)'
+                  : `${selectedReportsForPrint.length} de 6 relatórios selecionados`}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  const allReports: ReportType[] = ['executivo', 'memorial_descritivo', 'memorial_calculo', 'caderno_obra', 'comissionamento', 'viabilidade_negocios'];
+                  setSelectedReportsForPrint(selectedReportsForPrint.length === 6 ? [] : allReports);
+                }}
+                className="text-[11px] font-bold text-slate-300 hover:text-white px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 transition-colors border border-slate-700 cursor-pointer"
+              >
+                {selectedReportsForPrint.length === 6 ? 'Desmarcar Todos' : 'Selecionar Todos (6 Documentos)'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedReportsForPrint([selectedReport])}
+                className="text-[11px] font-bold text-slate-300 hover:text-white px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 transition-colors border border-slate-700 cursor-pointer"
+                title="Imprimir apenas o documento atualmente aberto na tela"
+              >
+                Apenas o Atual
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 pt-2.5 text-[11px]">
+            {reportsNav.map((rep) => {
+              const isChecked = selectedReportsForPrint.includes(rep.id);
+              const isViewing = selectedReport === rep.id;
+              return (
+                <div
+                  key={rep.id}
+                  className={`flex items-start justify-between gap-2 p-2 rounded-xl border transition-all ${
+                    isChecked
+                      ? 'bg-slate-800/95 border-[#E45318]/60 text-white shadow-sm ring-1 ring-[#E45318]/30'
+                      : 'bg-slate-950/40 border-slate-800 text-slate-400 hover:border-slate-700'
+                  }`}
+                >
+                  <label className="flex items-start gap-2.5 cursor-pointer flex-1">
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={() => {
+                        const order: ReportType[] = ['executivo', 'memorial_descritivo', 'memorial_calculo', 'caderno_obra', 'comissionamento', 'viabilidade_negocios'];
+                        if (isChecked) {
+                          setSelectedReportsForPrint(selectedReportsForPrint.filter(x => x !== rep.id));
+                        } else {
+                          setSelectedReportsForPrint([...selectedReportsForPrint, rep.id].sort((a, b) => order.indexOf(a) - order.indexOf(b)));
+                        }
+                      }}
+                      className="mt-0.5 rounded text-[#E45318] focus:ring-[#E45318] bg-slate-800 border-slate-700 accent-[#E45318] cursor-pointer"
+                    />
+                    <div className="flex-1 leading-tight">
+                      <strong className={`block text-[11px] ${isChecked ? 'text-white' : 'text-slate-300'}`}>{rep.title}</strong>
+                      <span className="text-[9.5px] text-slate-400 block mt-0.5">{rep.subtitle}</span>
+                    </div>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedReport(rep.id)}
+                    className={`text-[9px] px-2 py-0.5 rounded font-bold transition-all shrink-0 cursor-pointer ${
+                      isViewing
+                        ? 'bg-[#00B356] text-white shadow-sm'
+                        : 'bg-slate-700 hover:bg-slate-600 text-slate-200'
+                    }`}
+                  >
+                    {isViewing ? 'Na Tela' : 'Visualizar'}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* ─── CORPO: SELETOR DE RELATÓRIO + PAINEL DE VISUALIZAÇÃO A4 ─── */}
+        <div className="flex flex-col md:flex-row flex-1 overflow-hidden print:block print:overflow-visible print:w-full print:p-0 print:m-0">
+          
+          {/* Menu Lateral de Seleção dos 5 Relatórios */}
+          <div id="coenergygo-reports-sidebar" className="w-full md:w-80 bg-slate-50 border-r border-slate-200 p-4 overflow-y-auto space-y-2 print:hidden">
+            <div className="text-[11px] font-black uppercase tracking-wider text-slate-400 mb-3 px-1">
+              Selecione o Relatório Desejado:
+            </div>
+            {reportsNav.map((rep) => {
+              const Icon = rep.icon;
+              const isSelected = selectedReport === rep.id;
+              return (
+                <button
+                  key={rep.id}
+                  type="button"
+                  onClick={() => setSelectedReport(rep.id)}
+                  className={`w-full text-left p-3.5 rounded-2xl transition-all cursor-pointer border flex flex-col gap-1.5 ${
+                    isSelected
+                      ? 'bg-[#0A192F] text-white border-[#0A192F] shadow-md scale-[1.01]'
+                      : 'bg-white text-slate-700 border-slate-200 hover:border-[#E45318]/50 hover:bg-slate-100/60'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Icon className={`w-4 h-4 ${isSelected ? 'text-[#E45318]' : 'text-slate-500'}`} />
+                      <span className="text-xs font-bold">{rep.title}</span>
+                    </div>
+                    <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${
+                      isSelected ? 'bg-white/10 text-emerald-400' : 'bg-slate-100 text-slate-500'
+                    }`}>
+                      {rep.tag}
+                    </span>
+                  </div>
+                  <p className={`text-[11px] leading-relaxed pl-6 ${isSelected ? 'text-slate-300' : 'text-slate-500'}`}>
+                    {rep.subtitle}
+                  </p>
+                </button>
+              );
+            })}
+
+            {/* Banner de Links Úteis da Cordeiro Energia */}
+            <div className="mt-6 p-3.5 bg-emerald-50 rounded-2xl border border-emerald-200 text-emerald-950 text-xs space-y-1.5">
+              <span className="font-bold text-[10px] uppercase text-[#00B356] block">Atendimento & Engenharia</span>
+              <p className="text-[11px] leading-snug">
+                Projetos e laudos emitidos com responsabilidade técnica e conformidade integral Cemig e ABNT.
+              </p>
+              <div className="pt-1 flex items-center justify-between text-[10px] font-bold text-emerald-800">
+                <span>cordeiroenergia.com.br</span>
+                <span>@cordeiroenergia</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Área de Visualização do Documento (Simulação A4 Limpa e Pronta para Impressão) */}
+          <div className="flex-1 bg-slate-200 p-4 sm:p-6 overflow-y-auto print:p-0 print:m-0 print:bg-white print:block print:overflow-visible print:w-full">
+            <div id="printable-report-sheet" className="max-w-[210mm] mx-auto bg-white p-8 sm:p-12 shadow-xl print:shadow-none border border-slate-200 print:border-none min-h-[297mm] flex flex-col justify-between font-['Montserrat',sans-serif] print:p-0 print:m-0 print:border-none print:shadow-none print:block print:min-h-0 print:h-auto print:max-w-none print:w-full print:overflow-visible">
+              {renderReportDocument(selectedReport)}
+            </div>
+
+            {/* Container Oculto para Impressão Multi-Documento (Dossiê Consolidado) */}
+            <div id="all-printable-reports-container" className="hidden" aria-hidden="true">
+              {selectedReportsForPrint.map((repId) => (
+                <div key={repId} className="single-report-wrapper mb-8">
+                  {renderReportDocument(repId)}
+                </div>
+              ))}
             </div>
           </div>
 

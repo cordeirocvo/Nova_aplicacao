@@ -152,6 +152,20 @@ body:has([data-tv="true"]),
     break-inside: auto !important;
   }
 
+  /* Regras de quebra forçada física de páginas A4 do relatório */
+  .report-page-break,
+  .print-page-break,
+  .page-break-after,
+  .print\:break-after-page {
+    page-break-after: always !important;
+    break-after: page !important;
+    display: block !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+  }
+
   /* Regras de quebra de página inteligente para blocos de relatório */
   .report-break-avoid,
   .print-break-avoid,

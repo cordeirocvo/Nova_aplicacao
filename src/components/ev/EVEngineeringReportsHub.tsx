@@ -206,7 +206,7 @@ export function EVEngineeringReportsHub({
   ];
 
   const handlePrint = () => {
-    const originalTitle = document.title;
+    const reportElem = document.getElementById('printable-report-sheet');
     const reportTitles: Record<ReportType, string> = {
       executivo: 'Cordeiro_Energia_Sumario_Executivo_Carregador_Sete_Lagoas_Coenergy',
       memorial_descritivo: 'Cordeiro_Energia_Memorial_Descritivo_Carregador_Sete_Lagoas_Coenergy',
@@ -216,17 +216,158 @@ export function EVEngineeringReportsHub({
       viabilidade_negocios: 'Cordeiro_Energia_Estudo_Viabilidade_Financeira_Carregador_Sete_Lagoas_Coenergy',
     };
 
-    const newTitle = reportTitles[selectedReport] || 'Cordeiro_Energia_Memorial_Calculo_Sete_Lagoas_Coenergy';
-    document.title = newTitle;
+    const docTitle = reportTitles[selectedReport] || 'Cordeiro_Energia_Memorial_Calculo_Sete_Lagoas_Coenergy';
 
-    const cleanup = () => {
-      document.title = originalTitle;
-      window.removeEventListener('afterprint', cleanup);
-    };
+    if (!reportElem) {
+      const originalTitle = document.title;
+      document.title = docTitle;
+      window.print();
+      setTimeout(() => { document.title = originalTitle; }, 2000);
+      return;
+    }
 
-    window.addEventListener('afterprint', cleanup);
-    window.print();
-    setTimeout(cleanup, 2000);
+    try {
+      // Cria um iframe invisível isolado estritamente para impressão sem interferência do DOM pai (livre de flex e fixed)
+      const existingFrame = document.getElementById('report-print-frame');
+      if (existingFrame) {
+        existingFrame.remove();
+      }
+
+      const iframe = document.createElement('iframe');
+      iframe.id = 'report-print-frame';
+      iframe.style.position = 'fixed';
+      iframe.style.right = '0';
+      iframe.style.bottom = '0';
+      iframe.style.width = '0';
+      iframe.style.height = '0';
+      iframe.style.border = '0';
+      iframe.style.visibility = 'hidden';
+      document.body.appendChild(iframe);
+
+      const frameDoc = iframe.contentWindow?.document;
+      if (!frameDoc || !iframe.contentWindow) {
+        window.print();
+        return;
+      }
+
+      // Copia todas as folhas de estilo e links CSS ativos na página
+      let stylesMarkup = '';
+      const styleNodes = document.querySelectorAll('link[rel="stylesheet"], style');
+      styleNodes.forEach((node) => {
+        stylesMarkup += node.outerHTML + '\n';
+      });
+
+      const printCustomStyles = `
+        <style>
+          @page {
+            size: A4 portrait;
+            margin: 10mm 12mm;
+          }
+          * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            box-sizing: border-box;
+          }
+          html, body {
+            background-color: #ffffff !important;
+            background: #ffffff !important;
+            color: #0f172a !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            font-family: 'Montserrat', sans-serif !important;
+            font-size: 11px;
+            line-height: 1.5;
+            overflow: visible !important;
+            width: 100% !important;
+          }
+          #printable-report-sheet {
+            width: 100% !important;
+            max-width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: none !important;
+            box-shadow: none !important;
+            display: block !important;
+            min-height: 0 !important;
+            height: auto !important;
+            overflow: visible !important;
+          }
+          .report-card, .print-card, [class*="report-card"] {
+            break-inside: avoid-page !important;
+            page-break-inside: avoid !important;
+            display: block !important;
+            overflow: visible !important;
+            margin-bottom: 20px !important;
+          }
+          table {
+            border-collapse: collapse !important;
+            width: 100% !important;
+            margin-top: 8px !important;
+            margin-bottom: 8px !important;
+          }
+          tr, thead, tbody, th, td {
+            break-inside: avoid-page !important;
+            page-break-inside: avoid !important;
+          }
+          p {
+            text-align: justify !important;
+            text-justify: inter-word !important;
+          }
+          .no-print, button, .print\\:hidden {
+            display: none !important;
+          }
+        </style>
+      `;
+
+      frameDoc.open();
+      frameDoc.write(`
+        <!DOCTYPE html>
+        <html lang="pt-BR">
+          <head>
+            <meta charset="utf-8" />
+            <title>${docTitle}</title>
+            <link rel="preconnect" href="https://fonts.googleapis.com">
+            <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+            <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400&display=swap" rel="stylesheet">
+            ${stylesMarkup}
+            ${printCustomStyles}
+          </head>
+          <body>
+            <div id="printable-report-sheet">
+              ${reportElem.innerHTML}
+            </div>
+          </body>
+        </html>
+      `);
+      frameDoc.close();
+
+      const originalDocTitle = document.title;
+      document.title = docTitle;
+
+      setTimeout(() => {
+        try {
+          iframe.contentWindow?.focus();
+          iframe.contentWindow?.print();
+        } catch (printErr) {
+          console.warn('Erro ao disparar print no iframe, fallback para window.print:', printErr);
+          window.print();
+        } finally {
+          document.title = originalDocTitle;
+          setTimeout(() => {
+            if (document.body.contains(iframe)) {
+              document.body.removeChild(iframe);
+            }
+          }, 4000);
+        }
+      }, 500);
+
+    } catch (err) {
+      console.error('Erro na preparação da impressão isolada:', err);
+      const originalDocTitle = document.title;
+      document.title = docTitle;
+      window.print();
+      setTimeout(() => { document.title = originalDocTitle; }, 2000);
+    }
   };
 
   return (

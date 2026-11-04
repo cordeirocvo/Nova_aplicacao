@@ -75,7 +75,7 @@ body:has([data-tv="true"]),
     display: none !important;
   }
 
-  /* Quando o modal de relatórios estiver ativo, oculta todo o dashboard de fundo */
+  /* Quando o modal de relatórios estiver ativo, oculta todo o dashboard de fundo e reseta ancestrais flex */
   body:has(#coenergygo-reports-hub-modal) #coenergygo-dashboard-content,
   body.printing-ev-report #coenergygo-dashboard-content,
   body:has(#coenergygo-reports-hub-modal) header,
@@ -85,6 +85,14 @@ body:has([data-tv="true"]),
   body:has(#coenergygo-reports-hub-modal) aside,
   body.printing-ev-report aside {
     display: none !important;
+  }
+
+  body:has(#coenergygo-reports-hub-modal) div:not(#printable-report-sheet *),
+  body:has(#coenergygo-reports-hub-modal) main {
+    overflow: visible !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
   }
 
   /* Modal de relatórios em fluxo normal estático (sem fixed, sem repetição de páginas) */

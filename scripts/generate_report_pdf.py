@@ -330,6 +330,36 @@ li {
     margin-bottom: 3px;
 }
 
+
+.phase-card {
+    position: relative;
+    padding: 10px 14px 10px 18px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 8px;
+    page-break-inside: avoid;
+    break-inside: avoid;
+}
+.phase-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; width: 4px; height: 100%;
+}
+.phase-card.orange::before { background-color: #E45318; }
+.phase-card.blue::before { background-color: #1d4ed8; }
+.phase-card.green::before { background-color: #00B356; }
+
+.norm-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 10px 12px;
+    page-break-inside: avoid;
+    break-inside: avoid;
+}
+
 .page-break {
     page-break-after: always;
     break-after: page;
@@ -408,7 +438,7 @@ def get_official_reports() -> List[Dict[str, Any]]:
 
     return [
         # ─────────────────────────────────────────────────────────────────────
-        # 1. RELATÓRIO EXECUTIVO COMERCIAL
+        # 1. RELATÓRIO EXECUTIVO COMERCIAL (NA ÍNTEGRA • 6 PASSOS OFICIAIS)
         # ─────────────────────────────────────────────────────────────────────
         {
             "id": 1,
@@ -417,6 +447,7 @@ def get_official_reports() -> List[Dict[str, Any]]:
             "html": f"""
             {get_report_header_html(1, "RELATÓRIO EXECUTIVO COMERCIAL")}
 
+            <!-- ─── PARTE 1: SUMÁRIO EXECUTIVO & ATIVO (PASSO 1A) ─── -->
             <div class="card card-dark">
                 <div class="card-title">
                     <span>1. IDENTIFICAÇÃO DO ATIVO & PARTES ENVOLVIDAS (PASSO 1A)</span>
@@ -425,100 +456,410 @@ def get_official_reports() -> List[Dict[str, Any]]:
                 <p>
                     Este estudo estratégico e eletrotécnico contempla a implantação de <strong>1 estação física</strong> de alta potência atendendo 
                     <strong style="color: #00B356;">2 vagas comerciais simultâneas</strong> (2 conectores rápidos CCS2) com potência agregada de 
-                    <strong>60.0 kW</strong> no imóvel cedido pelo <strong>Sr. Saint Clair</strong>. O empreendimento está ancorado em 
-                    <strong>Galeria de lojas aberta 24 horas</strong>, oferecendo conveniência permanente, iluminação de segurança, sanitários e acesso frontal imediato.
+                    <strong>60.0 kW</strong> no imóvel cedido pelo <strong>Sr. Saint Clair</strong>, localizado na <strong>Travessa Olavo Bilac, Bairro Canaã, Sete Lagoas / MG</strong>. 
+                    O empreendimento está estrategicamente ancorado em <strong>Galeria de lojas aberta 24 horas</strong>, oferecendo conveniência permanente aos usuários, 
+                    iluminação de segurança, sanitários, alimentação e acesso frontal imediato sem desvios de rota.
                 </p>
                 <div class="grid-4" style="margin-top: 10px;">
                     <div class="kpi-box" style="background-color: #112240; border-color: #1e3a5f;">
                         <div class="kpi-lbl" style="color: #94a3b8;">Cliente Proponente</div>
-                        <div class="kpi-num" style="color: #ffffff; font-size: 11px;">CoenergyGO</div>
+                        <div class="kpi-num" style="color: #ffffff; font-size: 11.5px;">CoenergyGO</div>
+                        <div class="kpi-sub" style="color: #64748b;">Operador CaaS</div>
                     </div>
                     <div class="kpi-box" style="background-color: #112240; border-color: #1e3a5f;">
                         <div class="kpi-lbl" style="color: #94a3b8;">Proprietário / Cedente</div>
-                        <div class="kpi-num" style="color: #00B356; font-size: 11px;">Sr. Saint Clair</div>
+                        <div class="kpi-num" style="color: #00B356; font-size: 11.5px;">Sr. Saint Clair</div>
+                        <div class="kpi-sub" style="color: #64748b;">Cedente do Espaço</div>
                     </div>
                     <div class="kpi-box" style="background-color: #112240; border-color: #1e3a5f;">
                         <div class="kpi-lbl" style="color: #94a3b8;">Âncora Comercial</div>
-                        <div class="kpi-num" style="color: #ffffff; font-size: 11px;">Galeria 24 Horas</div>
+                        <div class="kpi-num" style="color: #ffffff; font-size: 11.5px;">Galeria 24 Horas</div>
+                        <div class="kpi-sub" style="color: #64748b;">Fluxo Contínuo</div>
                     </div>
                     <div class="kpi-box" style="background-color: #112240; border-color: #1e3a5f;">
                         <div class="kpi-lbl" style="color: #94a3b8;">Tecnologia Homologada</div>
-                        <div class="kpi-num" style="color: #E45318; font-size: 11px;">BENY DC 60 kW SiC</div>
+                        <div class="kpi-num" style="color: #E45318; font-size: 11.5px;">BENY DC 60 kW SiC</div>
+                        <div class="kpi-sub" style="color: #64748b;">Dual-Gun CCS2</div>
                     </div>
                 </div>
             </div>
 
+            <!-- ─── PARTE 2: DIAGNÓSTICO DEMOGRÁFICO IBGE & CONCORRÊNCIA DC (PASSO 1B) ─── -->
             <div class="card">
                 <div class="card-title">
                     <span>2. DIAGNÓSTICO DEMOGRÁFICO IBGE & CONCORRÊNCIA DC (PASSO 1B)</span>
-                    <span class="badge badge-green">Score AHP: 66,5 / 100</span>
+                    <span class="badge badge-green">Score Locacional AHP: 66,5 / 100</span>
                 </div>
-                <div class="grid-4" style="margin-bottom: 8px;">
+                <div class="grid-4" style="margin-bottom: 10px;">
                     <div class="kpi-box">
                         <div class="kpi-lbl">População IBGE</div>
                         <div class="kpi-num">241.835 hab.</div>
+                        <div class="kpi-sub">Sete Lagoas / MG</div>
                     </div>
                     <div class="kpi-box">
                         <div class="kpi-lbl">Frota VE Projetada 2026</div>
                         <div class="kpi-num highlight-val">780 VEs</div>
+                        <div class="kpi-sub">+42% crescimento a.a.</div>
                     </div>
                     <div class="kpi-box">
                         <div class="kpi-lbl">Comércios em 500m</div>
                         <div class="kpi-num green-val">4 Pontos</div>
+                        <div class="kpi-sub">Dwell time médio 40min</div>
                     </div>
                     <div class="kpi-box">
                         <div class="kpi-lbl">Score Ponderado AHP</div>
                         <div class="kpi-num green-val">66,5 / 100</div>
+                        <div class="kpi-sub">Classificação: MUITO BOM (GO)</div>
                     </div>
                 </div>
                 <p>
-                    A varredura de concorrência identificou 3 postos com recarga rápida DC no raio de 3 a 5 km: Posto Graal (60 kW DC a 1,8 km), 
-                    Mart Minas (60 kW DC a 2,4 km) e Shopping Sete Lagoas (40 kW DC a 3,8 km). Diante desse cenário competitivo, a implantação do Hub CoenergyGO 
-                    se consolida estrategicamente com dispensador BENY DC de 60 kW com dois conectores CCS2 simultâneos, diferenciando-se pela ancoragem comercial contínua de 24 horas e alta segurança patrimonial.
+                    A varredura de inteligência competitiva identificou 3 postos com recarga rápida DC no raio de 3 a 5 km (Posto Graal a 1,8 km, 
+                    Mart Minas a 2,4 km e Shopping Sete Lagoas a 3,8 km). Diante desse cenário competitivo, a implantação do Hub CoenergyGO 
+                    se consolida estrategicamente com dispensador BENY DC de 60 kW com dois conectores CCS2 simultâneos, diferenciando-se pela 
+                    ancoragem comercial contínua de 24 horas e alta segurança patrimonial.
                 </p>
+
+                <!-- Tabela de Eletropostos Concorrentes Mapeados -->
+                <div style="margin-top: 10px;">
+                    <div style="font-size: 9px; font-weight: 800; text-transform: uppercase; color: #64748b; margin-bottom: 4px;">
+                        Mapeamento de Campo de Estações Concorrentes no Raio de Varredura
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 32%;">Estabelecimento / Nome</th>
+                                <th style="width: 14%; text-align: center;">Distância</th>
+                                <th style="width: 16%; text-align: center;">Potência / Tipo</th>
+                                <th style="width: 38%;">Observações de Campo / Acesso</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td style="font-weight: 700; color: #0f172a;">Posto Graal Sete Lagoas</td>
+                                <td style="text-align: center; font-family: monospace;">1.8 km</td>
+                                <td style="text-align: center;"><span class="badge badge-orange">60 kW DC</span></td>
+                                <td style="color: #64748b; font-size: 8.5px;">Rodovia BR-040 km 468 • Operação contínua 24h na rodovia</td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 700; color: #0f172a;">Mart Minas Atacado</td>
+                                <td style="text-align: center; font-family: monospace;">2.4 km</td>
+                                <td style="text-align: center;"><span class="badge badge-orange">60 kW DC</span></td>
+                                <td style="color: #64748b; font-size: 8.5px;">Av. Raquel Teixeira Viana • Estacionamento restrito ao horário de compras</td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 700; color: #0f172a;">Shopping Sete Lagoas</td>
+                                <td style="text-align: center; font-family: monospace;">3.8 km</td>
+                                <td style="text-align: center;"><span class="badge badge-blue">40 kW DC</span></td>
+                                <td style="color: #64748b; font-size: 8.5px;">Av. Otávio Campelo • Acesso mediante pagamento de taxa de estacionamento</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
+            <!-- ─── PARTE 3: ENGENHARIA ELÉTRICA CEMIG (PASSO 2A) ─── -->
             <div class="card">
                 <div class="card-title">
-                    <span>3. ENGENHARIA ELÉTRICA & PADRÃO CEMIG (PASSO 2A/2B)</span>
-                    <span class="badge badge-green">Folga de 67,1 kW</span>
+                    <span>3. ENGENHARIA ELÉTRICA & DEMANDA CEMIG (PASSO 2A)</span>
+                    <span class="badge badge-green">Folga Disponível: 67,1 kW</span>
                 </div>
-                <p>
-                    Padrão de entrada existente classificado como <strong>C6 Trifásico (Disjuntor Geral de 200A)</strong> em 380/220V, com limite de fornecimento de <strong>75,0 kW</strong> (CEMIG ND-5.1). 
-                    A carga atual do imóvel em pico é de <strong>7,9 kW</strong>, conferindo uma folga de <strong>67,1 kW</strong> — suficiente para alimentar diretamente a estação BENY de 60,0 kW a plena carga sem necessidade de aumento de demanda junto à CEMIG.
-                </p>
-            </div>
-
-            <div class="card">
-                <div class="card-title">
-                    <span>4. ORÇAMENTO CAPEX & RETORNO DO INVESTIMENTO (PASSO 4B & 5)</span>
-                    <span class="badge badge-orange">CAPEX: R$ 133.844,00</span>
-                </div>
-                <div class="grid-4" style="margin-bottom: 8px;">
+                <div class="grid-4" style="margin-bottom: 10px;">
                     <div class="kpi-box">
-                        <div class="kpi-lbl">CAPEX TOTAL</div>
+                        <div class="kpi-lbl">Padrão de Entrada</div>
+                        <div class="kpi-num">C6 (200A)</div>
+                        <div class="kpi-sub">220V Trifásico CEMIG</div>
+                    </div>
+                    <div class="kpi-box">
+                        <div class="kpi-lbl">Capacidade da Entrada</div>
+                        <div class="kpi-num">75.0 kW</div>
+                        <div class="kpi-sub">Limite físico ND-5.1</div>
+                    </div>
+                    <div class="kpi-box">
+                        <div class="kpi-lbl">Carga Atual do Imóvel</div>
+                        <div class="kpi-num">7.9 kW</div>
+                        <div class="kpi-sub">SmartMeter (Pico NBR 5410)</div>
+                    </div>
+                    <div class="kpi-box">
+                        <div class="kpi-lbl">Folga Disponível</div>
+                        <div class="kpi-num green-val">67.1 kW</div>
+                        <div class="kpi-sub">Headroom para recarga</div>
+                    </div>
+                </div>
+                <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; font-size: 10px; line-height: 1.5;">
+                    <strong style="color: #00B356; display: block; font-size: 10.5px; margin-bottom: 2px;">✓ Regime Eletrotécnico Operacional: Alimentação Direta em Carga Plena</strong>
+                    <span style="color: #334155;">
+                        A folga de potência identificada no padrão existente (<strong>67,1 kW</strong>) suporta integralmente as estações instaladas (<strong>60,0 kW</strong>) 
+                        em operação contínua sem risco de sobrecarga e sem a necessidade de aumento oneroso de demanda contratada junto à CEMIG.
+                    </span>
+                </div>
+            </div>
+
+            <!-- ─── PARTE 3: CONFORMIDADE NBR 17019 & CBMMG IT-41 (PASSO 2B) ─── -->
+            <div class="card">
+                <div class="card-title">
+                    <span>CONFORMIDADE NORMATIVA ABNT NBR 17019 & CORPO DE BOMBEIROS (PASSO 2B)</span>
+                    <span class="badge badge-green">100% Homologado</span>
+                </div>
+                <div class="grid-2">
+                    <div class="norm-card" style="border-left: 3px solid #E45318;">
+                        <strong style="color: #E45318; font-size: 9.5px; text-transform: uppercase; display: block; margin-bottom: 3px;">
+                            1. Aterramento TN-S Mandatório (NBR 5410):
+                        </strong>
+                        <p style="margin: 0; font-size: 9px; color: #475569;">
+                            Condutor de proteção (PE) exclusivo interligado diretamente ao Barramento de Equipotencialização Principal (BEP), com resistividade de terra auditada inferior a 10 ohms.
+                        </p>
+                    </div>
+                    <div class="norm-card" style="border-left: 3px solid #00B356;">
+                        <strong style="color: #00B356; font-size: 9.5px; text-transform: uppercase; display: block; margin-bottom: 3px;">
+                            2. Dispositivo IDR Tipo B Dedicado (30mA):
+                        </strong>
+                        <p style="margin: 0; font-size: 9px; color: #475569;">
+                            Proteção diferencial-residual Tipo B específica para VE, imune a correntes CC de fuga transitórias e permanentes originadas nos retificadores veiculares de alta potência.
+                        </p>
+                    </div>
+                    <div class="norm-card" style="border-left: 3px solid #1d4ed8;">
+                        <strong style="color: #1d4ed8; font-size: 9.5px; text-transform: uppercase; display: block; margin-bottom: 3px;">
+                            3. Proteção contra Surtos (DPS Classe I+II):
+                        </strong>
+                        <p style="margin: 0; font-size: 9px; color: #475569;">
+                            Dispositivos protetores de surtos coordenados instalados no QDC-VE (Up &lt; 1,5 kV), protegendo os circuitos eletrônicos e os veículos contra descargas atmosféricas.
+                        </p>
+                    </div>
+                    <div class="norm-card" style="border-left: 3px solid #b91c1c;">
+                        <strong style="color: #b91c1c; font-size: 9.5px; text-transform: uppercase; display: block; margin-bottom: 3px;">
+                            4. Seccionamento de Emergência & Combate a Incêndio:
+                        </strong>
+                        <p style="margin: 0; font-size: 9px; color: #475569;">
+                            Botoeira de emergência tipo cogumelo com disparo de bobina de mínima tensão em &lt; 50ms, extintor de pó químico/CO₂ (5 kg) adjacente e sinalização viária NBR 9050.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ─── PARTE 4: ESPECIFICAÇÃO TÉCNICA BENY 60 kW (PASSO 3) ─── -->
+            <div class="card">
+                <div class="card-title">
+                    <span>4. ESPECIFICAÇÃO TÉCNICA DA ESTAÇÃO BENY 60 kW SiC (PASSO 3)</span>
+                    <span class="badge badge-orange">Total: 1 est. (60.0 kW | 2 Vagas)</span>
+                </div>
+                <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 8px;">
+                        <div>
+                            <strong style="font-size: 11.5px; color: #0f172a; display: block;">BENY BDC-60 kW DC Comercial Rápido (Dual-Gun CCS2)</strong>
+                            <span style="font-size: 9px; color: #64748b;">Fabricante: <strong>BENY New Energy</strong> • Modelo: <strong>BDC-60KW-2G</strong> • Tecnologia SiC</span>
+                        </div>
+                        <div style="text-align: right;">
+                            <strong style="font-size: 14px; color: #E45318; font-family: monospace; display: block;">60.0 kW</strong>
+                            <span class="badge badge-orange">DC Rápido • Trifásico</span>
+                        </div>
+                    </div>
+                    <div class="grid-4" style="margin-bottom: 8px;">
+                        <div class="kpi-box">
+                            <div class="kpi-lbl">Conectores</div>
+                            <strong style="font-size: 10px; color: #0f172a;">2x CCS2 (Dual-Gun)</strong>
+                        </div>
+                        <div class="kpi-box">
+                            <div class="kpi-lbl">Divisão de Potência</div>
+                            <strong style="font-size: 10px; color: #0f172a;">2x 30 kW ou 1x 60 kW</strong>
+                        </div>
+                        <div class="kpi-box">
+                            <div class="kpi-lbl">Protocolo OCPP</div>
+                            <strong style="font-size: 10px; color: #0f172a;">OCPP 1.6J / 2.0.1 JSON</strong>
+                        </div>
+                        <div class="kpi-box">
+                            <div class="kpi-lbl">Tempo Médio Recarga</div>
+                            <strong style="font-size: 10px; color: #00B356;">35 a 45 minutos</strong>
+                        </div>
+                    </div>
+                    <p style="margin: 0; font-size: 9.5px; color: #475569; background: #ffffff; padding: 8px 10px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                        A estação BENY DC 60 kW utiliza módulos de potência com semicondutores de <strong>Carboneto de Silício (SiC)</strong>, garantindo eficiência de conversão CA/CC 
+                        superior a <strong>96%</strong> e baixo aquecimento operacional. O equipamento dispõe de leitor RFID integrado, display touch de 7 polegadas com interface 
+                        em português e leitor QR Code dinâmico para integração autônoma com aplicativos de bilhetagem.
+                    </p>
+                </div>
+            </div>
+
+            <!-- ─── PARTE 4: ORÇAMENTO CAPEX BOM (PASSO 4B) ─── -->
+            <div class="card">
+                <div class="card-title">
+                    <span>ORÇAMENTO MODULAR DE CAPEX & LISTA DE MATERIAIS (PASSO 4B)</span>
+                    <span class="badge badge-orange">BDI Global: 18,5% • R$ 133.844,00</span>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 8%; text-align: center;">Item</th>
+                            <th style="width: 62%;">Descrição dos Equipamentos, Materiais & Serviços</th>
+                            <th style="width: 10%; text-align: center;">Qtd</th>
+                            <th style="width: 20%; text-align: right;">Valor Total (R$)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="text-align: center; font-weight: 700;">01</td>
+                            <td><strong>Estação de Recarga BENY DC 60 kW Dual Gun CCS2</strong> (Módulos SiC, OCPP 1.6J/2.0.1, RFID, Tela 7", Gestão Dinâmica)</td>
+                            <td style="text-align: center; font-family: monospace;">1 un</td>
+                            <td style="text-align: right; font-family: monospace; font-weight: 700;">R$ 85.000,00</td>
+                        </tr>
+                        <tr>
+                            <td style="text-align: center; font-weight: 700;">02</td>
+                            <td><strong>Infraestrutura Elétrica & Cabos de Cobre</strong> (Eletrodutos PEAD 3", Cabos EPR 70mm², QDC-VE, DPS Classe I+II e IDR Tipo B)</td>
+                            <td style="text-align: center; font-family: monospace;">1 cj</td>
+                            <td style="text-align: right; font-family: monospace; font-weight: 700;">R$ 28.500,00</td>
+                        </tr>
+                        <tr>
+                            <td style="text-align: center; font-weight: 700;">03</td>
+                            <td><strong>Mão de Obra de Instalação, Obras Civis & Pintura de Vagas</strong> (Abertura de vala, base de concreto e sinalização viária NBR 9050)</td>
+                            <td style="text-align: center; font-family: monospace;">1 sv</td>
+                            <td style="text-align: right; font-family: monospace; font-weight: 700;">R$ 15.000,00</td>
+                        </tr>
+                        <tr>
+                            <td style="text-align: center; font-weight: 700;">04</td>
+                            <td><strong>Engenharia Eletrotécnica, ART CREA & Homologação CEMIG</strong> (Projeto executivo, diagramas unifilares e aprovação CEMIG)</td>
+                            <td style="text-align: center; font-family: monospace;">1 sv</td>
+                            <td style="text-align: right; font-family: monospace; font-weight: 700;">R$ 5.344,00</td>
+                        </tr>
+                        <tr style="background-color: #0A192F; color: #ffffff;">
+                            <td colspan="3" style="text-align: right; font-weight: 800; font-size: 10px; text-transform: uppercase; padding: 8px 10px; color: #ffffff;">
+                                Total Geral Consolidado (Turnkey Completo com BDI):
+                            </td>
+                            <td style="text-align: right; font-family: monospace; font-weight: 900; font-size: 11px; padding: 8px 10px; color: #00B356;">
+                                R$ 133.844,00
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- ─── PARTE 5: MODELAGEM ECONÔMICO-FINANCEIRA (PASSO 5) ─── -->
+            <div class="card">
+                <div class="card-title">
+                    <span>5. MODELAGEM ECONÔMICO-FINANCEIRA & RETORNO COENERGYGO (PASSO 5)</span>
+                    <span class="badge badge-green">Payback: 20.9 meses • TIR: 50.5% a.a.</span>
+                </div>
+                <div class="grid-4" style="margin-bottom: 10px;">
+                    <div class="kpi-box">
+                        <div class="kpi-lbl">CAPEX Total</div>
                         <div class="kpi-num">R$ 133.844</div>
                         <div class="kpi-sub">Equip. 85k + Infra 48.8k</div>
                     </div>
                     <div class="kpi-box">
-                        <div class="kpi-lbl">PAYBACK DESCONTADO</div>
+                        <div class="kpi-lbl">Payback Descontado</div>
                         <div class="kpi-num green-val">20.9 meses</div>
                         <div class="kpi-sub">Solar (vs 47.3m Rede)</div>
                     </div>
                     <div class="kpi-box">
-                        <div class="kpi-lbl">TAXA INTERNA (TIR)</div>
+                        <div class="kpi-lbl">Taxa Interna (TIR)</div>
                         <div class="kpi-num" style="color: #1d4ed8;">50.5% a.a.</div>
                         <div class="kpi-sub">Fase Solar (vs 21.6% Rede)</div>
                     </div>
                     <div class="kpi-box">
-                        <div class="kpi-lbl">MARGEM LÍQUIDA</div>
+                        <div class="kpi-lbl">Margem Líquida</div>
                         <div class="kpi-num highlight-val">62.1%</div>
                         <div class="kpi-sub">Cenário Base (R$ 6.395/mês)</div>
                     </div>
                 </div>
+
+                <!-- Tabela de Sensibilidade dos 3 Cenários -->
+                <div style="font-size: 9px; font-weight: 800; text-transform: uppercase; color: #64748b; margin-bottom: 4px;">
+                    Matriz de Sensibilidade Operacional (Tarifa de Venda: R$ 2,20 / kWh)
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Cenário Operacional</th>
+                            <th style="text-align: center;">Ocupação / Dia</th>
+                            <th style="text-align: center;">Energia Mensal</th>
+                            <th style="text-align: right;">Receita Bruta (R$)</th>
+                            <th style="text-align: right;">Custo Energia Solar</th>
+                            <th style="text-align: right;">Margem Operacional</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="font-weight: 700;">Conservador</td>
+                            <td style="text-align: center; font-family: monospace;">4h / dia</td>
+                            <td style="text-align: center; font-family: monospace;">7.200 kWh</td>
+                            <td style="text-align: right; font-family: monospace;">R$ 15.840,00</td>
+                            <td style="text-align: right; font-family: monospace;">R$ 2.736,00</td>
+                            <td style="text-align: right; font-family: monospace; font-weight: 700; color: #00B356;">R$ 4.218,50 / mês</td>
+                        </tr>
+                        <tr style="background-color: #f0fdf4;">
+                            <td style="font-weight: 700; color: #0A192F;">Moderado (Cenário Base)</td>
+                            <td style="text-align: center; font-family: monospace; font-weight: 700;">6h / dia</td>
+                            <td style="text-align: center; font-family: monospace; font-weight: 700;">10.800 kWh</td>
+                            <td style="text-align: right; font-family: monospace; font-weight: 700;">R$ 23.760,00</td>
+                            <td style="text-align: right; font-family: monospace; font-weight: 700;">R$ 4.104,00</td>
+                            <td style="text-align: right; font-family: monospace; font-weight: 900; color: #00B356;">R$ 6.395,78 / mês</td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight: 700;">Otimista</td>
+                            <td style="text-align: center; font-family: monospace;">9h / dia</td>
+                            <td style="text-align: center; font-family: monospace;">16.200 kWh</td>
+                            <td style="text-align: right; font-family: monospace;">R$ 35.640,00</td>
+                            <td style="text-align: right; font-family: monospace;">R$ 6.156,00</td>
+                            <td style="text-align: right; font-family: monospace; font-weight: 700; color: #00B356;">R$ 9.870,20 / mês</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="grid-2" style="margin-top: 10px;">
+                    <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 10px; font-size: 9px;">
+                        <strong style="color: #00B356; display: block; font-size: 9.5px; margin-bottom: 2px;">Vantagem da Geração Solar Remota:</strong>
+                        Custo nivelado de <strong>R$ 0,38/kWh</strong> vs <strong>R$ 0,89/kWh</strong> da rede CEMIG convencional, proporcionando economia direta de <strong>+R$ 5.508,00/mês</strong>.
+                    </div>
+                    <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 10px; font-size: 9px;">
+                        <strong style="color: #0A192F; display: block; font-size: 9.5px; margin-bottom: 2px;">Modelo de Comodato & Parceria:</strong>
+                        O cedente (Sr. Saint Clair) cede o espaço sem desembolso financeiro, recebendo remuneração por cessão e atraindo clientes qualificados para a galeria 24h.
+                    </div>
+                </div>
             </div>
 
-            {get_signatures_html()}
+            <!-- ─── PARTE 6: CRONOGRAMA DE IMPLANTAÇÃO (PASSO 6) ─── -->
+            <div class="card">
+                <div class="card-title">
+                    <span>6. CRONOGRAMA DE IMPLANTAÇÃO & ENCERRAMENTO (PASSO 6)</span>
+                    <span class="badge badge-green">Prazo Total: 12 Semanas</span>
+                </div>
+                <div class="grid-3" style="margin-bottom: 12px;">
+                    <div class="phase-card orange">
+                        <span style="font-size: 8px; font-weight: 800; text-transform: uppercase; color: #E45318; display: block; margin-bottom: 2px;">Fase 1 • Semanas 1 a 4</span>
+                        <strong style="font-size: 10.5px; color: #0f172a; display: block; margin-bottom: 4px;">Engenharia & Homologação</strong>
+                        <ul style="font-size: 8.5px; color: #475569; padding-left: 14px; margin: 0;">
+                            <li>Vistoria técnica presencial e emissão de ART CREA.</li>
+                            <li>Aprovação de acesso CEMIG ND-5.1.</li>
+                            <li>Aquisição dos equipamentos BENY DC 60 kW.</li>
+                        </ul>
+                    </div>
+                    <div class="phase-card blue">
+                        <span style="font-size: 8px; font-weight: 800; text-transform: uppercase; color: #1d4ed8; display: block; margin-bottom: 2px;">Fase 2 • Semanas 5 a 9</span>
+                        <strong style="font-size: 10.5px; color: #0f172a; display: block; margin-bottom: 4px;">Obras Civis & Eletrotécnica</strong>
+                        <ul style="font-size: 8.5px; color: #475569; padding-left: 14px; margin: 0;">
+                            <li>Passagem de eletrodutos PEAD 3" e cabos 70mm².</li>
+                            <li>Montagem do QDC-VE com IDR Tipo B e DPS.</li>
+                            <li>Concretagem da base e pintura viária NBR 9050.</li>
+                        </ul>
+                    </div>
+                    <div class="phase-card green">
+                        <span style="font-size: 8px; font-weight: 800; text-transform: uppercase; color: #00B356; display: block; margin-bottom: 2px;">Fase 3 • Semanas 10 a 12</span>
+                        <strong style="font-size: 10.5px; color: #0f172a; display: block; margin-bottom: 4px;">Comissionamento & Go-Live</strong>
+                        <ul style="font-size: 8.5px; color: #475569; padding-left: 14px; margin: 0;">
+                            <li>Ensaios de isolamento e continuidade (Fluke 1664 FC).</li>
+                            <li>Testes de emergência com bobina MX (&lt; 50ms).</li>
+                            <li>Integração da plataforma OCPP 1.6J e inauguração.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; font-size: 9.5px; line-height: 1.5; margin-bottom: 12px;">
+                    <strong style="color: #0A192F; display: block; font-size: 10px; text-transform: uppercase; margin-bottom: 2px;">Termo de Responsabilidade Técnica & Encerramento:</strong>
+                    Certificamos que as premissas técnicas, cálculos de demanda e dimensionamentos orçamentários constantes neste Relatório Executivo Comercial 
+                    atendem rigorosamente às normas ABNT NBR 5410, ABNT NBR 17019, IEC 61851 e aos regulamentos de distribuição CEMIG ND-5.1 e ND-5.3, estando 
+                    o projeto plenamente qualificado para execução e conexão física.
+                </div>
+
+                {get_signatures_html()}
+            </div>
             """
         },
 

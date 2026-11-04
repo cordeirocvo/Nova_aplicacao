@@ -166,21 +166,32 @@ body:has([data-tv="true"]),
     border: none !important;
   }
 
-  /* Regras de quebra de página inteligente para blocos de relatório */
+  /* Regras de quebra de página inteligente para blocos de relatório (Nunca cortar quadros ao meio) */
+  .report-card,
+  .print-card,
   .report-break-avoid,
   .print-break-avoid,
   .print\:break-inside-avoid,
   .break-inside-avoid,
+  #printable-report-sheet > div > div,
   #printable-report-sheet .rounded-2xl,
   #printable-report-sheet .rounded-xl {
-    break-inside: avoid !important;
+    break-inside: avoid-page !important;
     page-break-inside: avoid !important;
+    display: block !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
   }
 
   /* Evita que tabelas e linhas sejam cortadas ao meio */
-  table, tr, td, th {
+  table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+  }
+
+  tr, thead, tbody, th, td {
+    break-inside: avoid-page !important;
     page-break-inside: avoid !important;
-    break-inside: avoid !important;
   }
 
   /* Força fidelidade total de cores em impressão */

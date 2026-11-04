@@ -932,15 +932,21 @@ export function EVModularBOMTable({
         {/* Botões de Ação */}
         <div className="flex items-center gap-2 flex-wrap">
           {hasModifications && (
-            <button
-              type="button"
-              onClick={onRestoreOriginal}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-950/60 hover:bg-amber-900/80 border border-amber-700/60 text-amber-200 rounded-lg text-xs font-bold transition-all cursor-pointer"
-              title="Restaurar quantidades e preços originais calculados"
-            >
-              <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
-              <span>Restaurar Originais</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-semibold text-emerald-400 flex items-center gap-1 bg-emerald-950/60 border border-emerald-500/30 px-2.5 py-1.5 rounded-lg shadow-sm animate-in fade-in">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Alterações salvas</span>
+              </span>
+              <button
+                type="button"
+                onClick={onRestoreOriginal}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-950/60 hover:bg-amber-900/80 border border-amber-700/60 text-amber-200 rounded-lg text-xs font-bold transition-all cursor-pointer"
+                title="Restaurar quantidades e preços originais calculados"
+              >
+                <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
+                <span>Restaurar Originais</span>
+              </button>
+            </div>
           )}
 
           <button

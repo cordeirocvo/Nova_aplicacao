@@ -659,19 +659,46 @@ export function EVTopologyChainViewer({
   // Sincroniza com as props do projeto quando um novo projeto ou rascunho é carregado
   React.useEffect(() => {
     if (externalUserBOMOverrides !== undefined) {
-      setUserBOMOverrides(externalUserBOMOverrides);
+      if (Object.keys(externalUserBOMOverrides).length > 0) {
+        setUserBOMOverrides(externalUserBOMOverrides);
+      } else {
+        try {
+          const s = localStorage.getItem('coenergygo_bom_user_overrides');
+          if (!s || s === '{}') setUserBOMOverrides({});
+        } catch (e) {
+          setUserBOMOverrides({});
+        }
+      }
     }
   }, [externalUserBOMOverrides]);
 
   React.useEffect(() => {
     if (externalDeletedItemIds !== undefined) {
-      setDeletedItemIds(externalDeletedItemIds);
+      if (externalDeletedItemIds.length > 0) {
+        setDeletedItemIds(externalDeletedItemIds);
+      } else {
+        try {
+          const s = localStorage.getItem('coenergygo_bom_deleted_items');
+          if (!s || s === '[]') setDeletedItemIds([]);
+        } catch (e) {
+          setDeletedItemIds([]);
+        }
+      }
     }
   }, [externalDeletedItemIds]);
 
   React.useEffect(() => {
     if (externalCustomAddedItems !== undefined) {
-      setCustomAddedItems(externalCustomAddedItems);
+      if (externalCustomAddedItems.length > 0) {
+        setCustomAddedItems(externalCustomAddedItems);
+      } else {
+        try {
+          const s = localStorage.getItem('coenergygo_bom_custom_items');
+          if (!s || s === '[]') setCustomAddedItems([]);
+        } catch (e) {
+          setCustomAddedItems([]);
+        }
+      }
     }
   }, [externalCustomAddedItems]);
 
@@ -832,6 +859,10 @@ export function EVTopologyChainViewer({
     quantidade: number;
     precoManual?: number;
   }) => {
+    let price = newItem.precoManual || 0;
+    let isAlerta = false;
+
+    // Tentativa resiliente de consulta ao backend sem travar a interface
     try {
       const res = await fetch('/api/orcamentos/novo-item-com-alerta', {
         method: 'POST',
@@ -845,32 +876,42 @@ export function EVTopologyChainViewer({
         })
       });
 
-      const data = await res.json();
-      const price = data.precoEstimado || newItem.precoManual || 0;
-      const customItem: BillOfMaterialItem = {
-        id: `custom-${Date.now()}`,
-        category: newItem.tipo as any,
-        description: newItem.descricao,
-        quantity: newItem.quantidade,
-        unit: newItem.unidade,
-        spec: `Item personalizado adicionado na ${newItem.stageId}`,
-        normReference: 'NBR 5410 / Custom',
-        manufacturer: data.alertaGerado ? 'Pendente Cotação (Estimativa Web)' : 'Fornecedor Homologado',
-        unitPriceBRL: price,
-        totalPriceBRL: price * newItem.quantidade
-      };
-      (customItem as any).stageId = newItem.stageId;
-      setCustomAddedItems(prev => {
-        const updated = [...prev, customItem];
-        try { localStorage.setItem('coenergygo_bom_custom_items', JSON.stringify(updated)); } catch (err) {}
-        if (onUpdateCustomAddedItems) {
-          setTimeout(() => onUpdateCustomAddedItems(updated), 0);
-        }
-        return updated;
-      });
-    } catch (e) {
-      console.error('Erro ao cadastrar novo item:', e);
+      if (res.ok) {
+        const data = await res.json();
+        price = data.precoEstimado || newItem.precoManual || price;
+        isAlerta = Boolean(data.alertaGerado);
+      }
+    } catch (netErr) {
+      console.warn('Aviso ao consultar API do CAPEX, usando fallback local:', netErr);
     }
+
+    if (!price || price <= 0) {
+      price = 50.0;
+    }
+
+    const qty = Number(newItem.quantidade) || 1;
+    const customItem: BillOfMaterialItem = {
+      id: `custom-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      category: (newItem.tipo || 'Material') as any,
+      description: newItem.descricao,
+      quantity: qty,
+      unit: newItem.unidade || 'un',
+      spec: `Item personalizado adicionado na ${newItem.stageId}`,
+      normReference: 'NBR 5410 / Custom',
+      manufacturer: isAlerta ? 'Pendente Cotação (Estimativa Web)' : 'Fornecedor Homologado',
+      unitPriceBRL: price,
+      totalPriceBRL: Number((price * qty).toFixed(2))
+    };
+    (customItem as any).stageId = newItem.stageId;
+
+    setCustomAddedItems(prev => {
+      const updated = [...prev, customItem];
+      try { localStorage.setItem('coenergygo_bom_custom_items', JSON.stringify(updated)); } catch (err) {}
+      if (onUpdateCustomAddedItems) {
+        setTimeout(() => onUpdateCustomAddedItems(updated), 0);
+      }
+      return updated;
+    });
   };
 
   // Totais Finais
@@ -1774,7 +1815,7 @@ export function EVTopologyChainViewer({
 
           <EVModularBOMTable
             modularBOM={modularBOM}
-            onUpdateQuantity={(itemId, qty, itemCode) => {
+            onUpdateQuantity={(itemId, qty) => {
               setUserBOMOverrides(prev => {
                 const updated: Record<string, { quantity?: number; unitPriceBRL?: number }> = {
                   ...prev,
@@ -1783,12 +1824,6 @@ export function EVTopologyChainViewer({
                     quantity: qty
                   }
                 };
-                if (itemCode) {
-                  updated[itemCode] = {
-                    ...prev[itemCode],
-                    quantity: qty
-                  };
-                }
                 try { localStorage.setItem('coenergygo_bom_user_overrides', JSON.stringify(updated)); } catch (e) {}
                 if (onUpdateBOMOverrides) {
                   setTimeout(() => onUpdateBOMOverrides(updated), 0);
@@ -1842,13 +1877,23 @@ export function EVTopologyChainViewer({
             }}
             onDeleteItem={(itemId) => {
               setDeletedItemIds(prev => {
-                const updated = [...prev, itemId];
+                const updated = prev.includes(itemId) ? prev : [...prev, itemId];
                 try { localStorage.setItem('coenergygo_bom_deleted_items', JSON.stringify(updated)); } catch (e) {}
                 if (onUpdateDeletedItemIds) {
                   setTimeout(() => onUpdateDeletedItemIds(updated), 0);
                 }
                 return updated;
               });
+              if (itemId.startsWith('custom-')) {
+                setCustomAddedItems(prev => {
+                  const updated = prev.filter(c => c.id !== itemId);
+                  try { localStorage.setItem('coenergygo_bom_custom_items', JSON.stringify(updated)); } catch (e) {}
+                  if (onUpdateCustomAddedItems) {
+                    setTimeout(() => onUpdateCustomAddedItems(updated), 0);
+                  }
+                  return updated;
+                });
+              }
             }}
             onRestoreOriginal={() => {
               setUserBOMOverrides({});

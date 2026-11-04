@@ -235,12 +235,86 @@ export default function CoenergyGODashboard() {
   const [useSmartMeterExistingLoad, setUseSmartMeterExistingLoad] = useState<boolean>(true);
 
   // Estados para persistência de personalizações da Lista de Materiais Modular (BOM)
-  const [bomUserOverrides, setBomUserOverrides] = useState<Record<string, { quantity?: number; unitPriceBRL?: number }>>({});
-  const [bomDeletedItemIds, setBomDeletedItemIds] = useState<string[]>([]);
-  const [bomCustomAddedItems, setBomCustomAddedItems] = useState<any[]>([]);
-  const [bomLaborMode, setBomLaborMode] = useState<'TABELADO' | 'PERCENTUAL'>('TABELADO');
-  const [bomLaborPercent, setBomLaborPercent] = useState<number>(25);
-  const [bomGlobalBdiPercent, setBomGlobalBdiPercent] = useState<number>(20);
+  const [bomUserOverrides, setBomUserOverrides] = useState<Record<string, { quantity?: number; unitPriceBRL?: number }>>(() => {
+    if (typeof window === 'undefined') return {};
+    try {
+      const draft = localStorage.getItem('coenergygo_active_draft');
+      if (draft) {
+        const p = JSON.parse(draft);
+        const ov = p?.userBOMOverrides || p?.clientProjectData?.userBOMOverrides;
+        if (ov && Object.keys(ov).length > 0) return ov;
+      }
+      const s = localStorage.getItem('coenergygo_bom_user_overrides');
+      if (s) return JSON.parse(s);
+    } catch (e) {}
+    return {};
+  });
+
+  const [bomDeletedItemIds, setBomDeletedItemIds] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const draft = localStorage.getItem('coenergygo_active_draft');
+      if (draft) {
+        const p = JSON.parse(draft);
+        const del = p?.deletedItemIds || p?.clientProjectData?.deletedItemIds;
+        if (Array.isArray(del) && del.length > 0) return del;
+      }
+      const s = localStorage.getItem('coenergygo_bom_deleted_items');
+      if (s) return JSON.parse(s);
+    } catch (e) {}
+    return [];
+  });
+
+  const [bomCustomAddedItems, setBomCustomAddedItems] = useState<any[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const draft = localStorage.getItem('coenergygo_active_draft');
+      if (draft) {
+        const p = JSON.parse(draft);
+        const cust = p?.customAddedItems || p?.clientProjectData?.customAddedItems;
+        if (Array.isArray(cust) && cust.length > 0) return cust;
+      }
+      const s = localStorage.getItem('coenergygo_bom_custom_items');
+      if (s) return JSON.parse(s);
+    } catch (e) {}
+    return [];
+  });
+
+  const [bomLaborMode, setBomLaborMode] = useState<'TABELADO' | 'PERCENTUAL'>(() => {
+    if (typeof window === 'undefined') return 'TABELADO';
+    try {
+      const s = localStorage.getItem('coenergygo_active_draft');
+      if (s) {
+        const p = JSON.parse(s);
+        if (p?.laborMode) return p.laborMode;
+      }
+    } catch (e) {}
+    return 'TABELADO';
+  });
+
+  const [bomLaborPercent, setBomLaborPercent] = useState<number>(() => {
+    if (typeof window === 'undefined') return 25;
+    try {
+      const s = localStorage.getItem('coenergygo_active_draft');
+      if (s) {
+        const p = JSON.parse(s);
+        if (typeof p?.laborPercent === 'number') return p.laborPercent;
+      }
+    } catch (e) {}
+    return 25;
+  });
+
+  const [bomGlobalBdiPercent, setBomGlobalBdiPercent] = useState<number>(() => {
+    if (typeof window === 'undefined') return 20;
+    try {
+      const s = localStorage.getItem('coenergygo_active_draft');
+      if (s) {
+        const p = JSON.parse(s);
+        if (typeof p?.globalBdiPercent === 'number') return p.globalBdiPercent;
+      }
+    } catch (e) {}
+    return 20;
+  });
 
   // Parâmetros de Medição Spot de Campo (Calculadora)
   const [spotVoltage, setSpotVoltage] = useState<number>(220);
@@ -1926,10 +2000,57 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
   const [saveSuccessMessage, setSaveSuccessMessage] = useState<string | null>(null);
 
   // Snapshot completo com todos os parâmetros dos Passos 1A a 3
-  const buildCurrentProjectSnapshot = (customId?: string) => {
+  const buildCurrentProjectSnapshot = (
+    customId?: string,
+    bomOverridesPartial?: {
+      userBOMOverrides?: Record<string, { quantity?: number; unitPriceBRL?: number }>;
+      deletedItemIds?: string[];
+      customAddedItems?: any[];
+      laborMode?: 'TABELADO' | 'PERCENTUAL';
+      laborPercent?: number;
+      globalBdiPercent?: number;
+    }
+  ) => {
     const resolvedProjectName = clientProjectData.projectName || projectName || "Novo Dimensionamento VE";
     const resolvedClientName = clientProjectData.clientName || clientName || "Cliente Particular";
     const projectId = customId || activeLoadedProjectId || `proj-coenergygo-${Date.now()}`;
+
+    const effectiveUserBOMOverrides = bomOverridesPartial?.userBOMOverrides ?? (
+      (bomUserOverrides && Object.keys(bomUserOverrides).length > 0)
+        ? bomUserOverrides
+        : (() => {
+            try {
+              const s = localStorage.getItem('coenergygo_bom_user_overrides');
+              return s ? JSON.parse(s) : {};
+            } catch (e) { return {}; }
+          })()
+    );
+
+    const effectiveDeletedItemIds = bomOverridesPartial?.deletedItemIds ?? (
+      (bomDeletedItemIds && bomDeletedItemIds.length > 0)
+        ? bomDeletedItemIds
+        : (() => {
+            try {
+              const s = localStorage.getItem('coenergygo_bom_deleted_items');
+              return s ? JSON.parse(s) : [];
+            } catch (e) { return []; }
+          })()
+    );
+
+    const effectiveCustomAddedItems = bomOverridesPartial?.customAddedItems ?? (
+      (bomCustomAddedItems && bomCustomAddedItems.length > 0)
+        ? bomCustomAddedItems
+        : (() => {
+            try {
+              const s = localStorage.getItem('coenergygo_bom_custom_items');
+              return s ? JSON.parse(s) : [];
+            } catch (e) { return []; }
+          })()
+    );
+
+    const effectiveLaborMode = bomOverridesPartial?.laborMode ?? bomLaborMode ?? 'TABELADO';
+    const effectiveLaborPercent = bomOverridesPartial?.laborPercent ?? bomLaborPercent ?? 25;
+    const effectiveGlobalBdiPercent = bomOverridesPartial?.globalBdiPercent ?? bomGlobalBdiPercent ?? 20;
 
     return {
       id: projectId,
@@ -2031,12 +2152,12 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
           return clientProjectData.selectedLoads380V;
         }
       })(),
-      userBOMOverrides: bomUserOverrides,
-      deletedItemIds: bomDeletedItemIds,
-      customAddedItems: bomCustomAddedItems,
-      laborMode: bomLaborMode,
-      laborPercent: bomLaborPercent,
-      globalBdiPercent: bomGlobalBdiPercent,
+      userBOMOverrides: effectiveUserBOMOverrides,
+      deletedItemIds: effectiveDeletedItemIds,
+      customAddedItems: effectiveCustomAddedItems,
+      laborMode: effectiveLaborMode,
+      laborPercent: effectiveLaborPercent,
+      globalBdiPercent: effectiveGlobalBdiPercent,
       financialAssumptions: (() => {
         try {
           const s = localStorage.getItem('coenergygo_financial_assumptions');
@@ -2059,12 +2180,12 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
         clientName: resolvedClientName,
         standardCategory: clientProjectData.standardCategory || currentStandardCategoryId,
         applicationMode: applicationMode,
-        userBOMOverrides: bomUserOverrides,
-        deletedItemIds: bomDeletedItemIds,
-        customAddedItems: bomCustomAddedItems,
-        laborMode: bomLaborMode,
-        laborPercent: bomLaborPercent,
-        globalBdiPercent: bomGlobalBdiPercent,
+        userBOMOverrides: effectiveUserBOMOverrides,
+        deletedItemIds: effectiveDeletedItemIds,
+        customAddedItems: effectiveCustomAddedItems,
+        laborMode: effectiveLaborMode,
+        laborPercent: effectiveLaborPercent,
+        globalBdiPercent: effectiveGlobalBdiPercent,
         selectedLoads220V: (() => {
           try {
             const { useEVTopologyStore } = require('@/lib/coenergygo/store/useEVTopologyStore');
@@ -2093,6 +2214,124 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
       createdAt: new Date().toISOString()
     };
   };
+
+  // Debounce ref para sincronização contínua com a API remota sem spam
+  const bomSaveDebounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const debouncedSaveToApi = useCallback((projectId: string, snapshot: any) => {
+    if (bomSaveDebounceTimerRef.current) {
+      clearTimeout(bomSaveDebounceTimerRef.current);
+    }
+    bomSaveDebounceTimerRef.current = setTimeout(async () => {
+      try {
+        await fetch(`/api/ev/sizing/${projectId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            projectName: snapshot.projectName,
+            clientName: snapshot.clientName,
+            clientAddress: snapshot.clientAddress,
+            utility: snapshot.utility || selectedUtility,
+            entranceCategory: snapshot.entranceCategory || effectiveHomologatedCategory.categoryId,
+            existingEntranceCategory: snapshot.existingEntranceCategory || currentStandardCategoryId,
+            existingLoadKW: snapshot.existingLoadKW || effectiveExistingLoadKW,
+            chargerPowerKW: snapshot.totalPowerKW || primaryCharger.powerKW,
+            analysisNotes: JSON.stringify({
+              isCoenergyGOSnapshot: true,
+              ...snapshot
+            })
+          })
+        });
+      } catch (err) {
+        console.warn("Aviso ao sincronizar BOM com a API remota:", err);
+      }
+    }, 1200);
+  }, [selectedUtility, effectiveHomologatedCategory.categoryId, currentStandardCategoryId, effectiveExistingLoadKW, primaryCharger.powerKW]);
+
+  // Sincronização e persistência atômica e robusta de alterações da BOM Modular
+  const handleSaveBOMChanges = useCallback((params: {
+    userBOMOverrides?: Record<string, { quantity?: number; unitPriceBRL?: number }>;
+    deletedItemIds?: string[];
+    customAddedItems?: any[];
+    laborMode?: 'TABELADO' | 'PERCENTUAL';
+    laborPercent?: number;
+    globalBdiPercent?: number;
+  }) => {
+    // 1. Atualizar localStorage das chaves dedicadas
+    if (params.userBOMOverrides !== undefined) {
+      setBomUserOverrides(params.userBOMOverrides);
+      try { localStorage.setItem('coenergygo_bom_user_overrides', JSON.stringify(params.userBOMOverrides)); } catch (e) {}
+    }
+    if (params.deletedItemIds !== undefined) {
+      setBomDeletedItemIds(params.deletedItemIds);
+      try { localStorage.setItem('coenergygo_bom_deleted_items', JSON.stringify(params.deletedItemIds)); } catch (e) {}
+    }
+    if (params.customAddedItems !== undefined) {
+      setBomCustomAddedItems(params.customAddedItems);
+      try { localStorage.setItem('coenergygo_bom_custom_items', JSON.stringify(params.customAddedItems)); } catch (e) {}
+    }
+    if (params.laborMode !== undefined) {
+      setBomLaborMode(params.laborMode);
+    }
+    if (params.laborPercent !== undefined) {
+      setBomLaborPercent(params.laborPercent);
+    }
+    if (params.globalBdiPercent !== undefined) {
+      setBomGlobalBdiPercent(params.globalBdiPercent);
+    }
+
+    // 2. Atualizar clientProjectData em memória
+    setClientProjectData(prev => ({
+      ...prev,
+      ...(params.userBOMOverrides !== undefined ? { userBOMOverrides: params.userBOMOverrides } : {}),
+      ...(params.deletedItemIds !== undefined ? { deletedItemIds: params.deletedItemIds } : {}),
+      ...(params.customAddedItems !== undefined ? { customAddedItems: params.customAddedItems } : {}),
+      ...(params.laborMode !== undefined ? { laborMode: params.laborMode } : {}),
+      ...(params.laborPercent !== undefined ? { laborPercent: params.laborPercent } : {}),
+      ...(params.globalBdiPercent !== undefined ? { globalBdiPercent: params.globalBdiPercent } : {})
+    }));
+
+    // 3. Montar snapshot atualizado imediatamente com os dados frescos
+    const targetId = activeLoadedProjectId || 'proj-auto-saved-current';
+    const snapshot = buildCurrentProjectSnapshot(targetId, params);
+
+    // 4. Salvar rascunho ativo
+    try {
+      localStorage.setItem('coenergygo_active_draft', JSON.stringify(snapshot));
+      if (activeLoadedProjectId) {
+        localStorage.setItem(`coenergygo_project_${activeLoadedProjectId}`, JSON.stringify(snapshot));
+      }
+    } catch (e) {}
+
+    // 5. Atualizar o projeto ativo na lista de projetos (setProjects e coenergygo_saved_projects)
+    const normName = (snapshot.projectName || "").trim().toLowerCase();
+    setProjects(prev =>
+      prev.map(p =>
+        p.id === targetId || ((p.projectName || "").trim().toLowerCase() === normName)
+          ? { ...p, ...snapshot, clientProjectData: { ...p.clientProjectData, ...snapshot.clientProjectData } }
+          : p
+      )
+    );
+
+    try {
+      const stored = localStorage.getItem('coenergygo_saved_projects');
+      if (stored) {
+        const list = JSON.parse(stored);
+        if (Array.isArray(list)) {
+          const updatedList = list.map((x: any) =>
+            x.id === targetId || ((x.projectName || "").trim().toLowerCase() === normName)
+              ? { ...x, ...snapshot, clientProjectData: { ...x.clientProjectData, ...snapshot.clientProjectData } }
+              : x
+          );
+          localStorage.setItem('coenergygo_saved_projects', JSON.stringify(updatedList));
+        }
+      }
+    } catch (e) {}
+
+    // 6. Auto-sync no banco de dados se for um projeto oficial já cadastrado
+    if (activeLoadedProjectId && !activeLoadedProjectId.startsWith('proj-')) {
+      debouncedSaveToApi(activeLoadedProjectId, snapshot);
+    }
+  }, [activeLoadedProjectId, selectedUtility, effectiveHomologatedCategory.categoryId, currentStandardCategoryId, effectiveExistingLoadKW, primaryCharger.powerKW, debouncedSaveToApi]);
 
   // Auto-Save silencioso automático disparado ao mudar de passo (salva APENAS se houver dados preenchidos)
   const handleAutoSaveSnapshot = () => {
@@ -2457,7 +2696,16 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
         ...(savedProject || {}),
         id: finalId,
         projectName: resolvedProjectName,
-        clientName: resolvedClientName
+        clientName: resolvedClientName,
+        userBOMOverrides: fullProjectSnapshot.userBOMOverrides,
+        deletedItemIds: fullProjectSnapshot.deletedItemIds,
+        customAddedItems: fullProjectSnapshot.customAddedItems,
+        clientProjectData: {
+          ...fullProjectSnapshot.clientProjectData,
+          userBOMOverrides: fullProjectSnapshot.userBOMOverrides,
+          deletedItemIds: fullProjectSnapshot.deletedItemIds,
+          customAddedItems: fullProjectSnapshot.customAddedItems
+        }
       };
 
       // Atualiza o estado da lista no React deduplicando rigorosamente por ID e por Nome
@@ -4934,23 +5182,23 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
             externalLaborPercent={bomLaborPercent}
             externalGlobalBdiPercent={bomGlobalBdiPercent}
             onUpdateBOMOverrides={(overrides) => {
-              setBomUserOverrides(overrides);
-              try { localStorage.setItem('coenergygo_bom_user_overrides', JSON.stringify(overrides)); } catch (e) {}
-              handleAutoSaveSnapshot();
+              handleSaveBOMChanges({ userBOMOverrides: overrides });
             }}
             onUpdateDeletedItemIds={(ids) => {
-              setBomDeletedItemIds(ids);
-              try { localStorage.setItem('coenergygo_bom_deleted_items', JSON.stringify(ids)); } catch (e) {}
-              handleAutoSaveSnapshot();
+              handleSaveBOMChanges({ deletedItemIds: ids });
             }}
             onUpdateCustomAddedItems={(items) => {
-              setBomCustomAddedItems(items);
-              try { localStorage.setItem('coenergygo_bom_custom_items', JSON.stringify(items)); } catch (e) {}
-              handleAutoSaveSnapshot();
+              handleSaveBOMChanges({ customAddedItems: items });
             }}
-            onUpdateLaborMode={(mode) => { setBomLaborMode(mode); handleAutoSaveSnapshot(); }}
-            onUpdateLaborPercent={(pct) => { setBomLaborPercent(pct); handleAutoSaveSnapshot(); }}
-            onUpdateGlobalBdiPercent={(bdi) => { setBomGlobalBdiPercent(bdi); handleAutoSaveSnapshot(); }}
+            onUpdateLaborMode={(mode) => {
+              handleSaveBOMChanges({ laborMode: mode });
+            }}
+            onUpdateLaborPercent={(pct) => {
+              handleSaveBOMChanges({ laborPercent: pct });
+            }}
+            onUpdateGlobalBdiPercent={(bdi) => {
+              handleSaveBOMChanges({ globalBdiPercent: bdi });
+            }}
           />
         </div>
       )}
@@ -5083,13 +5331,24 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
           transformerKVA: 45,
           transformerLossesKW: 0.9,
           fireSafety: fireSafety,
-          bomItems: [
-            { category: 'Padrão Entrada', name: 'Disjuntor Caixa Moldada 100A Homologado CEMIG PEC-11', quantity: 1, unit: 'un', unitPrice: 850 },
-            { category: 'Proteções', name: 'Disjuntor Termomagnético Bipolar/Tripolar DIN Curva C Soprano', quantity: configuredChargers.length, unit: 'un', unitPrice: 95 },
-            { category: 'Segurança NBR 17019', name: 'Interruptor Diferencial Residual IDR Tipo B / A-EV 30mA', quantity: configuredChargers.length, unit: 'un', unitPrice: 680 },
-            { category: 'Emergência', name: 'Botão de Emergência Cogumelo com Trava Giratória + Bobina MX', quantity: 1, unit: 'kit', unitPrice: 320 },
-            { category: 'Quadros', name: 'Quadro Metálico de Sobrepor Cemar / Strahl IP65 com Barramentos', quantity: 2, unit: 'un', unitPrice: 1250 }
-          ],
+          bomItems: (projectModularBOM && projectModularBOM.stages && projectModularBOM.stages.length > 0)
+            ? projectModularBOM.stages.flatMap(st => st.items.map(it => ({
+                category: st.shortTitle,
+                name: it.description,
+                quantity: it.quantity,
+                unit: it.unit,
+                unitPrice: it.unitPriceBRL || 0,
+                totalPrice: it.totalPriceBRL || 0,
+                codigo: it.codigo,
+                manufacturer: it.fornecedor || it.manufacturer
+              })))
+            : [
+                { category: 'Padrão Entrada', name: 'Disjuntor Caixa Moldada 100A Homologado CEMIG PEC-11', quantity: 1, unit: 'un', unitPrice: 850 },
+                { category: 'Proteções', name: 'Disjuntor Termomagnético Bipolar/Tripolar DIN Curva C Soprano', quantity: configuredChargers.length, unit: 'un', unitPrice: 95 },
+                { category: 'Segurança NBR 17019', name: 'Interruptor Diferencial Residual IDR Tipo B / A-EV 30mA', quantity: configuredChargers.length, unit: 'un', unitPrice: 680 },
+                { category: 'Emergência', name: 'Botão de Emergência Cogumelo com Trava Giratória + Bobina MX', quantity: 1, unit: 'kit', unitPrice: 320 },
+                { category: 'Quadros', name: 'Quadro Metálico de Sobrepor Cemar / Strahl IP65 com Barramentos', quantity: 2, unit: 'un', unitPrice: 1250 }
+              ],
           totalInvestmentBRL: projectModularBOM?.totalProjectInvestmentBRL || (totalChargersInstalledKW === 60 ? 106498.88 : (unifiedCalculation.totalEstimatedCapexBRL ? unifiedCalculation.totalEstimatedCapexBRL + 55000 : 106498.88)),
           capexSavingsBRL: unifiedCalculation.dlmEstimatedSavingsBRL || (dlmEnableDLM ? 18500 : 0),
           existingLoadKW: effectiveExistingLoadKW,

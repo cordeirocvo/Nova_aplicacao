@@ -43,7 +43,9 @@ import { BillOfMaterialItem } from '@/lib/coenergygo/types';
 import {
   buildModularBOM,
   ModularBOMOutput,
-  InstallationStageId
+  InstallationStageId,
+  BudgetCalculationType,
+  StageBudgetOverride
 } from '@/lib/coenergygo/engines/modularBomEngine';
 import { EVModularBOMTable } from './EVModularBOMTable';
 import { EVTopologyHeader } from './topology/EVTopologyHeader';
@@ -137,6 +139,8 @@ export interface EVTopologyChainViewerProps {
   externalLaborMode?: 'TABELADO' | 'PERCENTUAL';
   externalLaborPercent?: number;
   externalGlobalBdiPercent?: number;
+  externalStageBudgetOverrides?: Record<string, StageBudgetOverride>;
+  onUpdateStageBudgetOverrides?: (overrides: Record<string, StageBudgetOverride>) => void;
   onUpdateBOMOverrides?: (overrides: Record<string, { quantity?: number; unitPriceBRL?: number }>) => void;
   onUpdateDeletedItemIds?: (ids: string[]) => void;
   onUpdateCustomAddedItems?: (items: BillOfMaterialItem[]) => void;
@@ -193,6 +197,8 @@ export function EVTopologyChainViewer({
   externalLaborMode,
   externalLaborPercent,
   externalGlobalBdiPercent,
+  externalStageBudgetOverrides,
+  onUpdateStageBudgetOverrides,
   onUpdateBOMOverrides,
   onUpdateDeletedItemIds,
   onUpdateCustomAddedItems,
@@ -741,6 +747,63 @@ export function EVTopologyChainViewer({
       }
     }
   }, [selectedLoads220V, selectedLoads380V]);
+  const [stageBudgetOverrides, setStageBudgetOverrides] = useState<Record<string, StageBudgetOverride>>(() => {
+    if (externalStageBudgetOverrides && Object.keys(externalStageBudgetOverrides).length > 0) {
+      return externalStageBudgetOverrides;
+    }
+    try {
+      const saved = localStorage.getItem('coenergygo_bom_stage_budget_overrides');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return {};
+  });
+
+  React.useEffect(() => {
+    if (externalStageBudgetOverrides) {
+      setStageBudgetOverrides(externalStageBudgetOverrides);
+    }
+  }, [externalStageBudgetOverrides]);
+
+  const handleUpdateStageLaborBudget = React.useCallback((stageId: InstallationStageId, type: BudgetCalculationType, value: number) => {
+    setStageBudgetOverrides(prev => {
+      const current = prev[stageId] || {};
+      const updatedStage: StageBudgetOverride = {
+        ...current,
+        laborType: type,
+        ...(type === 'PERCENTUAL' ? { laborPercent: value, laborMode: 'PERCENTUAL' } : { laborAmountBRL: value, laborMode: 'TABELADO' })
+      };
+      const updated = {
+        ...prev,
+        [stageId]: updatedStage
+      };
+      try { localStorage.setItem('coenergygo_bom_stage_budget_overrides', JSON.stringify(updated)); } catch (e) {}
+      if (onUpdateStageBudgetOverrides) {
+        setTimeout(() => onUpdateStageBudgetOverrides(updated), 0);
+      }
+      return updated;
+    });
+  }, [onUpdateStageBudgetOverrides]);
+
+  const handleUpdateStageBdiBudget = React.useCallback((stageId: InstallationStageId, type: BudgetCalculationType, value: number) => {
+    setStageBudgetOverrides(prev => {
+      const current = prev[stageId] || {};
+      const updatedStage: StageBudgetOverride = {
+        ...current,
+        bdiType: type,
+        ...(type === 'PERCENTUAL' ? { bdiPercent: value } : { bdiAmountBRL: value })
+      };
+      const updated = {
+        ...prev,
+        [stageId]: updatedStage
+      };
+      try { localStorage.setItem('coenergygo_bom_stage_budget_overrides', JSON.stringify(updated)); } catch (e) {}
+      if (onUpdateStageBudgetOverrides) {
+        setTimeout(() => onUpdateStageBudgetOverrides(updated), 0);
+      }
+      return updated;
+    });
+  }, [onUpdateStageBudgetOverrides]);
+
   const [stageLaborOverrides, setStageLaborOverrides] = useState<Record<string, { mode?: 'TABELADO' | 'PERCENTUAL'; percent?: number; fixedAmountBRL?: number }>>({});
   const [capexPricingCatalog, setCapexPricingCatalog] = useState<Record<string, {
     unitPrice: number;
@@ -1903,10 +1966,13 @@ export function EVTopologyChainViewer({
                 localStorage.removeItem('coenergygo_bom_user_overrides');
                 localStorage.removeItem('coenergygo_bom_deleted_items');
                 localStorage.removeItem('coenergygo_bom_custom_items');
+                localStorage.removeItem('coenergygo_bom_stage_budget_overrides');
               } catch (e) {}
               if (onUpdateBOMOverrides) onUpdateBOMOverrides({});
               if (onUpdateDeletedItemIds) onUpdateDeletedItemIds([]);
               if (onUpdateCustomAddedItems) onUpdateCustomAddedItems([]);
+              setStageBudgetOverrides({});
+              if (onUpdateStageBudgetOverrides) onUpdateStageBudgetOverrides({});
             }}
             hasModifications={Object.keys(userBOMOverrides).length > 0 || deletedItemIds.length > 0 || customAddedItems.length > 0}
             globalBdiPercent={globalBdiPercent}
@@ -1942,6 +2008,9 @@ export function EVTopologyChainViewer({
                 }
               }));
             }}
+            stageBudgetOverrides={stageBudgetOverrides}
+            onUpdateStageLaborBudget={handleUpdateStageLaborBudget}
+            onUpdateStageBdiBudget={handleUpdateStageBdiBudget}
             onAddNewCustomItem={handleAddNewCustomItem}
             availableCatalogItems={capexItemsList}
             isSyncingCapex={isSyncingCapex}

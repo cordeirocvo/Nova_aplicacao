@@ -46,6 +46,8 @@ import {
   ModularBOMItem,
   InstallationStageId,
   LaborCalculationMode,
+  BudgetCalculationType,
+  StageBudgetOverride,
   STAGE_METADATA
 } from "@/lib/coenergygo/engines/modularBomEngine";
 
@@ -79,6 +81,9 @@ interface EVModularBOMTableProps {
   onUpdateLaborMode?: (mode: LaborCalculationMode) => void;
   onUpdateStageLaborMode?: (stageId: InstallationStageId, mode: LaborCalculationMode) => void;
   onUpdateStageLaborAmount?: (stageId: InstallationStageId, amount: number) => void;
+  stageBudgetOverrides?: Record<string, StageBudgetOverride>;
+  onUpdateStageLaborBudget?: (stageId: InstallationStageId, type: BudgetCalculationType, value: number) => void;
+  onUpdateStageBdiBudget?: (stageId: InstallationStageId, type: BudgetCalculationType, value: number) => void;
   onAddNewCustomItem: (newItem: {
     descricao: string;
     unidade: string;
@@ -185,6 +190,9 @@ export function EVModularBOMTable({
   onUpdateLaborMode,
   onUpdateStageLaborMode,
   onUpdateStageLaborAmount,
+  stageBudgetOverrides,
+  onUpdateStageLaborBudget,
+  onUpdateStageBdiBudget,
   onAddNewCustomItem,
   availableCatalogItems = [],
   isSyncingCapex = false,
@@ -1384,36 +1392,23 @@ export function EVModularBOMTable({
                 </div>
                 <div className="w-px h-8 bg-slate-800 hidden sm:block" />
                 <div className="text-right">
-                  <div className="flex items-center justify-end gap-1.5 mb-0.5">
-                    <span className="text-[10px] text-slate-400 uppercase font-bold">Mão de Obra</span>
-                    {onUpdateStageLaborMode && (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          onUpdateStageLaborMode(
-                            currentActiveStage.stageId,
-                            currentActiveStage.laborMode === "TABELADO" ? "PERCENTUAL" : "TABELADO"
-                          )
-                        }
-                        className={`text-[9px] px-1.5 py-0.5 rounded font-black uppercase tracking-tight cursor-pointer transition-all border ${
-                          currentActiveStage.laborMode === "TABELADO"
-                            ? "bg-emerald-950/80 text-emerald-300 border-emerald-600/50 hover:bg-emerald-900"
-                            : "bg-amber-950/80 text-amber-300 border-amber-600/50 hover:bg-amber-900"
-                        }`}
-                        title="Alternar entre Mão de Obra Tabelada e % sobre Materiais"
-                      >
-                        {currentActiveStage.laborMode === "TABELADO" ? "📋 Tabelado" : `٪ ${laborPercent}%`}
-                      </button>
-                    )}
-                  </div>
+                  <span className="text-[10px] text-slate-400 uppercase font-bold block">Mão de Obra</span>
                   <span className="text-xs font-mono font-bold text-emerald-400 block">
                     R$ {currentActiveStage.subtotalLaborBRL.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                   </span>
-                  {currentActiveStage.stageId === "ETAPA_1_PADRAO_CEMIG" && currentActiveStage.laborMode === "TABELADO" && (
-                    <span className="text-[8px] text-slate-400 font-normal block font-sans">
-                      Instalação R$ 10k + Projeto R$ 1,5k + Vistoria R$ 450
-                    </span>
-                  )}
+                  <span className="text-[9px] text-slate-500 font-mono block">
+                    {currentActiveStage.laborType === 'VALOR' ? 'Valor Fixo' : `${currentActiveStage.stageLaborPercent}% s/ insumos`}
+                  </span>
+                </div>
+                <div className="w-px h-8 bg-slate-800 hidden sm:block" />
+                <div className="text-right">
+                  <span className="text-[10px] text-slate-400 uppercase font-bold block">BDI da Etapa</span>
+                  <span className="text-xs font-mono font-bold text-sky-400 block">
+                    R$ {currentActiveStage.subtotalBdiBRL.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                  </span>
+                  <span className="text-[9px] text-slate-500 font-mono block">
+                    {currentActiveStage.bdiType === 'VALOR' ? 'Valor Fixo' : `${currentActiveStage.stageBdiPercent}% s/ insumos`}
+                  </span>
                 </div>
                 <div className="w-px h-8 bg-slate-800 hidden sm:block" />
                 <div className="text-right">
@@ -1425,36 +1420,194 @@ export function EVModularBOMTable({
               </div>
             </div>
 
-            {/* Ação de Inserção Rápida e Controle de Mão de Obra Específica para esta etapa */}
-            <div className="mt-4 pt-4 border-t border-slate-800/80 flex items-center justify-between gap-3 flex-wrap">
-              <div className="flex items-center gap-2 text-xs text-slate-400 flex-wrap">
-                <span className="font-semibold text-slate-300">Mão de Obra desta etapa:</span>
-                <div className="inline-flex items-center bg-slate-950 rounded-lg p-0.5 border border-slate-800">
-                  <button
-                    type="button"
-                    onClick={() => onUpdateStageLaborMode?.(currentActiveStage.stageId, "TABELADO")}
-                    className={`px-2.5 py-1 rounded text-[10px] font-bold uppercase transition-all cursor-pointer ${
-                      currentActiveStage.laborMode === "TABELADO"
-                        ? "bg-[#00B356] text-white shadow-sm"
-                        : "text-slate-400 hover:text-white"
-                    }`}
-                  >
-                    📋 Custo Tabelado {currentActiveStage.tabeladoLaborBRL > 0 ? `(R$ ${currentActiveStage.tabeladoLaborBRL.toLocaleString('pt-BR', { minimumFractionDigits: 2 })})` : ''}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onUpdateStageLaborMode?.(currentActiveStage.stageId, "PERCENTUAL")}
-                    className={`px-2.5 py-1 rounded text-[10px] font-bold uppercase transition-all cursor-pointer ${
-                      currentActiveStage.laborMode === "PERCENTUAL"
-                        ? "bg-[#E45318] text-white shadow-sm"
-                        : "text-slate-400 hover:text-white"
-                    }`}
-                  >
-                    ٪ Porcentagem ({laborPercent}% = R$ {currentActiveStage.percentLaborBRL.toLocaleString('pt-BR', { minimumFractionDigits: 2 })})
-                  </button>
+            {/* Ajustes Individuais da Etapa: Mão de Obra & BDI (Porcentagem % ou Valor R$) */}
+            <div className="mt-4 pt-4 border-t border-slate-800/80 grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Controle de Mão de Obra da Etapa */}
+              <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 flex flex-col gap-2.5">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                    <Wrench className="w-3.5 h-3.5 text-emerald-400" />
+                    Mão de Obra da Etapa:
+                  </span>
+                  <div className="inline-flex items-center bg-slate-900 rounded-lg p-0.5 border border-slate-700">
+                    <button
+                      type="button"
+                      onClick={() => onUpdateStageLaborBudget?.(
+                        currentActiveStage.stageId,
+                        "PERCENTUAL",
+                        currentActiveStage.stageLaborPercent || laborPercent
+                      )}
+                      className={`px-2 py-0.5 rounded text-[10px] font-black uppercase transition-all cursor-pointer ${
+                        currentActiveStage.laborType === "PERCENTUAL"
+                          ? "bg-[#00B356] text-white shadow-sm"
+                          : "text-slate-400 hover:text-white"
+                      }`}
+                    >
+                      % Porcentagem
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onUpdateStageLaborBudget?.(
+                        currentActiveStage.stageId,
+                        "VALOR",
+                        currentActiveStage.subtotalLaborBRL || (currentActiveStage.subtotalMaterialsBRL * 0.25)
+                      )}
+                      className={`px-2 py-0.5 rounded text-[10px] font-black uppercase transition-all cursor-pointer ${
+                        currentActiveStage.laborType === "VALOR"
+                          ? "bg-[#E45318] text-white shadow-sm"
+                          : "text-slate-400 hover:text-white"
+                      }`}
+                    >
+                      R$ Valor Fixo
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {currentActiveStage.laborType === "PERCENTUAL" ? (
+                    <div className="flex items-center gap-2 w-full">
+                      <div className="relative flex-1">
+                        <input
+                          type="number"
+                          min={0}
+                          max={100}
+                          step={1}
+                          value={currentActiveStage.stageLaborPercent}
+                          onChange={(e) => {
+                            const val = Math.max(0, parseFloat(e.target.value) || 0);
+                            onUpdateStageLaborBudget?.(currentActiveStage.stageId, "PERCENTUAL", val);
+                          }}
+                          className="w-full bg-slate-900 border border-slate-700 focus:border-[#00B356] rounded-lg px-2.5 py-1 text-xs font-mono font-bold text-emerald-400 outline-none"
+                        />
+                        <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-mono text-slate-500">%</span>
+                      </div>
+                      <span className="text-[11px] font-mono text-slate-400 shrink-0">
+                        = R$ {currentActiveStage.subtotalLaborBRL.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 w-full">
+                      <div className="relative flex-1">
+                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-mono text-slate-500">R$</span>
+                        <input
+                          type="number"
+                          min={0}
+                          step={50}
+                          value={currentActiveStage.subtotalLaborBRL}
+                          onChange={(e) => {
+                            const val = Math.max(0, parseFloat(e.target.value) || 0);
+                            onUpdateStageLaborBudget?.(currentActiveStage.stageId, "VALOR", val);
+                          }}
+                          className="w-full bg-slate-900 border border-slate-700 focus:border-[#E45318] rounded-lg pl-8 pr-2.5 py-1 text-xs font-mono font-bold text-amber-300 outline-none"
+                        />
+                      </div>
+                      <span className="text-[11px] font-mono text-slate-400 shrink-0">
+                        ({currentActiveStage.subtotalMaterialsBRL > 0
+                          ? ((currentActiveStage.subtotalLaborBRL / currentActiveStage.subtotalMaterialsBRL) * 100).toFixed(1)
+                          : "0.0"}% s/ insumos)
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 
+              {/* Controle de BDI da Etapa */}
+              <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 flex flex-col gap-2.5">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                    <Percent className="w-3.5 h-3.5 text-sky-400" />
+                    BDI da Etapa:
+                  </span>
+                  <div className="inline-flex items-center bg-slate-900 rounded-lg p-0.5 border border-slate-700">
+                    <button
+                      type="button"
+                      onClick={() => onUpdateStageBdiBudget?.(
+                        currentActiveStage.stageId,
+                        "PERCENTUAL",
+                        currentActiveStage.stageBdiPercent || globalBdiPercent
+                      )}
+                      className={`px-2 py-0.5 rounded text-[10px] font-black uppercase transition-all cursor-pointer ${
+                        currentActiveStage.bdiType === "PERCENTUAL"
+                          ? "bg-[#00B356] text-white shadow-sm"
+                          : "text-slate-400 hover:text-white"
+                      }`}
+                    >
+                      % Porcentagem
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onUpdateStageBdiBudget?.(
+                        currentActiveStage.stageId,
+                        "VALOR",
+                        currentActiveStage.subtotalBdiBRL || (currentActiveStage.subtotalMaterialsBRL * (globalBdiPercent / 100))
+                      )}
+                      className={`px-2 py-0.5 rounded text-[10px] font-black uppercase transition-all cursor-pointer ${
+                        currentActiveStage.bdiType === "VALOR"
+                          ? "bg-[#E45318] text-white shadow-sm"
+                          : "text-slate-400 hover:text-white"
+                      }`}
+                    >
+                      R$ Valor Fixo
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {currentActiveStage.bdiType === "PERCENTUAL" ? (
+                    <div className="flex items-center gap-2 w-full">
+                      <div className="relative flex-1">
+                        <input
+                          type="number"
+                          min={0}
+                          max={100}
+                          step={1}
+                          value={currentActiveStage.stageBdiPercent}
+                          onChange={(e) => {
+                            const val = Math.max(0, parseFloat(e.target.value) || 0);
+                            onUpdateStageBdiBudget?.(currentActiveStage.stageId, "PERCENTUAL", val);
+                          }}
+                          className="w-full bg-slate-900 border border-slate-700 focus:border-sky-500 rounded-lg px-2.5 py-1 text-xs font-mono font-bold text-sky-300 outline-none"
+                        />
+                        <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-mono text-slate-500">%</span>
+                      </div>
+                      <span className="text-[11px] font-mono text-slate-400 shrink-0">
+                        = R$ {currentActiveStage.subtotalBdiBRL.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 w-full">
+                      <div className="relative flex-1">
+                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-mono text-slate-500">R$</span>
+                        <input
+                          type="number"
+                          min={0}
+                          step={50}
+                          value={currentActiveStage.subtotalBdiBRL}
+                          onChange={(e) => {
+                            const val = Math.max(0, parseFloat(e.target.value) || 0);
+                            onUpdateStageBdiBudget?.(currentActiveStage.stageId, "VALOR", val);
+                          }}
+                          className="w-full bg-slate-900 border border-slate-700 focus:border-sky-500 rounded-lg pl-8 pr-2.5 py-1 text-xs font-mono font-bold text-sky-300 outline-none"
+                        />
+                      </div>
+                      <span className="text-[11px] font-mono text-slate-400 shrink-0">
+                        ({currentActiveStage.subtotalMaterialsBRL > 0
+                          ? ((currentActiveStage.subtotalBdiBRL / currentActiveStage.subtotalMaterialsBRL) * 100).toFixed(1)
+                          : "0.0"}% s/ insumos)
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Ação de Inserção Rápida de Material */}
+            <div className="mt-3 pt-3 border-t border-slate-800/60 flex items-center justify-between gap-3 flex-wrap">
+              <div className="text-xs text-slate-400 flex items-center gap-2">
+                <span className="font-semibold text-slate-300">
+                  {currentActiveStage.items.length} itens listados nesta etapa
+                </span>
+              </div>
               <button
                 type="button"
                 onClick={() => handleOpenAddModal(currentActiveStage.stageId)}

@@ -188,4 +188,64 @@ describe('Modular BOM Engine — Sizing and Budgeting Tests', () => {
     assert.strictEqual(bomOutput.globalBdiAmountBRL, expectedBdiValue, 'BDI total deve bater com a margem aplicada');
     assert.ok(bomOutput.totalProjectInvestmentBRL > bomOutput.totalMaterialsNetBRL + bomOutput.totalLaborNetBRL, 'CAPEX final deve conter BDI');
   });
+
+  it('Deve conter itens de CFTV do orçamento CEITEL Sete Lagoas na ETAPA 10 com título atualizado', () => {
+    const topology = createMockTopology();
+    const bomOutput = buildModularBOM(topology, mockCemigItems);
+
+    const etapa10 = bomOutput.stages.find(s => s.stageId === 'ETAPA_10_SEGURANCA_EMERGENCIA');
+    assert.ok(etapa10, 'Etapa 10 de segurança deve existir');
+    assert.ok(etapa10.title.includes('CFTV'), 'Título da etapa 10 deve conter CFTV');
+    assert.ok(etapa10.shortTitle.includes('CFTV'), 'Título curto da etapa 10 deve conter CFTV');
+
+    // Verificar itens de CFTV da cotação CEITEL Sete Lagoas (Orçamento 5501561)
+    const hasDvr = etapa10.items.some(it => it.description.toLowerCase().includes('mhdx 1304') || it.codigo === '15552');
+    const hasCamera = etapa10.items.some(it => it.description.toLowerCase().includes('vhd 1220') || it.codigo === '4560182');
+    const hasCabo = etapa10.items.some(it => it.description.toLowerCase().includes('utp') || it.codigo === '14161');
+    const hasBalun = etapa10.items.some(it => it.description.toLowerCase().includes('balun') || it.codigo === '12428');
+
+    assert.ok(hasDvr, 'Deve incluir DVR Intelbras MHDX 1304');
+    assert.ok(hasCamera, 'Deve incluir Câmera Intelbras VHD 1220');
+    assert.ok(hasCabo, 'Deve incluir Cabo UTP Cat5e Megatron');
+    assert.ok(hasBalun, 'Deve incluir Balun Passivo Intelbras');
+  });
+
+  it('Deve permitir ajuste individual de mão de obra (porcentagem ou valor fixo) e BDI por etapa', () => {
+    const topology = createMockTopology();
+    const bomOutput = buildModularBOM(topology, mockCemigItems, {
+      includeEntranceStandardInBOM: true,
+      stageBudgetOverrides: {
+        ETAPA_2_TRECHO_1_PADRAO_220V: {
+          laborType: 'VALOR',
+          laborAmountBRL: 1500,
+          bdiType: 'PERCENTUAL',
+          bdiPercent: 18
+        },
+        ETAPA_3_PAINEL_220V: {
+          laborType: 'PERCENTUAL',
+          laborPercent: 35,
+          bdiType: 'VALOR',
+          bdiAmountBRL: 750
+        }
+      }
+    });
+
+    const etapa2 = bomOutput.stages.find(s => s.stageId === 'ETAPA_2_TRECHO_1_PADRAO_220V');
+    assert.ok(etapa2);
+    assert.strictEqual(etapa2.laborType, 'VALOR');
+    assert.strictEqual(etapa2.subtotalLaborBRL, 1500);
+    assert.strictEqual(etapa2.bdiType, 'PERCENTUAL');
+    assert.strictEqual(etapa2.stageBdiPercent, 18);
+    const expectedBdi2 = Number((etapa2.subtotalMaterialsBRL * 0.18).toFixed(2));
+    assert.strictEqual(etapa2.subtotalBdiBRL, expectedBdi2);
+
+    const etapa3 = bomOutput.stages.find(s => s.stageId === 'ETAPA_3_PAINEL_220V');
+    assert.ok(etapa3);
+    assert.strictEqual(etapa3.laborType, 'PERCENTUAL');
+    assert.strictEqual(etapa3.stageLaborPercent, 35);
+    const expectedLabor3 = Number((etapa3.subtotalMaterialsBRL * 0.35).toFixed(2));
+    assert.strictEqual(etapa3.subtotalLaborBRL, expectedLabor3);
+    assert.strictEqual(etapa3.bdiType, 'VALOR');
+    assert.strictEqual(etapa3.subtotalBdiBRL, 750);
+  });
 });

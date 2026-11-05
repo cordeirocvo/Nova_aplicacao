@@ -33,12 +33,21 @@ export type InstallationStageId =
   | 'ETAPA_9_PONTO_RECARGA_SEGURANCA';
 
 export type LaborCalculationMode = 'TABELADO' | 'PERCENTUAL';
+export type BudgetCalculationType = 'PERCENTUAL' | 'VALOR';
 
-export interface StageLaborOverride {
+export interface StageBudgetOverride {
   mode?: LaborCalculationMode;
-  percent?: number;
+  laborType?: BudgetCalculationType;
+  laborPercent?: number;
+  laborAmountBRL?: number;
   fixedAmountBRL?: number;
+  bdiType?: BudgetCalculationType;
+  bdiPercent?: number;
+  bdiAmountBRL?: number;
+  percent?: number;
 }
+
+export type StageLaborOverride = StageBudgetOverride;
 
 export interface ModularBOMItem extends BillOfMaterialItem {
   stageId: InstallationStageId;
@@ -58,8 +67,15 @@ export interface ModularBOMStage {
   items: ModularBOMItem[];
   subtotalMaterialsBRL: number;
   subtotalLaborBRL: number;
+  subtotalBdiBRL: number;
   totalStageBRL: number;
   laborMode: LaborCalculationMode;
+  laborType: BudgetCalculationType;
+  stageLaborPercent: number;
+  stageLaborAmountBRL: number;
+  bdiType: BudgetCalculationType;
+  stageBdiPercent: number;
+  stageBdiAmountBRL: number;
   tabeladoLaborBRL: number;
   percentLaborBRL: number;
 }
@@ -84,7 +100,8 @@ export interface ModularBOMOptions {
   globalBdiPercent?: number;       // Margem BDI global (ex: 20%)
   laborPercent?: number;           // Mão de obra global estimada (% dos materiais, ex: 25%)
   laborMode?: LaborCalculationMode; // 'TABELADO' (default) | 'PERCENTUAL'
-  stageLaborOverrides?: Record<string, StageLaborOverride>;
+  stageLaborOverrides?: Record<string, StageBudgetOverride>;
+  stageBudgetOverrides?: Record<string, StageBudgetOverride>;
   userBOMOverrides?: Record<string, { quantity?: number; unitPriceBRL?: number }>;
   deletedItemIds?: string[];
   customAddedItems?: BillOfMaterialItem[];
@@ -163,9 +180,9 @@ export const STAGE_METADATA: Record<InstallationStageId, { order: number; title:
   },
   ETAPA_10_SEGURANCA_EMERGENCIA: {
     order: 10,
-    title: '10. Itens de Segurança, Proteção contra Incêndio & Emergência',
-    shortTitle: 'Itens de Segurança & Normas',
-    description: 'Botão de parada de emergência cogumelo com trava (≤ 5m NBR 17019), bobina de disparo MX no QGBT, extintores CO2/ABC, bate-rodas (bollards) tubulares e sinalização fotoluminescente.'
+    title: '10. Itens de Segurança, CFTV, Proteção contra Incêndio & Emergência',
+    shortTitle: 'Itens de Segurança, CFTV & Normas',
+    description: 'Sistema de monitoramento e CFTV (DVR Stand Alone 4 canais Intelbras com HD 1TB, Câmeras Full Color 20m, Cabeamento Megatron Cat5e e Fontes), Botão de emergência cogumelo (≤ 5m NBR 17019), bobina de disparo MX no QGBT, extintores CO2/ABC, bate-rodas (bollards) e sinalização fotoluminescente.'
   }
 };
 
@@ -579,6 +596,7 @@ export function buildModularBOM(
     laborPercent = 25,
     laborMode = 'TABELADO',
     stageLaborOverrides = {},
+    stageBudgetOverrides = {},
     userBOMOverrides = {},
     deletedItemIds = [],
     customAddedItems = [],
@@ -1618,6 +1636,118 @@ export function buildModularBOM(
     isMandatoryNorm: true
   });
 
+  // ─── SISTEMA DE MONITORAMENTO CFTV (Orçamento CEITEL SETE LAGOAS Nº 5501561) ───
+  rawItemsByStage.ETAPA_10_SEGURANCA_EMERGENCIA.push(
+    {
+      id: 'bom-etapa10-cftv-dvr-1304',
+      stageId: 'ETAPA_10_SEGURANCA_EMERGENCIA',
+      codigo: '15552',
+      category: 'cftv',
+      description: 'DVR STAND ALONE 04 CANAIS MHDX 1304 C/HD 1TB (Intelbras)',
+      quantity: 1,
+      unit: 'un',
+      spec: 'Gravador digital de vídeo com inteligência artificial, 4 canais, HD 1TB WD Purple incluso (NCM 85219000)',
+      normReference: 'NBR 17019 / Monitoramento CFTV 24h',
+      manufacturer: 'Intelbras / CEITEL',
+      unitPriceBRL: 1158.74,
+      totalPriceBRL: 1158.74,
+      pricingSource: 'CAPEX_DB',
+      fornecedor: 'CEITEL SETE LAGOAS',
+      numeroOrcamento: '5501561',
+      dataUltimaCotacao: '2026-11-05'
+    },
+    {
+      id: 'bom-etapa10-cftv-camera-1220b',
+      stageId: 'ETAPA_10_SEGURANCA_EMERGENCIA',
+      codigo: '4560182',
+      category: 'cftv',
+      description: 'CAMERA INFRA 20M 2.8 MM VHD 1220 B G9 FULL COLOR (Intelbras)',
+      quantity: 4,
+      unit: 'un',
+      spec: 'Câmera bullet HD com iluminação inteligente Full Color noturna para monitoramento das vagas VE (NCM 85258913)',
+      normReference: 'NBR 17019 / Monitoramento CFTV 24h',
+      manufacturer: 'Intelbras / CEITEL',
+      unitPriceBRL: 132.50,
+      totalPriceBRL: 530.00,
+      pricingSource: 'CAPEX_DB',
+      fornecedor: 'CEITEL SETE LAGOAS',
+      numeroOrcamento: '5501561',
+      dataUltimaCotacao: '2026-11-05'
+    },
+    {
+      id: 'bom-etapa10-cftv-cabo-utp-cat5e',
+      stageId: 'ETAPA_10_SEGURANCA_EMERGENCIA',
+      codigo: '14161',
+      category: 'cftv',
+      description: 'CABO UTP 04X24 AWG CAT 5e AZ (100M) MEGATRON',
+      quantity: 1,
+      unit: 'rl',
+      spec: 'Cabo de rede trançado 4 pares para transmissão de vídeo e dados CFTV (NCM 85444900)',
+      normReference: 'NBR 17019 / ABNT NBR 14565',
+      manufacturer: 'Megatron / CEITEL',
+      unitPriceBRL: 249.90,
+      totalPriceBRL: 249.90,
+      pricingSource: 'CAPEX_DB',
+      fornecedor: 'CEITEL SETE LAGOAS',
+      numeroOrcamento: '5501561',
+      dataUltimaCotacao: '2026-11-05'
+    },
+    {
+      id: 'bom-etapa10-cftv-balun-vb501p',
+      stageId: 'ETAPA_10_SEGURANCA_EMERGENCIA',
+      codigo: '12428',
+      category: 'cftv',
+      description: 'BALUN PASSIVO DE 01 CANAL VIDEO (PAR) VB 501 P G2 (Intelbras)',
+      quantity: 4,
+      unit: 'par',
+      spec: 'Casador de impedância passivo com proteção contra surtos para cabo UTP (NCM 85043199)',
+      normReference: 'NBR 17019 / NBR 5410',
+      manufacturer: 'Intelbras / CEITEL',
+      unitPriceBRL: 20.50,
+      totalPriceBRL: 82.00,
+      pricingSource: 'CAPEX_DB',
+      fornecedor: 'CEITEL SETE LAGOAS',
+      numeroOrcamento: '5501561',
+      dataUltimaCotacao: '2026-11-05'
+    },
+    {
+      id: 'bom-etapa10-cftv-fonte-efm1205',
+      stageId: 'ETAPA_10_SEGURANCA_EMERGENCIA',
+      codigo: '14069',
+      category: 'cftv',
+      description: 'FONTE 12,8V 05A EFM 1205 G2 GRADEADA (Intelbras)',
+      quantity: 1,
+      unit: 'un',
+      spec: 'Fonte de alimentação metálica com filtro contra ruídos para até 8 câmeras (NCM 85044021)',
+      normReference: 'NBR 5410',
+      manufacturer: 'Intelbras / CEITEL',
+      unitPriceBRL: 56.23,
+      totalPriceBRL: 56.23,
+      pricingSource: 'CAPEX_DB',
+      fornecedor: 'CEITEL SETE LAGOAS',
+      numeroOrcamento: '5501561',
+      dataUltimaCotacao: '2026-11-05'
+    },
+    {
+      id: 'bom-etapa10-cftv-conector-p4',
+      stageId: 'ETAPA_10_SEGURANCA_EMERGENCIA',
+      codigo: '1644',
+      category: 'cftv',
+      description: 'CONECTOR ADAPTADOR P4 MACHO (10 UN)',
+      quantity: 1,
+      unit: 'pct',
+      spec: 'Conector de alimentação P4 com borne de parafuso para câmeras (NCM 85299019)',
+      normReference: 'NBR 5410',
+      manufacturer: 'CEITEL',
+      unitPriceBRL: 8.90,
+      totalPriceBRL: 8.90,
+      pricingSource: 'CAPEX_DB',
+      fornecedor: 'CEITEL SETE LAGOAS',
+      numeroOrcamento: '5501561',
+      dataUltimaCotacao: '2026-11-05'
+    }
+  );
+
   // ─────────────────────────────────────────────────────────────────────────────
   // APLICAÇÃO DE ITENS CUSTOMIZADOS DO USUÁRIO
   // ─────────────────────────────────────────────────────────────────────────────
@@ -1806,42 +1936,81 @@ export function buildModularBOM(
       materialItems.reduce((acc, it) => acc + (it.totalPriceBRL || 0), 0).toFixed(2)
     );
 
-    // Mão de Obra e Serviços:
-    // Modo TABELADO (Padrão CEMIG R$ 10.000 + R$ 1.500 + R$ 450 = R$ 11.950) vs Modo PERCENTUAL (% sobre materiais)
-    const stageOverride = stageLaborOverrides?.[sId];
+    // Sincronização individual por etapa: Mão de Obra e BDI (% ou Valor R$)
+    const stageOverride = stageBudgetOverrides?.[sId] || stageLaborOverrides?.[sId];
     const effectiveStageMode: LaborCalculationMode = stageOverride?.mode || laborMode || 'TABELADO';
-    const effectiveStagePercent: number = stageOverride?.percent !== undefined ? stageOverride.percent : laborPercent;
 
     const tabeladoLaborBRL = Number(
       serviceItems.reduce((acc, it) => acc + (it.totalPriceBRL || 0), 0).toFixed(2)
     );
-    const percentLaborBRL = Number(
-      (subtotalMaterialsBRL * (effectiveStagePercent / 100)).toFixed(2)
-    );
+
+    // ─── 1. MÃO DE OBRA DA ETAPA (Porcentagem vs Valor R$) ───────────────────
+    const effectiveLaborType: BudgetCalculationType = stageOverride?.laborType || 
+      (stageOverride?.laborAmountBRL !== undefined || stageOverride?.fixedAmountBRL !== undefined ? 'VALOR' : 'PERCENTUAL');
 
     let subtotalLaborBRL = 0;
+    let stageLaborPercent = laborPercent;
+    let stageLaborAmountBRL = 0;
+
     if (sId === 'ETAPA_1_PADRAO_CEMIG' && !includeEntranceStandardInBOM) {
-      // Padrão existente mantido sem modificação: Custo de mão de obra e materiais ZERADOS no orçamento
       subtotalLaborBRL = 0;
-    } else if (effectiveStageMode === 'TABELADO') {
-      if (stageOverride?.fixedAmountBRL !== undefined) {
-        subtotalLaborBRL = stageOverride.fixedAmountBRL;
-      } else if (tabeladoLaborBRL > 0) {
-        // Ex: Padrão CEMIG = R$ 10.000 (instalação) + R$ 1.500 (projeto) + R$ 450 (vistoria) = R$ 11.950,00
-        subtotalLaborBRL = tabeladoLaborBRL;
-      } else {
-        // Para etapas sem serviços tabelados explícitos, adota a taxa percentual padrão
-        subtotalLaborBRL = percentLaborBRL;
-      }
+      stageLaborPercent = 0;
+      stageLaborAmountBRL = 0;
+    } else if (stageOverride?.laborType === 'VALOR' && stageOverride?.laborAmountBRL !== undefined) {
+      subtotalLaborBRL = Number(stageOverride.laborAmountBRL.toFixed(2));
+      stageLaborAmountBRL = subtotalLaborBRL;
+      stageLaborPercent = subtotalMaterialsBRL > 0 ? Number(((subtotalLaborBRL / subtotalMaterialsBRL) * 100).toFixed(1)) : laborPercent;
+    } else if (stageOverride?.fixedAmountBRL !== undefined && stageOverride?.laborType !== 'PERCENTUAL') {
+      subtotalLaborBRL = Number(stageOverride.fixedAmountBRL.toFixed(2));
+      stageLaborAmountBRL = subtotalLaborBRL;
+      stageLaborPercent = subtotalMaterialsBRL > 0 ? Number(((subtotalLaborBRL / subtotalMaterialsBRL) * 100).toFixed(1)) : laborPercent;
+    } else if (stageOverride?.laborType === 'PERCENTUAL' && stageOverride?.laborPercent !== undefined) {
+      stageLaborPercent = stageOverride.laborPercent;
+      subtotalLaborBRL = Number((subtotalMaterialsBRL * (stageLaborPercent / 100)).toFixed(2));
+      stageLaborAmountBRL = subtotalLaborBRL;
+    } else if (stageOverride?.percent !== undefined) {
+      stageLaborPercent = stageOverride.percent;
+      subtotalLaborBRL = Number((subtotalMaterialsBRL * (stageLaborPercent / 100)).toFixed(2));
+      stageLaborAmountBRL = subtotalLaborBRL;
+    } else if (effectiveStageMode === 'TABELADO' && tabeladoLaborBRL > 0) {
+      subtotalLaborBRL = tabeladoLaborBRL;
+      stageLaborAmountBRL = tabeladoLaborBRL;
+      stageLaborPercent = subtotalMaterialsBRL > 0 ? Number(((subtotalLaborBRL / subtotalMaterialsBRL) * 100).toFixed(1)) : laborPercent;
     } else {
-      // Modo PERCENTUAL: Alíquota estrita sobre materiais físicos
-      subtotalLaborBRL = percentLaborBRL;
+      stageLaborPercent = laborPercent;
+      subtotalLaborBRL = Number((subtotalMaterialsBRL * (laborPercent / 100)).toFixed(2));
+      stageLaborAmountBRL = subtotalLaborBRL;
+    }
+
+    const percentLaborBRL = Number((subtotalMaterialsBRL * (stageLaborPercent / 100)).toFixed(2));
+
+    // ─── 2. BDI DA ETAPA (Porcentagem vs Valor R$) ────────────────────────────
+    const effectiveBdiType: BudgetCalculationType = stageOverride?.bdiType ||
+      (stageOverride?.bdiAmountBRL !== undefined ? 'VALOR' : 'PERCENTUAL');
+
+    let subtotalBdiBRL = 0;
+    let stageBdiPercent = globalBdiPercent;
+    let stageBdiAmountBRL = 0;
+
+    if (stageOverride?.bdiType === 'VALOR' && stageOverride?.bdiAmountBRL !== undefined) {
+      subtotalBdiBRL = Number(stageOverride.bdiAmountBRL.toFixed(2));
+      stageBdiAmountBRL = subtotalBdiBRL;
+      stageBdiPercent = subtotalMaterialsBRL > 0 ? Number(((subtotalBdiBRL / subtotalMaterialsBRL) * 100).toFixed(1)) : globalBdiPercent;
+    } else if (stageOverride?.bdiType === 'PERCENTUAL' && stageOverride?.bdiPercent !== undefined) {
+      stageBdiPercent = stageOverride.bdiPercent;
+      subtotalBdiBRL = Number((subtotalMaterialsBRL * (stageBdiPercent / 100)).toFixed(2));
+      stageBdiAmountBRL = subtotalBdiBRL;
+    } else if (stageOverride?.bdiAmountBRL !== undefined) {
+      subtotalBdiBRL = Number(stageOverride.bdiAmountBRL.toFixed(2));
+      stageBdiAmountBRL = subtotalBdiBRL;
+      stageBdiPercent = subtotalMaterialsBRL > 0 ? Number(((subtotalBdiBRL / subtotalMaterialsBRL) * 100).toFixed(1)) : globalBdiPercent;
+    } else {
+      stageBdiPercent = globalBdiPercent;
+      subtotalBdiBRL = Number((subtotalMaterialsBRL * (globalBdiPercent / 100)).toFixed(2));
+      stageBdiAmountBRL = subtotalBdiBRL;
     }
 
     // Itens finais para exibição na tabela da etapa:
-    // Se o modo for PERCENTUAL, os itens de serviço devem ficar com valores unitários e totais ZERADOS (R$ 0,00),
-    // evitando cobrança visual dupla já que o valor está computado no subtotalLaborBRL.
-    // Se o modo for TABELADO, os valores tabelados reais ficam visíveis.
     const finalItems = items.map((it) => {
       if (isService(it) && effectiveStageMode === 'PERCENTUAL') {
         return {
@@ -1850,14 +2019,14 @@ export function buildModularBOM(
           totalPriceBRL: 0,
           pricingSource: 'DEFAULT' as const,
           spec: it.spec
-            ? `${it.spec} (Valor zerado na tabela pois a mão de obra está calculada pela taxa de ${effectiveStagePercent}% sobre os materiais)`
-            : `(Valor zerado na tabela: incluso na taxa de ${effectiveStagePercent}% sobre materiais)`
+            ? `${it.spec} (Valor zerado na tabela pois a mão de obra está calculada pela taxa de ${stageLaborPercent}% sobre os materiais)`
+            : `(Valor zerado na tabela: incluso na taxa de ${stageLaborPercent}% sobre materiais)`
         };
       }
       return it;
     });
 
-    const totalStageBRL = Number((subtotalMaterialsBRL + subtotalLaborBRL).toFixed(2));
+    const totalStageBRL = Number((subtotalMaterialsBRL + subtotalLaborBRL + subtotalBdiBRL).toFixed(2));
 
     totalMaterialsNetBRL += subtotalMaterialsBRL;
     totalLaborNetBRL += subtotalLaborBRL;
@@ -1872,8 +2041,15 @@ export function buildModularBOM(
       items: finalItems,
       subtotalMaterialsBRL,
       subtotalLaborBRL,
+      subtotalBdiBRL,
       totalStageBRL,
       laborMode: effectiveStageMode,
+      laborType: effectiveLaborType,
+      stageLaborPercent,
+      stageLaborAmountBRL,
+      bdiType: effectiveBdiType,
+      stageBdiPercent,
+      stageBdiAmountBRL,
       tabeladoLaborBRL,
       percentLaborBRL
     };
@@ -1881,16 +2057,21 @@ export function buildModularBOM(
 
   totalMaterialsNetBRL = Number(totalMaterialsNetBRL.toFixed(2));
   totalLaborNetBRL = Number(totalLaborNetBRL.toFixed(2));
-  const globalBdiAmountBRL = Number((totalMaterialsNetBRL * (globalBdiPercent / 100)).toFixed(2));
+  const globalBdiAmountBRL = Number(
+    stages.reduce((acc, st) => acc + (st.subtotalBdiBRL || 0), 0).toFixed(2)
+  );
   const totalProjectInvestmentBRL = Number(
     (totalMaterialsNetBRL + globalBdiAmountBRL + totalLaborNetBRL).toFixed(2)
   );
+  const effectiveGlobalBdiPercent = totalMaterialsNetBRL > 0
+    ? Number(((globalBdiAmountBRL / totalMaterialsNetBRL) * 100).toFixed(2))
+    : globalBdiPercent;
 
   return {
     stages,
     totalMaterialsNetBRL,
     totalLaborNetBRL,
-    globalBdiPercent,
+    globalBdiPercent: effectiveGlobalBdiPercent,
     globalBdiAmountBRL,
     totalProjectInvestmentBRL,
     totalItemsCount,

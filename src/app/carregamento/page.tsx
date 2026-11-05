@@ -280,6 +280,21 @@ export default function CoenergyGODashboard() {
     return [];
   });
 
+  const [bomStageBudgetOverrides, setBomStageBudgetOverrides] = useState<Record<string, any>>(() => {
+    if (typeof window === 'undefined') return {};
+    try {
+      const draft = localStorage.getItem('coenergygo_active_draft');
+      if (draft) {
+        const p = JSON.parse(draft);
+        const st = p?.stageBudgetOverrides || p?.clientProjectData?.stageBudgetOverrides;
+        if (st && Object.keys(st).length > 0) return st;
+      }
+      const s = localStorage.getItem('coenergygo_bom_stage_budget_overrides');
+      if (s) return JSON.parse(s);
+    } catch (e) {}
+    return {};
+  });
+
   const [bomLaborMode, setBomLaborMode] = useState<'TABELADO' | 'PERCENTUAL'>(() => {
     if (typeof window === 'undefined') return 'TABELADO';
     try {
@@ -597,6 +612,17 @@ export default function CoenergyGODashboard() {
               try {
                 const s = localStorage.getItem('coenergygo_bom_custom_items');
                 if (s) setBomCustomAddedItems(JSON.parse(s));
+              } catch (e) {}
+            }
+
+            const draftStageBudget = parsedDraft?.stageBudgetOverrides || parsedDraft?.clientProjectData?.stageBudgetOverrides;
+            if (draftStageBudget && Object.keys(draftStageBudget).length > 0) {
+              setBomStageBudgetOverrides(draftStageBudget);
+              try { localStorage.setItem('coenergygo_bom_stage_budget_overrides', JSON.stringify(draftStageBudget)); } catch (e) {}
+            } else {
+              try {
+                const s = localStorage.getItem('coenergygo_bom_stage_budget_overrides');
+                if (s) setBomStageBudgetOverrides(JSON.parse(s));
               } catch (e) {}
             }
 
@@ -1280,11 +1306,13 @@ export default function CoenergyGODashboard() {
       localStorage.removeItem('coenergygo_bom_user_overrides');
       localStorage.removeItem('coenergygo_bom_deleted_items');
       localStorage.removeItem('coenergygo_bom_custom_items');
+      localStorage.removeItem('coenergygo_bom_stage_budget_overrides');
       localStorage.removeItem('coenergygo_financial_assumptions');
     } catch (e) {}
     setBomUserOverrides({});
     setBomDeletedItemIds([]);
     setBomCustomAddedItems([]);
+    setBomStageBudgetOverrides({});
 
     // 7. Resetar o Store da Topologia Eletrotécnica
     try {
@@ -2006,6 +2034,7 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
       userBOMOverrides?: Record<string, { quantity?: number; unitPriceBRL?: number }>;
       deletedItemIds?: string[];
       customAddedItems?: any[];
+    stageBudgetOverrides?: Record<string, any>;
       laborMode?: 'TABELADO' | 'PERCENTUAL';
       laborPercent?: number;
       globalBdiPercent?: number;
@@ -2045,6 +2074,17 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
               const s = localStorage.getItem('coenergygo_bom_custom_items');
               return s ? JSON.parse(s) : [];
             } catch (e) { return []; }
+          })()
+    );
+
+    const effectiveStageBudgetOverrides = bomOverridesPartial?.stageBudgetOverrides ?? (
+      (bomStageBudgetOverrides && Object.keys(bomStageBudgetOverrides).length > 0)
+        ? bomStageBudgetOverrides
+        : (() => {
+            try {
+              const s = localStorage.getItem('coenergygo_bom_stage_budget_overrides');
+              return s ? JSON.parse(s) : {};
+            } catch (e) { return {}; }
           })()
     );
 
@@ -2155,6 +2195,7 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
       userBOMOverrides: effectiveUserBOMOverrides,
       deletedItemIds: effectiveDeletedItemIds,
       customAddedItems: effectiveCustomAddedItems,
+      stageBudgetOverrides: effectiveStageBudgetOverrides,
       laborMode: effectiveLaborMode,
       laborPercent: effectiveLaborPercent,
       globalBdiPercent: effectiveGlobalBdiPercent,
@@ -2183,6 +2224,7 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
         userBOMOverrides: effectiveUserBOMOverrides,
         deletedItemIds: effectiveDeletedItemIds,
         customAddedItems: effectiveCustomAddedItems,
+        stageBudgetOverrides: effectiveStageBudgetOverrides,
         laborMode: effectiveLaborMode,
         laborPercent: effectiveLaborPercent,
         globalBdiPercent: effectiveGlobalBdiPercent,
@@ -2252,6 +2294,7 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
     userBOMOverrides?: Record<string, { quantity?: number; unitPriceBRL?: number }>;
     deletedItemIds?: string[];
     customAddedItems?: any[];
+    stageBudgetOverrides?: Record<string, any>;
     laborMode?: 'TABELADO' | 'PERCENTUAL';
     laborPercent?: number;
     globalBdiPercent?: number;
@@ -2269,6 +2312,10 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
       setBomCustomAddedItems(params.customAddedItems);
       try { localStorage.setItem('coenergygo_bom_custom_items', JSON.stringify(params.customAddedItems)); } catch (e) {}
     }
+    if (params.stageBudgetOverrides !== undefined) {
+      setBomStageBudgetOverrides(params.stageBudgetOverrides);
+      try { localStorage.setItem('coenergygo_bom_stage_budget_overrides', JSON.stringify(params.stageBudgetOverrides)); } catch (e) {}
+    }
     if (params.laborMode !== undefined) {
       setBomLaborMode(params.laborMode);
     }
@@ -2285,6 +2332,7 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
       ...(params.userBOMOverrides !== undefined ? { userBOMOverrides: params.userBOMOverrides } : {}),
       ...(params.deletedItemIds !== undefined ? { deletedItemIds: params.deletedItemIds } : {}),
       ...(params.customAddedItems !== undefined ? { customAddedItems: params.customAddedItems } : {}),
+      ...(params.stageBudgetOverrides !== undefined ? { stageBudgetOverrides: params.stageBudgetOverrides } : {}),
       ...(params.laborMode !== undefined ? { laborMode: params.laborMode } : {}),
       ...(params.laborPercent !== undefined ? { laborPercent: params.laborPercent } : {}),
       ...(params.globalBdiPercent !== undefined ? { globalBdiPercent: params.globalBdiPercent } : {})
@@ -5181,6 +5229,10 @@ ${configuredChargers.map(c => `  * ${c.quantity}x ${c.name} (${c.powerKW} kW - $
             externalLaborMode={bomLaborMode}
             externalLaborPercent={bomLaborPercent}
             externalGlobalBdiPercent={bomGlobalBdiPercent}
+            externalStageBudgetOverrides={bomStageBudgetOverrides}
+            onUpdateStageBudgetOverrides={(overrides) => {
+              handleSaveBOMChanges({ stageBudgetOverrides: overrides });
+            }}
             onUpdateBOMOverrides={(overrides) => {
               handleSaveBOMChanges({ userBOMOverrides: overrides });
             }}

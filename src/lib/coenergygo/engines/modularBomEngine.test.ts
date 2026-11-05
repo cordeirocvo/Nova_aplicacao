@@ -248,4 +248,38 @@ describe('Modular BOM Engine — Sizing and Budgeting Tests', () => {
     assert.strictEqual(etapa3.bdiType, 'VALOR');
     assert.strictEqual(etapa3.subtotalBdiBRL, 750);
   });
+
+  it('Deve alternar entre percentual geral ou individual para as etapas conforme budgetScope', () => {
+    const topology = createMockTopology();
+    const overrides = {
+      ETAPA_2_TRECHO_1_PADRAO_220V: {
+        laborType: 'PERCENTUAL' as const,
+        laborPercent: 40,
+        bdiType: 'PERCENTUAL' as const,
+        bdiPercent: 30
+      }
+    };
+
+    // Modo GERAL: segue alíquotas globais (25% e 20%)
+    const bomGeral = buildModularBOM(topology, mockCemigItems, {
+      budgetScope: 'GERAL',
+      laborPercent: 25,
+      globalBdiPercent: 20,
+      stageBudgetOverrides: overrides
+    });
+    const etapa2Geral = bomGeral.stages.find(s => s.stageId === 'ETAPA_2_TRECHO_1_PADRAO_220V');
+    assert.strictEqual(etapa2Geral?.stageLaborPercent, 25, 'No modo GERAL, deve usar o percentual global');
+    assert.strictEqual(etapa2Geral?.stageBdiPercent, 20, 'No modo GERAL, deve usar o BDI global');
+
+    // Modo INDIVIDUAL: segue override da etapa (40% e 30%)
+    const bomIndividual = buildModularBOM(topology, mockCemigItems, {
+      budgetScope: 'INDIVIDUAL',
+      laborPercent: 25,
+      globalBdiPercent: 20,
+      stageBudgetOverrides: overrides
+    });
+    const etapa2Individual = bomIndividual.stages.find(s => s.stageId === 'ETAPA_2_TRECHO_1_PADRAO_220V');
+    assert.strictEqual(etapa2Individual?.stageLaborPercent, 40, 'No modo INDIVIDUAL, deve usar o percentual customizado da etapa');
+    assert.strictEqual(etapa2Individual?.stageBdiPercent, 30, 'No modo INDIVIDUAL, deve usar o BDI customizado da etapa');
+  });
 });

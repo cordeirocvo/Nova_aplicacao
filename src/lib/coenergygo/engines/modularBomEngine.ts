@@ -36,6 +36,7 @@ export type LaborCalculationMode = 'TABELADO' | 'PERCENTUAL';
 export type BudgetCalculationType = 'PERCENTUAL' | 'VALOR';
 
 export interface StageBudgetOverride {
+  isCustom?: boolean;
   mode?: LaborCalculationMode;
   laborType?: BudgetCalculationType;
   laborPercent?: number;
@@ -78,6 +79,8 @@ export interface ModularBOMStage {
   stageBdiAmountBRL: number;
   tabeladoLaborBRL: number;
   percentLaborBRL: number;
+  budgetScope?: 'GERAL' | 'INDIVIDUAL';
+  isCustomConfig?: boolean;
 }
 
 export interface ModularBOMOutput {
@@ -88,6 +91,7 @@ export interface ModularBOMOutput {
   globalBdiAmountBRL: number;
   totalProjectInvestmentBRL: number;
   totalItemsCount: number;
+  budgetScope?: 'GERAL' | 'INDIVIDUAL';
   laborMode: LaborCalculationMode;
   syncedOrcamentoProjetoId?: string;
   syncedAt?: string;
@@ -97,6 +101,7 @@ export interface ModularBOMOptions {
   includeEntranceStandardInBOM?: boolean;
   includeEmergencyShutdown?: boolean;
   terminalType?: 'COMPRESSAO_OLHAL' | 'TUBULAR';
+  budgetScope?: "GERAL" | "INDIVIDUAL";
   globalBdiPercent?: number;       // Margem BDI global (ex: 20%)
   laborPercent?: number;           // Mão de obra global estimada (% dos materiais, ex: 25%)
   laborMode?: LaborCalculationMode; // 'TABELADO' (default) | 'PERCENTUAL'
@@ -1937,7 +1942,11 @@ export function buildModularBOM(
     );
 
     // Sincronização individual por etapa: Mão de Obra e BDI (% ou Valor R$)
-    const stageOverride = stageBudgetOverrides?.[sId] || stageLaborOverrides?.[sId];
+    const effectiveScope: 'GERAL' | 'INDIVIDUAL' = options.budgetScope || 'GERAL';
+    const rawStageOverride = stageBudgetOverrides?.[sId] || stageLaborOverrides?.[sId];
+    const isStageCustom = effectiveScope === 'INDIVIDUAL' ? Boolean(rawStageOverride) : (options.budgetScope === 'GERAL' ? Boolean(rawStageOverride?.isCustom) : Boolean(rawStageOverride));
+    const stageOverride = isStageCustom ? rawStageOverride : undefined;
+    const isCustomConfig = Boolean(rawStageOverride && (rawStageOverride.isCustom || rawStageOverride.laborType || rawStageOverride.bdiType || rawStageOverride.laborPercent !== undefined || rawStageOverride.bdiPercent !== undefined || rawStageOverride.laborAmountBRL !== undefined || rawStageOverride.bdiAmountBRL !== undefined));
     const effectiveStageMode: LaborCalculationMode = stageOverride?.mode || laborMode || 'TABELADO';
 
     const tabeladoLaborBRL = Number(
@@ -2051,7 +2060,9 @@ export function buildModularBOM(
       stageBdiPercent,
       stageBdiAmountBRL,
       tabeladoLaborBRL,
-      percentLaborBRL
+      percentLaborBRL,
+      budgetScope: effectiveScope,
+      isCustomConfig
     };
   });
 
@@ -2075,6 +2086,7 @@ export function buildModularBOM(
     globalBdiAmountBRL,
     totalProjectInvestmentBRL,
     totalItemsCount,
-    laborMode: laborMode || 'TABELADO'
+    laborMode: laborMode || 'TABELADO',
+    budgetScope: options.budgetScope || 'GERAL'
   };
 }

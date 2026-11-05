@@ -804,6 +804,52 @@ export function EVTopologyChainViewer({
     });
   }, [onUpdateStageBudgetOverrides]);
 
+  const [budgetScope, setBudgetScope] = useState<'GERAL' | 'INDIVIDUAL'>(() => {
+    try {
+      const saved = localStorage.getItem('coenergygo_bom_budget_scope');
+      if (saved === 'INDIVIDUAL' || saved === 'GERAL') return saved;
+    } catch (e) {}
+    return 'GERAL';
+  });
+
+  const handleUpdateBudgetScope = React.useCallback((scope: 'GERAL' | 'INDIVIDUAL') => {
+    setBudgetScope(scope);
+    try { localStorage.setItem('coenergygo_bom_budget_scope', scope); } catch (e) {}
+  }, []);
+
+  const handleResetStageToGeneral = React.useCallback((stageId: InstallationStageId) => {
+    setStageBudgetOverrides(prev => {
+      const updated = { ...prev };
+      delete updated[stageId];
+      try { localStorage.setItem('coenergygo_bom_stage_budget_overrides', JSON.stringify(updated)); } catch (e) {}
+      if (onUpdateStageBudgetOverrides) {
+        setTimeout(() => onUpdateStageBudgetOverrides(updated), 0);
+      }
+      return updated;
+    });
+  }, [onUpdateStageBudgetOverrides]);
+
+  const handleEnableStageCustom = React.useCallback((stageId: InstallationStageId) => {
+    setStageBudgetOverrides(prev => {
+      const updated = {
+        ...prev,
+        [stageId]: {
+          ...prev[stageId],
+          isCustom: true,
+          laborType: prev[stageId]?.laborType || 'PERCENTUAL',
+          laborPercent: prev[stageId]?.laborPercent ?? laborPercent,
+          bdiType: prev[stageId]?.bdiType || 'PERCENTUAL',
+          bdiPercent: prev[stageId]?.bdiPercent ?? globalBdiPercent
+        }
+      };
+      try { localStorage.setItem('coenergygo_bom_stage_budget_overrides', JSON.stringify(updated)); } catch (e) {}
+      if (onUpdateStageBudgetOverrides) {
+        setTimeout(() => onUpdateStageBudgetOverrides(updated), 0);
+      }
+      return updated;
+    });
+  }, [laborPercent, globalBdiPercent, onUpdateStageBudgetOverrides]);
+
   const [stageLaborOverrides, setStageLaborOverrides] = useState<Record<string, { mode?: 'TABELADO' | 'PERCENTUAL'; percent?: number; fixedAmountBRL?: number }>>({});
   const [capexPricingCatalog, setCapexPricingCatalog] = useState<Record<string, {
     unitPrice: number;
@@ -844,6 +890,8 @@ export function EVTopologyChainViewer({
       globalBdiPercent,
       laborPercent,
       laborMode,
+      budgetScope,
+      stageBudgetOverrides,
       stageLaborOverrides,
       userBOMOverrides,
       deletedItemIds,
@@ -859,6 +907,8 @@ export function EVTopologyChainViewer({
     globalBdiPercent,
     laborPercent,
     laborMode,
+    budgetScope,
+    stageBudgetOverrides,
     stageLaborOverrides,
     userBOMOverrides,
     deletedItemIds,
@@ -2008,6 +2058,10 @@ export function EVTopologyChainViewer({
                 }
               }));
             }}
+            budgetScope={budgetScope}
+            onUpdateBudgetScope={handleUpdateBudgetScope}
+            onResetStageToGeneral={handleResetStageToGeneral}
+            onEnableStageCustom={handleEnableStageCustom}
             stageBudgetOverrides={stageBudgetOverrides}
             onUpdateStageLaborBudget={handleUpdateStageLaborBudget}
             onUpdateStageBdiBudget={handleUpdateStageBdiBudget}
